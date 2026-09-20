@@ -3,82 +3,73 @@
 > El temporizador Pomodoro pensado para el foco real: planificá tus tareas, protegé tu concentración y descansá con propósito, sin bloatware ni suscripciones abusivas.
 
 [![Estado del Proyecto](https://img.shields.io/badge/Estado-En%20Definici%C3%B3n%20%2F%20v0.1-blue)](docs/roadmap.md)
-[![Licencia](https://img.shields.io/badge/Licencia-MIT-green)](#)
-
----
-
-## Documentación
-
-El diseño funcional y técnico del proyecto está organizado de manera modular en [`docs/`](docs/):
-
-* **[Visión del Producto](docs/vision.md)**: Propósito, público objetivo, análisis de mercado y plataformas (Web y Windows).
-* **[Hoja de Ruta (Roadmap)](docs/roadmap.md)**: Planificación por versiones (v0.1, v0.2, +v0.3) y distribución de entregas.
-* **[Propuestas de Fede](docs/proposals/fede-ideas.md)**: Las 5 propuestas de Fede con su formato dual (propuesta original y resolución técnica de arquitectura).
-* **[Propuestas de Vortex](docs/proposals/vortex-ideas.md)**: Funcionalidades de planificación ágil, pausas guiadas y blindaje de foco.
+[![Plataformas](https://img.shields.io/badge/Plataformas-Web%20%7C%20Windows-informational)](docs/vision.md#3-plataformas-objetivo)
+[![Licencia](https://img.shields.io/badge/Licencia-MIT-green)](#licencia)
 
 ---
 
 ## Visión general
 
-Muchas aplicaciones de Pomodoro caen en uno de dos extremos: o son temporizadores excesivamente básicos que no permiten organizar qué vas a hacer en cada bloque de trabajo, o son herramientas sobrecargadas de funciones accesorias bloqueadas bajo suscripciones costosas, con interfaces pesadas o limitadas a un único sistema operativo.
+La mayoría de las herramientas de Pomodoro caen en uno de dos extremos: o son temporizadores excesivamente básicos que no permiten organizar la sesión, o son aplicaciones sobrecargadas de funciones accesorias bloqueadas bajo suscripciones costosas.
 
-**Pomody** nace como una herramienta personal orientada a resolver esos problemas desde la práctica diaria:
-- **Planificación sin fricción**: saber exactamente qué tarea encarar antes de iniciar un bloque de concentración.
-- **Descansos con propósito**: pausas sugeridas que realmente recarguen energía en lugar de fomentar la dispersión pasiva.
-- **Respeto al usuario**: una experiencia visual limpia, enfocada en el flujo de trabajo y sin costos artificiales.
+**Pomody** nace como una herramienta personal y colaborativa orientada a resolver esos problemas desde la práctica diaria:
+* **Planificación sin fricción**: saber exactamente qué tarea encarar antes de iniciar un bloque de concentración.
+* **Descansos con propósito**: pausas sugeridas que realmente recarguen energía en lugar de fomentar la dispersión pasiva.
+* **Cero bloatware**: una experiencia visual limpia, sin publicidad, sin telemetría invasiva y sin costos artificiales.
 
 ---
 
 ## Núcleo de la experiencia
 
-El flujo esencial de Pomody mantiene la premisa clásica, optimizando cada etapa:
+El flujo esencial de Pomody optimiza cada etapa del método clásico mediante una **Máquina de Estados Finita (FSM)** predecible y desacoplada:
 
 ```text
 Configurar tiempo ──▶ Iniciar Bloque ──▶ Trabajar (Foco) ──▶ Alerta de Fin ──▶ Descanso Guiado ──▶ Repetir
 ```
 
 1. **Definición de sesión**: fijá la duración de los intervalos y tu objetivo inmediato.
-2. **Foco protegido**: interfaz minimalista durante el trabajo para minimizar distracciones.
+2. **Foco protegido (Modo Zen)**: interfaz minimalista durante el trabajo que oculta distracciones.
 3. **Pausa revitalizante**: sugerencias concretas de descanso para despejar la mente antes del siguiente ciclo.
 
 ---
 
-## Hoja de ruta (Roadmap)
+## Documentación del Proyecto
 
-El desarrollo de Pomody está organizado en entregas incrementales para validar cada funcionalidad con uso real antes de sumar complejidad:
+El diseño funcional, técnico y las decisiones de arquitectura están organizados de forma modular en [`docs/`](docs/):
 
-### v0.1 — Cimientos y MVP base (En desarrollo activo)
-- [ ] Temporizador Pomodoro tradicional con Máquina de Estados Finita (FSM) desacoplada y configurable.
-- [ ] Interfaz principal minimalista y reactiva a la FSM (oculta controles en modo foco).
-- [ ] Drawer/Modal de ajustes y configuración desacoplado.
-- [ ] Shell con barra de pestañas superior central con soporte de navegación y placeholders `(en v0.X)`.
-- [ ] Sistema de diseño con tres paletas basadas en Rosé Pine (*Dark*, *High-Contrast* y *Light Dawn*) mediante tokens CSS.
-- [ ] Notificaciones sonoras de fin de bloque.
-- [ ] Emisión de Domain Events en memoria y contador numérico diario elemental.
-- [ ] Base arquitectónica desacoplada orientada a Web y Windows.
-
-### v0.2 — Planificación, descansos y asistencia al foco
-- [ ] **Mini To-Do integrado**: asignación de objetivos o subtareas específicas por bloque de trabajo.
-- [ ] **Revitalización automática**: catálogo de actividades sugeridas para descansos saludables (evitando el scroll pasivo).
-- [ ] **Presupuesto de sesión**: proyección automática de bloques disponibles según un horario límite o cantidad de pomodoros objetivo.
-- [ ] **Detector de dispersión simplificado**: recordatorio de distracción basado en metadatos de ventana activa en Windows (`IDistractionMonitor`) con whitelist por sesión.
-- [ ] **Ilustraciones progresivas**: gráficos SVG estáticos que evolucionan por fases fijas por bloque completado (sin bucles de animación pesados).
-- [ ] **Historial persistido y métricas semanales**: almacenamiento local y gráficos de barras renderizados en CSS/SVG nativo.
-
-### v0.3 / Futuro — Automatización y modo compacto
-- [ ] **Modo Compacto / Mini-Player**: vista reducida (~220x80px) Always on Top en Windows para monitorear el tiempo sobre otras aplicaciones.
-- [ ] **Blindaje de foco**: sincronización con estados de presencia (Discord RPC) y activación automática del modo "No molestar" del sistema.
-- [ ] **Analítica avanzada**: estimación heurística de calidad de sesión y correlación de foco vs distracciones.
+* 📖 **[Visión del Producto](docs/vision.md)**: Propósito, público objetivo, análisis de mercado y plataformas (Web y Windows).
+* 🗺️ **[Hoja de Ruta (Roadmap)](docs/roadmap.md)**: Planificación por versiones, criterios de entrega y desglose detallado de tareas.
+* 💡 **[Propuestas de Fede](docs/proposals/fede-ideas.md)**: Propuestas originales y resoluciones técnicas de arquitectura (analizador de pantalla, temas, métricas, UI minimalista y widget flotante).
+* 🛠️ **[Propuestas de Vortex](docs/proposals/vortex-ideas.md)**: Funcionalidades de planificación ágil (Mini To-Do), pausas guiadas, presupuesto de sesión y blindaje de foco.
 
 ---
 
-## Estado del proyecto y tecnologías
+## Hoja de ruta resumida
 
-Actualmente Pomody se encuentra en **fase de definición de arquitectura y prototipado conceptual**.
+Para consultar el checklist completo y criterios de aceptación, visitá [`docs/roadmap.md`](docs/roadmap.md).
 
-* **Objetivo de plataforma**: Web y Windows (aplicación de escritorio).
-* **Stack tecnológico**: En evaluación (priorizando rendimiento, bajo consumo de recursos y arquitectura limpia desacoplada).
-* **Progreso de diseño**: Podés consultar las especificaciones y acuerdos funcionales detallados en [`docs/`](docs/).
+| Versión | Enfoque Principal | Responsable | Estado |
+| :--- | :--- | :--- | :--- |
+| **[v0.1 — Cimientos](docs/roadmap.md#v01--cimientos-y-mvp-base-inmediato)** | Temporizador base (FSM), UI minimalista Zen, temas Rosé Pine y Domain Events. | Vortex | **En desarrollo activo** |
+| **[v0.2 — Planificación](docs/roadmap.md#v02--planificación-descansos-y-asistencia-al-foco-cercano)** | Mini To-Do integrado, pausas guiadas, presupuesto de sesión y detector de dispersión ligero. | Vortex & Fede | Planificado |
+| **[+v0.3 — Automatización](docs/roadmap.md#v03--automatización-presencia-y-modo-compacto-futuro)** | Modo Compacto / Mini-Player (Always on Top), Discord RPC y analítica avanzada. | Equipo Pomody | Roadmap futuro |
+
+---
+
+## Equipo y Desarrollo
+
+Pomody se desarrolla mediante pair programming y mentoría técnica continua:
+
+* **Vortex** ([`docs/profiles/vortex.md`](docs/profiles/vortex.md)) — Tech Lead / Arquitecto.
+* **Fede** ([`docs/profiles/fede.md`](docs/profiles/fede.md)) — Trainee Vibe Coder / Manual Tester.
+
+---
+
+## Estado y Tecnologías
+
+* **Plataformas objetivo**: Web (navegadores modernos) y Windows (aplicación de escritorio).
+* **Stack tecnológico**: En evaluación para la v0.1 (priorizando rendimiento, bajo consumo de memoria y arquitectura desacoplada).
+* **Especificaciones detalladas**: Consultar [`docs/`](docs/).
 
 ---
 
