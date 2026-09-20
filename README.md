@@ -41,6 +41,7 @@ El diseño funcional, técnico y las decisiones de arquitectura están organizad
 * 🗺️ **[Hoja de Ruta (Roadmap)](docs/roadmap.md)**: Planificación por versiones, criterios de entrega y desglose detallado de tareas.
 * 💡 **[Propuestas de Fede](docs/proposals/fede-ideas.md)**: Propuestas originales y resoluciones técnicas de arquitectura (analizador de pantalla, temas, métricas, UI minimalista y widget flotante).
 * 🛠️ **[Propuestas de Vortex](docs/proposals/vortex-ideas.md)**: Funcionalidades de planificación ágil (Mini To-Do), pausas guiadas, presupuesto de sesión y blindaje de foco.
+* 🏗️ **[Arquitectura y Stack](docs/architecture.md)**: Stack técnico definitivo (SvelteKit + Tauri v2), cobertura de requerimientos y patrones de diseño.
 
 ---
 
@@ -68,11 +69,28 @@ Pomody se desarrolla mediante pair programming y mentoría técnica continua:
 ## Estado y Tecnologías
 
 * **Plataformas objetivo**: Web (navegadores modernos) y Windows (aplicación de escritorio).
-* **Stack tecnológico**: En evaluación para la v0.1 (priorizando rendimiento, bajo consumo de memoria y arquitectura desacoplada).
+* **Stack tecnológico**: SvelteKit + Tauri v2 + Tailwind CSS v4 / shadcn-svelte (ver [`docs/architecture.md`](docs/architecture.md)).
 * **Especificaciones detalladas**: Consultar [`docs/`](docs/).
+
+---
+
+## Requisitos de Entorno
+
+Para levantar y desarrollar el proyecto localmente:
+
+| Herramienta | Versión recomendada | Rol / Notas |
+| :--- | :--- | :--- |
+| **Node.js** | `>= 20.18.0 LTS` (v22 recomendada) | Runtime para desarrollo frontend y tooling. |
+| **pnpm** | `>= 9.0.0` | Gestor de paquetes oficial (`corepack enable`). |
+| **Rust** | `Stable` (`>= 1.77.2`) | Solo necesario para compilar la app de escritorio (Tauri v2). |
+| **C++ Build Tools** | Visual Studio Build Tools 2022 | Dependencia del toolchain MSVC de Rust en Windows. |
+
+> [!TIP]
+> **Desarrollo ágil de UI:** Para maquetar vistas, componentes y estilos en el navegador (`pnpm dev`), únicamente se requiere **Node.js** y **pnpm**. No es obligatorio instalar Rust ni C++ salvo que se trabaje en el empaquetado o integración de escritorio.
 
 ---
 
 ## Licencia
 
 Este proyecto está bajo la Licencia MIT.
+
