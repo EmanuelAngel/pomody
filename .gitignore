@@ -1,0 +1,6 @@
+# Local AI runtime state
+.atl/
+.agents/
+
+# Obsidian
+.obsidian
