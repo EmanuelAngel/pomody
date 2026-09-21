@@ -7,3 +7,9 @@ bun.lockb
 
 # Miscellaneous
 /static/
+
+# AI and Tooling
+.gemini/
+.claude/
+.opencode/
+.agents/
