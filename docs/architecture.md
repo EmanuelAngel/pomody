@@ -74,12 +74,34 @@ Mapeo de requerimientos funcionales hacia la arquitectura técnica y sus respect
 
 ## 4. Decisiones de Arquitectura Clave
 
-### 4.1. Desacoplamiento Hexagonal del Dominio
+### 4.1. Desacoplamiento Hexagonal Pragmático del Dominio
 
-La lógica de temporización, la máquina de estados finita (FSM) y los eventos de dominio residen en TypeScript puro (`src/lib/domain/`), sin referencias a Svelte, Tauri o APIs del navegador:
+La lógica de temporización, la máquina de estados finita (FSM) y los eventos de dominio residen en TypeScript puro (`src/lib/domain/`), sin referencias a Svelte, Tauri o APIs del navegador. La arquitectura adopta una variante pragmática de Puertos y Adaptadores alineada a las convenciones de SvelteKit y shadcn-svelte:
 
-- **Testabilidad aislada:** Se ejecutan tests unitarios al 100% con Vitest en cuestión de milisegundos.
-- **Adaptadores de presentación:** Svelte consume el dominio mediante adaptadores reactivos (Runes/Stores) que escuchan los eventos emitidos.
+```text
+src/lib/
+├── domain/                  # TypeScript puro (cero dependencias externas)
+│   ├── timer/               # FSM, cálculo por delta de timestamps, entidades
+│   ├── events/              # Eventos de dominio (SessionStarted, BlockCompleted)
+│   └── ports/               # Interfaces puras (IAudioNotifier, ISessionRepository)
+│
+├── adapters/                # Implementaciones concretas de los puertos técnicos
+│   ├── audio/               # Web Audio API nativa (WebAudioNotifier)
+│   ├── worker/              # Web Worker para mitigar background-throttling
+│   └── storage/             # IndexedDB / Web Storage (en v0.2)
+│
+├── state/                   # Composition Root y Adaptador Conductor Reactivo
+│   └── timer.svelte.ts      # Conecta la FSM con adaptadores y expone Runes ($state)
+│
+└── components/              # UI semántica acorde a SvelteKit y shadcn-svelte
+    ├── ui/                  # Primitivas accesibles de shadcn-svelte
+    ├── timer/               # Arco circular zen, controles, task pill
+    ├── settings/            # Drawer de configuración, selector de tema
+    └── layout/              # Shell principal y header
+```
+
+- **Testabilidad aislada:** Se ejecutan tests unitarios al 100% con Vitest en milisegundos sin levantar navegadores.
+- **Composition Root reactivo:** `src/lib/state/timer.svelte.ts` actúa como puente conductor. Elimina capas intermedias innecesarias (como servicios de aplicación vacíos) y expone Runes universales de Svelte 5 a los componentes.
 
 ### 4.2. Precisión Temporal y Protección contra Throttling en Background
 
@@ -117,8 +139,8 @@ Para dar soporte a los tres modos requeridos (Dark, Dawn y OLED High-Contrast) s
 
 ## 6. Próximos Pasos (Arranque de v0.1)
 
-- [ ] Inicializar proyecto SvelteKit en modo SPA con `@sveltejs/adapter-static` y TypeScript estricto.
-- [ ] Configurar Tailwind CSS v4 y componentes base con `pnpm dlx shadcn-svelte@latest init`.
-- [ ] Incorporar variables CSS para los 3 temas Rosé Pine (`dark`, `dawn`, `oled`).
+- [x] Inicializar proyecto SvelteKit en modo SPA con `@sveltejs/adapter-static` y TypeScript estricto.
+- [x] Configurar Tailwind CSS v4 y componentes base con `pnpm dlx shadcn-svelte@latest init`.
+- [x] Incorporar variables CSS para los 3 temas Rosé Pine (`dark`, `dawn`, `oled`).
 - [ ] Modelar la FSM pura en `src/lib/domain/timer/` con cobertura de pruebas en Vitest.
 - [ ] Configurar el contenedor Tauri v2 apuntando al directorio estático (`build/`).
