@@ -1,0 +1,174 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn-svelte/tailwind.css';
+@import '@fontsource-variable/inter';
+
+@custom-variant dark (&:is(.dark *));
+
+:root,
+[data-theme='dark'] {
+	/* Rosé Pine Base */
+	--bg-base: #191724;
+	--bg-surface: #1f1d2e;
+	--bg-overlay: #26233a;
+	--text-muted: #6e6a86;
+	--text-subtle: #908caa;
+	--text-primary: #e0def4;
+	--accent-love: #eb6f92;
+	--accent-rose: #ebbcba;
+	--accent-pine: #31748f;
+	--accent-foam: #9ccfd8;
+	--accent-iris: #c4a7e7;
+	--accent-gold: #f6c177;
+
+	/* shadcn-svelte UI mappings */
+	--background: #191724;
+	--foreground: #e0def4;
+	--card: #1f1d2e;
+	--card-foreground: #e0def4;
+	--popover: #1f1d2e;
+	--popover-foreground: #e0def4;
+	--primary: #ebbcba;
+	--primary-foreground: #191724;
+	--secondary: #26233a;
+	--secondary-foreground: #e0def4;
+	--muted: #26233a;
+	--muted-foreground: #908caa;
+	--accent: #26233a;
+	--accent-foreground: #ebbcba;
+	--destructive: #eb6f92;
+	--border: #26233a;
+	--input: #26233a;
+	--ring: #ebbcba;
+	--radius: 0.625rem;
+}
+
+[data-theme='dawn'] {
+	/* Rosé Pine Dawn */
+	--bg-base: #faf4ed;
+	--bg-surface: #fffaf3;
+	--bg-overlay: #f2e9e1;
+	--text-muted: #9893a5;
+	--text-subtle: #797593;
+	--text-primary: #575279;
+	--accent-love: #b4637a;
+	--accent-rose: #d7827e;
+	--accent-pine: #286983;
+	--accent-foam: #56949f;
+	--accent-iris: #907aa9;
+	--accent-gold: #ea9d34;
+
+	/* shadcn-svelte UI mappings */
+	--background: #faf4ed;
+	--foreground: #575279;
+	--card: #fffaf3;
+	--card-foreground: #575279;
+	--popover: #fffaf3;
+	--popover-foreground: #575279;
+	--primary: #d7827e;
+	--primary-foreground: #faf4ed;
+	--secondary: #f2e9e1;
+	--secondary-foreground: #575279;
+	--muted: #f2e9e1;
+	--muted-foreground: #797593;
+	--accent: #f2e9e1;
+	--accent-foreground: #d7827e;
+	--destructive: #b4637a;
+	--border: #f2e9e1;
+	--input: #f2e9e1;
+	--ring: #d7827e;
+	--radius: 0.625rem;
+}
+
+[data-theme='oled'] {
+	/* Rosé Pine OLED (Pure Black) */
+	--bg-base: #000000;
+	--bg-surface: #0a0a0a;
+	--bg-overlay: #141414;
+	--text-muted: #737373;
+	--text-subtle: #a3a3a3;
+	--text-primary: #ffffff;
+	--accent-love: #ff6b8b;
+	--accent-rose: #ffb4b4;
+	--accent-pine: #38bdf8;
+	--accent-foam: #67e8f9;
+	--accent-iris: #c084fc;
+	--accent-gold: #facc15;
+
+	/* shadcn-svelte UI mappings */
+	--background: #000000;
+	--foreground: #ffffff;
+	--card: #0a0a0a;
+	--card-foreground: #ffffff;
+	--popover: #0a0a0a;
+	--popover-foreground: #ffffff;
+	--primary: #ffb4b4;
+	--primary-foreground: #000000;
+	--secondary: #141414;
+	--secondary-foreground: #ffffff;
+	--muted: #141414;
+	--muted-foreground: #a3a3a3;
+	--accent: #141414;
+	--accent-foreground: #ffb4b4;
+	--destructive: #ff6b8b;
+	--border: #262626;
+	--input: #262626;
+	--ring: #ffb4b4;
+	--radius: 0.625rem;
+}
+
+@theme inline {
+	--font-sans: 'Inter Variable', sans-serif;
+	--color-bg-base: var(--bg-base);
+	--color-bg-surface: var(--bg-surface);
+	--color-bg-overlay: var(--bg-overlay);
+	--color-text-muted: var(--text-muted);
+	--color-text-subtle: var(--text-subtle);
+	--color-text-primary: var(--text-primary);
+	--color-accent-love: var(--accent-love);
+	--color-accent-rose: var(--accent-rose);
+	--color-accent-pine: var(--accent-pine);
+	--color-accent-foam: var(--accent-foam);
+	--color-accent-iris: var(--accent-iris);
+	--color-accent-gold: var(--accent-gold);
+
+	--color-ring: var(--ring);
+	--color-input: var(--input);
+	--color-border: var(--border);
+	--color-destructive: var(--destructive);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-accent: var(--accent);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-muted: var(--muted);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-secondary: var(--secondary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-primary: var(--primary);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-popover: var(--popover);
+	--color-card-foreground: var(--card-foreground);
+	--color-card: var(--card);
+	--color-foreground: var(--foreground);
+	--color-background: var(--background);
+	--radius-sm: calc(var(--radius) * 0.6);
+	--radius-md: calc(var(--radius) * 0.8);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) * 1.4);
+	--radius-2xl: calc(var(--radius) * 1.8);
+	--radius-3xl: calc(var(--radius) * 2.2);
+	--radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground;
+		margin: 0;
+		user-select: none;
+	}
+	html {
+		@apply font-sans;
+	}
+}
