@@ -3,6 +3,8 @@
 		"*.css": "tailwindcss"
 	},
 	"flow-icons.folders.associations": {
-		"state": "context"
+		"state": "context",
+		"ports": "plugin",
+		"timer": "asm"
 	}
 }

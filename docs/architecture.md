@@ -142,5 +142,5 @@ Para dar soporte a los tres modos requeridos (Dark, Dawn y OLED High-Contrast) s
 - [x] Inicializar proyecto SvelteKit en modo SPA con `@sveltejs/adapter-static` y TypeScript estricto.
 - [x] Configurar Tailwind CSS v4 y componentes base con `pnpm dlx shadcn-svelte@latest init`.
 - [x] Incorporar variables CSS para los 3 temas Rosé Pine (`dark`, `dawn`, `oled`).
-- [ ] Modelar la FSM pura en `src/lib/domain/timer/` con cobertura de pruebas en Vitest.
+- [x] Modelar la FSM pura en `src/lib/domain/timer/` con cobertura de pruebas en Vitest.
 - [ ] Configurar el contenedor Tauri v2 apuntando al directorio estático (`build/`).
