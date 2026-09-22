@@ -79,15 +79,25 @@ Pomody se desarrolla mediante pair programming y mentoría técnica continua:
 
 Para levantar y desarrollar el proyecto localmente:
 
-| Herramienta         | Versión recomendada                | Rol / Notas                                                   |
-| :------------------ | :--------------------------------- | :------------------------------------------------------------ |
-| **Node.js**         | `>= 20.18.0 LTS` (v22 recomendada) | Runtime para desarrollo frontend y tooling.                   |
-| **pnpm**            | `>= 9.0.0`                         | Gestor de paquetes oficial (`corepack enable`).               |
-| **Rust**            | `Stable` (`>= 1.77.2`)             | Solo necesario para compilar la app de escritorio (Tauri v2). |
-| **C++ Build Tools** | Visual Studio Build Tools 2022     | Dependencia del toolchain MSVC de Rust en Windows.            |
+| Herramienta             | Versión requerida                  | Rol / Notas                                                                                   |
+| :---------------------- | :--------------------------------- | :-------------------------------------------------------------------------------------------- |
+| **pnpm**                | `>= 9.0.0` (v10 recomendada)       | **Gestor oficial y mandatorio.** Usar siempre antes y sobre `npm` (`corepack enable`).        |
+| **Node.js**             | `>= 20.18.0 LTS` (v22 recomendada) | Runtime para desarrollo frontend y tooling (Vite, SvelteKit, Vitest).                         |
+| **Playwright Chromium** | `v1.60.0+`                         | Opcional: Solo necesario para correr tests de componentes en navegador (`pnpm test:browser`). |
+| **Rust**                | `Stable` (`>= 1.77.2`)             | Solo necesario para compilar la app de escritorio (Tauri v2).                                 |
+| **C++ Build Tools**     | Visual Studio Build Tools 2022     | Dependencia del toolchain MSVC de Rust en Windows.                                            |
+
+> [!IMPORTANT]
+> **Uso estricto de pnpm:** Pomody utiliza `pnpm` de forma exclusiva para garantizar resolución determinista de dependencias mediante `pnpm-lock.yaml`. No ejecutes `npm` ni `yarn`.
+>
+> Para instalar el navegador de pruebas de componentes cuando sea requerido:
+>
+> ```bash
+> pnpm exec playwright install chromium
+> ```
 
 > [!TIP]
-> **Desarrollo ágil de UI:** Para maquetar vistas, componentes y estilos en el navegador (`pnpm dev`), únicamente se requiere **Node.js** y **pnpm**. No es obligatorio instalar Rust ni C++ salvo que se trabaje en el empaquetado o integración de escritorio.
+> **Desarrollo ágil de UI y Dominio:** Para trabajar en la lógica pura (`pnpm test:unit`) o levantar el servidor de desarrollo (`pnpm dev`), únicamente se requiere **Node.js** y **pnpm**. No es obligatorio instalar Playwright, Rust ni C++ salvo que se ejecuten pruebas de navegador o empaquetado desktop.
 
 ---
 
