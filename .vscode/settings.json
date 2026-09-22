@@ -3,8 +3,11 @@
 		"*.css": "tailwindcss"
 	},
 	"flow-icons.folders.associations": {
+		".svelte-kit": "svelte",
 		"state": "context",
 		"ports": "plugin",
-		"timer": "asm"
+		"timer": "temp",
+		"worker": "project",
+		"proposals": "idea"
 	}
 }
