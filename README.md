@@ -43,6 +43,7 @@ El diseño funcional, técnico y las decisiones de arquitectura están organizad
 - 💡 **[Propuestas de Fede](docs/proposals/fede-ideas.md)**: Propuestas originales y resoluciones técnicas de arquitectura (analizador de pantalla, temas, métricas, UI minimalista y widget flotante).
 - 🛠️ **[Propuestas de Vortex](docs/proposals/vortex-ideas.md)**: Funcionalidades de planificación ágil (Mini To-Do), pausas guiadas, presupuesto de sesión y blindaje de foco.
 - 🏗️ **[Arquitectura y Stack](docs/architecture.md)**: Stack técnico definitivo (SvelteKit + Tauri v2), cobertura de requerimientos y patrones de diseño.
+- 🤝 **[Flujo de Git y Calidad](docs/git-workflow.md)**: Estándares de Git, Conventional Commits y arneses automáticos de calidad (Husky, lint-staged, CI).
 
 ---
 
