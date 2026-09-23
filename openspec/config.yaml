@@ -1,0 +1,66 @@
+schema: spec-driven
+
+context: |
+  Tech stack: SvelteKit 2 (SPA), Svelte 5 (Runes), TypeScript, Tailwind CSS v4, Rosé Pine tokens, Vite 8
+  Architecture: Pragmatic Hexagonal (pure TS domain, ports, adapters, state runes composition root, UI)
+  Testing: Pure Node unit tests (<500ms), Vitest browser mode, Playwright E2E
+  Package manager: pnpm mandatory
+
+strict_tdd: true
+
+testing:
+  projects:
+    - path: '.'
+      stack: 'SvelteKit / TypeScript / Vite'
+      test_command: 'pnpm test'
+      test_layers:
+        unit:
+          available: true
+          tool: 'vitest run --project server'
+        integration:
+          available: true
+          tool: 'vitest run --project client'
+        e2e:
+          available: true
+          tool: 'playwright test'
+      coverage:
+        available: false
+        command: ''
+      quality:
+        linter:
+          available: true
+          command: 'pnpm lint'
+        type_checker:
+          available: true
+          command: 'pnpm check'
+        formatter:
+          available: true
+          command: 'pnpm format'
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Validate architectural boundaries (domain vs adapter vs UI)
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Keep domain layer pure TypeScript (zero dependencies on Svelte, DOM, or Tauri)
+    - Define abstract interfaces in src/lib/domain/ports/ for external services
+    - Use container-presentational pattern for UI
+  tasks:
+    - Group by architectural layer (Domain -> Adapters -> State -> UI)
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Use Svelte 5 Runes ($state, $derived, $props)
+      - Never import @tauri-apps/* in domain or components
+      - Follow Conventional Commits without AI attribution
+    tdd: true
+    test_command: 'pnpm test:unit'
+  verify:
+    test_command: 'pnpm test:unit'
+    build_command: 'pnpm build'
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
