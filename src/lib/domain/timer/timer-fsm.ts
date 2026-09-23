@@ -2,13 +2,262 @@ export type TimerState = 'idle' | 'running' | 'paused' | 'completed';
 export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
 export interface TimerConfig {
-	focusDurationSeconds: number;
-	shortBreakDurationSeconds: number;
-	longBreakDurationSeconds: number;
+	readonly focusDurationSeconds: number;
+	readonly shortBreakDurationSeconds: number;
+	readonly longBreakDurationSeconds: number;
+	readonly roundsBeforeLongBreak: number;
 }
 
-export const DEFAULT_TIMER_CONFIG: TimerConfig = {
-	focusDurationSeconds: 25 * 60,
-	shortBreakDurationSeconds: 5 * 60,
-	longBreakDurationSeconds: 15 * 60
-};
+export interface TimerSnapshot {
+	readonly state: TimerState;
+	readonly mode: TimerMode;
+	readonly remainingMs: number;
+	readonly durationMs: number;
+	readonly currentRound: number;
+	readonly totalRoundsCompleted: number;
+	readonly progress: number;
+}
+
+export type TimerSubscriber = (snapshot: TimerSnapshot) => void;
+export type Unsubscribe = () => void;
+
+export class InvalidTimerConfigError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'InvalidTimerConfigError';
+	}
+}
+
+export const DEFAULT_TIMER_CONFIG: TimerConfig = Object.freeze({
+	focusDurationSeconds: 1500,
+	shortBreakDurationSeconds: 300,
+	longBreakDurationSeconds: 900,
+	roundsBeforeLongBreak: 4
+});
+
+/**
+ * Asserts that configuration values are valid strictly positive integers.
+ * Throws InvalidTimerConfigError if any property fails validation.
+ */
+export function validateTimerConfig(config: TimerConfig): void {
+	const fields: (keyof TimerConfig)[] = [
+		'focusDurationSeconds',
+		'shortBreakDurationSeconds',
+		'longBreakDurationSeconds',
+		'roundsBeforeLongBreak'
+	];
+
+	for (const field of fields) {
+		const value = config[field];
+		if (
+			typeof value !== 'number' ||
+			!Number.isFinite(value) ||
+			!Number.isInteger(value) ||
+			value <= 0
+		) {
+			throw new InvalidTimerConfigError(
+				`Invalid configuration for "${field}": expected a positive integer, got ${value}`
+			);
+		}
+	}
+}
+
+/**
+ * Calculates the next Pomodoro mode and round given the current mode, round, and cycle limits.
+ */
+export function calculateNextCycleStep(
+	currentMode: TimerMode,
+	currentRound: number,
+	roundsBeforeLongBreak: number
+): { nextMode: TimerMode; nextRound: number } {
+	switch (currentMode) {
+		case 'focus': {
+			const nextMode = currentRound < roundsBeforeLongBreak ? 'shortBreak' : 'longBreak';
+			return { nextMode, nextRound: currentRound };
+		}
+		case 'shortBreak': {
+			return { nextMode: 'focus', nextRound: currentRound + 1 };
+		}
+		case 'longBreak': {
+			return { nextMode: 'focus', nextRound: 1 };
+		}
+	}
+}
+
+export class TimerFSM {
+	private readonly _config: TimerConfig;
+	private _state: TimerState = 'idle';
+	private _mode: TimerMode = 'focus';
+	private _currentRound = 1;
+	private _totalRoundsCompleted = 0;
+	private _remainingMs: number;
+	private readonly _subscribers: Set<TimerSubscriber> = new Set();
+
+	constructor(config?: Partial<TimerConfig>) {
+		const merged: TimerConfig = {
+			...DEFAULT_TIMER_CONFIG,
+			...config
+		};
+		validateTimerConfig(merged);
+		this._config = Object.freeze(merged);
+		this._remainingMs = this.durationMs;
+	}
+
+	public get config(): TimerConfig {
+		return this._config;
+	}
+
+	public get state(): TimerState {
+		return this._state;
+	}
+
+	public get mode(): TimerMode {
+		return this._mode;
+	}
+
+	public get durationMs(): number {
+		switch (this._mode) {
+			case 'focus':
+				return this._config.focusDurationSeconds * 1000;
+			case 'shortBreak':
+				return this._config.shortBreakDurationSeconds * 1000;
+			case 'longBreak':
+				return this._config.longBreakDurationSeconds * 1000;
+		}
+	}
+
+	public get remainingMs(): number {
+		return this._remainingMs;
+	}
+
+	public get currentRound(): number {
+		return this._currentRound;
+	}
+
+	public get totalRoundsCompleted(): number {
+		return this._totalRoundsCompleted;
+	}
+
+	public get progress(): number {
+		const duration = this.durationMs;
+		if (duration <= 0) return 0;
+		const rawProgress = (duration - this._remainingMs) / duration;
+		return Math.min(1.0, Math.max(0.0, rawProgress));
+	}
+
+	public get snapshot(): TimerSnapshot {
+		return Object.freeze({
+			state: this._state,
+			mode: this._mode,
+			remainingMs: this._remainingMs,
+			durationMs: this.durationMs,
+			currentRound: this._currentRound,
+			totalRoundsCompleted: this._totalRoundsCompleted,
+			progress: this.progress
+		});
+	}
+
+	public subscribe(subscriber: TimerSubscriber): Unsubscribe {
+		this._subscribers.add(subscriber);
+		return () => {
+			this._subscribers.delete(subscriber);
+		};
+	}
+
+	public start(): void {
+		if (this._state === 'idle') {
+			this._state = 'running';
+			this.notify();
+			return;
+		}
+
+		if (this._state === 'completed') {
+			this.advanceMode();
+			this._state = 'running';
+			this.notify();
+			return;
+		}
+
+		// 'running' or 'paused' are safe no-ops
+	}
+
+	public pause(): void {
+		if (this._state === 'running') {
+			this._state = 'paused';
+			this.notify();
+		}
+		// 'idle', 'paused', 'completed' are safe no-ops
+	}
+
+	public resume(): void {
+		if (this._state === 'paused') {
+			this._state = 'running';
+			this.notify();
+		}
+		// 'idle', 'running', 'completed' are safe no-ops
+	}
+
+	public reset(): void {
+		if (this._state === 'idle') {
+			this._remainingMs = this.durationMs;
+			return;
+		}
+
+		this._state = 'idle';
+		this._remainingMs = this.durationMs;
+		this.notify();
+	}
+
+	public skip(): void {
+		this.advanceMode();
+		this._state = 'idle';
+		this.notify();
+	}
+
+	public tick(deltaMs: number): void {
+		if (this._state !== 'running') {
+			return;
+		}
+
+		if (typeof deltaMs !== 'number' || !Number.isFinite(deltaMs) || deltaMs <= 0) {
+			return;
+		}
+
+		if (deltaMs >= this._remainingMs) {
+			this._remainingMs = 0;
+			this._state = 'completed';
+			if (this._mode === 'focus') {
+				this._totalRoundsCompleted += 1;
+			}
+			this.notify();
+			return;
+		}
+
+		this._remainingMs -= deltaMs;
+		this.notify();
+	}
+
+	private advanceMode(): void {
+		const step = calculateNextCycleStep(
+			this._mode,
+			this._currentRound,
+			this._config.roundsBeforeLongBreak
+		);
+		this._mode = step.nextMode;
+		this._currentRound = step.nextRound;
+		this._remainingMs = this.durationMs;
+	}
+
+	private notify(): void {
+		if (this._subscribers.size === 0) return;
+		const snap = this.snapshot;
+		for (const subscriber of this._subscribers) {
+			try {
+				subscriber(snap);
+			} catch (error) {
+				// preserve listener isolation
+				console.error(error);
+			}
+		}
+	}
+}
