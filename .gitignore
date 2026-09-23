@@ -27,6 +27,9 @@ test-results
 # Local AI runtime state
 .atl/
 .agents/
+.claude/skills/
+.gemini/
+.opencode/
 
 # Obsidian
 .obsidian

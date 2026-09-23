@@ -6,6 +6,12 @@
 			"sourceType": "github",
 			"skillPath": ".agents/skills/impeccable/SKILL.md",
 			"computedHash": "ec48c58ca973b42c826d5d3be9069b7023d2361ebf7f89ee56b0bae7eb92390a"
+		},
+		"shadcn-svelte": {
+			"source": "huntabyte/shadcn-svelte",
+			"sourceType": "github",
+			"skillPath": "skills/shadcn-svelte/SKILL.md",
+			"computedHash": "f54ebcafcd4b80e64935671f6b096abcdb03d841a7736b32cea766a0824169ed"
 		}
 	}
 }
