@@ -1,2 +1,11 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<script lang="ts">
+	import Timer from '$lib/components/timer/timer.svelte';
+</script>
+
+<svelte:head>
+	<title>Pomody — Minimalist Focus Timer</title>
+</svelte:head>
+
+<main class="flex min-h-screen w-full flex-col items-center justify-center p-4 sm:p-8">
+	<Timer />
+</main>

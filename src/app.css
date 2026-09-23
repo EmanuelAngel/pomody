@@ -2,6 +2,7 @@
 @import 'tw-animate-css';
 @import 'shadcn-svelte/tailwind.css';
 @import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -119,6 +120,7 @@
 
 @theme inline {
 	--font-sans: 'Inter Variable', sans-serif;
+	--font-mono: 'JetBrains Mono Variable', monospace;
 	--color-bg-base: var(--bg-base);
 	--color-bg-surface: var(--bg-surface);
 	--color-bg-overlay: var(--bg-overlay);
