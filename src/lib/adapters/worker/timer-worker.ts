@@ -50,6 +50,8 @@ export class WebWorkerTimerTicker implements ITimerTicker {
 	private worker: Worker | null = null;
 	private fallback: FallbackTimerTicker | null = null;
 	private _isRunning = false;
+	private activeCallback: TickCallback | null = null;
+	private activeIntervalMs = 250;
 
 	public get isRunning(): boolean {
 		return this._isRunning;
@@ -58,6 +60,8 @@ export class WebWorkerTimerTicker implements ITimerTicker {
 	public start(onTick: TickCallback, intervalMs = 250): void {
 		this.stop();
 		this._isRunning = true;
+		this.activeCallback = onTick;
+		this.activeIntervalMs = intervalMs;
 
 		// Transparent fallback for environments without Web Worker support (Node, Vitest)
 		if (typeof Worker === 'undefined') {
@@ -72,15 +76,21 @@ export class WebWorkerTimerTicker implements ITimerTicker {
 				});
 
 				this.worker.onmessage = (event: MessageEvent<{ type?: string; deltaMs?: number }>) => {
+					if (!this._isRunning) return;
 					if (event.data?.type === 'tick' && typeof event.data.deltaMs === 'number') {
-						onTick(event.data.deltaMs);
+						this.activeCallback?.(event.data.deltaMs);
 					}
 				};
 
 				this.worker.onerror = () => {
+					if (!this._isRunning) return;
 					// In case of worker runtime failure, switch gracefully to fallback
+					const callback = this.activeCallback;
+					const interval = this.activeIntervalMs;
 					this.terminateWorker();
-					this.ensureFallback().start(onTick, intervalMs);
+					if (callback) {
+						this.ensureFallback().start(callback, interval);
+					}
 				};
 			}
 
@@ -105,6 +115,7 @@ export class WebWorkerTimerTicker implements ITimerTicker {
 	public destroy(): void {
 		this.stop();
 		this.terminateWorker();
+		this.activeCallback = null;
 		if (this.fallback) {
 			this.fallback.destroy();
 			this.fallback = null;

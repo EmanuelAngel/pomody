@@ -208,4 +208,110 @@ describe('WebWorkerTimerTicker', () => {
 
 		ticker.destroy();
 	});
+
+	it('should delegate ticks to the latest callback on consecutive start() calls (JD-01)', () => {
+		const workerBridge: {
+			messageHandler: ((event: MessageEvent) => void) | null;
+		} = { messageHandler: null };
+		const mockPostMessage = vi.fn();
+		const mockTerminate = vi.fn();
+
+		class MockWorker {
+			public postMessage = mockPostMessage;
+			public terminate = mockTerminate;
+			public onerror: ((error: unknown) => void) | null = null;
+
+			set onmessage(handler: (event: MessageEvent) => void) {
+				workerBridge.messageHandler = handler;
+			}
+		}
+
+		// @ts-expect-error mock worker class
+		globalThis.Worker = MockWorker;
+
+		const ticker = new WebWorkerTimerTicker();
+		const onTick1 = vi.fn();
+		const onTick2 = vi.fn();
+
+		ticker.start(onTick1, 200);
+		ticker.start(onTick2, 300);
+
+		// Simulate tick from worker
+		workerBridge.messageHandler?.({
+			data: { type: 'tick', deltaMs: 300 }
+		} as MessageEvent);
+
+		expect(onTick1).not.toHaveBeenCalled();
+		expect(onTick2).toHaveBeenCalledWith(300);
+
+		ticker.destroy();
+	});
+
+	it('should ignore in-flight worker ticks arriving after stop() (JD-02)', () => {
+		const workerBridge: {
+			messageHandler: ((event: MessageEvent) => void) | null;
+		} = { messageHandler: null };
+		const mockPostMessage = vi.fn();
+		const mockTerminate = vi.fn();
+
+		class MockWorker {
+			public postMessage = mockPostMessage;
+			public terminate = mockTerminate;
+			public onerror: ((error: unknown) => void) | null = null;
+
+			set onmessage(handler: (event: MessageEvent) => void) {
+				workerBridge.messageHandler = handler;
+			}
+		}
+
+		// @ts-expect-error mock worker class
+		globalThis.Worker = MockWorker;
+
+		const ticker = new WebWorkerTimerTicker();
+		const onTick = vi.fn();
+
+		ticker.start(onTick, 250);
+		ticker.stop();
+
+		// Simulate in-flight tick arriving after stop()
+		workerBridge.messageHandler?.({
+			data: { type: 'tick', deltaMs: 250 }
+		} as MessageEvent);
+
+		expect(onTick).not.toHaveBeenCalled();
+
+		ticker.destroy();
+	});
+
+	it('should not start fallback ticker when worker onerror fires after stop() (JD-05)', () => {
+		const workerBridge: {
+			errorHandler: ((err: unknown) => void) | null;
+		} = { errorHandler: null };
+
+		class FaultyWorker {
+			public postMessage = vi.fn();
+			public terminate = vi.fn();
+			set onerror(handler: (err: unknown) => void) {
+				workerBridge.errorHandler = handler;
+			}
+		}
+
+		// @ts-expect-error mock faulty worker
+		globalThis.Worker = FaultyWorker;
+
+		const ticker = new WebWorkerTimerTicker();
+		const onTick = vi.fn();
+
+		ticker.start(onTick, 250);
+		ticker.stop();
+
+		// Trigger error after ticker has been stopped
+		workerBridge.errorHandler?.(new Error('Async worker error after stop'));
+
+		vi.advanceTimersByTime(500);
+		expect(onTick).not.toHaveBeenCalled();
+		expect(ticker.isRunning).toBe(false);
+
+		ticker.destroy();
+	});
 });

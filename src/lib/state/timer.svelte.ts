@@ -3,7 +3,8 @@ import {
 	type TimerConfig,
 	type TimerMode,
 	type TimerSnapshot,
-	type TimerState as TimerFsmState
+	type TimerState as TimerFsmState,
+	type Unsubscribe
 } from '../domain/timer/timer-fsm';
 import { WebWorkerTimerTicker } from '../adapters/worker/timer-worker';
 import type { ITimerTicker } from '../domain/ports/timer-ticker.port';
@@ -27,6 +28,7 @@ export function formatTime(remainingMs: number): string {
 export class TimerState {
 	private readonly fsm: TimerFSM;
 	private readonly ticker: ITimerTicker;
+	private readonly unsubscribe: Unsubscribe;
 
 	private _snapshot = $state<TimerSnapshot>({
 		state: 'idle',
@@ -84,7 +86,7 @@ export class TimerState {
 		this.ticker = ticker ?? new WebWorkerTimerTicker();
 		this._snapshot = this.fsm.snapshot;
 
-		this.fsm.subscribe((newSnapshot) => {
+		this.unsubscribe = this.fsm.subscribe((newSnapshot) => {
 			this._snapshot = newSnapshot;
 			if (newSnapshot.state !== 'running') {
 				this.ticker.stop();
@@ -97,7 +99,7 @@ export class TimerState {
 	 */
 	public start(): void {
 		this.fsm.start();
-		if (this.fsm.state === 'running') {
+		if (this.fsm.state === 'running' && !this.ticker.isRunning) {
 			this.ticker.start((deltaMs) => {
 				this.fsm.tick(deltaMs);
 			});
@@ -117,7 +119,7 @@ export class TimerState {
 	 */
 	public resume(): void {
 		this.fsm.resume();
-		if (this.fsm.state === 'running') {
+		if (this.fsm.state === 'running' && !this.ticker.isRunning) {
 			this.ticker.start((deltaMs) => {
 				this.fsm.tick(deltaMs);
 			});
@@ -144,6 +146,7 @@ export class TimerState {
 	 * Cleans up and destroys ticker resources (e.g. terminates Web Worker).
 	 */
 	public destroy(): void {
+		this.unsubscribe();
 		this.ticker.destroy();
 	}
 }

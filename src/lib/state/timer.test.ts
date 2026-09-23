@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TimerState, createTimerState, formatTime, timerState } from './timer.svelte';
+import { TimerFSM } from '../domain/timer/timer-fsm';
 import type { ITimerTicker, TickCallback } from '../domain/ports/timer-ticker.port';
 
 describe('formatTime', () => {
@@ -217,6 +218,46 @@ describe('TimerState Composition Root', () => {
 		expect(timer.state).toBe('idle');
 		expect(timer.formattedTime).toBe('25:00');
 		timer.destroy();
+	});
+
+	it('should not restart ticker if start() or resume() is called while already running (JD-03)', () => {
+		const timer = createTimerState({ focusDurationSeconds: 10 }, mockTicker);
+
+		timer.start();
+		expect(mockTicker.startCallCount).toBe(1);
+
+		// Redundant start() while running
+		timer.start();
+		expect(mockTicker.startCallCount).toBe(1);
+
+		// Redundant resume() while running
+		timer.resume();
+		expect(mockTicker.startCallCount).toBe(1);
+
+		timer.destroy();
+	});
+
+	it('should execute FSM unsubscribe callback on destroy() (JD-04)', () => {
+		const unsubscribeMock = vi.fn();
+		const originalSubscribe = TimerFSM.prototype.subscribe;
+		const subscribeSpy = vi.spyOn(TimerFSM.prototype, 'subscribe').mockImplementation(function (
+			this: TimerFSM,
+			subscriber
+		) {
+			const realUnsub = originalSubscribe.call(this, subscriber);
+			return () => {
+				realUnsub();
+				unsubscribeMock();
+			};
+		});
+
+		const timer = createTimerState(undefined, mockTicker);
+		expect(unsubscribeMock).not.toHaveBeenCalled();
+
+		timer.destroy();
+		expect(unsubscribeMock).toHaveBeenCalledTimes(1);
+
+		subscribeSpy.mockRestore();
 	});
 
 	it('should export a valid global timerState instance', () => {
