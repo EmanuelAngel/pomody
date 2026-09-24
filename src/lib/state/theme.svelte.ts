@@ -11,6 +11,9 @@ export class ThemeState {
 
 	constructor(initialTheme: Theme = 'dark') {
 		this._theme = initialTheme;
+		if (typeof document !== 'undefined') {
+			document.documentElement.dataset.theme = this._theme;
+		}
 	}
 
 	public get current(): Theme {

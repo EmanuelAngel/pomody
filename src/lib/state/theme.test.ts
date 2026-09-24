@@ -59,8 +59,14 @@ describe('ThemeState', () => {
 			vi.unstubAllGlobals();
 		});
 
-		it('should synchronize document.documentElement.dataset.theme when switching themes', () => {
+		it('should synchronize document.documentElement.dataset.theme on initialization', () => {
+			createThemeState('dawn');
+			expect(mockDocument.documentElement.dataset.theme).toBe('dawn');
+		});
+
+		it('should synchronize document.documentElement.dataset.theme on default initialization and when switching themes', () => {
 			const theme = createThemeState();
+			expect(mockDocument.documentElement.dataset.theme).toBe('dark');
 
 			theme.setTheme('dawn');
 			expect(mockDocument.documentElement.dataset.theme).toBe('dawn');

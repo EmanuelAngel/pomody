@@ -299,7 +299,7 @@ describe('TimerState Composition Root', () => {
 		timer.destroy();
 	});
 
-	it('should update config but preserve remainingMs when updateConfig is called while running', () => {
+	it('should update config but preserve active durationMs and remainingMs when updateConfig is called while running', () => {
 		const timer = createTimerState({ focusDurationSeconds: 10 }, mockTicker);
 		timer.start();
 		mockTicker.simulateTick(3000); // 7000ms remaining
@@ -308,9 +308,20 @@ describe('TimerState Composition Root', () => {
 		timer.updateConfig({ focusDurationSeconds: 20 });
 
 		expect(timer.config.focusDurationSeconds).toBe(20);
-		expect(timer.durationMs).toBe(20000);
+		// Active block duration is preserved while running
+		expect(timer.durationMs).toBe(10000);
 		expect(timer.remainingMs).toBe(7000);
 		expect(timer.formattedTime).toBe('00:07');
+		timer.destroy();
+	});
+
+	it('should reactively update config property when FSM subscriber notification fires (JD-5)', () => {
+		const timer = createTimerState(undefined, mockTicker);
+		expect(timer.config.focusDurationSeconds).toBe(1500);
+
+		timer.updateConfig({ focusDurationSeconds: 1200 });
+		expect(timer.config.focusDurationSeconds).toBe(1200);
+
 		timer.destroy();
 	});
 
