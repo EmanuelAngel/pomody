@@ -33,6 +33,7 @@
 	let localFocus = $state<number | null>(null);
 	let localShortBreak = $state<number | null>(null);
 	let localLongBreak = $state<number | null>(null);
+	let localRounds = $state<number | null>(null);
 
 	// Derived values defaulting to timerState config
 	const focusMinutes = $derived(
@@ -48,6 +49,9 @@
 			? localLongBreak
 			: Math.round(timerState.config.longBreakDurationSeconds / 60)
 	);
+	const roundsBeforeLongBreak = $derived(
+		localRounds !== null ? localRounds : timerState.roundsBeforeLongBreak
+	);
 
 	// Clear temporary slider overrides whenever drawer opens
 	$effect(() => {
@@ -55,6 +59,7 @@
 			localFocus = null;
 			localShortBreak = null;
 			localLongBreak = null;
+			localRounds = null;
 		}
 	});
 
@@ -79,14 +84,23 @@
 		}
 	}
 
+	function handleRoundsChange(val: number) {
+		if (Number.isInteger(val) && val >= 1 && val <= 12) {
+			localRounds = val;
+			timerState.updateConfig({ roundsBeforeLongBreak: val });
+		}
+	}
+
 	function handleResetDefaults() {
 		localFocus = null;
 		localShortBreak = null;
 		localLongBreak = null;
+		localRounds = null;
 		timerState.updateConfig({
 			focusDurationSeconds: DEFAULT_TIMER_CONFIG.focusDurationSeconds,
 			shortBreakDurationSeconds: DEFAULT_TIMER_CONFIG.shortBreakDurationSeconds,
-			longBreakDurationSeconds: DEFAULT_TIMER_CONFIG.longBreakDurationSeconds
+			longBreakDurationSeconds: DEFAULT_TIMER_CONFIG.longBreakDurationSeconds,
+			roundsBeforeLongBreak: DEFAULT_TIMER_CONFIG.roundsBeforeLongBreak
 		});
 	}
 
@@ -192,11 +206,35 @@
 							class="py-1 [&_[data-slot=slider-range]]:bg-accent-iris [&_[data-slot=slider-thumb]]:border-accent-iris [&_[data-slot=slider-thumb]]:bg-background"
 						/>
 					</Field.Field>
+
+					<!-- Rounds before Long Break -->
+					<Field.Field class="gap-2.5">
+						<div class="flex items-center justify-between">
+							<Field.Label class="flex items-center gap-2 text-xs font-medium text-foreground">
+								<span class="size-2 rounded-full bg-accent-rose"></span>
+								Rounds before Long Break
+							</Field.Label>
+							<span class="font-mono text-xs font-semibold text-accent-rose">
+								{roundsBeforeLongBreak}
+								{roundsBeforeLongBreak === 1 ? 'round' : 'rounds'}
+							</span>
+						</div>
+						<Slider
+							type="single"
+							value={roundsBeforeLongBreak}
+							min={1}
+							max={12}
+							step={1}
+							aria-label="Rounds before long break"
+							onValueChange={handleRoundsChange}
+							class="py-1 [&_[data-slot=slider-range]]:bg-accent-rose [&_[data-slot=slider-thumb]]:border-accent-rose [&_[data-slot=slider-thumb]]:bg-background"
+						/>
+					</Field.Field>
 				</Field.Group>
 
 				<Button variant="outline" size="sm" onclick={handleResetDefaults} class="mt-1 w-full">
 					<RotateCcw data-icon="inline-start" />
-					Reset to defaults (25 / 5 / 15 min)
+					Reset to defaults (25 / 5 / 15 min · 4 rounds)
 				</Button>
 			</div>
 

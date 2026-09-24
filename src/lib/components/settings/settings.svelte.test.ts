@@ -109,6 +109,7 @@ describe('SettingsDrawer (Client Browser)', () => {
 		await expect.element(screen.getByText('30 min', { exact: true })).toBeVisible();
 		await expect.element(screen.getByText('5 min', { exact: true })).toBeVisible();
 		await expect.element(screen.getByText('20 min', { exact: true })).toBeVisible();
+		await expect.element(screen.getByText('4 rounds', { exact: true })).toBeVisible();
 
 		// Check section headers
 		await expect.element(screen.getByRole('heading', { name: 'Intervals' })).toBeVisible();
@@ -205,13 +206,47 @@ describe('SettingsDrawer (Client Browser)', () => {
 		expect(timerState.config.longBreakDurationSeconds).toBe(16 * 60);
 	});
 
-	it('resets intervals to defaults (25 / 5 / 15 min) on clicking Reset', async () => {
+	it('adjusts rounds before long break slider via keyboard arrows and updates timer config', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({ roundsBeforeLongBreak: 4 }, ticker);
+		const themeState = createThemeState();
+
+		const screen = await render(SettingsDrawer, {
+			open: true,
+			timerState,
+			themeState,
+			portalProps: { disabled: true }
+		});
+
+		const roundsSlider = screen.getByLabelText('Rounds before long break');
+		const thumb = roundsSlider.getByRole('slider');
+
+		await expect.element(thumb).toHaveAttribute('aria-valuenow', '4');
+		await expect.element(screen.getByText('4 rounds', { exact: true })).toBeVisible();
+
+		(thumb.element() as HTMLElement).focus();
+
+		await userEvent.keyboard('{ArrowRight}');
+
+		await expect.element(thumb).toHaveAttribute('aria-valuenow', '5');
+		await expect.element(screen.getByText('5 rounds', { exact: true })).toBeVisible();
+		expect(timerState.config.roundsBeforeLongBreak).toBe(5);
+
+		await userEvent.keyboard('{ArrowLeft}');
+
+		await expect.element(thumb).toHaveAttribute('aria-valuenow', '4');
+		await expect.element(screen.getByText('4 rounds', { exact: true })).toBeVisible();
+		expect(timerState.config.roundsBeforeLongBreak).toBe(4);
+	});
+
+	it('resets intervals to defaults (25 / 5 / 15 min · 4 rounds) on clicking Reset', async () => {
 		const ticker = createDummyTicker(false);
 		const timerState = createTimerState(
 			{
 				focusDurationSeconds: 2700, // 45 min
 				shortBreakDurationSeconds: 600, // 10 min
-				longBreakDurationSeconds: 1800 // 30 min
+				longBreakDurationSeconds: 1800, // 30 min
+				roundsBeforeLongBreak: 6
 			},
 			ticker
 		);
@@ -227,6 +262,7 @@ describe('SettingsDrawer (Client Browser)', () => {
 		await expect.element(screen.getByText('45 min', { exact: true })).toBeVisible();
 		await expect.element(screen.getByText('10 min', { exact: true })).toBeVisible();
 		await expect.element(screen.getByText('30 min', { exact: true })).toBeVisible();
+		await expect.element(screen.getByText('6 rounds', { exact: true })).toBeVisible();
 
 		const resetBtn = screen.getByRole('button', { name: /Reset to defaults/i });
 		await resetBtn.click();
@@ -238,10 +274,14 @@ describe('SettingsDrawer (Client Browser)', () => {
 		expect(timerState.config.longBreakDurationSeconds).toBe(
 			DEFAULT_TIMER_CONFIG.longBreakDurationSeconds
 		);
+		expect(timerState.config.roundsBeforeLongBreak).toBe(
+			DEFAULT_TIMER_CONFIG.roundsBeforeLongBreak
+		);
 
 		await expect.element(screen.getByText('25 min', { exact: true })).toBeVisible();
 		await expect.element(screen.getByText('5 min', { exact: true })).toBeVisible();
 		await expect.element(screen.getByText('15 min', { exact: true })).toBeVisible();
+		await expect.element(screen.getByText('4 rounds', { exact: true })).toBeVisible();
 	});
 
 	it('switches themes across Dark, Dawn, and OLED with DOM synchronization', async () => {
