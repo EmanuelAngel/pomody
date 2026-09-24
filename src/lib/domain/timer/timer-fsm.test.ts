@@ -95,9 +95,35 @@ describe('Phase 1: Types, Errors, and Config Validation', () => {
 		});
 
 		it('should reject non-positive or decimal roundsBeforeLongBreak', () => {
-			expect(() => new TimerFSM({ roundsBeforeLongBreak: 0 })).toThrow(InvalidTimerConfigError);
-			expect(() => new TimerFSM({ roundsBeforeLongBreak: -2 })).toThrow(InvalidTimerConfigError);
-			expect(() => new TimerFSM({ roundsBeforeLongBreak: 4.5 })).toThrow(InvalidTimerConfigError);
+			expect(() => new TimerFSM({ roundsBeforeLongBreak: 0 })).toThrow(
+				'Invalid configuration for "roundsBeforeLongBreak": expected an integer between 1 and 12, got 0'
+			);
+			expect(() => new TimerFSM({ roundsBeforeLongBreak: -2 })).toThrow(
+				'Invalid configuration for "roundsBeforeLongBreak": expected an integer between 1 and 12, got -2'
+			);
+			expect(() => new TimerFSM({ roundsBeforeLongBreak: 4.5 })).toThrow(
+				'Invalid configuration for "roundsBeforeLongBreak": expected an integer between 1 and 12, got 4.5'
+			);
+		});
+
+		it('should reject roundsBeforeLongBreak greater than 12', () => {
+			expect(() => new TimerFSM({ roundsBeforeLongBreak: 13 })).toThrow(
+				'Invalid configuration for "roundsBeforeLongBreak": expected an integer between 1 and 12, got 13'
+			);
+			expect(() => new TimerFSM({ roundsBeforeLongBreak: 20 })).toThrow(
+				'Invalid configuration for "roundsBeforeLongBreak": expected an integer between 1 and 12, got 20'
+			);
+		});
+
+		it('should accept valid boundary values 1 and 12 for roundsBeforeLongBreak', () => {
+			expect(() => new TimerFSM({ roundsBeforeLongBreak: 1 })).not.toThrow();
+			expect(() => new TimerFSM({ roundsBeforeLongBreak: 12 })).not.toThrow();
+
+			const fsmMin = new TimerFSM({ roundsBeforeLongBreak: 1 });
+			expect(fsmMin.config.roundsBeforeLongBreak).toBe(1);
+
+			const fsmMax = new TimerFSM({ roundsBeforeLongBreak: 12 });
+			expect(fsmMax.config.roundsBeforeLongBreak).toBe(12);
 		});
 
 		it('should reject NaN or Infinity values in configuration', () => {
@@ -643,5 +669,152 @@ describe('Phase 5: Observer Subscription Mechanism', () => {
 			// @ts-expect-error mutating frozen object
 			snapshot.remainingMs = 0;
 		}).toThrow(TypeError);
+	});
+});
+
+describe('TimerFSM Configuration Updates (updateConfig)', () => {
+	it('should update config and reset remainingMs to new duration when idle', () => {
+		const fsm = new TimerFSM();
+		expect(fsm.state).toBe('idle');
+		expect(fsm.durationMs).toBe(1500000);
+		expect(fsm.remainingMs).toBe(1500000);
+
+		fsm.updateConfig({ focusDurationSeconds: 1200 });
+
+		expect(fsm.config.focusDurationSeconds).toBe(1200);
+		expect(fsm.durationMs).toBe(1200000);
+		expect(fsm.remainingMs).toBe(1200000);
+		expect(fsm.snapshot.durationMs).toBe(1200000);
+		expect(fsm.snapshot.remainingMs).toBe(1200000);
+	});
+
+	it('should update shortBreak duration and remainingMs when idle in shortBreak mode', () => {
+		const fsm = new TimerFSM();
+		fsm.skip(); // advances to shortBreak, idle
+		expect(fsm.mode).toBe('shortBreak');
+		expect(fsm.state).toBe('idle');
+		expect(fsm.remainingMs).toBe(300000);
+
+		fsm.updateConfig({ shortBreakDurationSeconds: 600 });
+
+		expect(fsm.config.shortBreakDurationSeconds).toBe(600);
+		expect(fsm.durationMs).toBe(600000);
+		expect(fsm.remainingMs).toBe(600000);
+	});
+
+	it('should update config but preserve active block duration and remainingMs when running (active block uninterrupted)', () => {
+		const fsm = new TimerFSM();
+		fsm.start();
+		fsm.tick(300000); // 1500s - 300s = 1200s (1,200,000 ms remaining)
+		expect(fsm.state).toBe('running');
+		expect(fsm.remainingMs).toBe(1200000);
+
+		fsm.updateConfig({ focusDurationSeconds: 1800 });
+
+		expect(fsm.config.focusDurationSeconds).toBe(1800);
+		// Active block's baseline duration and remaining time must be preserved
+		expect(fsm.durationMs).toBe(1500000);
+		expect(fsm.remainingMs).toBe(1200000);
+		expect(fsm.snapshot.remainingMs).toBe(1200000);
+		expect(fsm.snapshot.durationMs).toBe(1500000);
+		expect(fsm.progress).toBeCloseTo(0.2);
+	});
+
+	it('should update config but preserve active block duration and remainingMs when paused (active block uninterrupted)', () => {
+		const fsm = new TimerFSM();
+		fsm.start();
+		fsm.tick(500000); // 1,000,000 ms remaining
+		fsm.pause();
+		expect(fsm.state).toBe('paused');
+		expect(fsm.remainingMs).toBe(1000000);
+
+		fsm.updateConfig({ focusDurationSeconds: 2400 });
+
+		expect(fsm.config.focusDurationSeconds).toBe(2400);
+		// Active block's baseline duration and remaining time must be preserved
+		expect(fsm.durationMs).toBe(1500000);
+		expect(fsm.remainingMs).toBe(1000000);
+		expect(fsm.snapshot.remainingMs).toBe(1000000);
+		expect(fsm.snapshot.durationMs).toBe(1500000);
+		expect(fsm.progress).toBeCloseTo(1 / 3);
+	});
+
+	it('should preserve active block duration when config duration is decreased while running so remainingMs never exceeds durationMs', () => {
+		const fsm = new TimerFSM();
+		fsm.start();
+		fsm.tick(300000); // 1,200,000 ms remaining out of 1,500,000 ms
+		expect(fsm.remainingMs).toBe(1200000);
+
+		// Decrease focus to 10 min (600s = 600,000 ms) which is less than remainingMs
+		fsm.updateConfig({ focusDurationSeconds: 600 });
+
+		expect(fsm.config.focusDurationSeconds).toBe(600);
+		expect(fsm.durationMs).toBe(1500000);
+		expect(fsm.remainingMs).toBe(1200000);
+		expect(fsm.remainingMs).toBeLessThanOrEqual(fsm.durationMs);
+		expect(fsm.progress).toBeCloseTo(0.2);
+	});
+
+	it('should notify subscribers with updated snapshot upon config update', () => {
+		const fsm = new TimerFSM();
+		let callCount = 0;
+		let lastSnapshotDuration = 0;
+		let lastSnapshotRemaining = 0;
+
+		fsm.subscribe((snapshot) => {
+			callCount++;
+			lastSnapshotDuration = snapshot.durationMs;
+			lastSnapshotRemaining = snapshot.remainingMs;
+		});
+
+		fsm.updateConfig({ focusDurationSeconds: 900 });
+
+		expect(callCount).toBe(1);
+		expect(lastSnapshotDuration).toBe(900000);
+		expect(lastSnapshotRemaining).toBe(900000);
+	});
+
+	it('should freeze the merged config object defensively', () => {
+		const fsm = new TimerFSM();
+		fsm.updateConfig({ focusDurationSeconds: 1000 });
+
+		expect(Object.isFrozen(fsm.config)).toBe(true);
+		expect(() => {
+			// @ts-expect-error mutating frozen config
+			fsm.config.focusDurationSeconds = 2000;
+		}).toThrow(TypeError);
+	});
+
+	it('should reject invalid values with InvalidTimerConfigError and not alter state', () => {
+		const fsm = new TimerFSM();
+		let notified = false;
+		fsm.subscribe(() => {
+			notified = true;
+		});
+
+		expect(() => fsm.updateConfig({ focusDurationSeconds: 0 })).toThrow(InvalidTimerConfigError);
+		expect(() => fsm.updateConfig({ focusDurationSeconds: -10 })).toThrow(InvalidTimerConfigError);
+		expect(() => fsm.updateConfig({ shortBreakDurationSeconds: 25.5 })).toThrow(
+			InvalidTimerConfigError
+		);
+		expect(() => fsm.updateConfig({ longBreakDurationSeconds: NaN })).toThrow(
+			InvalidTimerConfigError
+		);
+		expect(() => fsm.updateConfig({ roundsBeforeLongBreak: Infinity })).toThrow(
+			InvalidTimerConfigError
+		);
+		expect(() => fsm.updateConfig({ roundsBeforeLongBreak: 0 })).toThrow(InvalidTimerConfigError);
+		expect(() => fsm.updateConfig({ roundsBeforeLongBreak: 13 })).toThrow(InvalidTimerConfigError);
+
+		// Config and state remain unmodified
+		expect(fsm.config.focusDurationSeconds).toBe(1500);
+		expect(fsm.config.roundsBeforeLongBreak).toBe(4);
+		expect(fsm.remainingMs).toBe(1500000);
+		expect(notified).toBe(false);
+
+		// Valid update succeeds
+		expect(() => fsm.updateConfig({ roundsBeforeLongBreak: 12 })).not.toThrow();
+		expect(fsm.config.roundsBeforeLongBreak).toBe(12);
+		expect(notified).toBe(true);
 	});
 });

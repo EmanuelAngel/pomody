@@ -1,4 +1,5 @@
 import {
+	DEFAULT_TIMER_CONFIG,
 	TimerFSM,
 	type TimerConfig,
 	type TimerMode,
@@ -39,6 +40,8 @@ export class TimerState {
 		totalRoundsCompleted: 0,
 		progress: 0
 	});
+
+	private _config = $state<TimerConfig>(DEFAULT_TIMER_CONFIG);
 
 	public readonly formattedRemainingTime = $derived.by(() =>
 		formatTime(this._snapshot.remainingMs)
@@ -81,17 +84,23 @@ export class TimerState {
 		return this._snapshot.state === 'running';
 	}
 
+	public get config(): TimerConfig {
+		return this._config;
+	}
+
 	public get roundsBeforeLongBreak(): number {
-		return this.fsm.config.roundsBeforeLongBreak;
+		return this._config.roundsBeforeLongBreak;
 	}
 
 	constructor(config?: Partial<TimerConfig>, ticker?: ITimerTicker) {
 		this.fsm = new TimerFSM(config);
 		this.ticker = ticker ?? new WebWorkerTimerTicker();
 		this._snapshot = this.fsm.snapshot;
+		this._config = this.fsm.config;
 
 		this.unsubscribe = this.fsm.subscribe((newSnapshot) => {
 			this._snapshot = newSnapshot;
+			this._config = this.fsm.config;
 			if (newSnapshot.state !== 'running') {
 				this.ticker.stop();
 			}
@@ -136,6 +145,13 @@ export class TimerState {
 	public skip(): void {
 		this.ticker.stop();
 		this.fsm.skip();
+	}
+
+	/**
+	 * Updates the timer configuration and recalculates reactive snapshot.
+	 */
+	public updateConfig(config: Partial<TimerConfig>): void {
+		this.fsm.updateConfig(config);
 	}
 
 	/**

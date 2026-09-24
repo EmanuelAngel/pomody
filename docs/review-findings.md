@@ -47,3 +47,19 @@
 - **ID Referencia:** JD-16
 - **Ubicación:** `src/lib/components/timer/timer-arc.svelte`
 - **Descripción:** El elemento `<svg>` incluye las clases `-rotate-0 transform`, las cuales son remanentes innecesarios bajo el motor de Tailwind CSS v4.
+
+---
+
+## 6. Cierre Automático del Panel de Configuración al Iniciar Temporizador
+
+- **ID Referencia:** JD-08
+- **Ubicación:** `src/lib/components/settings/settings-drawer.svelte`
+- **Descripción:** El panel lateral de configuración no reacciona ante transiciones a `timerState.isRunning` para cerrarse automáticamente si el temporizador se inicia en segundo plano o mediante atajos globales futuros, pudiendo solaparse sobre una sesión activa y romper el modo Zen.
+
+---
+
+## 7. Modularización y Separación de Responsabilidades en Drawer de Configuración
+
+- **ID Referencia:** MOD-01
+- **Ubicación:** `src/lib/components/settings/settings-drawer.svelte`
+- **Descripción:** El componente acumula múltiples responsabilidades (orquestación del `Sheet`, lógica y duplicación de sliders de intervalos del temporizador, y selector de paletas Rosé Pine). Conviene descomponerlo extrayendo subcomponentes (`interval-settings.svelte` o `interval-slider.svelte`, y `theme-selector.svelte`), preservando el drawer exclusivamente como contenedor de UI.
