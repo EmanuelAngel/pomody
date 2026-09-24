@@ -676,7 +676,7 @@ describe('TimerFSM Configuration Updates (updateConfig)', () => {
 		expect(fsm.remainingMs).toBe(600000);
 	});
 
-	it('should update config but NOT modify remainingMs when running (active block uninterrupted)', () => {
+	it('should update config but preserve active block duration and remainingMs when running (active block uninterrupted)', () => {
 		const fsm = new TimerFSM();
 		fsm.start();
 		fsm.tick(300000); // 1500s - 300s = 1200s (1,200,000 ms remaining)
@@ -686,14 +686,15 @@ describe('TimerFSM Configuration Updates (updateConfig)', () => {
 		fsm.updateConfig({ focusDurationSeconds: 1800 });
 
 		expect(fsm.config.focusDurationSeconds).toBe(1800);
-		expect(fsm.durationMs).toBe(1800000);
-		// Remaining time must NOT be modified
+		// Active block's baseline duration and remaining time must be preserved
+		expect(fsm.durationMs).toBe(1500000);
 		expect(fsm.remainingMs).toBe(1200000);
 		expect(fsm.snapshot.remainingMs).toBe(1200000);
-		expect(fsm.snapshot.durationMs).toBe(1800000);
+		expect(fsm.snapshot.durationMs).toBe(1500000);
+		expect(fsm.progress).toBeCloseTo(0.2);
 	});
 
-	it('should update config but NOT modify remainingMs when paused (active block uninterrupted)', () => {
+	it('should update config but preserve active block duration and remainingMs when paused (active block uninterrupted)', () => {
 		const fsm = new TimerFSM();
 		fsm.start();
 		fsm.tick(500000); // 1,000,000 ms remaining
@@ -704,11 +705,28 @@ describe('TimerFSM Configuration Updates (updateConfig)', () => {
 		fsm.updateConfig({ focusDurationSeconds: 2400 });
 
 		expect(fsm.config.focusDurationSeconds).toBe(2400);
-		expect(fsm.durationMs).toBe(2400000);
-		// Remaining time must NOT be modified
+		// Active block's baseline duration and remaining time must be preserved
+		expect(fsm.durationMs).toBe(1500000);
 		expect(fsm.remainingMs).toBe(1000000);
 		expect(fsm.snapshot.remainingMs).toBe(1000000);
-		expect(fsm.snapshot.durationMs).toBe(2400000);
+		expect(fsm.snapshot.durationMs).toBe(1500000);
+		expect(fsm.progress).toBeCloseTo(1 / 3);
+	});
+
+	it('should preserve active block duration when config duration is decreased while running so remainingMs never exceeds durationMs', () => {
+		const fsm = new TimerFSM();
+		fsm.start();
+		fsm.tick(300000); // 1,200,000 ms remaining out of 1,500,000 ms
+		expect(fsm.remainingMs).toBe(1200000);
+
+		// Decrease focus to 10 min (600s = 600,000 ms) which is less than remainingMs
+		fsm.updateConfig({ focusDurationSeconds: 600 });
+
+		expect(fsm.config.focusDurationSeconds).toBe(600);
+		expect(fsm.durationMs).toBe(1500000);
+		expect(fsm.remainingMs).toBe(1200000);
+		expect(fsm.remainingMs).toBeLessThanOrEqual(fsm.durationMs);
+		expect(fsm.progress).toBeCloseTo(0.2);
 	});
 
 	it('should notify subscribers with updated snapshot upon config update', () => {

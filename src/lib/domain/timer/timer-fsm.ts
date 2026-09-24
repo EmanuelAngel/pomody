@@ -90,6 +90,7 @@ export class TimerFSM {
 	private _mode: TimerMode = 'focus';
 	private _currentRound = 1;
 	private _totalRoundsCompleted = 0;
+	private _durationMs: number;
 	private _remainingMs: number;
 	private readonly _subscribers: Set<TimerSubscriber> = new Set();
 
@@ -100,7 +101,19 @@ export class TimerFSM {
 		};
 		validateTimerConfig(merged);
 		this._config = Object.freeze(merged);
-		this._remainingMs = this.durationMs;
+		this._durationMs = this.getModeDurationMs(this._mode);
+		this._remainingMs = this._durationMs;
+	}
+
+	private getModeDurationMs(mode: TimerMode): number {
+		switch (mode) {
+			case 'focus':
+				return this._config.focusDurationSeconds * 1000;
+			case 'shortBreak':
+				return this._config.shortBreakDurationSeconds * 1000;
+			case 'longBreak':
+				return this._config.longBreakDurationSeconds * 1000;
+		}
 	}
 
 	public get config(): TimerConfig {
@@ -110,8 +123,8 @@ export class TimerFSM {
 	/**
 	 * Updates the timer configuration with partial overrides.
 	 * Merges with the existing configuration and validates the result.
-	 * If the timer is idle, resets remainingMs to match the new duration for the active mode.
-	 * If running or paused, the active block finishes uninterrupted with its current remainingMs.
+	 * If the timer is idle, resets remainingMs and durationMs to match the new duration for the active mode.
+	 * If running or paused, the active block's baseline duration is anchored and finishes uninterrupted with its current remainingMs.
 	 * Synchronously notifies subscribers of the updated snapshot.
 	 */
 	public updateConfig(config: Partial<TimerConfig>): void {
@@ -123,7 +136,8 @@ export class TimerFSM {
 		this._config = Object.freeze(merged);
 
 		if (this._state === 'idle') {
-			this._remainingMs = this.durationMs;
+			this._durationMs = this.getModeDurationMs(this._mode);
+			this._remainingMs = this._durationMs;
 		}
 
 		this.notify();
@@ -138,14 +152,7 @@ export class TimerFSM {
 	}
 
 	public get durationMs(): number {
-		switch (this._mode) {
-			case 'focus':
-				return this._config.focusDurationSeconds * 1000;
-			case 'shortBreak':
-				return this._config.shortBreakDurationSeconds * 1000;
-			case 'longBreak':
-				return this._config.longBreakDurationSeconds * 1000;
-		}
+		return this._durationMs;
 	}
 
 	public get remainingMs(): number {
@@ -221,12 +228,14 @@ export class TimerFSM {
 
 	public reset(): void {
 		if (this._state === 'idle') {
-			this._remainingMs = this.durationMs;
+			this._durationMs = this.getModeDurationMs(this._mode);
+			this._remainingMs = this._durationMs;
 			return;
 		}
 
 		this._state = 'idle';
-		this._remainingMs = this.durationMs;
+		this._durationMs = this.getModeDurationMs(this._mode);
+		this._remainingMs = this._durationMs;
 		this.notify();
 	}
 
@@ -267,7 +276,8 @@ export class TimerFSM {
 		);
 		this._mode = step.nextMode;
 		this._currentRound = step.nextRound;
-		this._remainingMs = this.durationMs;
+		this._durationMs = this.getModeDurationMs(this._mode);
+		this._remainingMs = this._durationMs;
 	}
 
 	private notify(): void {
