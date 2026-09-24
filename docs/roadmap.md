@@ -23,7 +23,7 @@ El proyecto está organizado en entregas modulares para validar la estabilidad y
 _Objetivo: Disponer de un temporizador Pomodoro autónomo, robusto, testeable y estéticamente superior._
 
 - [x] **Núcleo del temporizador (FSM)**: Máquina de estados desacoplada en memoria con duraciones configurables (foco, descanso corto y descanso largo).
-- [ ] **Pantalla principal minimalista**: Vista reactiva a la FSM que oculta configuraciones durante el estado `Running` (modo Zen) para proteger el foco.
+- [x] **Pantalla principal minimalista**: Vista reactiva a la FSM que oculta configuraciones durante el estado `Running` (modo Zen) para proteger el foco.
 - [ ] **Drawer de ajustes desacoplado**: Panel lateral para configuración de intervalos sin contaminar la vista principal.
 - [ ] **Shell de navegación con Tabs superiores**: Barra de navegación superior central que incluye la vista activa y placeholders para próximas secciones (_Planning_ y _Métricas_) rotuladas como `(en v0.X)`.
 - [ ] **Sistema de diseño Rosé Pine**: Implementación de tres paletas de color con variables/tokens CSS:
