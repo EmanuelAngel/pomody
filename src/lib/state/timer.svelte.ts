@@ -81,6 +81,10 @@ export class TimerState {
 		return this._snapshot.state === 'running';
 	}
 
+	public get roundsBeforeLongBreak(): number {
+		return this.fsm.config.roundsBeforeLongBreak;
+	}
+
 	constructor(config?: Partial<TimerConfig>, ticker?: ITimerTicker) {
 		this.fsm = new TimerFSM(config);
 		this.ticker = ticker ?? new WebWorkerTimerTicker();
