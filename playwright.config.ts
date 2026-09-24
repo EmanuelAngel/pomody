@@ -6,5 +6,8 @@ export default defineConfig({
 		port: 4173,
 		reuseExistingServer: !process.env.CI
 	},
+	use: {
+		channel: process.env.CI ? undefined : 'msedge'
+	},
 	testMatch: '**/*.e2e.{ts,js}'
 });
