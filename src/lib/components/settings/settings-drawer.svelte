@@ -2,7 +2,7 @@
 	import * as Sheet from '$lib/components/ui/sheet';
 	import * as Field from '$lib/components/ui/field';
 	import * as ToggleGroup from '$lib/components/ui/toggle-group';
-	import { Input } from '$lib/components/ui/input';
+	import { Slider } from '$lib/components/ui/slider';
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
@@ -29,10 +29,10 @@
 		portalProps
 	}: Props = $props();
 
-	// Local reactive override state for temporarily uncommitted/invalid user input
-	let localFocus = $state<string | null>(null);
-	let localShortBreak = $state<string | null>(null);
-	let localLongBreak = $state<string | null>(null);
+	// Local reactive override state for slider adjustments
+	let localFocus = $state<number | null>(null);
+	let localShortBreak = $state<number | null>(null);
+	let localLongBreak = $state<number | null>(null);
 
 	// Derived values defaulting to timerState config
 	const focusMinutes = $derived(
@@ -49,7 +49,7 @@
 			: Math.round(timerState.config.longBreakDurationSeconds / 60)
 	);
 
-	// Clear temporary input overrides whenever drawer opens
+	// Clear temporary slider overrides whenever drawer opens
 	$effect(() => {
 		if (open) {
 			localFocus = null;
@@ -58,65 +58,24 @@
 		}
 	});
 
-	// Field validation checks
-	function isValidMinutes(val: string | number, min: number, max: number): boolean {
-		if (typeof val === 'number') {
-			return Number.isInteger(val) && val >= min && val <= max;
-		}
-		if (val.trim() === '') return false;
-		const num = Number(val);
-		return Number.isInteger(num) && num >= min && num <= max;
-	}
-
-	const isFocusValid = $derived(isValidMinutes(focusMinutes, 1, 60));
-	const isShortBreakValid = $derived(isValidMinutes(shortBreakMinutes, 1, 30));
-	const isLongBreakValid = $derived(isValidMinutes(longBreakMinutes, 1, 60));
-
-	function handleFocusInput(event: Event) {
-		const target = event.currentTarget as HTMLInputElement;
-		const raw = target.value;
-		if (raw.trim() === '') {
-			localFocus = '';
-			return;
-		}
-		const val = Number(raw);
+	function handleFocusChange(val: number) {
 		if (Number.isInteger(val) && val >= 1 && val <= 60) {
-			localFocus = null;
+			localFocus = val;
 			timerState.updateConfig({ focusDurationSeconds: val * 60 });
-		} else {
-			localFocus = raw;
 		}
 	}
 
-	function handleShortBreakInput(event: Event) {
-		const target = event.currentTarget as HTMLInputElement;
-		const raw = target.value;
-		if (raw.trim() === '') {
-			localShortBreak = '';
-			return;
-		}
-		const val = Number(raw);
+	function handleShortBreakChange(val: number) {
 		if (Number.isInteger(val) && val >= 1 && val <= 30) {
-			localShortBreak = null;
+			localShortBreak = val;
 			timerState.updateConfig({ shortBreakDurationSeconds: val * 60 });
-		} else {
-			localShortBreak = raw;
 		}
 	}
 
-	function handleLongBreakInput(event: Event) {
-		const target = event.currentTarget as HTMLInputElement;
-		const raw = target.value;
-		if (raw.trim() === '') {
-			localLongBreak = '';
-			return;
-		}
-		const val = Number(raw);
+	function handleLongBreakChange(val: number) {
 		if (Number.isInteger(val) && val >= 1 && val <= 60) {
-			localLongBreak = null;
+			localLongBreak = val;
 			timerState.updateConfig({ longBreakDurationSeconds: val * 60 });
-		} else {
-			localLongBreak = raw;
 		}
 	}
 
@@ -164,71 +123,74 @@
 					</p>
 				</div>
 
-				<Field.Group class="flex flex-col gap-4">
+				<Field.Group class="flex flex-col gap-5">
 					<!-- Focus Duration -->
-					<Field.Field data-invalid={!isFocusValid}>
-						<Field.Label for="focus-duration" class="text-xs font-medium text-foreground">
-							Focus (1–60 min)
-						</Field.Label>
-						<Input
-							id="focus-duration"
-							type="number"
-							min="1"
-							max="60"
+					<Field.Field class="gap-2.5">
+						<div class="flex items-center justify-between">
+							<Field.Label class="flex items-center gap-2 text-xs font-medium text-foreground">
+								<span class="size-2 rounded-full bg-accent-foam"></span>
+								Focus
+							</Field.Label>
+							<span class="font-mono text-xs font-semibold text-accent-foam">
+								{focusMinutes} min
+							</span>
+						</div>
+						<Slider
+							type="single"
 							value={focusMinutes}
-							oninput={handleFocusInput}
-							aria-invalid={!isFocusValid}
-							class="h-9 font-mono text-sm"
+							min={1}
+							max={60}
+							step={1}
+							aria-label="Focus duration"
+							onValueChange={handleFocusChange}
+							class="py-1 [&_[data-slot=slider-range]]:bg-accent-foam [&_[data-slot=slider-thumb]]:border-accent-foam [&_[data-slot=slider-thumb]]:bg-background"
 						/>
-						{#if !isFocusValid}
-							<Field.Error class="mt-1 text-xs text-destructive">
-								Must be an integer between 1 and 60 minutes.
-							</Field.Error>
-						{/if}
 					</Field.Field>
 
 					<!-- Short Break Duration -->
-					<Field.Field data-invalid={!isShortBreakValid}>
-						<Field.Label for="short-break-duration" class="text-xs font-medium text-foreground">
-							Short Break (1–30 min)
-						</Field.Label>
-						<Input
-							id="short-break-duration"
-							type="number"
-							min="1"
-							max="30"
+					<Field.Field class="gap-2.5">
+						<div class="flex items-center justify-between">
+							<Field.Label class="flex items-center gap-2 text-xs font-medium text-foreground">
+								<span class="size-2 rounded-full bg-accent-pine"></span>
+								Short Break
+							</Field.Label>
+							<span class="font-mono text-xs font-semibold text-accent-pine">
+								{shortBreakMinutes} min
+							</span>
+						</div>
+						<Slider
+							type="single"
 							value={shortBreakMinutes}
-							oninput={handleShortBreakInput}
-							aria-invalid={!isShortBreakValid}
-							class="h-9 font-mono text-sm"
+							min={1}
+							max={30}
+							step={1}
+							aria-label="Short break duration"
+							onValueChange={handleShortBreakChange}
+							class="py-1 [&_[data-slot=slider-range]]:bg-accent-pine [&_[data-slot=slider-thumb]]:border-accent-pine [&_[data-slot=slider-thumb]]:bg-background"
 						/>
-						{#if !isShortBreakValid}
-							<Field.Error class="mt-1 text-xs text-destructive">
-								Must be an integer between 1 and 30 minutes.
-							</Field.Error>
-						{/if}
 					</Field.Field>
 
 					<!-- Long Break Duration -->
-					<Field.Field data-invalid={!isLongBreakValid}>
-						<Field.Label for="long-break-duration" class="text-xs font-medium text-foreground">
-							Long Break (1–60 min)
-						</Field.Label>
-						<Input
-							id="long-break-duration"
-							type="number"
-							min="1"
-							max="60"
+					<Field.Field class="gap-2.5">
+						<div class="flex items-center justify-between">
+							<Field.Label class="flex items-center gap-2 text-xs font-medium text-foreground">
+								<span class="size-2 rounded-full bg-accent-iris"></span>
+								Long Break
+							</Field.Label>
+							<span class="font-mono text-xs font-semibold text-accent-iris">
+								{longBreakMinutes} min
+							</span>
+						</div>
+						<Slider
+							type="single"
 							value={longBreakMinutes}
-							oninput={handleLongBreakInput}
-							aria-invalid={!isLongBreakValid}
-							class="h-9 font-mono text-sm"
+							min={1}
+							max={60}
+							step={1}
+							aria-label="Long break duration"
+							onValueChange={handleLongBreakChange}
+							class="py-1 [&_[data-slot=slider-range]]:bg-accent-iris [&_[data-slot=slider-thumb]]:border-accent-iris [&_[data-slot=slider-thumb]]:bg-background"
 						/>
-						{#if !isLongBreakValid}
-							<Field.Error class="mt-1 text-xs text-destructive">
-								Must be an integer between 1 and 60 minutes.
-							</Field.Error>
-						{/if}
 					</Field.Field>
 				</Field.Group>
 

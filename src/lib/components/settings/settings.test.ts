@@ -56,12 +56,19 @@ describe('SettingsDrawer (Component Rendering)', () => {
 
 		expect(result.body).toContain('Settings');
 		expect(result.body).toContain('Intervals');
-		expect(result.body).toContain('Focus (1–60 min)');
-		expect(result.body).toContain('Short Break (1–30 min)');
-		expect(result.body).toContain('Long Break (1–60 min)');
-		expect(result.body).toContain('value="30"'); // 1800s / 60 = 30 min
-		expect(result.body).toContain('value="5"'); // 300s / 60 = 5 min
-		expect(result.body).toContain('value="15"'); // 900s / 60 = 15 min
+		expect(result.body).toContain('Focus');
+		expect(result.body).toContain('30 min'); // 1800s / 60 = 30 min
+		expect(result.body).toContain('Short Break');
+		expect(result.body).toContain('5 min'); // 300s / 60 = 5 min
+		expect(result.body).toContain('Long Break');
+		expect(result.body).toContain('15 min'); // 900s / 60 = 15 min
+		expect(result.body).toContain('aria-label="Focus duration"');
+		expect(result.body).toContain('aria-label="Short break duration"');
+		expect(result.body).toContain('aria-label="Long break duration"');
+		expect(result.body).toContain('data-slot="slider"');
+		expect(result.body).toContain('bg-accent-foam');
+		expect(result.body).toContain('bg-accent-pine');
+		expect(result.body).toContain('bg-accent-iris');
 		expect(result.body).toContain('Reset to defaults');
 		expect(result.body).toContain('Theme');
 		expect(result.body).toContain('Dark');
