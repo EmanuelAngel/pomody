@@ -81,6 +81,10 @@ export class TimerState {
 		return this._snapshot.state === 'running';
 	}
 
+	public get config(): TimerConfig {
+		return this.fsm.config;
+	}
+
 	public get roundsBeforeLongBreak(): number {
 		return this.fsm.config.roundsBeforeLongBreak;
 	}
@@ -136,6 +140,13 @@ export class TimerState {
 	public skip(): void {
 		this.ticker.stop();
 		this.fsm.skip();
+	}
+
+	/**
+	 * Updates the timer configuration and recalculates reactive snapshot.
+	 */
+	public updateConfig(config: Partial<TimerConfig>): void {
+		this.fsm.updateConfig(config);
 	}
 
 	/**

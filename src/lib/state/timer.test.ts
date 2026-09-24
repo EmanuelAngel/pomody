@@ -264,4 +264,60 @@ describe('TimerState Composition Root', () => {
 		expect(timerState).toBeInstanceOf(TimerState);
 		expect(timerState.state).toBe('idle');
 	});
+
+	it('should expose current config via config getter', () => {
+		const timer = createTimerState(
+			{
+				focusDurationSeconds: 1200,
+				shortBreakDurationSeconds: 240,
+				longBreakDurationSeconds: 600,
+				roundsBeforeLongBreak: 3
+			},
+			mockTicker
+		);
+
+		expect(timer.config).toEqual({
+			focusDurationSeconds: 1200,
+			shortBreakDurationSeconds: 240,
+			longBreakDurationSeconds: 600,
+			roundsBeforeLongBreak: 3
+		});
+		timer.destroy();
+	});
+
+	it('should update config and reactive snapshot when updateConfig is called in idle state', () => {
+		const timer = createTimerState(undefined, mockTicker);
+		expect(timer.remainingMs).toBe(1500000);
+		expect(timer.formattedTime).toBe('25:00');
+
+		timer.updateConfig({ focusDurationSeconds: 1800 });
+
+		expect(timer.config.focusDurationSeconds).toBe(1800);
+		expect(timer.durationMs).toBe(1800000);
+		expect(timer.remainingMs).toBe(1800000);
+		expect(timer.formattedTime).toBe('30:00');
+		timer.destroy();
+	});
+
+	it('should update config but preserve remainingMs when updateConfig is called while running', () => {
+		const timer = createTimerState({ focusDurationSeconds: 10 }, mockTicker);
+		timer.start();
+		mockTicker.simulateTick(3000); // 7000ms remaining
+		expect(timer.remainingMs).toBe(7000);
+
+		timer.updateConfig({ focusDurationSeconds: 20 });
+
+		expect(timer.config.focusDurationSeconds).toBe(20);
+		expect(timer.durationMs).toBe(20000);
+		expect(timer.remainingMs).toBe(7000);
+		expect(timer.formattedTime).toBe('00:07');
+		timer.destroy();
+	});
+
+	it('should propagate validation errors on invalid updateConfig calls', () => {
+		const timer = createTimerState(undefined, mockTicker);
+		expect(() => timer.updateConfig({ focusDurationSeconds: 0 })).toThrow();
+		expect(timer.config.focusDurationSeconds).toBe(1500);
+		timer.destroy();
+	});
 });
