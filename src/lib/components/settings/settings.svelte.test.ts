@@ -26,10 +26,10 @@ describe('SettingsTrigger (Client Browser)', () => {
 		const button = screen.getByRole('button', { name: 'Open settings' });
 
 		await expect.element(button).toBeVisible();
-		expect(button.element().hasAttribute('disabled')).toBe(false);
-		expect(button.element().className).toContain('opacity-100');
-		expect(button.element().className).toContain('pointer-events-auto');
-		expect(button.element().getAttribute('aria-expanded')).toBe('false');
+		await expect.element(button).not.toBeDisabled();
+		await expect.element(button).toHaveClass('opacity-100');
+		await expect.element(button).toHaveClass('pointer-events-auto');
+		await expect.element(button).toHaveAttribute('aria-expanded', 'false');
 	});
 
 	it('triggers onclick callback when clicked', async () => {
@@ -52,11 +52,11 @@ describe('SettingsTrigger (Client Browser)', () => {
 		const screen = await render(SettingsTrigger, { timerState });
 		const button = screen.getByRole('button', { name: 'Open settings', includeHidden: true });
 
-		expect(button.element().hasAttribute('disabled')).toBe(true);
-		expect(button.element().getAttribute('aria-hidden')).toBe('true');
-		expect(button.element().getAttribute('tabindex')).toBe('-1');
-		expect(button.element().className).toContain('opacity-0');
-		expect(button.element().className).toContain('pointer-events-none');
+		await expect.element(button).toBeDisabled();
+		await expect.element(button).toHaveAttribute('aria-hidden', 'true');
+		await expect.element(button).toHaveAttribute('tabindex', '-1');
+		await expect.element(button).toHaveClass('opacity-0');
+		await expect.element(button).toHaveClass('pointer-events-none');
 	});
 
 	it('restores visibility and interactivity when timer pauses', async () => {
@@ -66,14 +66,14 @@ describe('SettingsTrigger (Client Browser)', () => {
 
 		const screen = await render(SettingsTrigger, { timerState });
 		const button = screen.getByRole('button', { name: 'Open settings', includeHidden: true });
-		expect(button.element().hasAttribute('disabled')).toBe(true);
+		await expect.element(button).toBeDisabled();
 
 		timerState.pause();
 
 		await expect.element(button).toBeVisible();
-		expect(button.element().hasAttribute('disabled')).toBe(false);
-		expect(button.element().className).toContain('opacity-100');
-		expect(button.element().className).toContain('pointer-events-auto');
+		await expect.element(button).not.toBeDisabled();
+		await expect.element(button).toHaveClass('opacity-100');
+		await expect.element(button).toHaveClass('pointer-events-auto');
 	});
 });
 
@@ -131,30 +131,24 @@ describe('SettingsDrawer (Client Browser)', () => {
 			portalProps: { disabled: true }
 		});
 
-		const focusSliderContainer = screen.container.querySelector(
-			'[aria-label="Focus duration"]'
-		) as HTMLElement;
-		expect(focusSliderContainer).not.toBeNull();
+		const focusSlider = screen.getByLabelText('Focus duration');
+		const focusThumb = focusSlider.getByRole('slider');
 
-		const focusThumb = focusSliderContainer.querySelector(
-			'[data-slot="slider-thumb"]'
-		) as HTMLElement;
-		expect(focusThumb).not.toBeNull();
-		expect(focusThumb.getAttribute('aria-valuenow')).toBe('25');
+		await expect.element(focusThumb).toHaveAttribute('aria-valuenow', '25');
 
-		focusThumb.focus();
+		(focusThumb.element() as HTMLElement).focus();
 
 		// ArrowRight increases by 1 min (step=1)
 		await userEvent.keyboard('{ArrowRight}');
 
-		expect(focusThumb.getAttribute('aria-valuenow')).toBe('26');
+		await expect.element(focusThumb).toHaveAttribute('aria-valuenow', '26');
 		await expect.element(screen.getByText('26 min', { exact: true })).toBeVisible();
 		expect(timerState.config.focusDurationSeconds).toBe(26 * 60);
 
 		// ArrowLeft decreases by 1 min
 		await userEvent.keyboard('{ArrowLeft}');
 
-		expect(focusThumb.getAttribute('aria-valuenow')).toBe('25');
+		await expect.element(focusThumb).toHaveAttribute('aria-valuenow', '25');
 		await expect.element(screen.getByText('25 min', { exact: true })).toBeVisible();
 		expect(timerState.config.focusDurationSeconds).toBe(25 * 60);
 	});
@@ -177,31 +171,23 @@ describe('SettingsDrawer (Client Browser)', () => {
 			portalProps: { disabled: true }
 		});
 
-		const shortBreakContainer = screen.container.querySelector(
-			'[aria-label="Short break duration"]'
-		) as HTMLElement;
-		const longBreakContainer = screen.container.querySelector(
-			'[aria-label="Long break duration"]'
-		) as HTMLElement;
+		const shortBreakSlider = screen.getByLabelText('Short break duration');
+		const longBreakSlider = screen.getByLabelText('Long break duration');
 
-		const shortBreakThumb = shortBreakContainer.querySelector(
-			'[data-slot="slider-thumb"]'
-		) as HTMLElement;
-		const longBreakThumb = longBreakContainer.querySelector(
-			'[data-slot="slider-thumb"]'
-		) as HTMLElement;
+		const shortBreakThumb = shortBreakSlider.getByRole('slider');
+		const longBreakThumb = longBreakSlider.getByRole('slider');
 
 		// Increase short break: 5 -> 6 min
-		shortBreakThumb.focus();
+		(shortBreakThumb.element() as HTMLElement).focus();
 		await userEvent.keyboard('{ArrowRight}');
-		expect(shortBreakThumb.getAttribute('aria-valuenow')).toBe('6');
+		await expect.element(shortBreakThumb).toHaveAttribute('aria-valuenow', '6');
 		await expect.element(screen.getByText('6 min', { exact: true })).toBeVisible();
 		expect(timerState.config.shortBreakDurationSeconds).toBe(6 * 60);
 
 		// Increase long break: 15 -> 16 min
-		longBreakThumb.focus();
+		(longBreakThumb.element() as HTMLElement).focus();
 		await userEvent.keyboard('{ArrowRight}');
-		expect(longBreakThumb.getAttribute('aria-valuenow')).toBe('16');
+		await expect.element(longBreakThumb).toHaveAttribute('aria-valuenow', '16');
 		await expect.element(screen.getByText('16 min', { exact: true })).toBeVisible();
 		expect(timerState.config.longBreakDurationSeconds).toBe(16 * 60);
 	});
@@ -305,8 +291,8 @@ describe('SettingsDrawer (Client Browser)', () => {
 
 		expect(themeState.current).toBe('dawn');
 		expect(document.documentElement.dataset.theme).toBe('dawn');
-		expect(dawnRadio.element().getAttribute('data-state')).toBe('on');
-		expect(dawnRadio.element().getAttribute('aria-checked')).toBe('true');
+		await expect.element(dawnRadio).toHaveAttribute('data-state', 'on');
+		await expect.element(dawnRadio).toHaveAttribute('aria-checked', 'true');
 
 		// Switch to OLED
 		const oledRadio = screen.getByRole('radio', { name: 'OLED theme' });
@@ -314,8 +300,8 @@ describe('SettingsDrawer (Client Browser)', () => {
 
 		expect(themeState.current).toBe('oled');
 		expect(document.documentElement.dataset.theme).toBe('oled');
-		expect(oledRadio.element().getAttribute('data-state')).toBe('on');
-		expect(oledRadio.element().getAttribute('aria-checked')).toBe('true');
+		await expect.element(oledRadio).toHaveAttribute('data-state', 'on');
+		await expect.element(oledRadio).toHaveAttribute('aria-checked', 'true');
 
 		// Switch back to Dark
 		const darkRadio = screen.getByRole('radio', { name: 'Dark theme' });
@@ -323,8 +309,8 @@ describe('SettingsDrawer (Client Browser)', () => {
 
 		expect(themeState.current).toBe('dark');
 		expect(document.documentElement.dataset.theme).toBe('dark');
-		expect(darkRadio.element().getAttribute('data-state')).toBe('on');
-		expect(darkRadio.element().getAttribute('aria-checked')).toBe('true');
+		await expect.element(darkRadio).toHaveAttribute('data-state', 'on');
+		await expect.element(darkRadio).toHaveAttribute('aria-checked', 'true');
 	});
 
 	it('retains active theme when clicking already selected toggle item (no unselect corruption)', async () => {
@@ -358,12 +344,10 @@ describe('SettingsDrawer (Client Browser)', () => {
 			portalProps: { disabled: true }
 		});
 
-		const focusContainer = screen.container.querySelector(
-			'[aria-label="Focus duration"]'
-		) as HTMLElement;
-		const focusThumb = focusContainer.querySelector('[data-slot="slider-thumb"]') as HTMLElement;
+		const focusSlider = screen.getByLabelText('Focus duration');
+		const focusThumb = focusSlider.getByRole('slider');
 
-		focusThumb.focus();
+		(focusThumb.element() as HTMLElement).focus();
 		// Shorten focus duration while running: 25 -> 24 min
 		await userEvent.keyboard('{ArrowLeft}');
 
@@ -386,33 +370,31 @@ describe('SettingsDrawer (Client Browser)', () => {
 			portalProps: { disabled: true }
 		});
 
-		const focusContainer = screen.container.querySelector(
-			'[aria-label="Focus duration"]'
-		) as HTMLElement;
-		const focusThumb = focusContainer.querySelector('[data-slot="slider-thumb"]') as HTMLElement;
+		const focusSlider = screen.getByLabelText('Focus duration');
+		const focusThumb = focusSlider.getByRole('slider');
 
-		focusThumb.focus();
+		(focusThumb.element() as HTMLElement).focus();
 
 		// Home key jumps to minimum (1 min)
 		await userEvent.keyboard('{Home}');
-		expect(focusThumb.getAttribute('aria-valuenow')).toBe('1');
+		await expect.element(focusThumb).toHaveAttribute('aria-valuenow', '1');
 		await expect.element(screen.getByText('1 min', { exact: true })).toBeVisible();
 		expect(timerState.config.focusDurationSeconds).toBe(1 * 60);
 
 		// ArrowLeft at minimum does not go below 1 min
 		await userEvent.keyboard('{ArrowLeft}');
-		expect(focusThumb.getAttribute('aria-valuenow')).toBe('1');
+		await expect.element(focusThumb).toHaveAttribute('aria-valuenow', '1');
 		expect(timerState.config.focusDurationSeconds).toBe(1 * 60);
 
 		// End key jumps to maximum (60 min)
 		await userEvent.keyboard('{End}');
-		expect(focusThumb.getAttribute('aria-valuenow')).toBe('60');
+		await expect.element(focusThumb).toHaveAttribute('aria-valuenow', '60');
 		await expect.element(screen.getByText('60 min', { exact: true })).toBeVisible();
 		expect(timerState.config.focusDurationSeconds).toBe(60 * 60);
 
 		// ArrowRight at maximum does not exceed 60 min
 		await userEvent.keyboard('{ArrowRight}');
-		expect(focusThumb.getAttribute('aria-valuenow')).toBe('60');
+		await expect.element(focusThumb).toHaveAttribute('aria-valuenow', '60');
 		expect(timerState.config.focusDurationSeconds).toBe(60 * 60);
 	});
 });
@@ -485,12 +467,10 @@ describe('Settings Integration: Trigger & Drawer (Client Browser)', () => {
 		const triggerBtn = screen.getByRole('button', { name: 'Open settings' });
 		await triggerBtn.click();
 
-		const focusContainer = screen.container.querySelector(
-			'[aria-label="Focus duration"]'
-		) as HTMLElement;
-		const focusThumb = focusContainer.querySelector('[data-slot="slider-thumb"]') as HTMLElement;
+		const focusSlider = screen.getByLabelText('Focus duration');
+		const focusThumb = focusSlider.getByRole('slider');
 
-		focusThumb.focus();
+		(focusThumb.element() as HTMLElement).focus();
 		await userEvent.keyboard('{ArrowRight}'); // 26 min
 		await expect.element(screen.getByText('26 min', { exact: true })).toBeVisible();
 
