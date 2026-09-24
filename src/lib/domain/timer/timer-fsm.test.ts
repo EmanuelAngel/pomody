@@ -645,3 +645,124 @@ describe('Phase 5: Observer Subscription Mechanism', () => {
 		}).toThrow(TypeError);
 	});
 });
+
+describe('TimerFSM Configuration Updates (updateConfig)', () => {
+	it('should update config and reset remainingMs to new duration when idle', () => {
+		const fsm = new TimerFSM();
+		expect(fsm.state).toBe('idle');
+		expect(fsm.durationMs).toBe(1500000);
+		expect(fsm.remainingMs).toBe(1500000);
+
+		fsm.updateConfig({ focusDurationSeconds: 1200 });
+
+		expect(fsm.config.focusDurationSeconds).toBe(1200);
+		expect(fsm.durationMs).toBe(1200000);
+		expect(fsm.remainingMs).toBe(1200000);
+		expect(fsm.snapshot.durationMs).toBe(1200000);
+		expect(fsm.snapshot.remainingMs).toBe(1200000);
+	});
+
+	it('should update shortBreak duration and remainingMs when idle in shortBreak mode', () => {
+		const fsm = new TimerFSM();
+		fsm.skip(); // advances to shortBreak, idle
+		expect(fsm.mode).toBe('shortBreak');
+		expect(fsm.state).toBe('idle');
+		expect(fsm.remainingMs).toBe(300000);
+
+		fsm.updateConfig({ shortBreakDurationSeconds: 600 });
+
+		expect(fsm.config.shortBreakDurationSeconds).toBe(600);
+		expect(fsm.durationMs).toBe(600000);
+		expect(fsm.remainingMs).toBe(600000);
+	});
+
+	it('should update config but NOT modify remainingMs when running (active block uninterrupted)', () => {
+		const fsm = new TimerFSM();
+		fsm.start();
+		fsm.tick(300000); // 1500s - 300s = 1200s (1,200,000 ms remaining)
+		expect(fsm.state).toBe('running');
+		expect(fsm.remainingMs).toBe(1200000);
+
+		fsm.updateConfig({ focusDurationSeconds: 1800 });
+
+		expect(fsm.config.focusDurationSeconds).toBe(1800);
+		expect(fsm.durationMs).toBe(1800000);
+		// Remaining time must NOT be modified
+		expect(fsm.remainingMs).toBe(1200000);
+		expect(fsm.snapshot.remainingMs).toBe(1200000);
+		expect(fsm.snapshot.durationMs).toBe(1800000);
+	});
+
+	it('should update config but NOT modify remainingMs when paused (active block uninterrupted)', () => {
+		const fsm = new TimerFSM();
+		fsm.start();
+		fsm.tick(500000); // 1,000,000 ms remaining
+		fsm.pause();
+		expect(fsm.state).toBe('paused');
+		expect(fsm.remainingMs).toBe(1000000);
+
+		fsm.updateConfig({ focusDurationSeconds: 2400 });
+
+		expect(fsm.config.focusDurationSeconds).toBe(2400);
+		expect(fsm.durationMs).toBe(2400000);
+		// Remaining time must NOT be modified
+		expect(fsm.remainingMs).toBe(1000000);
+		expect(fsm.snapshot.remainingMs).toBe(1000000);
+		expect(fsm.snapshot.durationMs).toBe(2400000);
+	});
+
+	it('should notify subscribers with updated snapshot upon config update', () => {
+		const fsm = new TimerFSM();
+		let callCount = 0;
+		let lastSnapshotDuration = 0;
+		let lastSnapshotRemaining = 0;
+
+		fsm.subscribe((snapshot) => {
+			callCount++;
+			lastSnapshotDuration = snapshot.durationMs;
+			lastSnapshotRemaining = snapshot.remainingMs;
+		});
+
+		fsm.updateConfig({ focusDurationSeconds: 900 });
+
+		expect(callCount).toBe(1);
+		expect(lastSnapshotDuration).toBe(900000);
+		expect(lastSnapshotRemaining).toBe(900000);
+	});
+
+	it('should freeze the merged config object defensively', () => {
+		const fsm = new TimerFSM();
+		fsm.updateConfig({ focusDurationSeconds: 1000 });
+
+		expect(Object.isFrozen(fsm.config)).toBe(true);
+		expect(() => {
+			// @ts-expect-error mutating frozen config
+			fsm.config.focusDurationSeconds = 2000;
+		}).toThrow(TypeError);
+	});
+
+	it('should reject invalid values with InvalidTimerConfigError and not alter state', () => {
+		const fsm = new TimerFSM();
+		let notified = false;
+		fsm.subscribe(() => {
+			notified = true;
+		});
+
+		expect(() => fsm.updateConfig({ focusDurationSeconds: 0 })).toThrow(InvalidTimerConfigError);
+		expect(() => fsm.updateConfig({ focusDurationSeconds: -10 })).toThrow(InvalidTimerConfigError);
+		expect(() => fsm.updateConfig({ shortBreakDurationSeconds: 25.5 })).toThrow(
+			InvalidTimerConfigError
+		);
+		expect(() => fsm.updateConfig({ longBreakDurationSeconds: NaN })).toThrow(
+			InvalidTimerConfigError
+		);
+		expect(() => fsm.updateConfig({ roundsBeforeLongBreak: Infinity })).toThrow(
+			InvalidTimerConfigError
+		);
+
+		// Config and state remain unmodified
+		expect(fsm.config.focusDurationSeconds).toBe(1500);
+		expect(fsm.remainingMs).toBe(1500000);
+		expect(notified).toBe(false);
+	});
+});

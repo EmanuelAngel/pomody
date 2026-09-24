@@ -85,7 +85,7 @@ export function calculateNextCycleStep(
 }
 
 export class TimerFSM {
-	private readonly _config: TimerConfig;
+	private _config: TimerConfig;
 	private _state: TimerState = 'idle';
 	private _mode: TimerMode = 'focus';
 	private _currentRound = 1;
@@ -105,6 +105,28 @@ export class TimerFSM {
 
 	public get config(): TimerConfig {
 		return this._config;
+	}
+
+	/**
+	 * Updates the timer configuration with partial overrides.
+	 * Merges with the existing configuration and validates the result.
+	 * If the timer is idle, resets remainingMs to match the new duration for the active mode.
+	 * If running or paused, the active block finishes uninterrupted with its current remainingMs.
+	 * Synchronously notifies subscribers of the updated snapshot.
+	 */
+	public updateConfig(config: Partial<TimerConfig>): void {
+		const merged: TimerConfig = {
+			...this._config,
+			...config
+		};
+		validateTimerConfig(merged);
+		this._config = Object.freeze(merged);
+
+		if (this._state === 'idle') {
+			this._remainingMs = this.durationMs;
+		}
+
+		this.notify();
 	}
 
 	public get state(): TimerState {
