@@ -84,10 +84,11 @@ describe('TimerControls & Zen Mode (Component Rendering)', () => {
 		expect(idleResult.body).toContain('opacity-100');
 		expect(idleResult.body).toContain('pointer-events-auto');
 
-		// Running state: Zen mode activates opacity-0 pointer-events-none on Reset and Skip
+		// Running state: Zen mode activates opacity-0 pointer-events-none and disabled on Reset and Skip
 		const runningResult = render(TimerControls, {
 			props: {
 				isRunning: true,
+				isPaused: false,
 				onPlayPause: noop,
 				onReset: noop,
 				onSkip: noop
@@ -98,6 +99,20 @@ describe('TimerControls & Zen Mode (Component Rendering)', () => {
 		expect(runningResult.body).toContain('opacity-0');
 		expect(runningResult.body).toContain('pointer-events-none');
 		expect(runningResult.body).toContain('tabindex="-1"');
+		expect(runningResult.body).toContain('disabled');
+
+		// Paused state: Primary button displays "Resume timer"
+		const pausedResult = render(TimerControls, {
+			props: {
+				isRunning: false,
+				isPaused: true,
+				onPlayPause: noop,
+				onReset: noop,
+				onSkip: noop
+			}
+		});
+
+		expect(pausedResult.body).toContain('aria-label="Resume timer"');
 	});
 });
 

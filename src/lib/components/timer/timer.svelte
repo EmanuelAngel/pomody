@@ -35,11 +35,13 @@
 			formattedTime={state.formattedRemainingTime}
 			mode={state.mode}
 			currentRound={state.currentRound}
+			roundsBeforeLongBreak={state.roundsBeforeLongBreak}
 		/>
 	</TimerArc>
 
 	<TimerControls
 		isRunning={state.isRunning}
+		isPaused={state.state === 'paused'}
 		onPlayPause={handlePlayPause}
 		onReset={handleReset}
 		onSkip={handleSkip}

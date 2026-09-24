@@ -41,6 +41,8 @@
 		}
 	});
 
+	const safeRoundsBeforeLongBreak = $derived(Math.max(1, Math.floor(roundsBeforeLongBreak || 4)));
+
 	const completedInCycle = $derived.by(() => {
 		if (mode === 'focus') {
 			return Math.max(0, currentRound - 1);
@@ -48,7 +50,7 @@
 		if (mode === 'shortBreak') {
 			return currentRound;
 		}
-		return roundsBeforeLongBreak;
+		return safeRoundsBeforeLongBreak;
 	});
 </script>
 
@@ -73,10 +75,10 @@
 	<!-- Round dots (●●○○) below time -->
 	<div
 		role="status"
-		aria-label={`Pomodoro cycle: ${completedInCycle} of ${roundsBeforeLongBreak} rounds completed`}
+		aria-label={`Pomodoro cycle: ${completedInCycle} of ${safeRoundsBeforeLongBreak} rounds completed`}
 		class="mt-3 flex items-center justify-center gap-2 sm:mt-4 sm:gap-2.5"
 	>
-		{#each Array.from({ length: roundsBeforeLongBreak }, (_, i) => i) as index (index)}
+		{#each Array.from({ length: safeRoundsBeforeLongBreak }, (_, i) => i) as index (index)}
 			{#if index < completedInCycle}
 				<!-- Completed round dot (filled with mode accent) -->
 				<span
@@ -92,8 +94,7 @@
 				></span>
 			{:else}
 				<!-- Upcoming round dot (dimmed track) -->
-				<span
-					class="size-2 rounded-full bg-border/80 transition-all duration-300 sm:size-2.5 dark:bg-border/60"
+				<span class="size-2 rounded-full bg-border/80 transition-all duration-300 sm:size-2.5"
 				></span>
 			{/if}
 		{/each}

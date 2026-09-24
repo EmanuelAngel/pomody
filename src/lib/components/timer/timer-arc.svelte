@@ -13,7 +13,9 @@
 	const RADIUS = 148;
 	const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-	const clampedProgress = $derived(Math.min(1, Math.max(0, progress)));
+	const clampedProgress = $derived(
+		Number.isFinite(progress) ? Math.min(1, Math.max(0, progress)) : 0
+	);
 	const strokeDashoffset = $derived(CIRCUMFERENCE * (1 - clampedProgress));
 
 	const strokeColor = $derived.by(() => {
@@ -40,7 +42,7 @@
 			cy="160"
 			r={RADIUS}
 			fill="none"
-			class="stroke-border/70 transition-colors duration-300 dark:stroke-border/50"
+			class="stroke-border/70 transition-colors duration-300"
 			stroke-width="2.5"
 		/>
 

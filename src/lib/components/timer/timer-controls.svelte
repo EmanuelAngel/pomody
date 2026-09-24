@@ -8,12 +8,13 @@
 
 	interface Props {
 		isRunning: boolean;
+		isPaused?: boolean;
 		onPlayPause: () => void;
 		onReset: () => void;
 		onSkip: () => void;
 	}
 
-	let { isRunning = false, onPlayPause, onReset, onSkip }: Props = $props();
+	let { isRunning = false, isPaused = false, onPlayPause, onReset, onSkip }: Props = $props();
 </script>
 
 <div class="mt-8 flex items-center justify-center gap-6 sm:gap-8">
@@ -22,8 +23,9 @@
 		variant="ghost"
 		size="icon"
 		aria-label="Reset timer"
-		tabindex={isRunning ? -1 : 0}
-		aria-hidden={isRunning}
+		disabled={isRunning}
+		tabindex={isRunning ? -1 : undefined}
+		aria-hidden={isRunning ? true : undefined}
 		onclick={onReset}
 		class={cn(
 			'size-12 rounded-full text-muted-foreground transition-opacity duration-300 ease-in-out hover:text-foreground',
@@ -37,7 +39,7 @@
 	<Button
 		variant="default"
 		size="icon-lg"
-		aria-label={isRunning ? 'Pause timer' : 'Start timer'}
+		aria-label={isRunning ? 'Pause timer' : isPaused ? 'Resume timer' : 'Start timer'}
 		onclick={onPlayPause}
 		class="size-16 cursor-pointer rounded-full shadow-md transition-transform duration-200 hover:scale-105 active:scale-95"
 	>
@@ -53,8 +55,9 @@
 		variant="ghost"
 		size="icon"
 		aria-label="Skip to next session"
-		tabindex={isRunning ? -1 : 0}
-		aria-hidden={isRunning}
+		disabled={isRunning}
+		tabindex={isRunning ? -1 : undefined}
+		aria-hidden={isRunning ? true : undefined}
 		onclick={onSkip}
 		class={cn(
 			'size-12 rounded-full text-muted-foreground transition-opacity duration-300 ease-in-out hover:text-foreground',
