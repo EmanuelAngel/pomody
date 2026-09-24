@@ -95,9 +95,35 @@ describe('Phase 1: Types, Errors, and Config Validation', () => {
 		});
 
 		it('should reject non-positive or decimal roundsBeforeLongBreak', () => {
-			expect(() => new TimerFSM({ roundsBeforeLongBreak: 0 })).toThrow(InvalidTimerConfigError);
-			expect(() => new TimerFSM({ roundsBeforeLongBreak: -2 })).toThrow(InvalidTimerConfigError);
-			expect(() => new TimerFSM({ roundsBeforeLongBreak: 4.5 })).toThrow(InvalidTimerConfigError);
+			expect(() => new TimerFSM({ roundsBeforeLongBreak: 0 })).toThrow(
+				'Invalid configuration for "roundsBeforeLongBreak": expected an integer between 1 and 12, got 0'
+			);
+			expect(() => new TimerFSM({ roundsBeforeLongBreak: -2 })).toThrow(
+				'Invalid configuration for "roundsBeforeLongBreak": expected an integer between 1 and 12, got -2'
+			);
+			expect(() => new TimerFSM({ roundsBeforeLongBreak: 4.5 })).toThrow(
+				'Invalid configuration for "roundsBeforeLongBreak": expected an integer between 1 and 12, got 4.5'
+			);
+		});
+
+		it('should reject roundsBeforeLongBreak greater than 12', () => {
+			expect(() => new TimerFSM({ roundsBeforeLongBreak: 13 })).toThrow(
+				'Invalid configuration for "roundsBeforeLongBreak": expected an integer between 1 and 12, got 13'
+			);
+			expect(() => new TimerFSM({ roundsBeforeLongBreak: 20 })).toThrow(
+				'Invalid configuration for "roundsBeforeLongBreak": expected an integer between 1 and 12, got 20'
+			);
+		});
+
+		it('should accept valid boundary values 1 and 12 for roundsBeforeLongBreak', () => {
+			expect(() => new TimerFSM({ roundsBeforeLongBreak: 1 })).not.toThrow();
+			expect(() => new TimerFSM({ roundsBeforeLongBreak: 12 })).not.toThrow();
+
+			const fsmMin = new TimerFSM({ roundsBeforeLongBreak: 1 });
+			expect(fsmMin.config.roundsBeforeLongBreak).toBe(1);
+
+			const fsmMax = new TimerFSM({ roundsBeforeLongBreak: 12 });
+			expect(fsmMax.config.roundsBeforeLongBreak).toBe(12);
 		});
 
 		it('should reject NaN or Infinity values in configuration', () => {
@@ -777,10 +803,18 @@ describe('TimerFSM Configuration Updates (updateConfig)', () => {
 		expect(() => fsm.updateConfig({ roundsBeforeLongBreak: Infinity })).toThrow(
 			InvalidTimerConfigError
 		);
+		expect(() => fsm.updateConfig({ roundsBeforeLongBreak: 0 })).toThrow(InvalidTimerConfigError);
+		expect(() => fsm.updateConfig({ roundsBeforeLongBreak: 13 })).toThrow(InvalidTimerConfigError);
 
 		// Config and state remain unmodified
 		expect(fsm.config.focusDurationSeconds).toBe(1500);
+		expect(fsm.config.roundsBeforeLongBreak).toBe(4);
 		expect(fsm.remainingMs).toBe(1500000);
 		expect(notified).toBe(false);
+
+		// Valid update succeeds
+		expect(() => fsm.updateConfig({ roundsBeforeLongBreak: 12 })).not.toThrow();
+		expect(fsm.config.roundsBeforeLongBreak).toBe(12);
+		expect(notified).toBe(true);
 	});
 });

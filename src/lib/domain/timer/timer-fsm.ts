@@ -36,18 +36,19 @@ export const DEFAULT_TIMER_CONFIG: TimerConfig = Object.freeze({
 });
 
 /**
- * Asserts that configuration values are valid strictly positive integers.
+ * Asserts that configuration values are valid.
+ * Duration fields must be strictly positive integers.
+ * roundsBeforeLongBreak must be an integer between 1 and 12 inclusive.
  * Throws InvalidTimerConfigError if any property fails validation.
  */
 export function validateTimerConfig(config: TimerConfig): void {
-	const fields: (keyof TimerConfig)[] = [
+	const durationFields: (keyof Omit<TimerConfig, 'roundsBeforeLongBreak'>)[] = [
 		'focusDurationSeconds',
 		'shortBreakDurationSeconds',
-		'longBreakDurationSeconds',
-		'roundsBeforeLongBreak'
+		'longBreakDurationSeconds'
 	];
 
-	for (const field of fields) {
+	for (const field of durationFields) {
 		const value = config[field];
 		if (
 			typeof value !== 'number' ||
@@ -59,6 +60,19 @@ export function validateTimerConfig(config: TimerConfig): void {
 				`Invalid configuration for "${field}": expected a positive integer, got ${value}`
 			);
 		}
+	}
+
+	const rounds = config.roundsBeforeLongBreak;
+	if (
+		typeof rounds !== 'number' ||
+		!Number.isFinite(rounds) ||
+		!Number.isInteger(rounds) ||
+		rounds < 1 ||
+		rounds > 12
+	) {
+		throw new InvalidTimerConfigError(
+			`Invalid configuration for "roundsBeforeLongBreak": expected an integer between 1 and 12, got ${config.roundsBeforeLongBreak}`
+		);
 	}
 }
 
