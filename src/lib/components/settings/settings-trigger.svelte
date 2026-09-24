@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Button from '$lib/components/ui/button/button.svelte';
+	import { Button } from '$lib/components/ui/button';
 	import Settings from '@lucide/svelte/icons/settings';
 	import { cn } from '$lib/utils.js';
-	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte.js';
+	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
 
 	interface Props {
 		open?: boolean;
@@ -34,5 +34,5 @@
 		isRunning ? 'pointer-events-none opacity-0' : 'pointer-events-auto opacity-100'
 	)}
 >
-	<Settings class="size-5" />
+	<Settings />
 </Button>
