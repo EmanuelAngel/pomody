@@ -57,7 +57,7 @@ Todo issue asignado a desarrollo debe contener:
 
 Aplica para componentes de presentación, ajustes de estilos Tailwind, copy o pequeñas mejoras de interfaz.
 
-1. **Tomar el issue** del tablero Kanban y moverlo a _In Progress_.
+1. **Tomar la tarea**: Elegir un issue del tablero Kanban o un hallazgo menor de [`docs/review-findings.md`](./review-findings.md) y moverlo a _In Progress_.
 2. **Crear rama** desde `main` (`feat/nombre-tarea` o `fix/nombre-tarea`).
 3. **Implementar con asistencia de IA**: Generar o ajustar código limitado a `src/lib/components/`.
 4. **Abrir PR**: Verificar que el diff sea pequeño (<150-200 líneas) para facilitar la revisión.

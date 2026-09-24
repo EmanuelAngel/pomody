@@ -1,4 +1,4 @@
-# Hallazgos y Mejoras Pendientes (Needs Review)
+# Hallazgos de Revisión (Review Findings)
 
 > Buffer efímero para registrar hallazgos menores, detalles cosméticos y micro-mejoras (<1h de resolución) identificadas durante revisiones de código.
 

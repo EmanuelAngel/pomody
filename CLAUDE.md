@@ -66,6 +66,7 @@ src/lib/
 2. **State Management**: Use Svelte 5 Runes (`$state`, `$derived`, `$props`, `$bindable`) inside `src/lib/state/` and `.svelte` components. Do not use legacy Svelte 4 store patterns (`writable`, `derived`).
 3. **UI Styling**: Tailwind CSS v4 with semantic CSS variables mapped to Rosé Pine tokens (`[data-theme='dark']`, `[data-theme='dawn']`, `[data-theme='oled']`).
 4. **Git Commits**: Use Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`, `docs:`). Never add AI attribution or "Co-Authored-By" trailers.
+5. **Review Findings Buffer**: Non-core, minor UI/cosmetic findings (<1h) are tracked in [`docs/review-findings.md`](docs/review-findings.md) (ephemeral buffer with WIP limit = 20; fix and delete).
 
 ---
 

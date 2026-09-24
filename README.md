@@ -44,6 +44,7 @@ El diseño funcional, técnico y las decisiones de arquitectura están organizad
 - 🛠️ **[Propuestas de Vortex](docs/proposals/vortex-ideas.md)**: Funcionalidades de planificación ágil (Mini To-Do), pausas guiadas, presupuesto de sesión y blindaje de foco.
 - 🏗️ **[Arquitectura y Stack](docs/architecture.md)**: Stack técnico definitivo (SvelteKit + Tauri v2), cobertura de requerimientos y patrones de diseño.
 - 🤝 **[Flujo de Git y Calidad](docs/git-workflow.md)**: Estándares de Git, Conventional Commits y arneses automáticos de calidad (Husky, lint-staged, CI).
+- 🔍 **[Hallazgos de Revisión](docs/review-findings.md)**: Buffer efímero de mejoras menores y tareas visuales rápidas (<1h) pendientes de resolución.
 
 ---
 
