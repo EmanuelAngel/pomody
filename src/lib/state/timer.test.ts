@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TimerState, createTimerState, formatTime, timerState } from './timer.svelte';
 import { TimerFSM } from '../domain/timer/timer-fsm';
 import type { ITimerTicker, TickCallback } from '../domain/ports/timer-ticker.port';
+import type { IAudioNotifier } from '../domain/ports/IAudioNotifier';
 
 describe('formatTime', () => {
 	it('should format full standard Pomodoro duration as 25:00', () => {
@@ -330,5 +331,130 @@ describe('TimerState Composition Root', () => {
 		expect(() => timer.updateConfig({ focusDurationSeconds: 0 })).toThrow();
 		expect(timer.config.focusDurationSeconds).toBe(1500);
 		timer.destroy();
+	});
+
+	describe('IAudioNotifier & soundEnabled wiring', () => {
+		let mockAudioNotifier: IAudioNotifier;
+
+		beforeEach(() => {
+			mockAudioNotifier = {
+				notifyBlockCompleted: vi.fn(),
+				unlock: vi.fn()
+			};
+		});
+
+		it('should default soundEnabled to true', () => {
+			const timer = createTimerState(undefined, mockTicker, mockAudioNotifier);
+			expect(timer.soundEnabled).toBe(true);
+			timer.destroy();
+		});
+
+		it('should update soundEnabled reactively via setSoundEnabled and toggleSound', () => {
+			const timer = createTimerState(undefined, mockTicker, mockAudioNotifier);
+			expect(timer.soundEnabled).toBe(true);
+
+			timer.setSoundEnabled(false);
+			expect(timer.soundEnabled).toBe(false);
+
+			timer.toggleSound();
+			expect(timer.soundEnabled).toBe(true);
+
+			timer.toggleSound();
+			expect(timer.soundEnabled).toBe(false);
+
+			timer.destroy();
+		});
+
+		it('should call mockAudioNotifier.notifyBlockCompleted with "focus" when focus block completes', () => {
+			const timer = createTimerState(undefined, mockTicker, mockAudioNotifier);
+			timer.start();
+
+			expect(mockAudioNotifier.notifyBlockCompleted).not.toHaveBeenCalled();
+
+			mockTicker.simulateTick(1500000);
+
+			expect(timer.state).toBe('completed');
+			expect(mockAudioNotifier.notifyBlockCompleted).toHaveBeenCalledTimes(1);
+			expect(mockAudioNotifier.notifyBlockCompleted).toHaveBeenCalledWith('focus');
+
+			timer.destroy();
+		});
+
+		it('should NOT call mockAudioNotifier.notifyBlockCompleted when soundEnabled is false', () => {
+			const timer = createTimerState(undefined, mockTicker, mockAudioNotifier);
+			timer.setSoundEnabled(false);
+			timer.start();
+
+			mockTicker.simulateTick(1500000);
+
+			expect(timer.state).toBe('completed');
+			expect(mockAudioNotifier.notifyBlockCompleted).not.toHaveBeenCalled();
+
+			timer.destroy();
+		});
+
+		it('should call mockAudioNotifier.unlock() when start() is called', () => {
+			const timer = createTimerState(undefined, mockTicker, mockAudioNotifier);
+			expect(mockAudioNotifier.unlock).not.toHaveBeenCalled();
+
+			timer.start();
+
+			expect(mockAudioNotifier.unlock).toHaveBeenCalledTimes(1);
+
+			timer.destroy();
+		});
+
+		it('should call mockAudioNotifier.unlock() when resume() is called', () => {
+			const timer = createTimerState(undefined, mockTicker, mockAudioNotifier);
+			timer.start();
+			expect(mockAudioNotifier.unlock).toHaveBeenCalledTimes(1);
+
+			timer.pause();
+			timer.resume();
+
+			expect(mockAudioNotifier.unlock).toHaveBeenCalledTimes(2);
+
+			timer.destroy();
+		});
+
+		it('should call mockAudioNotifier.notifyBlockCompleted with break mode when break block completes', () => {
+			const timer = createTimerState(
+				{ focusDurationSeconds: 1, shortBreakDurationSeconds: 2 },
+				mockTicker,
+				mockAudioNotifier
+			);
+			timer.start();
+			mockTicker.simulateTick(1000); // completes focus
+			expect(mockAudioNotifier.notifyBlockCompleted).toHaveBeenLastCalledWith('focus');
+
+			timer.start(); // starts shortBreak
+			mockTicker.simulateTick(2000); // completes shortBreak
+			expect(mockAudioNotifier.notifyBlockCompleted).toHaveBeenLastCalledWith('shortBreak');
+
+			timer.destroy();
+		});
+
+		it('should unsubscribe from FSM domain events on destroy()', () => {
+			const unsubscribeEventsMock = vi.fn();
+			const originalOnEvent = TimerFSM.prototype.onEvent;
+			const onEventSpy = vi.spyOn(TimerFSM.prototype, 'onEvent').mockImplementation(function (
+				this: TimerFSM,
+				subscriber
+			) {
+				const realUnsub = originalOnEvent.call(this, subscriber);
+				return () => {
+					realUnsub();
+					unsubscribeEventsMock();
+				};
+			});
+
+			const timer = createTimerState(undefined, mockTicker, mockAudioNotifier);
+			expect(unsubscribeEventsMock).not.toHaveBeenCalled();
+
+			timer.destroy();
+			expect(unsubscribeEventsMock).toHaveBeenCalledTimes(1);
+
+			onEventSpy.mockRestore();
+		});
 	});
 });
