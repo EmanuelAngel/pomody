@@ -114,6 +114,7 @@ describe('SettingsDrawer (Client Browser)', () => {
 		// Check section headers
 		await expect.element(screen.getByRole('heading', { name: 'Intervals' })).toBeVisible();
 		await expect.element(screen.getByRole('heading', { name: 'Theme' })).toBeVisible();
+		await expect.element(screen.getByRole('heading', { name: 'Sound' })).toBeVisible();
 
 		// Check Reset button
 		await expect.element(screen.getByRole('button', { name: /Reset to defaults/i })).toBeVisible();
@@ -396,6 +397,69 @@ describe('SettingsDrawer (Client Browser)', () => {
 		await userEvent.keyboard('{ArrowRight}');
 		await expect.element(focusThumb).toHaveAttribute('aria-valuenow', '60');
 		expect(timerState.config.focusDurationSeconds).toBe(60 * 60);
+	});
+
+	it('toggles sound alerts switch and updates timerState soundEnabled', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+		const themeState = createThemeState();
+
+		const screen = await render(SettingsDrawer, {
+			open: true,
+			timerState,
+			themeState,
+			portalProps: { disabled: true }
+		});
+
+		await expect.element(screen.getByRole('heading', { name: 'Sound' })).toBeVisible();
+		await expect.element(screen.getByText('Enable or mute audio transition alerts.')).toBeVisible();
+
+		// Verify the sound alerts switch renders and is accessible
+		const switchEl = screen.getByRole('switch', { name: 'Sound alerts' });
+		await expect.element(switchEl).toBeVisible();
+
+		// Verify the switch is checked by default
+		expect(timerState.soundEnabled).toBe(true);
+		await expect.element(switchEl).toBeChecked();
+
+		// Click the switch and verify timerState.soundEnabled toggles to false and switch is unchecked
+		await switchEl.click();
+		expect(timerState.soundEnabled).toBe(false);
+		await expect.element(switchEl).not.toBeChecked();
+
+		// Click the switch again and verify timerState.soundEnabled toggles back to true and switch is checked
+		await switchEl.click();
+		expect(timerState.soundEnabled).toBe(true);
+		await expect.element(switchEl).toBeChecked();
+	});
+
+	it('resets sound alerts switch to checked on clicking Reset to defaults', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+		const themeState = createThemeState();
+
+		// Set sound to disabled first
+		timerState.setSoundEnabled(false);
+
+		const screen = await render(SettingsDrawer, {
+			open: true,
+			timerState,
+			themeState,
+			portalProps: { disabled: true }
+		});
+
+		const switchEl = screen.getByRole('switch', { name: 'Sound alerts' });
+		await expect.element(switchEl).toBeVisible();
+		await expect.element(switchEl).not.toBeChecked();
+		expect(timerState.soundEnabled).toBe(false);
+
+		// Click Reset to defaults
+		const resetBtn = screen.getByRole('button', { name: /Reset to defaults/i });
+		await resetBtn.click();
+
+		// Verify sound alerts switch resets to checked and timerState.soundEnabled is true
+		expect(timerState.soundEnabled).toBe(true);
+		await expect.element(switchEl).toBeChecked();
 	});
 });
 
