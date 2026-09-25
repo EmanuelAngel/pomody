@@ -8,19 +8,21 @@ El proyecto está organizado en entregas modulares para validar la estabilidad y
 
 ## Resumen de Versiones
 
-| Versión   | Enfoque Principal                                                         | Responsable Principal   | Estado                   |
-| :-------- | :------------------------------------------------------------------------ | :---------------------- | :----------------------- |
-| **v0.1**  | Cimientos del sistema, FSM pura, UI minimalista y temas Rosé Pine         | Vortex (Tech Lead)      | **En desarrollo activo** |
-| **v0.2**  | Planificación (Mini To-Do), pausas guiadas, métricas locales y asistencia | Vortex & Fede (Trainee) | Planificado              |
-| **+v0.3** | Automatizaciones del SO, modo compacto flotante y analítica avanzada      | Equipo Pomody           | Roadmap futuro           |
+| Versión  | Enfoque Principal                                                            | Responsable Principal   | Estado                   |
+| :------- | :--------------------------------------------------------------------------- | :---------------------- | :----------------------- |
+| **v0.1** | Cimientos del sistema, FSM pura, UI minimalista, temas Rosé Pine y Tauri v2  | Vortex (Tech Lead)      | **Completado / Testing** |
+| **v0.2** | Planificación (Mini To-Do híbrido), pausas guiadas, estética y persistencia  | Vortex & Fede (Trainee) | **Próximo foco**         |
+| **v0.3** | Desktop Focus: Modo Compacto flotante (Mini-Player) y detector de dispersión | Vortex & Fede           | Planificado              |
+| **v0.4** | Analítica avanzada, métricas visuales y calidad de sesión                    | Equipo Pomody           | Roadmap futuro           |
+| **v0.5** | Ecosistema y blindaje: Discord Rich Presence y Modo No Molestar del SO       | Equipo Pomody           | Roadmap futuro           |
 
 ---
 
 ## Detalle de Hitos
 
-### v0.1 — Cimientos y MVP Base (Inmediato)
+### v0.1 — Cimientos y MVP Base (Completado / Testing)
 
-_Objetivo: Disponer de un temporizador Pomodoro autónomo, robusto, testeable y estéticamente superior._
+_Objetivo: Disponer de un temporizador Pomodoro autónomo, robusto, testeable y estéticamente superior en Web y Desktop._
 
 - [x] **Núcleo del temporizador (FSM)**: Máquina de estados desacoplada en memoria con duraciones configurables (foco, descanso corto y descanso largo).
 - [x] **Pantalla principal minimalista**: Vista reactiva a la FSM que oculta configuraciones durante el estado `Running` (modo Zen) para proteger el foco.
@@ -37,28 +39,45 @@ _Objetivo: Disponer de un temporizador Pomodoro autónomo, robusto, testeable y 
 
 ---
 
-### v0.2 — Planificación, Descansos y Asistencia al Foco (Cercano)
+### v0.2 — Planificación, Descansos y UX de Foco (Próximo foco)
 
-_Objetivo: Integrar la gestión ágil de objetivos y dinámicas de descanso saludable sin saturar la aplicación._
+_Objetivo: Integrar el flujo ágil de tareas, dinámicas de pausa saludable y progreso visual sin saturar la aplicación ni depender de APIs de bajo nivel del SO (100% paridad Web/Desktop)._
 
-- [ ] **Contador diario de pomodoros**: Visualización en UI de la cantidad de bloques de foco completados durante el día.
-- [ ] **Mini To-Do integrado**: Asignación de objetivos o tareas concretas por bloque de focus antes de arrancar.
-- [ ] **Revitalización automática**: Catálogo de actividades saludables sugeridas para los descansos (estiramientos, hidratación, respiración), evitando la dispersión pasiva.
-- [ ] **Presupuesto de sesión**: Cálculo automático de bloques disponibles y proyección del horario de finalización a partir de una meta horaria o cantidad de pomodoros.
-- [ ] **Detector de dispersión simplificado**: Sondeo ligero de metadatos de ventana activa en Windows (`IDistractionMonitor`) con diálogo interactivo y lista blanca por sesión/día.
-- [ ] **Ilustraciones progresivas**: Componente gráfico SVG que evoluciona en 4 o 5 fases discretas por bloque completado (ej. crecimiento botánico), sin animaciones continuas.
-- [ ] **Historial persistido y métricas nativas**: Almacenamiento local de sesiones completadas y gráficos de barras semanales renderizados en CSS/SVG nativo (sin dependencias externas).
+- [ ] **Mini To-Do híbrido**:
+  - _Task Pill_ interactivo y sutil en la pantalla del Timer para fijar o cambiar la tarea activa al vuelo sin salir del flujo de foco.
+  - Pestaña de navegación _Planning_ habilitada para listar tareas pendientes y gestionar la cola de objetivos.
+- [ ] **Presupuesto de sesión (Session Budget)**: Cálculo proyectado en la pestaña _Planning_ a partir de una meta de bloques o límite horario. Comportamiento informativo y flexible (notifica meta cumplida pero no bloquea el hyperfocus).
+- [ ] **Revitalización automática**: Sugerencia suave de actividades saludables bajo el temporizador al entrar en descanso (estiramientos, hidratación, respiración) con botón de rotación (_shuffle_) y toggle en ajustes.
+- [ ] **Ilustración progresiva botánica (SVG)**: Obra vectorial minimalista ubicada en los laterales (_flank_) que evoluciona en fases discretas por bloque completado. Visible en pantallas estándar/grandes, oculta en pantallas pequeñas, con switch global en Settings y configuración para Zen mode.
+- [ ] **Persistencia y repositorio desacoplado**: Puertos de dominio (`ITaskRepository`, `ISessionRepository`) con adaptador inicial en `localStorage` (cero dependencias externas, síncrono e instantáneo) y botón para purgar datos locales en Settings.
+- [ ] **Contador diario**: Indicador numérico simple de bloques completados durante la jornada.
 
 ---
 
-### +v0.3 — Automatización, Presencia y Modo Compacto (Futuro)
+### v0.3 — Desktop Power & Blindaje Activo (Planificado)
 
-_Objetivo: Automatizar integraciones con el sistema operativo y herramientas del usuario._
+_Objetivo: Maximizar el valor de la app en Windows mediante interacción nativa ligera con el sistema operativo._
 
-- [ ] **Modo Compacto / Mini-Player**: Estado de ventana reducida (~220x80px) fijable al frente (_Always on Top_ en Windows) para monitoreo persistente mientras se trabaja en otras apps.
+- [ ] **Modo Compacto / Mini-Player**: Redimensionamiento instantáneo de la ventana a formato reducido (~220x80px) con bandera nativa _Always on Top_ fijable al frente para monitorear el foco mientras se trabaja en otras aplicaciones.
+- [ ] **Detector de dispersión simplificado**: Sondeo ligero de metadatos de ventana activa en Windows (`IDistractionMonitor` vía Rust/Win32) con diálogo interactivo y lista blanca por sesión/día.
+
+---
+
+### v0.4 — Analítica Avanzada & Métricas Visuales (Roadmap futuro)
+
+_Objetivo: Transformar los datos reales acumulados de sesiones, tareas y distracciones en insights visuales accionables._
+
+- [ ] **Panel de Métricas nativo**: Desbloqueo de la pestaña _Métricas_ con gráficos de barras semanales y tendencias renderizados con CSS/SVG nativo (sin librerías externas pesadas).
+- [ ] **Calidad de sesión y correlación**: Estimación heurística de efectividad de bloques basada en cumplimiento de tareas y pausas.
+
+---
+
+### v0.5 — Ecosistema y Automatización Externa (Roadmap futuro)
+
+_Objetivo: Blindaje de interrupciones externas y sincronización con herramientas sociales/laborales._
+
 - [ ] **Blindaje de foco (No Molestar)**: Activación automática del modo concentración del sistema operativo durante bloques de trabajo.
 - [ ] **Integración de presencia (Discord RPC)**: Notificación pasiva del estado de concentración en el perfil de Discord con opción de modo privado.
-- [ ] **Analítica avanzada**: Estimación heurística de calidad de sesión/bloque basada en histórico de bloques y distracciones registradas.
 
 ---
 
