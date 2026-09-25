@@ -51,6 +51,7 @@ _Objetivo: Integrar el flujo ágil de tareas, dinámicas de pausa saludable y pr
 - [ ] **Ilustración progresiva botánica (SVG)**: Obra vectorial minimalista ubicada en los laterales (_flank_) que evoluciona en fases discretas por bloque completado. Visible en pantallas estándar/grandes, oculta en pantallas pequeñas, con switch global en Settings y configuración para Zen mode.
 - [ ] **Persistencia y repositorio desacoplado**: Puertos de dominio (`ITaskRepository`, `ISessionRepository`) con adaptador inicial en `localStorage` (cero dependencias externas, síncrono e instantáneo) y botón para purgar datos locales en Settings.
 - [ ] **Contador diario**: Indicador numérico simple de bloques completados durante la jornada.
+- [ ] **Flujo continuo y auto-avance de ciclos**: Switch configurable en el panel de Settings para transicionar e iniciar automáticamente el siguiente bloque (foco o descanso) al finalizar el intervalo actual sin requerir interacción manual.
 
 ---
 
