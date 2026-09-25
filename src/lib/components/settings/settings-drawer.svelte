@@ -54,6 +54,12 @@
 		localRounds !== null ? localRounds : timerState.roundsBeforeLongBreak
 	);
 
+	const defaultFocus = Math.round(DEFAULT_TIMER_CONFIG.focusDurationSeconds / 60);
+	const defaultShort = Math.round(DEFAULT_TIMER_CONFIG.shortBreakDurationSeconds / 60);
+	const defaultLong = Math.round(DEFAULT_TIMER_CONFIG.longBreakDurationSeconds / 60);
+	const defaultRounds = DEFAULT_TIMER_CONFIG.roundsBeforeLongBreak;
+	const resetLabel = `Reset to defaults (${defaultFocus} / ${defaultShort} / ${defaultLong} min · ${defaultRounds} rounds)`;
+
 	// Clear temporary slider overrides whenever drawer opens
 	$effect(() => {
 		if (open) {
@@ -236,7 +242,7 @@
 
 				<Button variant="outline" size="sm" onclick={handleResetDefaults} class="mt-1 w-full">
 					<RotateCcw data-icon="inline-start" />
-					Reset to defaults (25 / 5 / 15 min · 4 rounds)
+					{resetLabel}
 				</Button>
 			</div>
 

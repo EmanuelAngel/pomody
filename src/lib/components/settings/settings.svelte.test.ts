@@ -226,7 +226,7 @@ describe('SettingsDrawer (Client Browser)', () => {
 		expect(timerState.config.roundsBeforeLongBreak).toBe(4);
 	});
 
-	it('resets intervals to defaults (25 / 5 / 15 min · 4 rounds) on clicking Reset', async () => {
+	it('resets intervals and sound alerts to defaults while preserving active theme on clicking Reset', async () => {
 		const ticker = createDummyTicker(false);
 		const timerState = createTimerState(
 			{
@@ -237,7 +237,14 @@ describe('SettingsDrawer (Client Browser)', () => {
 			},
 			ticker
 		);
-		const themeState = createThemeState();
+		timerState.setSoundEnabled(false);
+		const themeState = createThemeState('dawn');
+
+		const defaultFocus = Math.round(DEFAULT_TIMER_CONFIG.focusDurationSeconds / 60);
+		const defaultShort = Math.round(DEFAULT_TIMER_CONFIG.shortBreakDurationSeconds / 60);
+		const defaultLong = Math.round(DEFAULT_TIMER_CONFIG.longBreakDurationSeconds / 60);
+		const defaultRounds = DEFAULT_TIMER_CONFIG.roundsBeforeLongBreak;
+		const expectedResetLabel = `Reset to defaults (${defaultFocus} / ${defaultShort} / ${defaultLong} min · ${defaultRounds} rounds)`;
 
 		const screen = await render(SettingsDrawer, {
 			open: true,
@@ -251,7 +258,16 @@ describe('SettingsDrawer (Client Browser)', () => {
 		await expect.element(screen.getByText('30 min', { exact: true })).toBeVisible();
 		await expect.element(screen.getByText('6 rounds', { exact: true })).toBeVisible();
 
-		const resetBtn = screen.getByRole('button', { name: /Reset to defaults/i });
+		const switchEl = screen.getByRole('switch', { name: 'Sound alerts' });
+		await expect.element(switchEl).not.toBeChecked();
+
+		const dawnRadio = screen.getByRole('radio', { name: 'Dawn theme' });
+		await expect.element(dawnRadio).toHaveAttribute('data-state', 'on');
+		expect(themeState.current).toBe('dawn');
+		expect(document.documentElement.dataset.theme).toBe('dawn');
+
+		const resetBtn = screen.getByRole('button', { name: expectedResetLabel });
+		await expect.element(resetBtn).toBeVisible();
 		await resetBtn.click();
 
 		expect(timerState.config.focusDurationSeconds).toBe(DEFAULT_TIMER_CONFIG.focusDurationSeconds);
@@ -264,11 +280,20 @@ describe('SettingsDrawer (Client Browser)', () => {
 		expect(timerState.config.roundsBeforeLongBreak).toBe(
 			DEFAULT_TIMER_CONFIG.roundsBeforeLongBreak
 		);
+		expect(timerState.soundEnabled).toBe(true);
 
-		await expect.element(screen.getByText('25 min', { exact: true })).toBeVisible();
-		await expect.element(screen.getByText('5 min', { exact: true })).toBeVisible();
-		await expect.element(screen.getByText('15 min', { exact: true })).toBeVisible();
-		await expect.element(screen.getByText('4 rounds', { exact: true })).toBeVisible();
+		await expect.element(screen.getByText(`${defaultFocus} min`, { exact: true })).toBeVisible();
+		await expect.element(screen.getByText(`${defaultShort} min`, { exact: true })).toBeVisible();
+		await expect.element(screen.getByText(`${defaultLong} min`, { exact: true })).toBeVisible();
+		await expect
+			.element(screen.getByText(`${defaultRounds} rounds`, { exact: true }))
+			.toBeVisible();
+		await expect.element(switchEl).toBeChecked();
+
+		// Active theme is preserved
+		expect(themeState.current).toBe('dawn');
+		expect(document.documentElement.dataset.theme).toBe('dawn');
+		await expect.element(dawnRadio).toHaveAttribute('data-state', 'on');
 	});
 
 	it('switches themes across Dark, Dawn, and OLED with DOM synchronization', async () => {
