@@ -2,8 +2,8 @@
 
 - **Issue**: #18
 - **Branch**: `feat/desktop-tauri`
-- **Status**: In Progress
-- **Delivery Strategy**: `single-pr` (Forecast: ~250 lines across 4 atomic work-unit commits)
+- **Status**: Completed
+- **Delivery Strategy**: `single-pr` (Total authored changes: ~300 lines across 4 atomic work-unit commits)
 - **TDD Mode**: Standard Unit & Quality Harness (`pnpm check`, `pnpm lint`, `pnpm test`, `pnpm build`)
 
 ## Objective
@@ -17,9 +17,9 @@ Pomody is designed as a minimalist focus timer for both Web (Cloudflare Pages) a
 ## Architecture Boundaries
 
 - **Desktop Layer (`src-tauri/`)**:
-  - `src-tauri/Cargo.toml`: Tauri v2 Rust dependencies.
+  - `src-tauri/Cargo.toml`: Tauri v2 Rust dependencies (`pomody-desktop`, `pomody_lib`).
   - `src-tauri/tauri.conf.json`: Window dimensions (800x650 default, min 480x500), identifier `com.pomody.app`, frontendDist `../build`, devUrl `http://localhost:5173`.
-  - `src-tauri/capabilities/default.json`: Core permissions and window capability.
+  - `src-tauri/capabilities/default.json`: Core permissions and window capability for `main`.
   - `src-tauri/src/main.rs` & `src-tauri/src/lib.rs`: Minimal entrypoint running Tauri application.
   - `src-tauri/build.rs`: Standard Tauri build script.
 - **Root Layer (`package.json`, `.gitignore`)**:
@@ -28,11 +28,11 @@ Pomody is designed as a minimalist focus timer for both Web (Cloudflare Pages) a
 - **CI/CD Layer (`.github/workflows/desktop-ci.yml`)**:
   - Dedicated Windows build runner generating NSIS installer and binary artifacts on `push` to `main`, changes in `src-tauri/**`, or `workflow_dispatch`.
 - **Domain & UI Isolation**:
-  - 100% decoupling: no direct Tauri dependencies inside `src/lib/domain/` or UI components.
+  - 100% decoupling: zero `@tauri-apps/*` imports inside `src/lib/domain/` or UI components.
 
 ## Implementation Tasks
 
-### [ ] TASK-1: Dependencies, scripts, and gitignore setup
+### [x] TASK-1: Dependencies, scripts, and gitignore setup
 
 - **Route**: Direct inline (Mechanical config: `package.json`, `.gitignore`)
 - **Target Files**:
@@ -42,11 +42,11 @@ Pomody is designed as a minimalist focus timer for both Web (Cloudflare Pages) a
   - `@tauri-apps/cli` added to `devDependencies`.
   - Scripts `tauri`, `tauri:dev`, and `tauri:build` added to `package.json`.
   - `src-tauri/target/` added to `.gitignore`.
-  - `pnpm install` succeeds.
-- **Commit**: Pending
-- **Evidence / Status**: Pending
+  - `pnpm install` succeeds and lockfile is updated.
+- **Commit**: `e3dd95d` (`build(desktop): add @tauri-apps/cli and desktop scripts`)
+- **Evidence / Status**: Completed. `@tauri-apps/cli` v2.11.5 installed, lockfile updated, `pnpm check` found 0 errors.
 
-### [ ] TASK-2: Scaffold Tauri v2 container and window configuration
+### [x] TASK-2: Scaffold Tauri v2 container and window configuration
 
 - **Route**: Delegated direct (Writer trigger: 6+ non-trivial files in `src-tauri/`)
 - **Target Files**:
@@ -63,12 +63,12 @@ Pomody is designed as a minimalist focus timer for both Web (Cloudflare Pages) a
   - Standard native OS window configured with default `800x650`, minimum `480x500`, native decorations enabled.
   - Tauri v2 permissions/capabilities configured for core window management.
   - Default application icons provided for bundling.
-- **Commit**: Pending
-- **Evidence / Status**: Pending
+- **Commit**: `ea4d477` (`feat(desktop): scaffold Tauri v2 container and window configuration`)
+- **Evidence / Status**: Completed by delegated specialist subagent. Window bounds, identifier, NSIS target configured, icons generated, 172 tests passing, 0 lint/check errors.
 
-### [ ] TASK-3: Configure Windows Desktop Executable CI Workflow
+### [x] TASK-3: Configure Windows Desktop Executable CI Workflow
 
-- **Route**: Delegated direct (CI workflow: `.github/workflows/desktop-ci.yml`)
+- **Route**: Direct inline (CI workflow: `.github/workflows/desktop-ci.yml`)
 - **Target Files**:
   - `.github/workflows/desktop-ci.yml`
 - **Acceptance Criteria**:
@@ -76,16 +76,17 @@ Pomody is designed as a minimalist focus timer for both Web (Cloudflare Pages) a
   - Runs on `windows-latest` with Node.js 22 LTS, pnpm, and Rust stable toolchain.
   - Builds the static SPA and compiles the desktop app with NSIS installer.
   - Uploads the resulting `.exe` installer and bundle as a GitHub Actions workflow artifact.
-- **Commit**: Pending
-- **Evidence / Status**: Pending
+- **Commit**: `9b52edf` (`ci(desktop): add GitHub Actions workflow for Windows desktop executable`)
+- **Evidence / Status**: Completed. `.github/workflows/desktop-ci.yml` created targeting `windows-latest` with Rust cache, frozen pnpm install, SPA build, and artifact upload.
 
-### [ ] TASK-4: Update roadmap and verify full project quality harness
+### [x] TASK-4: Update roadmap and verify full project quality harness
 
 - **Route**: Direct inline (1 docs file + verification commands)
 - **Target Files**:
   - `docs/roadmap.md`
+  - `odd/tasks/desktop-tauri.md`
 - **Acceptance Criteria**:
   - `docs/roadmap.md` updated marking Tauri v2 scaffolding complete for v0.1.
   - `pnpm check`, `pnpm lint`, `pnpm test`, and `pnpm build` pass with 0 errors.
 - **Commit**: Pending
-- **Evidence / Status**: Pending
+- **Evidence / Status**: Completed. Full test and quality harness verified with 0 errors.
