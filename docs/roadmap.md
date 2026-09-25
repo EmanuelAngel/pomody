@@ -24,15 +24,16 @@ _Objetivo: Disponer de un temporizador Pomodoro autónomo, robusto, testeable y 
 
 - [x] **Núcleo del temporizador (FSM)**: Máquina de estados desacoplada en memoria con duraciones configurables (foco, descanso corto y descanso largo).
 - [x] **Pantalla principal minimalista**: Vista reactiva a la FSM que oculta configuraciones durante el estado `Running` (modo Zen) para proteger el foco.
-- [ ] **Drawer de ajustes desacoplado**: Panel lateral para configuración de intervalos sin contaminar la vista principal.
-- [ ] **Shell de navegación con Tabs superiores**: Barra de navegación superior central que incluye la vista activa y placeholders para próximas secciones (_Planning_ y _Métricas_) rotuladas como `(en v0.X)`.
-- [ ] **Sistema de diseño Rosé Pine**: Implementación de tres paletas de color con variables/tokens CSS:
+- [x] **Drawer de ajustes desacoplado**: Panel lateral para configuración de intervalos sin contaminar la vista principal.
+- [x] **Shell de navegación con Tabs superiores**: Barra de navegación superior central que incluye la vista activa y placeholders para próximas secciones (_Planning_ y _Métricas_) rotuladas como `(en v0.X)`.
+- [x] **Sistema de diseño Rosé Pine**: Implementación de tres paletas de color con variables/tokens CSS:
   1. _Dark_: Fondo oscuro neutral.
   2. _High-Contrast_: Fondo negro puro OLED.
   3. _Light_: Rosé Pine Dawn.
-- [ ] **Alertas sonoras de transición**: Notificaciones de audio al completar bloques de trabajo y descanso.
-- [ ] **Métricas base en memoria**: Emisión de _Domain Events_ (`SessionStarted`, `BlockCompleted`) y contador diario visible en UI.
-- [ ] **Compatibilidad de despliegue**: Arquitectura base lista para Web y Windows.
+- [x] **Alertas sonoras de transición**: Notificaciones de audio al completar bloques de trabajo y descanso.
+- [x] **Emisión de eventos de dominio**: Eventos desacoplados en memoria (`BlockCompleted`) listos para extensiones y métricas.
+- [x] **Despliegue Web**: Despliegue en producción completado y operativo en Cloudflare Pages.
+- [ ] **Despliegue Desktop (Windows)**: Scaffold de Tauri v2 con Rust y generación de binario ejecutable (`.exe` / instalador).
 
 ---
 
@@ -40,6 +41,7 @@ _Objetivo: Disponer de un temporizador Pomodoro autónomo, robusto, testeable y 
 
 _Objetivo: Integrar la gestión ágil de objetivos y dinámicas de descanso saludable sin saturar la aplicación._
 
+- [ ] **Contador diario de pomodoros**: Visualización en UI de la cantidad de bloques de foco completados durante el día.
 - [ ] **Mini To-Do integrado**: Asignación de objetivos o tareas concretas por bloque de focus antes de arrancar.
 - [ ] **Revitalización automática**: Catálogo de actividades saludables sugeridas para los descansos (estiramientos, hidratación, respiración), evitando la dispersión pasiva.
 - [ ] **Presupuesto de sesión**: Cálculo automático de bloques disponibles y proyección del horario de finalización a partir de una meta horaria o cantidad de pomodoros.
