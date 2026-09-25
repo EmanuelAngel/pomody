@@ -1,5 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { DEFAULT_TIMER_CONFIG, InvalidTimerConfigError, TimerFSM } from './timer-fsm';
+import {
+	DEFAULT_TIMER_CONFIG,
+	InvalidTimerConfigError,
+	TimerFSM,
+	type BlockCompletedEvent,
+	type DomainEvent
+} from './timer-fsm';
 
 describe('Phase 1: Types, Errors, and Config Validation', () => {
 	describe('DEFAULT_TIMER_CONFIG', () => {
@@ -816,5 +822,217 @@ describe('TimerFSM Configuration Updates (updateConfig)', () => {
 		expect(() => fsm.updateConfig({ roundsBeforeLongBreak: 12 })).not.toThrow();
 		expect(fsm.config.roundsBeforeLongBreak).toBe(12);
 		expect(notified).toBe(true);
+	});
+});
+
+describe('Phase 4: Domain Events & Event Subscription', () => {
+	it('should emit BlockCompletedEvent when focus finishes with mode="focus", correct round, totalRoundsCompleted, and completedAt', () => {
+		const fsm = new TimerFSM();
+		const events: DomainEvent[] = [];
+		const startTime = new Date();
+
+		fsm.onEvent((event) => {
+			events.push(event);
+		});
+
+		fsm.start();
+		fsm.tick(1500000);
+
+		expect(fsm.state).toBe('completed');
+		expect(events).toHaveLength(1);
+
+		const event = events[0] as BlockCompletedEvent;
+		expect(event.type).toBe('block-completed');
+		expect(event.mode).toBe('focus');
+		expect(event.round).toBe(1);
+		expect(event.totalRoundsCompleted).toBe(1);
+		expect(event.completedAt).toBeInstanceOf(Date);
+		expect(event.completedAt.getTime()).toBeGreaterThanOrEqual(startTime.getTime());
+		expect(event.completedAt.getTime()).toBeLessThanOrEqual(Date.now());
+	});
+
+	it('should emit BlockCompletedEvent when shortBreak and longBreak finish', () => {
+		const fsm = new TimerFSM({
+			focusDurationSeconds: 10,
+			shortBreakDurationSeconds: 5,
+			longBreakDurationSeconds: 15,
+			roundsBeforeLongBreak: 2
+		});
+		const events: DomainEvent[] = [];
+
+		fsm.onEvent((event) => {
+			events.push(event);
+		});
+
+		// Round 1 Focus
+		fsm.start();
+		fsm.tick(10000);
+		expect(events).toHaveLength(1);
+		expect(events[0]).toMatchObject({
+			type: 'block-completed',
+			mode: 'focus',
+			round: 1,
+			totalRoundsCompleted: 1
+		});
+
+		// Round 1 Short Break
+		fsm.start();
+		expect(fsm.mode).toBe('shortBreak');
+		fsm.tick(5000);
+		expect(events).toHaveLength(2);
+		expect(events[1]).toMatchObject({
+			type: 'block-completed',
+			mode: 'shortBreak',
+			round: 1,
+			totalRoundsCompleted: 1
+		});
+
+		// Round 2 Focus
+		fsm.start();
+		expect(fsm.mode).toBe('focus');
+		expect(fsm.currentRound).toBe(2);
+		fsm.tick(10000);
+		expect(events).toHaveLength(3);
+		expect(events[2]).toMatchObject({
+			type: 'block-completed',
+			mode: 'focus',
+			round: 2,
+			totalRoundsCompleted: 2
+		});
+
+		// Round 2 Long Break
+		fsm.start();
+		expect(fsm.mode).toBe('longBreak');
+		fsm.tick(15000);
+		expect(events).toHaveLength(4);
+		expect(events[3]).toMatchObject({
+			type: 'block-completed',
+			mode: 'longBreak',
+			round: 2,
+			totalRoundsCompleted: 2
+		});
+		expect(events[3].completedAt).toBeInstanceOf(Date);
+	});
+
+	it('should NOT emit BlockCompletedEvent on intermediate ticks (when remainingMs > 0)', () => {
+		const fsm = new TimerFSM();
+		const events: DomainEvent[] = [];
+
+		fsm.onEvent((event) => {
+			events.push(event);
+		});
+
+		fsm.start();
+		fsm.tick(500000);
+		expect(fsm.remainingMs).toBe(1000000);
+		expect(events).toHaveLength(0);
+
+		fsm.tick(500000);
+		expect(fsm.remainingMs).toBe(500000);
+		expect(events).toHaveLength(0);
+
+		fsm.tick(499999);
+		expect(fsm.remainingMs).toBe(1);
+		expect(events).toHaveLength(0);
+
+		fsm.tick(1);
+		expect(fsm.remainingMs).toBe(0);
+		expect(events).toHaveLength(1);
+	});
+
+	it('should NOT emit BlockCompletedEvent on skip() or reset()', () => {
+		const fsm = new TimerFSM();
+		const events: DomainEvent[] = [];
+
+		fsm.onEvent((event) => {
+			events.push(event);
+		});
+
+		fsm.start();
+		fsm.tick(500000);
+		fsm.reset();
+
+		expect(fsm.state).toBe('idle');
+		expect(events).toHaveLength(0);
+
+		fsm.skip();
+		expect(fsm.mode).toBe('shortBreak');
+		expect(events).toHaveLength(0);
+
+		fsm.start();
+		fsm.skip();
+		expect(fsm.mode).toBe('focus');
+		expect(events).toHaveLength(0);
+	});
+
+	it('should return unsubscribe function which removes listener', () => {
+		const fsm = new TimerFSM();
+		const events1: DomainEvent[] = [];
+		const events2: DomainEvent[] = [];
+
+		const unsub1 = fsm.onEvent((event) => {
+			events1.push(event);
+		});
+		fsm.onEvent((event) => {
+			events2.push(event);
+		});
+
+		fsm.start();
+		fsm.tick(1500000);
+
+		expect(events1).toHaveLength(1);
+		expect(events2).toHaveLength(1);
+
+		unsub1();
+
+		// Start shortBreak and complete it
+		fsm.start();
+		fsm.tick(300000);
+
+		expect(events1).toHaveLength(1); // unsubscribed listener not called again
+		expect(events2).toHaveLength(2); // still subscribed listener called
+	});
+
+	it('should safely handle errors thrown by an event subscriber without breaking other subscribers or timer completion', () => {
+		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		const fsm = new TimerFSM();
+		let secondHandlerCalled = false;
+
+		fsm.onEvent(() => {
+			throw new Error('Exploding event subscriber');
+		});
+
+		fsm.onEvent(() => {
+			secondHandlerCalled = true;
+		});
+
+		fsm.start();
+		expect(() => fsm.tick(1500000)).not.toThrow();
+
+		expect(fsm.state).toBe('completed');
+		expect(secondHandlerCalled).toBe(true);
+		expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+
+		consoleSpy.mockRestore();
+	});
+
+	it('should emit domain events before notifying snapshot subscribers', () => {
+		const fsm = new TimerFSM();
+		const executionOrder: string[] = [];
+
+		fsm.subscribe((snapshot) => {
+			if (snapshot.state === 'completed') {
+				executionOrder.push('snapshot-subscriber');
+			}
+		});
+
+		fsm.onEvent(() => {
+			executionOrder.push('domain-event');
+		});
+
+		fsm.start();
+		fsm.tick(1500000);
+
+		expect(executionOrder).toEqual(['domain-event', 'snapshot-subscriber']);
 	});
 });
