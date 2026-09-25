@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ThemeState, createThemeState, themeState, THEMES } from './theme.svelte';
+import {
+	DEFAULT_USER_SETTINGS,
+	type ISettingsStorage,
+	type UserSettings
+} from '../domain/ports/settings-storage.port';
 
 describe('ThemeState', () => {
 	describe('Constants & Initial State', () => {
@@ -87,6 +92,54 @@ describe('ThemeState', () => {
 			const theme = createThemeState();
 			expect(() => theme.setTheme('oled')).not.toThrow();
 			expect(theme.current).toBe('oled');
+		});
+	});
+
+	describe('ISettingsStorage persistence', () => {
+		let mockStorage: ISettingsStorage;
+
+		beforeEach(() => {
+			mockStorage = {
+				loadSettings: vi.fn((): UserSettings => ({
+					...DEFAULT_USER_SETTINGS,
+					theme: 'dawn'
+				})),
+				saveSettings: vi.fn(),
+				resetSettings: vi.fn()
+			};
+		});
+
+		it('should load saved theme from storage on initialization when initialTheme is omitted', () => {
+			const theme = createThemeState(undefined, mockStorage);
+			expect(theme.current).toBe('dawn');
+			expect(mockStorage.loadSettings).toHaveBeenCalledTimes(1);
+		});
+
+		it('should give explicit initialTheme precedence over storage if both provided', () => {
+			const theme = createThemeState('oled', mockStorage);
+			expect(theme.current).toBe('oled');
+		});
+
+		it('should call storage.saveSettings with updated theme when setTheme is called', () => {
+			const theme = createThemeState(undefined, mockStorage);
+			expect(theme.current).toBe('dawn');
+
+			theme.setTheme('oled');
+			expect(theme.current).toBe('oled');
+			expect(mockStorage.saveSettings).toHaveBeenCalledTimes(1);
+			expect(mockStorage.saveSettings).toHaveBeenCalledWith({ theme: 'oled' });
+
+			theme.setTheme('dark');
+			expect(theme.current).toBe('dark');
+			expect(mockStorage.saveSettings).toHaveBeenCalledTimes(2);
+			expect(mockStorage.saveSettings).toHaveBeenLastCalledWith({ theme: 'dark' });
+		});
+
+		it('should safely operate without storage when not provided', () => {
+			const theme = createThemeState();
+			expect(theme.current).toBe('dark');
+			expect(() => theme.setTheme('dawn')).not.toThrow();
+			expect(theme.current).toBe('dawn');
 		});
 	});
 });

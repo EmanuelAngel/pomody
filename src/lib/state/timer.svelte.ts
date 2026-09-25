@@ -11,6 +11,8 @@ import { WebWorkerTimerTicker } from '../adapters/worker/timer-worker';
 import type { ITimerTicker } from '../domain/ports/timer-ticker.port';
 import type { IAudioNotifier } from '../domain/ports/IAudioNotifier';
 import { WebAudioNotifier } from '../adapters/audio/web-audio-notifier';
+import type { ISettingsStorage } from '../domain/ports/settings-storage.port';
+import { LocalSettingsStorage } from '../adapters/storage/local-settings-storage';
 
 /**
  * Formats a duration in milliseconds to MM:SS string representation.
@@ -32,6 +34,7 @@ export class TimerState {
 	private readonly fsm: TimerFSM;
 	private readonly ticker: ITimerTicker;
 	private readonly audioNotifier: IAudioNotifier;
+	private readonly storage?: ISettingsStorage;
 	private readonly unsubscribe: Unsubscribe;
 	private readonly unsubscribeEvents: Unsubscribe;
 
@@ -60,10 +63,12 @@ export class TimerState {
 
 	public setSoundEnabled(enabled: boolean): void {
 		this._soundEnabled = enabled;
+		this.storage?.saveSettings({ soundEnabled: this._soundEnabled });
 	}
 
 	public toggleSound(): void {
 		this._soundEnabled = !this._soundEnabled;
+		this.storage?.saveSettings({ soundEnabled: this._soundEnabled });
 	}
 
 	public get snapshot(): TimerSnapshot {
@@ -113,9 +118,18 @@ export class TimerState {
 	constructor(
 		config?: Partial<TimerConfig>,
 		ticker?: ITimerTicker,
-		audioNotifier?: IAudioNotifier
+		audioNotifier?: IAudioNotifier,
+		storage?: ISettingsStorage
 	) {
-		this.fsm = new TimerFSM(config);
+		this.storage = storage;
+		const storedSettings = this.storage?.loadSettings();
+		const initialConfig = storedSettings ? { ...storedSettings.timer, ...config } : config;
+
+		if (storedSettings !== undefined) {
+			this._soundEnabled = storedSettings.soundEnabled;
+		}
+
+		this.fsm = new TimerFSM(initialConfig);
 		this.ticker = ticker ?? new WebWorkerTimerTicker();
 		this.audioNotifier = audioNotifier ?? new WebAudioNotifier();
 		this._snapshot = this.fsm.snapshot;
@@ -183,6 +197,7 @@ export class TimerState {
 	 */
 	public updateConfig(config: Partial<TimerConfig>): void {
 		this.fsm.updateConfig(config);
+		this.storage?.saveSettings({ timer: this.fsm.config });
 	}
 
 	/**
@@ -209,12 +224,18 @@ export class TimerState {
 export function createTimerState(
 	config?: Partial<TimerConfig>,
 	ticker?: ITimerTicker,
-	audioNotifier?: IAudioNotifier
+	audioNotifier?: IAudioNotifier,
+	storage?: ISettingsStorage
 ): TimerState {
-	return new TimerState(config, ticker, audioNotifier);
+	return new TimerState(config, ticker, audioNotifier, storage);
 }
 
 /**
  * Global singleton reactive timer state instance for the application.
  */
-export const timerState = new TimerState();
+export const timerState = new TimerState(
+	undefined,
+	undefined,
+	undefined,
+	new LocalSettingsStorage()
+);

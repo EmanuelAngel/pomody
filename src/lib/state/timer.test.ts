@@ -3,6 +3,11 @@ import { TimerState, createTimerState, formatTime, timerState } from './timer.sv
 import { TimerFSM } from '../domain/timer/timer-fsm';
 import type { ITimerTicker, TickCallback } from '../domain/ports/timer-ticker.port';
 import type { IAudioNotifier } from '../domain/ports/IAudioNotifier';
+import {
+	DEFAULT_USER_SETTINGS,
+	type ISettingsStorage,
+	type UserSettings
+} from '../domain/ports/settings-storage.port';
 
 describe('formatTime', () => {
 	it('should format full standard Pomodoro duration as 25:00', () => {
@@ -455,6 +460,125 @@ describe('TimerState Composition Root', () => {
 			expect(unsubscribeEventsMock).toHaveBeenCalledTimes(1);
 
 			onEventSpy.mockRestore();
+		});
+	});
+
+	describe('ISettingsStorage persistence', () => {
+		let mockStorage: ISettingsStorage;
+
+		beforeEach(() => {
+			mockStorage = {
+				loadSettings: vi.fn((): UserSettings => ({
+					...DEFAULT_USER_SETTINGS,
+					timer: {
+						focusDurationSeconds: 1200,
+						shortBreakDurationSeconds: 240,
+						longBreakDurationSeconds: 600,
+						roundsBeforeLongBreak: 3
+					},
+					soundEnabled: false
+				})),
+				saveSettings: vi.fn(),
+				resetSettings: vi.fn()
+			};
+		});
+
+		it('should load custom timer intervals and soundEnabled: false on initialization with storage', () => {
+			const timer = createTimerState(undefined, mockTicker, undefined, mockStorage);
+
+			expect(mockStorage.loadSettings).toHaveBeenCalledTimes(1);
+			expect(timer.config).toEqual({
+				focusDurationSeconds: 1200,
+				shortBreakDurationSeconds: 240,
+				longBreakDurationSeconds: 600,
+				roundsBeforeLongBreak: 3
+			});
+			expect(timer.remainingMs).toBe(1200000);
+			expect(timer.durationMs).toBe(1200000);
+			expect(timer.formattedTime).toBe('20:00');
+			expect(timer.soundEnabled).toBe(false);
+
+			timer.destroy();
+		});
+
+		it('should allow explicit config parameter to merge over storage values', () => {
+			const timer = createTimerState(
+				{ focusDurationSeconds: 1800 },
+				mockTicker,
+				undefined,
+				mockStorage
+			);
+
+			expect(timer.config).toEqual({
+				focusDurationSeconds: 1800,
+				shortBreakDurationSeconds: 240,
+				longBreakDurationSeconds: 600,
+				roundsBeforeLongBreak: 3
+			});
+			expect(timer.remainingMs).toBe(1800000);
+			expect(timer.soundEnabled).toBe(false);
+
+			timer.destroy();
+		});
+
+		it('should call storage.saveSettings with updated timer when updateConfig is called', () => {
+			const timer = createTimerState(undefined, mockTicker, undefined, mockStorage);
+
+			timer.updateConfig({ focusDurationSeconds: 1500 });
+
+			expect(mockStorage.saveSettings).toHaveBeenCalledTimes(1);
+			expect(mockStorage.saveSettings).toHaveBeenCalledWith({
+				timer: {
+					focusDurationSeconds: 1500,
+					shortBreakDurationSeconds: 240,
+					longBreakDurationSeconds: 600,
+					roundsBeforeLongBreak: 3
+				}
+			});
+
+			timer.destroy();
+		});
+
+		it('should call storage.saveSettings with updated soundEnabled when setSoundEnabled is called', () => {
+			const timer = createTimerState(undefined, mockTicker, undefined, mockStorage);
+			expect(timer.soundEnabled).toBe(false);
+
+			timer.setSoundEnabled(true);
+			expect(timer.soundEnabled).toBe(true);
+			expect(mockStorage.saveSettings).toHaveBeenCalledTimes(1);
+			expect(mockStorage.saveSettings).toHaveBeenCalledWith({ soundEnabled: true });
+
+			timer.setSoundEnabled(false);
+			expect(timer.soundEnabled).toBe(false);
+			expect(mockStorage.saveSettings).toHaveBeenCalledTimes(2);
+			expect(mockStorage.saveSettings).toHaveBeenLastCalledWith({ soundEnabled: false });
+
+			timer.destroy();
+		});
+
+		it('should call storage.saveSettings with toggled soundEnabled when toggleSound is called', () => {
+			const timer = createTimerState(undefined, mockTicker, undefined, mockStorage);
+			expect(timer.soundEnabled).toBe(false);
+
+			timer.toggleSound();
+			expect(timer.soundEnabled).toBe(true);
+			expect(mockStorage.saveSettings).toHaveBeenCalledTimes(1);
+			expect(mockStorage.saveSettings).toHaveBeenCalledWith({ soundEnabled: true });
+
+			timer.toggleSound();
+			expect(timer.soundEnabled).toBe(false);
+			expect(mockStorage.saveSettings).toHaveBeenCalledTimes(2);
+			expect(mockStorage.saveSettings).toHaveBeenLastCalledWith({ soundEnabled: false });
+
+			timer.destroy();
+		});
+
+		it('should safely operate without throwing when storage is undefined', () => {
+			const timer = createTimerState(undefined, mockTicker);
+			expect(() => timer.updateConfig({ focusDurationSeconds: 1800 })).not.toThrow();
+			expect(() => timer.setSoundEnabled(false)).not.toThrow();
+			expect(() => timer.toggleSound()).not.toThrow();
+			timer.destroy();
 		});
 	});
 });
