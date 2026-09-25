@@ -61,6 +61,7 @@ _Objetivo: Maximizar el valor de la app en Windows mediante interacción nativa 
 
 - [ ] **Modo Compacto / Mini-Player**: Redimensionamiento instantáneo de la ventana a formato reducido (~220x80px) con bandera nativa _Always on Top_ fijable al frente para monitorear el foco mientras se trabaja en otras aplicaciones.
 - [ ] **Detector de dispersión simplificado**: Sondeo ligero de metadatos de ventana activa en Windows (`IDistractionMonitor` vía Rust/Win32) con diálogo interactivo y lista blanca por sesión/día.
+- [ ] **Integración con System Tray (Bandeja del sistema)**: Minimización o cierre de ventana interceptados en Windows para ocultar a la bandeja en segundo plano (Tauri v2 tray icon con menú contextual para restaurar o finalizar), permitiendo que la sesión continúe sin saturar la barra de tareas.
 
 ---
 
