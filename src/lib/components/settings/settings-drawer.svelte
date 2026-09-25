@@ -5,6 +5,7 @@
 	import { Slider } from '$lib/components/ui/slider';
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
+	import { Switch } from '$lib/components/ui/switch';
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
@@ -102,6 +103,7 @@
 			longBreakDurationSeconds: DEFAULT_TIMER_CONFIG.longBreakDurationSeconds,
 			roundsBeforeLongBreak: DEFAULT_TIMER_CONFIG.roundsBeforeLongBreak
 		});
+		timerState.setSoundEnabled(true);
 	}
 
 	let selectedTheme = $derived(themeState.current);
@@ -295,6 +297,34 @@
 						<span class="text-xs font-medium">OLED</span>
 					</ToggleGroup.Item>
 				</ToggleGroup.Root>
+			</div>
+
+			<Separator />
+
+			<!-- Section: Sound Alerts -->
+			<div class="flex flex-col gap-3">
+				<div>
+					<h3 class="text-sm font-semibold tracking-wide text-foreground">Sound</h3>
+					<p class="mt-0.5 text-xs text-muted-foreground">
+						Enable or mute audio transition alerts.
+					</p>
+				</div>
+
+				<div
+					class="flex items-center justify-between rounded-lg border border-border p-3.5 shadow-xs"
+				>
+					<div class="flex flex-col gap-0.5">
+						<span class="text-xs font-medium text-foreground">Sound alerts</span>
+						<span class="text-xs text-muted-foreground"
+							>Play soothing chimes on block transitions</span
+						>
+					</div>
+					<Switch
+						checked={timerState.soundEnabled}
+						onCheckedChange={(checked) => timerState.setSoundEnabled(checked)}
+						aria-label="Sound alerts"
+					/>
+				</div>
 			</div>
 		</div>
 	</Sheet.Content>

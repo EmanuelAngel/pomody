@@ -9,6 +9,8 @@ import {
 } from '../domain/timer/timer-fsm';
 import { WebWorkerTimerTicker } from '../adapters/worker/timer-worker';
 import type { ITimerTicker } from '../domain/ports/timer-ticker.port';
+import type { IAudioNotifier } from '../domain/ports/IAudioNotifier';
+import { WebAudioNotifier } from '../adapters/audio/web-audio-notifier';
 
 /**
  * Formats a duration in milliseconds to MM:SS string representation.
@@ -29,7 +31,11 @@ export function formatTime(remainingMs: number): string {
 export class TimerState {
 	private readonly fsm: TimerFSM;
 	private readonly ticker: ITimerTicker;
+	private readonly audioNotifier: IAudioNotifier;
 	private readonly unsubscribe: Unsubscribe;
+	private readonly unsubscribeEvents: Unsubscribe;
+
+	private _soundEnabled = $state<boolean>(true);
 
 	private _snapshot = $state<TimerSnapshot>({
 		state: 'idle',
@@ -47,6 +53,18 @@ export class TimerState {
 		formatTime(this._snapshot.remainingMs)
 	);
 	public readonly formattedTime = $derived.by(() => this.formattedRemainingTime);
+
+	public get soundEnabled(): boolean {
+		return this._soundEnabled;
+	}
+
+	public setSoundEnabled(enabled: boolean): void {
+		this._soundEnabled = enabled;
+	}
+
+	public toggleSound(): void {
+		this._soundEnabled = !this._soundEnabled;
+	}
 
 	public get snapshot(): TimerSnapshot {
 		return this._snapshot;
@@ -92,9 +110,14 @@ export class TimerState {
 		return this._config.roundsBeforeLongBreak;
 	}
 
-	constructor(config?: Partial<TimerConfig>, ticker?: ITimerTicker) {
+	constructor(
+		config?: Partial<TimerConfig>,
+		ticker?: ITimerTicker,
+		audioNotifier?: IAudioNotifier
+	) {
 		this.fsm = new TimerFSM(config);
 		this.ticker = ticker ?? new WebWorkerTimerTicker();
+		this.audioNotifier = audioNotifier ?? new WebAudioNotifier();
 		this._snapshot = this.fsm.snapshot;
 		this._config = this.fsm.config;
 
@@ -105,12 +128,19 @@ export class TimerState {
 				this.ticker.stop();
 			}
 		});
+
+		this.unsubscribeEvents = this.fsm.onEvent((event) => {
+			if (event.type === 'block-completed' && this._soundEnabled) {
+				void this.audioNotifier.notifyBlockCompleted(event.mode);
+			}
+		});
 	}
 
 	/**
 	 * Starts or advances the timer.
 	 */
 	public start(): void {
+		void this.audioNotifier.unlock();
 		this.fsm.start();
 		if (this.fsm.state === 'running' && !this.ticker.isRunning) {
 			this.ticker.start((deltaMs) => {
@@ -131,6 +161,7 @@ export class TimerState {
 	 * Resumes a paused timer and restarts ticker.
 	 */
 	public resume(): void {
+		void this.audioNotifier.unlock();
 		this.fsm.resume();
 		if (this.fsm.state === 'running' && !this.ticker.isRunning) {
 			this.ticker.start((deltaMs) => {
@@ -167,6 +198,7 @@ export class TimerState {
 	 */
 	public destroy(): void {
 		this.unsubscribe();
+		this.unsubscribeEvents();
 		this.ticker.destroy();
 	}
 }
@@ -174,8 +206,12 @@ export class TimerState {
 /**
  * Factory function to create isolated TimerState instances (useful for testing or sub-contexts).
  */
-export function createTimerState(config?: Partial<TimerConfig>, ticker?: ITimerTicker): TimerState {
-	return new TimerState(config, ticker);
+export function createTimerState(
+	config?: Partial<TimerConfig>,
+	ticker?: ITimerTicker,
+	audioNotifier?: IAudioNotifier
+): TimerState {
+	return new TimerState(config, ticker, audioNotifier);
 }
 
 /**

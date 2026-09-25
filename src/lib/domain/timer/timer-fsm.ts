@@ -1,3 +1,6 @@
+import type { DomainEvent, BlockCompletedEvent } from '../events/block-completed.event';
+
+export type { DomainEvent, BlockCompletedEvent };
 export type TimerState = 'idle' | 'running' | 'paused' | 'completed';
 export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
@@ -107,6 +110,7 @@ export class TimerFSM {
 	private _durationMs: number;
 	private _remainingMs: number;
 	private readonly _subscribers: Set<TimerSubscriber> = new Set();
+	private readonly _eventSubscribers: Set<(event: DomainEvent) => void> = new Set();
 
 	constructor(config?: Partial<TimerConfig>) {
 		const merged: TimerConfig = {
@@ -207,6 +211,13 @@ export class TimerFSM {
 		};
 	}
 
+	public onEvent(subscriber: (event: DomainEvent) => void): Unsubscribe {
+		this._eventSubscribers.add(subscriber);
+		return () => {
+			this._eventSubscribers.delete(subscriber);
+		};
+	}
+
 	public start(): void {
 		if (this._state === 'idle') {
 			this._state = 'running';
@@ -274,6 +285,13 @@ export class TimerFSM {
 			if (this._mode === 'focus') {
 				this._totalRoundsCompleted += 1;
 			}
+			this.emitEvent({
+				type: 'block-completed',
+				mode: this._mode,
+				round: this._currentRound,
+				totalRoundsCompleted: this._totalRoundsCompleted,
+				completedAt: new Date()
+			});
 			this.notify();
 			return;
 		}
@@ -292,6 +310,18 @@ export class TimerFSM {
 		this._currentRound = step.nextRound;
 		this._durationMs = this.getModeDurationMs(this._mode);
 		this._remainingMs = this._durationMs;
+	}
+
+	private emitEvent(event: DomainEvent): void {
+		if (this._eventSubscribers.size === 0) return;
+		for (const subscriber of this._eventSubscribers) {
+			try {
+				subscriber(event);
+			} catch (error) {
+				// preserve listener isolation
+				console.error(error);
+			}
+		}
 	}
 
 	private notify(): void {
