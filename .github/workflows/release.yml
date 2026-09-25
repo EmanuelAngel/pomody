@@ -13,6 +13,9 @@ jobs:
   release-please:
     name: Release Please Automation
     runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - name: Run Release Please
         uses: google-github-actions/release-please-action@v4
@@ -20,3 +23,11 @@ jobs:
         with:
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  upload-desktop-assets:
+    name: Build & Attach Windows Executable
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    uses: ./.github/workflows/desktop-ci.yml
+    with:
+      release_tag: ${{ needs.release-please.outputs.tag_name }}
