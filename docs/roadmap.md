@@ -33,7 +33,7 @@ _Objetivo: Disponer de un temporizador Pomodoro autónomo, robusto, testeable y 
 - [x] **Alertas sonoras de transición**: Notificaciones de audio al completar bloques de trabajo y descanso.
 - [x] **Emisión de eventos de dominio**: Eventos desacoplados en memoria (`BlockCompleted`) listos para extensiones y métricas.
 - [x] **Despliegue Web**: Despliegue en producción completado y operativo en Cloudflare Pages.
-- [ ] **Despliegue Desktop (Windows)**: Scaffold de Tauri v2 con Rust y generación de binario ejecutable (`.exe` / instalador).
+- [x] **Despliegue Desktop (Windows)**: Scaffold de Tauri v2 con Rust y generación de binario ejecutable (`.exe` / instalador).
 
 ---
 

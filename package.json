@@ -16,7 +16,10 @@
 		"test:unit:watch": "vitest --project server",
 		"test:browser": "vitest run --project client",
 		"test": "vitest run",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"tauri": "tauri",
+		"tauri:dev": "tauri dev",
+		"tauri:build": "tauri build"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^21.2.3",
@@ -31,6 +34,7 @@
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@tailwindcss/vite": "^4.3.0",
+		"@tauri-apps/cli": "^2.11.5",
 		"@types/node": "^24",
 		"@vitest/browser-playwright": "^4.1.8",
 		"bits-ui": "^2.19.3",
