@@ -2,7 +2,7 @@
 
 > El temporizador Pomodoro pensado para el foco real: planificá tus tareas, protegé tu concentración y descansá con propósito, sin bloatware ni suscripciones abusivas.
 
-[![Estado del Proyecto](https://img.shields.io/badge/Estado-En%20Definici%C3%B3n%20%2F%20v0.1-blue)](docs/roadmap.md)
+[![Estado del Proyecto](https://img.shields.io/badge/Estado-v0.1%20Completado%20%2F%20Testing-brightgreen)](docs/roadmap.md)
 [![Plataformas](https://img.shields.io/badge/Plataformas-Web%20%7C%20Windows-informational)](docs/vision.md#3-plataformas-objetivo)
 [![Licencia](https://img.shields.io/badge/Licencia-MIT-green)](#licencia)
 
@@ -52,11 +52,13 @@ El diseño funcional, técnico y las decisiones de arquitectura están organizad
 
 Para consultar el checklist completo y criterios de aceptación, visitá [`docs/roadmap.md`](docs/roadmap.md).
 
-| Versión                                                                                               | Enfoque Principal                                                                            | Responsable   | Estado                   |
-| :---------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------- | :------------ | :----------------------- |
-| **[v0.1 — Cimientos](docs/roadmap.md#v01--cimientos-y-mvp-base-inmediato)**                           | Temporizador base (FSM), UI minimalista Zen, temas Rosé Pine y Domain Events.                | Vortex        | **En desarrollo activo** |
-| **[v0.2 — Planificación](docs/roadmap.md#v02--planificación-descansos-y-asistencia-al-foco-cercano)** | Mini To-Do integrado, pausas guiadas, presupuesto de sesión y detector de dispersión ligero. | Vortex & Fede | Planificado              |
-| **[+v0.3 — Automatización](docs/roadmap.md#v03--automatización-presencia-y-modo-compacto-futuro)**    | Modo Compacto / Mini-Player (Always on Top), Discord RPC y analítica avanzada.               | Equipo Pomody | Roadmap futuro           |
+| Versión                                                                                            | Enfoque Principal                                                            | Responsable             | Estado                   |
+| :------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------- | :---------------------- | :----------------------- |
+| **[v0.1 — Cimientos](docs/roadmap.md#v01--cimientos-y-mvp-base-completado--testing)**              | Cimientos del sistema, FSM pura, UI minimalista, temas Rosé Pine y Tauri v2. | Vortex (Tech Lead)      | **Completado / Testing** |
+| **[v0.2 — Planificación](docs/roadmap.md#v02--planificación-descansos-y-ux-de-foco-próximo-foco)** | Planificación (Mini To-Do híbrido), pausas guiadas, estética y persistencia. | Vortex & Fede (Trainee) | **Próximo foco**         |
+| **[v0.3 — Desktop Focus](docs/roadmap.md#v03--desktop-power--blindaje-activo-planificado)**        | Modo Compacto flotante (Mini-Player) y detector de dispersión.               | Vortex & Fede           | Planificado              |
+| **[v0.4 — Analítica](docs/roadmap.md#v04--analítica-avanzada--métricas-visuales-roadmap-futuro)**  | Analítica avanzada, métricas visuales y calidad de sesión.                   | Equipo Pomody           | Roadmap futuro           |
+| **[v0.5 — Ecosistema](docs/roadmap.md#v05--ecosistema-y-automatización-externa-roadmap-futuro)**   | Discord Rich Presence y Modo No Molestar del SO.                             | Equipo Pomody           | Roadmap futuro           |
 
 ---
 
