@@ -71,3 +71,11 @@
 - **ID Referencia:** UI-01
 - **Ubicación:** `src/lib/components/` (Header, Drawer, enlaces y acciones secundarias)
 - **Descripción:** Pendiente definir y charlar en equipo: evaluar la incorporación de iconos duo-tone en links y botones de navegación, analizando coherencia visual con los tokens Rosé Pine y verificando que no añadan carga cognitiva ni dependencias innecesarias.
+
+---
+
+## 9. Internacionalización con Paraglide (Inglés / Español)
+
+- **ID Referencia:** I18N-01
+- **Ubicación:** `src/lib/components/` (layout, settings, timer) y suites de test (`settings.svelte.test.ts`, `timer.svelte.test.ts`)
+- **Descripción:** Evaluar e incorporar soporte bilingüe (EN/ES) usando Paraglide para SvelteKit. Estimación preliminar: riesgo bajo (usando estrategia de estado/storage para no romper SPA estática ni Tauri), dificultad baja (~30 keys), energía baja y tiempo estimado de 3 a 3.5 horas. Requiere especial atención a la actualización y cobertura de tests de UI existentes que asertan copys exactos (`aria-label`, headings, textos de botones).

@@ -86,5 +86,6 @@ _Objetivo: Blindaje de interrupciones externas y sincronización con herramienta
 ## Documentación Relacionada
 
 - Fundamentos del producto: [`vision.md`](./vision.md)
+- Especificación técnica de Tareas, Revitalización y Planning (v0.2): [`features/tasks-and-planning.md`](./features/tasks-and-planning.md)
 - Análisis y resoluciones de las propuestas de Fede: [`proposals/fede-ideas.md`](./proposals/fede-ideas.md)
 - Análisis y resoluciones de las propuestas de Vortex: [`proposals/vortex-ideas.md`](./proposals/vortex-ideas.md)
