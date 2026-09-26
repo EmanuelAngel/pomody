@@ -22,9 +22,9 @@
   - _Files_: `src/lib/domain/ports/task-repository.port.ts`, `src/lib/domain/ports/task-repository.port.test.ts`
   - _Route_: Delegated writer
   - _Verification_: `pnpm test:unit`
-  - _Commit_: `feat(domain): define ITaskRepository port contract and sorting invariants`
+  - _Commit_: `d372301` `feat(domain): define ITaskRepository port contract and sorting invariants`
 
-- [ ] **TASK-03**: Implement `LocalStorageTaskRepository` with defensive envelope (`pomody:tasks`), corrupt item sanitization, error resilience, and `clearAll()` purge.
+- [x] **TASK-03**: Implement `LocalStorageTaskRepository` with defensive envelope (`pomody:tasks`), corrupt item sanitization, error resilience, and `clearAll()` purge.
   - _Files_: `src/lib/adapters/storage/local-task-repository.ts`, `src/lib/adapters/storage/local-task-repository.test.ts`
   - _Route_: Delegated writer
   - _Verification_: `pnpm test:unit`
@@ -40,4 +40,5 @@
 - Base: `main`
 - Initial test suite: 172 passed across 9 test files.
 - TASK-01 verified and committed (`d4a7df9`): 23 new unit tests in `src/lib/domain/tasks/task.entity.test.ts` (195 passed across 10 test files).
-- TASK-02 verified: 10 new unit tests in `src/lib/domain/ports/task-repository.port.test.ts` (205 passed across 11 test files).
+- TASK-02 verified and committed (`d372301`): 10 new unit tests in `src/lib/domain/ports/task-repository.port.test.ts` (205 passed across 11 test files).
+- TASK-03 verified: 34 new unit tests in `src/lib/adapters/storage/local-task-repository.test.ts` (239 passed across 12 test files).
