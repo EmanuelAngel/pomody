@@ -63,7 +63,7 @@ function createDummyTicker(isRunning = false) {
 }
 
 describe('TaskPill (Client Browser)', () => {
-	it('renders unassigned state ("Foco libre") when no active task exists', async () => {
+	it('renders unassigned state ("Free focus") when no active task exists', async () => {
 		const repo = new MockTaskRepository();
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
@@ -74,9 +74,9 @@ describe('TaskPill (Client Browser)', () => {
 			portalProps: { disabled: true }
 		});
 
-		const pill = screen.getByRole('button', { name: 'Seleccionar tarea de enfoque' });
+		const pill = screen.getByRole('button', { name: 'Select focus task' });
 		await expect.element(pill).toBeVisible();
-		await expect.element(screen.getByText('Foco libre')).toBeVisible();
+		await expect.element(screen.getByText('Free focus')).toBeVisible();
 		await expect.element(pill).toHaveClass('opacity-100');
 
 		await expect.element(screen.getByRole('checkbox')).not.toBeInTheDocument();
@@ -93,13 +93,13 @@ describe('TaskPill (Client Browser)', () => {
 			portalProps: { disabled: true }
 		});
 
-		const pill = screen.getByRole('button', { name: 'Seleccionar tarea de enfoque' });
+		const pill = screen.getByRole('button', { name: 'Select focus task' });
 		await expect.element(pill).toBeVisible();
 		await expect.element(pill).toHaveClass('opacity-60');
 	});
 
 	it('renders active task title and inline checkbox when active task is present', async () => {
-		const initialTask = createFocusTask({ title: 'Configurar Hexagonal' });
+		const initialTask = createFocusTask({ title: 'Configure Hexagonal' });
 		const repo = new MockTaskRepository([initialTask]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
@@ -111,20 +111,20 @@ describe('TaskPill (Client Browser)', () => {
 			portalProps: { disabled: true }
 		});
 
-		await expect.element(screen.getByText('Configurar Hexagonal')).toBeVisible();
+		await expect.element(screen.getByText('Configure Hexagonal')).toBeVisible();
 
 		const checkbox = screen.getByRole('checkbox');
 		await expect.element(checkbox).toBeVisible();
 		await expect.element(checkbox).toHaveAttribute('aria-checked', 'false');
 
 		const trigger = screen.getByRole('button', {
-			name: 'Cambiar tarea activa: Configurar Hexagonal'
+			name: 'Change active task: Configure Hexagonal'
 		});
 		await expect.element(trigger).toBeVisible();
 	});
 
 	it('toggles active task completion in-place without opening popover', async () => {
-		const task = createFocusTask({ title: 'Escribir tests unitarios' });
+		const task = createFocusTask({ title: 'Write unit tests' });
 		const repo = new MockTaskRepository([task]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
@@ -165,16 +165,16 @@ describe('TaskPill (Client Browser)', () => {
 			portalProps: { disabled: true }
 		});
 
-		const pill = screen.getByRole('button', { name: 'Seleccionar tarea de enfoque' });
+		const pill = screen.getByRole('button', { name: 'Select focus task' });
 		await pill.click();
 
-		const input = screen.getByRole('textbox', { name: 'Crear y fijar nueva tarea' });
+		const input = screen.getByRole('textbox', { name: 'Create and pin new task' });
 		await expect.element(input).toBeVisible();
 
-		const freeFocusOption = screen.getByRole('option', { name: /Foco libre/i });
+		const freeFocusOption = screen.getByRole('option', { name: /Free focus/i });
 		await expect.element(freeFocusOption).toBeVisible();
 
-		await expect.element(screen.getByText('No hay tareas pendientes')).toBeVisible();
+		await expect.element(screen.getByText('No pending tasks')).toBeVisible();
 	});
 
 	it('creates new task and sets it as active on pressing Enter in input', async () => {
@@ -189,27 +189,27 @@ describe('TaskPill (Client Browser)', () => {
 		});
 
 		// Open popover
-		const pill = screen.getByRole('button', { name: 'Seleccionar tarea de enfoque' });
+		const pill = screen.getByRole('button', { name: 'Select focus task' });
 		await pill.click();
 
-		const input = screen.getByRole('textbox', { name: 'Crear y fijar nueva tarea' });
+		const input = screen.getByRole('textbox', { name: 'Create and pin new task' });
 		await expect.element(input).toBeVisible();
 
 		// Type new task and press Enter
-		await input.fill('Diseñar arquitectura de eventos');
+		await input.fill('Design event architecture');
 		await userEvent.keyboard('{Enter}');
 
 		// Popover should close and pill should display new active task
-		await expect.element(screen.getByText('Diseñar arquitectura de eventos')).toBeVisible();
+		await expect.element(screen.getByText('Design event architecture')).toBeVisible();
 		const checkbox = screen.getByRole('checkbox');
 		await expect.element(checkbox).toBeVisible();
 
-		expect(tasksState.activeTask?.title).toBe('Diseñar arquitectura de eventos');
+		expect(tasksState.activeTask?.title).toBe('Design event architecture');
 	});
 
 	it('switches active task when clicking a pending task in popover list', async () => {
-		const taskA = createFocusTask({ title: 'Tarea Alfa', order: 0 });
-		const taskB = createFocusTask({ title: 'Tarea Beta', order: 1 });
+		const taskA = createFocusTask({ title: 'Task Alpha', order: 0 });
+		const taskB = createFocusTask({ title: 'Task Beta', order: 1 });
 		const repo = new MockTaskRepository([taskA, taskB]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
@@ -221,26 +221,26 @@ describe('TaskPill (Client Browser)', () => {
 			portalProps: { disabled: true }
 		});
 
-		await expect.element(screen.getByText('Tarea Alfa')).toBeVisible();
+		await expect.element(screen.getByText('Task Alpha')).toBeVisible();
 
 		// Open popover
 		const trigger = screen.getByRole('button', {
-			name: 'Cambiar tarea activa: Tarea Alfa'
+			name: 'Change active task: Task Alpha'
 		});
 		await trigger.click();
 
-		// Select Tarea Beta from the pending list
-		const taskBOption = screen.getByRole('option', { name: 'Tarea Beta' });
+		// Select Task Beta from the pending list
+		const taskBOption = screen.getByRole('option', { name: 'Task Beta' });
 		await expect.element(taskBOption).toBeVisible();
 		await taskBOption.click();
 
-		// Active task should now be Tarea Beta
-		await expect.element(screen.getByText('Tarea Beta')).toBeVisible();
+		// Active task should now be Task Beta
+		await expect.element(screen.getByText('Task Beta')).toBeVisible();
 		expect(tasksState.activeTaskId).toBe(taskB.id);
 	});
 
-	it('unassigns active task when selecting "Foco libre" option', async () => {
-		const task = createFocusTask({ title: 'Tarea Activa' });
+	it('unassigns active task when selecting "Free focus" option', async () => {
+		const task = createFocusTask({ title: 'Active Task' });
 		const repo = new MockTaskRepository([task]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
@@ -252,20 +252,20 @@ describe('TaskPill (Client Browser)', () => {
 			portalProps: { disabled: true }
 		});
 
-		await expect.element(screen.getByText('Tarea Activa')).toBeVisible();
+		await expect.element(screen.getByText('Active Task')).toBeVisible();
 
 		// Open popover
 		const trigger = screen.getByRole('button', {
-			name: 'Cambiar tarea activa: Tarea Activa'
+			name: 'Change active task: Active Task'
 		});
 		await trigger.click();
 
-		// Click "Foco libre"
-		const freeFocusOption = screen.getByRole('option', { name: /Foco libre/i });
+		// Click "Free focus"
+		const freeFocusOption = screen.getByRole('option', { name: /Free focus/i });
 		await freeFocusOption.click();
 
-		// Should revert to "Foco libre"
-		await expect.element(screen.getByText('Foco libre')).toBeVisible();
+		// Should revert to "Free focus"
+		await expect.element(screen.getByText('Free focus')).toBeVisible();
 		expect(tasksState.activeTaskId).toBeNull();
 	});
 
@@ -280,10 +280,10 @@ describe('TaskPill (Client Browser)', () => {
 			portalProps: { disabled: true }
 		});
 
-		const pill = screen.getByRole('button', { name: 'Seleccionar tarea de enfoque' });
+		const pill = screen.getByRole('button', { name: 'Select focus task' });
 		await pill.click();
 
-		const input = screen.getByRole('textbox', { name: 'Crear y fijar nueva tarea' });
+		const input = screen.getByRole('textbox', { name: 'Create and pin new task' });
 		await expect.element(input).toBeVisible();
 
 		// Press Escape
@@ -296,7 +296,7 @@ describe('TaskPill (Client Browser)', () => {
 
 describe('TaskPill in Timer Integration (Client Browser)', () => {
 	it('renders TaskPill beneath TimerControls and reflects active task', async () => {
-		const task = createFocusTask({ title: 'Tarea en Temporizador' });
+		const task = createFocusTask({ title: 'Timer Task' });
 		const repo = new MockTaskRepository([task]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
@@ -310,9 +310,9 @@ describe('TaskPill in Timer Integration (Client Browser)', () => {
 			tasksState
 		});
 
-		await expect.element(screen.getByText('FOCUS')).toBeVisible();
+		await expect.element(screen.getByText('FOCUS', { exact: true })).toBeVisible();
 		await expect.element(screen.getByText('25:00')).toBeVisible();
-		await expect.element(screen.getByText('Tarea en Temporizador')).toBeVisible();
+		await expect.element(screen.getByText('Timer Task')).toBeVisible();
 
 		// Starts timer and verifies Zen Mode opacity on pill
 		const startBtn = screen.getByRole('button', { name: 'Start timer' });
@@ -320,7 +320,7 @@ describe('TaskPill in Timer Integration (Client Browser)', () => {
 		expect(timerState.isRunning).toBe(true);
 
 		const pill = screen.getByRole('button', {
-			name: 'Cambiar tarea activa: Tarea en Temporizador'
+			name: 'Change active task: Timer Task'
 		});
 		await expect.element(pill).toBeVisible();
 	});

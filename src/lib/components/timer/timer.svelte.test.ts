@@ -149,7 +149,7 @@ describe('Timer Orchestrator Integration (Client Browser)', () => {
 		const state = createTimerState({ focusDurationSeconds: 1500 }, dummyTicker);
 
 		const screen = await render(Timer, { state });
-		await expect.element(screen.getByText('FOCUS')).toBeVisible();
+		await expect.element(screen.getByText('FOCUS', { exact: true })).toBeVisible();
 		await expect.element(screen.getByText('25:00')).toBeVisible();
 
 		// Click Start

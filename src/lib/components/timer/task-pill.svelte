@@ -86,8 +86,8 @@
 				role="checkbox"
 				aria-checked={activeTask.completed}
 				aria-label={activeTask.completed
-					? `Marcar "${activeTask.title}" como pendiente`
-					: `Marcar "${activeTask.title}" como completada`}
+					? `Mark "${activeTask.title}" as pending`
+					: `Mark "${activeTask.title}" as completed`}
 				onclick={handleToggleCompleted}
 				class={cn(
 					'flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-all duration-150 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
@@ -103,7 +103,7 @@
 
 			<Popover.Trigger
 				class="inline-flex cursor-pointer items-center gap-1.5 text-foreground select-none focus-visible:outline-none"
-				aria-label={`Cambiar tarea activa: ${activeTask.title}`}
+				aria-label={`Change active task: ${activeTask.title}`}
 			>
 				<span
 					class={cn(
@@ -125,9 +125,9 @@
 				'group inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-3.5 py-1 text-xs text-muted-foreground/80 shadow-xs transition-all duration-200 select-none hover:bg-muted/60 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none sm:text-sm',
 				isRunning ? 'opacity-60 transition-opacity hover:opacity-100' : 'opacity-100'
 			)}
-			aria-label="Seleccionar tarea de enfoque"
+			aria-label="Select focus task"
 		>
-			<span class="font-normal">Foco libre</span>
+			<span class="font-normal">Free focus</span>
 			<ChevronDown
 				class="size-3 text-muted-foreground/60 transition-transform duration-200 group-data-[state=open]:rotate-180"
 			/>
@@ -145,8 +145,8 @@
 			<div class="relative mb-2 flex items-center">
 				<input
 					type="text"
-					placeholder="Nueva tarea... (Enter para fijar)"
-					aria-label="Crear y fijar nueva tarea"
+					placeholder="New task... (Enter to pin)"
+					aria-label="Create and pin new task"
 					bind:value={newTaskTitle}
 					onkeydown={handleInputKeyDown}
 					class="h-8 w-full rounded-lg border border-input/60 bg-muted/30 px-2.5 pr-8 text-xs text-foreground placeholder:text-muted-foreground/70 focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
@@ -154,7 +154,7 @@
 				{#if newTaskTitle.trim().length > 0}
 					<button
 						type="button"
-						aria-label="Agregar tarea"
+						aria-label="Add task"
 						onclick={handleSubmitNewTask}
 						class="absolute right-1 flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none"
 					>
@@ -176,7 +176,7 @@
 			>
 				<div class="flex min-w-0 items-center gap-2">
 					<span class="size-2 rounded-full border border-muted-foreground/40"></span>
-					<span class="truncate">Foco libre</span>
+					<span class="truncate">Free focus</span>
 				</div>
 				{#if activeTaskId === null}
 					<Check class="size-3.5 shrink-0 text-primary" />
@@ -189,12 +189,12 @@
 			<div
 				class="px-2 py-1 text-[10px] font-semibold tracking-wider text-muted-foreground/80 uppercase"
 			>
-				Tareas pendientes
+				Pending tasks
 			</div>
 			<div class="max-h-48 space-y-0.5 overflow-y-auto" role="listbox">
 				{#if pendingTasks.length === 0}
 					<p class="px-2.5 py-2 text-center text-xs text-muted-foreground/60 italic">
-						No hay tareas pendientes
+						No pending tasks
 					</p>
 				{:else}
 					{#each pendingTasks as task (task.id)}
