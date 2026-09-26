@@ -44,11 +44,33 @@ describe('TimerDisplay (Client Browser)', () => {
 
 		await expect.element(screen.getByText('FOCUS')).toBeVisible();
 		await expect.element(screen.getByText('25:00')).toBeVisible();
+		await expect.element(screen.getByRole('timer')).toBeVisible();
+		await expect
+			.element(screen.getByRole('timer'))
+			.toHaveAttribute('aria-label', 'Time remaining: 25:00');
 
 		const status = screen.container.querySelector('[role="status"]');
 		expect(status).not.toBeNull();
 		const dots = status?.querySelectorAll('span');
 		expect(dots?.length).toBe(4);
+	});
+
+	it('renders accurate uppercase labels for break modes', async () => {
+		const shortScreen = await render(TimerDisplay, {
+			formattedTime: '05:00',
+			mode: 'shortBreak',
+			currentRound: 1
+		});
+		await expect.element(shortScreen.getByText('SHORT BREAK')).toBeVisible();
+		await expect.element(shortScreen.getByText('05:00')).toBeVisible();
+
+		const longScreen = await render(TimerDisplay, {
+			formattedTime: '15:00',
+			mode: 'longBreak',
+			currentRound: 4
+		});
+		await expect.element(longScreen.getByText('LONG BREAK')).toBeVisible();
+		await expect.element(longScreen.getByText('15:00')).toBeVisible();
 	});
 });
 
@@ -100,6 +122,19 @@ describe('TimerControls & Zen Mode (Client Browser)', () => {
 		expect(skipButtonZen.element().hasAttribute('disabled')).toBe(true);
 
 		await expect.element(pauseButton).toBeVisible();
+	});
+
+	it('displays Resume timer label when paused', async () => {
+		const screenPaused = await render(TimerControls, {
+			isRunning: false,
+			isPaused: true,
+			onPlayPause: vi.fn(),
+			onReset: vi.fn(),
+			onSkip: vi.fn()
+		});
+
+		const resumeButton = screenPaused.getByRole('button', { name: 'Resume timer' });
+		await expect.element(resumeButton).toBeVisible();
 	});
 });
 
