@@ -28,11 +28,12 @@
   - _Files_: `src/lib/adapters/storage/local-task-repository.ts`, `src/lib/adapters/storage/local-task-repository.test.ts`
   - _Route_: Delegated writer
   - _Verification_: `pnpm test:unit`
-  - _Commit_: `feat(adapters): implement LocalStorageTaskRepository with defensive envelope and purge`
+  - _Commit_: `72c0b76` `feat(adapters): implement LocalStorageTaskRepository with defensive envelope and purge`
 
-- [ ] **TASK-04**: Run global verification suite (`pnpm check`, `pnpm lint`, `pnpm test:unit`), verify zero regressions and complete issue #22 DoD.
+- [x] **TASK-04**: Run global verification suite (`pnpm check`, `pnpm lint`, `pnpm test:unit`), verify zero regressions and complete issue #22 DoD.
   - _Route_: Direct inline
   - _Verification_: `pnpm check && pnpm lint && pnpm test:unit`
+  - _Commit_: `docs(odd): complete all tasks and verification for issue #22`
 
 ## Progress & Verification Evidence
 
@@ -41,4 +42,5 @@
 - Initial test suite: 172 passed across 9 test files.
 - TASK-01 verified and committed (`d4a7df9`): 23 new unit tests in `src/lib/domain/tasks/task.entity.test.ts` (195 passed across 10 test files).
 - TASK-02 verified and committed (`d372301`): 10 new unit tests in `src/lib/domain/ports/task-repository.port.test.ts` (205 passed across 11 test files).
-- TASK-03 verified: 34 new unit tests in `src/lib/adapters/storage/local-task-repository.test.ts` (239 passed across 12 test files).
+- TASK-03 verified and committed (`72c0b76`): 34 new unit tests in `src/lib/adapters/storage/local-task-repository.test.ts` (239 passed across 12 test files).
+- TASK-04 verified: Full suite passed with 0 TypeScript/SvelteKit check errors (`pnpm check`), clean code style and linting (`pnpm lint`), and 239/239 unit tests passing across 12 test files (`pnpm test:unit`). All DoD criteria for issue #22 satisfied.
