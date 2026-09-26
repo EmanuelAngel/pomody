@@ -7,6 +7,27 @@ export class InvalidTaskTitleError extends Error {
 	}
 }
 
+export class InvalidTaskIdError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'InvalidTaskIdError';
+	}
+}
+
+export class InvalidTaskOrderError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'InvalidTaskOrderError';
+	}
+}
+
+export class InvalidTaskCreatedAtError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'InvalidTaskCreatedAtError';
+	}
+}
+
 export interface FocusTask {
 	readonly id: string;
 	readonly title: string;
@@ -21,6 +42,23 @@ export interface CreateFocusTaskParams {
 	readonly order?: number;
 	readonly id?: string;
 	readonly createdAt?: number;
+}
+
+/**
+ * Generates an RFC 4122 v4 UUID.
+ * In secure contexts (HTTPS/localhost), uses standard `crypto.randomUUID()`.
+ * In non-secure contexts (e.g. HTTP LAN dev), falls back to an RFC 4122 v4 UUID generator.
+ */
+export function generateTaskId(): string {
+	if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+		return crypto.randomUUID();
+	}
+
+	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+		const r = (Math.random() * 16) | 0;
+		const v = c === 'x' ? r : (r & 0x3) | 0x8;
+		return v.toString(16);
+	});
 }
 
 /**
@@ -50,7 +88,7 @@ export function validateTaskTitle(title: string): string {
 /**
  * Creates an immutable FocusTask instance.
  * Defaults:
- * - id: crypto.randomUUID()
+ * - id: generateTaskId() (crypto.randomUUID() or RFC 4122 v4 fallback)
  * - completed: false
  * - createdAt: Date.now()
  * - order: 0
@@ -58,8 +96,38 @@ export function validateTaskTitle(title: string): string {
 export function createFocusTask(params: CreateFocusTaskParams): FocusTask {
 	const trimmedTitle = validateTaskTitle(params.title);
 
+	let id: string;
+	if (params.id !== undefined) {
+		if (typeof params.id !== 'string') {
+			throw new InvalidTaskIdError('Task ID must be a string.');
+		}
+		const trimmedId = params.id.trim();
+		if (trimmedId.length === 0) {
+			throw new InvalidTaskIdError('Task ID cannot be empty.');
+		}
+		id = trimmedId;
+	} else {
+		id = generateTaskId();
+	}
+
+	if (params.order !== undefined) {
+		if (typeof params.order !== 'number' || !Number.isInteger(params.order) || params.order < 0) {
+			throw new InvalidTaskOrderError('Task order must be an integer greater than or equal to 0.');
+		}
+	}
+
+	if (params.createdAt !== undefined) {
+		if (
+			typeof params.createdAt !== 'number' ||
+			!Number.isFinite(params.createdAt) ||
+			params.createdAt <= 0
+		) {
+			throw new InvalidTaskCreatedAtError('Task createdAt must be a finite number greater than 0.');
+		}
+	}
+
 	const task: FocusTask = {
-		id: params.id ?? crypto.randomUUID(),
+		id,
 		title: trimmedTitle,
 		completed: false,
 		createdAt: params.createdAt ?? Date.now(),

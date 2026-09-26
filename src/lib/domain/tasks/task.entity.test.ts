@@ -1,7 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
 	TASK_TITLE_MAX_LENGTH,
 	InvalidTaskTitleError,
+	InvalidTaskIdError,
+	InvalidTaskOrderError,
+	InvalidTaskCreatedAtError,
+	generateTaskId,
 	validateTaskTitle,
 	createFocusTask,
 	toggleFocusTask,
@@ -10,6 +14,39 @@ import {
 } from './task.entity';
 
 describe('FocusTask Domain Entity', () => {
+	describe('generateTaskId', () => {
+		it('should generate a valid RFC 4122 v4 UUID in standard environment', () => {
+			const id = generateTaskId();
+			expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+		});
+
+		it('should fall back to RFC 4122 v4 generator when crypto.randomUUID is undefined', () => {
+			try {
+				// Simulate non-secure context where crypto is undefined
+				vi.stubGlobal('crypto', undefined);
+				const idNoCrypto = generateTaskId();
+				expect(idNoCrypto).toMatch(
+					/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+				);
+
+				// Simulate non-secure context where crypto exists but randomUUID is not a function
+				vi.stubGlobal('crypto', {});
+				const idEmptyCrypto = generateTaskId();
+				expect(idEmptyCrypto).toMatch(
+					/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+				);
+
+				// Verify createFocusTask also succeeds with crypto fallback
+				const task = createFocusTask({ title: 'Fallback task' });
+				expect(task.id).toMatch(
+					/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+				);
+			} finally {
+				vi.unstubAllGlobals();
+			}
+		});
+	});
+
 	describe('validateTaskTitle', () => {
 		it('should trim leading and trailing whitespace', () => {
 			expect(validateTaskTitle('   Write unit tests   ')).toBe('Write unit tests');
@@ -82,6 +119,109 @@ describe('FocusTask Domain Entity', () => {
 			expect(task.id).toBe(customId);
 			expect(task.order).toBe(3);
 			expect(task.createdAt).toBe(customCreatedAt);
+		});
+
+		it('should trim custom id when provided', () => {
+			const task = createFocusTask({
+				title: 'Task with spaces in id',
+				id: '  custom-trimmed-id  '
+			});
+			expect(task.id).toBe('custom-trimmed-id');
+		});
+
+		it('should throw InvalidTaskIdError if id is empty string', () => {
+			expect(() => createFocusTask({ title: 'Task', id: '' })).toThrow(InvalidTaskIdError);
+			expect(() => createFocusTask({ title: 'Task', id: '' })).toThrow('Task ID cannot be empty.');
+		});
+
+		it('should throw InvalidTaskIdError if id only contains whitespace', () => {
+			expect(() => createFocusTask({ title: 'Task', id: '   \t  ' })).toThrow(InvalidTaskIdError);
+		});
+
+		it('should throw InvalidTaskIdError if id is not a string', () => {
+			// @ts-expect-error testing runtime validation
+			expect(() => createFocusTask({ title: 'Task', id: 123 })).toThrow(InvalidTaskIdError);
+			// @ts-expect-error testing runtime validation
+			expect(() => createFocusTask({ title: 'Task', id: null })).toThrow(InvalidTaskIdError);
+			// @ts-expect-error testing runtime validation
+			expect(() => createFocusTask({ title: 'Task', id: true })).toThrow(InvalidTaskIdError);
+		});
+
+		it('should accept valid order integers >= 0', () => {
+			const task0 = createFocusTask({ title: 'Task', order: 0 });
+			expect(task0.order).toBe(0);
+
+			const task5 = createFocusTask({ title: 'Task', order: 5 });
+			expect(task5.order).toBe(5);
+		});
+
+		it('should throw InvalidTaskOrderError if order is negative', () => {
+			expect(() => createFocusTask({ title: 'Task', order: -1 })).toThrow(InvalidTaskOrderError);
+			expect(() => createFocusTask({ title: 'Task', order: -1 })).toThrow(
+				'Task order must be an integer greater than or equal to 0.'
+			);
+		});
+
+		it('should throw InvalidTaskOrderError if order is not an integer', () => {
+			expect(() => createFocusTask({ title: 'Task', order: 1.5 })).toThrow(InvalidTaskOrderError);
+			expect(() => createFocusTask({ title: 'Task', order: -0.5 })).toThrow(InvalidTaskOrderError);
+		});
+
+		it('should throw InvalidTaskOrderError if order is not a number', () => {
+			// @ts-expect-error testing runtime validation
+			expect(() => createFocusTask({ title: 'Task', order: '0' })).toThrow(InvalidTaskOrderError);
+			// @ts-expect-error testing runtime validation
+			expect(() => createFocusTask({ title: 'Task', order: null })).toThrow(InvalidTaskOrderError);
+			expect(() => createFocusTask({ title: 'Task', order: NaN })).toThrow(InvalidTaskOrderError);
+			expect(() => createFocusTask({ title: 'Task', order: Infinity })).toThrow(
+				InvalidTaskOrderError
+			);
+			expect(() => createFocusTask({ title: 'Task', order: -Infinity })).toThrow(
+				InvalidTaskOrderError
+			);
+		});
+
+		it('should accept valid createdAt number > 0', () => {
+			const task = createFocusTask({ title: 'Task', createdAt: 1700000000000 });
+			expect(task.createdAt).toBe(1700000000000);
+		});
+
+		it('should throw InvalidTaskCreatedAtError if createdAt is zero', () => {
+			expect(() => createFocusTask({ title: 'Task', createdAt: 0 })).toThrow(
+				InvalidTaskCreatedAtError
+			);
+			expect(() => createFocusTask({ title: 'Task', createdAt: 0 })).toThrow(
+				'Task createdAt must be a finite number greater than 0.'
+			);
+		});
+
+		it('should throw InvalidTaskCreatedAtError if createdAt is negative', () => {
+			expect(() => createFocusTask({ title: 'Task', createdAt: -100 })).toThrow(
+				InvalidTaskCreatedAtError
+			);
+		});
+
+		it('should throw InvalidTaskCreatedAtError if createdAt is not a finite number', () => {
+			expect(() => createFocusTask({ title: 'Task', createdAt: NaN })).toThrow(
+				InvalidTaskCreatedAtError
+			);
+			expect(() => createFocusTask({ title: 'Task', createdAt: Infinity })).toThrow(
+				InvalidTaskCreatedAtError
+			);
+			expect(() => createFocusTask({ title: 'Task', createdAt: -Infinity })).toThrow(
+				InvalidTaskCreatedAtError
+			);
+		});
+
+		it('should throw InvalidTaskCreatedAtError if createdAt is not a number', () => {
+			// @ts-expect-error testing runtime validation
+			expect(() => createFocusTask({ title: 'Task', createdAt: '1700000000000' })).toThrow(
+				InvalidTaskCreatedAtError
+			);
+			// @ts-expect-error testing runtime validation
+			expect(() => createFocusTask({ title: 'Task', createdAt: null })).toThrow(
+				InvalidTaskCreatedAtError
+			);
 		});
 
 		it('should return a frozen, immutable object', () => {
