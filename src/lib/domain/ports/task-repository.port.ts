@@ -2,18 +2,22 @@ import type { FocusTask } from '../tasks/task.entity';
 
 /**
  * Pure comparison function for ordering focus tasks deterministically.
- * Orders primarily by `order` ascending, breaking ties by `createdAt` ascending.
+ * Orders primarily by `order` ascending, then `createdAt` ascending,
+ * breaking ties by `id` ascending (`localeCompare`).
  */
 export function compareFocusTasks(a: FocusTask, b: FocusTask): number {
 	if (a.order !== b.order) {
 		return a.order - b.order;
 	}
-	return a.createdAt - b.createdAt;
+	if (a.createdAt !== b.createdAt) {
+		return a.createdAt - b.createdAt;
+	}
+	return a.id.localeCompare(b.id);
 }
 
 /**
  * Returns a new frozen array containing the given focus tasks sorted deterministically
- * by `order` ascending, then `createdAt` ascending.
+ * by `order` ascending, then `createdAt` ascending, then `id` ascending.
  */
 export function sortFocusTasks(tasks: readonly FocusTask[]): readonly FocusTask[] {
 	return Object.freeze([...tasks].sort(compareFocusTasks));
@@ -25,12 +29,12 @@ export function sortFocusTasks(tasks: readonly FocusTask[]): readonly FocusTask[
  */
 export interface ITaskRepository {
 	/**
-	 * Retrieves all tasks ordered deterministically by order ascending, then createdAt ascending.
+	 * Retrieves all tasks ordered deterministically by order ascending, createdAt ascending, then id ascending.
 	 */
 	getAll(): Promise<readonly FocusTask[]>;
 
 	/**
-	 * Retrieves pending (uncompleted) tasks ordered deterministically by order ascending, then createdAt ascending.
+	 * Retrieves pending (uncompleted) tasks ordered deterministically by order ascending, createdAt ascending, then id ascending.
 	 */
 	getPending(): Promise<readonly FocusTask[]>;
 

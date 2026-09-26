@@ -20,9 +20,17 @@ describe('Task Repository Port & Sorting Utilities', () => {
 			expect(compareFocusTasks(taskLater, taskEarlier)).toBeGreaterThan(0);
 		});
 
-		it('should return 0 when both order and createdAt are identical', () => {
-			const task1 = createFocusTask({ title: 'Same 1', order: 2, createdAt: 1500 });
-			const task2 = createFocusTask({ title: 'Same 2', order: 2, createdAt: 1500 });
+		it('should break ties using id ascending when both order and createdAt are identical', () => {
+			const taskA = createFocusTask({ id: 'task-a', title: 'Task A', order: 2, createdAt: 1500 });
+			const taskB = createFocusTask({ id: 'task-b', title: 'Task B', order: 2, createdAt: 1500 });
+
+			expect(compareFocusTasks(taskA, taskB)).toBeLessThan(0);
+			expect(compareFocusTasks(taskB, taskA)).toBeGreaterThan(0);
+		});
+
+		it('should return 0 when order, createdAt, and id are identical', () => {
+			const task1 = createFocusTask({ id: 'same-id', title: 'Same 1', order: 2, createdAt: 1500 });
+			const task2 = createFocusTask({ id: 'same-id', title: 'Same 2', order: 2, createdAt: 1500 });
 
 			expect(compareFocusTasks(task1, task2)).toBe(0);
 		});
@@ -47,6 +55,16 @@ describe('Task Repository Port & Sorting Utilities', () => {
 			const sorted = sortFocusTasks([taskA, taskB, taskC]);
 
 			expect(sorted.map((t) => t.title)).toEqual(['B', 'C', 'A']);
+		});
+
+		it('should break ties using id ascending when order and createdAt are equal', () => {
+			const taskA = createFocusTask({ id: 'task-a', title: 'Task A', order: 1, createdAt: 100 });
+			const taskB = createFocusTask({ id: 'task-b', title: 'Task B', order: 1, createdAt: 100 });
+			const taskC = createFocusTask({ id: 'task-c', title: 'Task C', order: 1, createdAt: 100 });
+
+			const sorted = sortFocusTasks([taskC, taskA, taskB]);
+
+			expect(sorted.map((t) => t.id)).toEqual(['task-a', 'task-b', 'task-c']);
 		});
 
 		it('should return a frozen array to preserve immutability', () => {
