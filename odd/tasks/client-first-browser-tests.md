@@ -2,7 +2,7 @@
 
 - **Issue**: #13
 - **Branch**: `refactor/13-client-browser-tests`
-- **Status**: In Progress
+- **Status**: Completed
 
 ## Objective
 
