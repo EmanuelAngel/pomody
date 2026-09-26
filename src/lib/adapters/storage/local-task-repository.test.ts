@@ -569,6 +569,7 @@ describe('LocalStorageTaskRepository', () => {
 		});
 
 		it('handles QuotaExceededError or DOMException on setItem gracefully without throwing', async () => {
+			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 			const throwingStorage: Storage = {
 				...mockStorage,
 				setItem: vi.fn().mockImplementation(() => {
@@ -583,6 +584,103 @@ describe('LocalStorageTaskRepository', () => {
 			await expect(repo.saveBatch([task])).resolves.not.toThrow();
 			await expect(repo.delete('t1')).resolves.not.toThrow();
 			await expect(repo.clearCompleted()).resolves.not.toThrow();
+
+			consoleErrorSpy.mockRestore();
+		});
+
+		it('logs console.error when storage.setItem throws QuotaExceededError or SecurityError', async () => {
+			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+			const quotaError = new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+			const throwingStorage: Storage = {
+				...mockStorage,
+				setItem: vi.fn().mockImplementation(() => {
+					throw quotaError;
+				})
+			};
+
+			const repo = new LocalStorageTaskRepository(throwingStorage);
+			const task = createFocusTask({ id: 't1', title: 'Task' });
+
+			await repo.save(task);
+			expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to write tasks to storage:', quotaError);
+
+			const securityError = new DOMException('The operation is insecure.', 'SecurityError');
+			throwingStorage.setItem = vi.fn().mockImplementation(() => {
+				throw securityError;
+			});
+
+			await repo.delete('t1');
+			expect(consoleErrorSpy).toHaveBeenCalledWith(
+				'Failed to write tasks to storage:',
+				securityError
+			);
+
+			consoleErrorSpy.mockRestore();
+		});
+
+		it('returns null if accessing window.localStorage throws a SecurityError or DOMException', () => {
+			const originalWindow = globalThis.window;
+			try {
+				const restrictedWindow = {} as Window & typeof globalThis;
+				Object.defineProperty(restrictedWindow, 'localStorage', {
+					get() {
+						throw new DOMException('The operation is insecure.', 'SecurityError');
+					},
+					configurable: true
+				});
+				(globalThis as unknown as { window: unknown }).window = restrictedWindow;
+
+				const repo = new LocalStorageTaskRepository();
+				expect(repo.getStorage()).toBeNull();
+			} finally {
+				if (originalWindow === undefined) {
+					delete (globalThis as unknown as { window?: unknown }).window;
+				} else {
+					(globalThis as unknown as { window: unknown }).window = originalWindow;
+				}
+			}
+		});
+
+		it('does not overwrite newer storage envelope versions on save, delete, or saveBatch and logs a warning', async () => {
+			const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+			const v2Envelope = JSON.stringify({
+				version: 2,
+				tasks: [
+					{
+						id: 'v2-task-1',
+						title: 'Future Task',
+						completed: false,
+						createdAt: 1000,
+						order: 0
+					}
+				]
+			});
+			mockStorage.setItem(TASKS_STORAGE_KEY, v2Envelope);
+
+			const task = createFocusTask({ id: 't1', title: 'New Task 1' });
+
+			// 1. save() should NOT overwrite v2 envelope
+			await repository.save(task);
+			expect(mockStorage.getItem(TASKS_STORAGE_KEY)).toBe(v2Envelope);
+			expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
+
+			// 2. delete() should NOT overwrite v2 envelope
+			await repository.delete('v2-task-1');
+			expect(mockStorage.getItem(TASKS_STORAGE_KEY)).toBe(v2Envelope);
+			expect(consoleWarnSpy).toHaveBeenCalledTimes(2);
+
+			// 3. saveBatch() should NOT overwrite v2 envelope
+			const task2 = createFocusTask({ id: 't2', title: 'Batch Task' });
+			await repository.saveBatch([task2]);
+			expect(mockStorage.getItem(TASKS_STORAGE_KEY)).toBe(v2Envelope);
+			expect(consoleWarnSpy).toHaveBeenCalledTimes(3);
+
+			// 4. clearCompleted() should NOT overwrite v2 envelope
+			await repository.clearCompleted();
+			expect(mockStorage.getItem(TASKS_STORAGE_KEY)).toBe(v2Envelope);
+			expect(consoleWarnSpy).toHaveBeenCalledTimes(4);
+
+			consoleWarnSpy.mockRestore();
 		});
 
 		it('handles SecurityError on removeItem gracefully without throwing', async () => {

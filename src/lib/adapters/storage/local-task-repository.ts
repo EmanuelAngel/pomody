@@ -105,7 +105,7 @@ export class LocalStorageTaskRepository implements ITaskRepository {
 			return this.injectedStorage;
 		}
 
-		if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
+		if (typeof window !== 'undefined') {
 			try {
 				return window.localStorage;
 			} catch {
@@ -279,6 +279,13 @@ export class LocalStorageTaskRepository implements ITaskRepository {
 			return;
 		}
 
+		if (this.hasNewerVersionStored(storage)) {
+			console.warn(
+				`Storage contains a newer envelope version than supported (${TASKS_STORAGE_VERSION}). Write aborted to prevent data loss.`
+			);
+			return;
+		}
+
 		const envelope: StoredTasksEnvelope = {
 			version: TASKS_STORAGE_VERSION,
 			tasks: sortFocusTasks(tasks)
@@ -286,8 +293,28 @@ export class LocalStorageTaskRepository implements ITaskRepository {
 
 		try {
 			storage.setItem(TASKS_STORAGE_KEY, JSON.stringify(envelope));
+		} catch (err) {
+			console.error('Failed to write tasks to storage:', err);
+		}
+	}
+
+	/**
+	 * Checks whether storage contains an envelope with a newer version than supported.
+	 */
+	private hasNewerVersionStored(storage: Storage): boolean {
+		try {
+			const raw = storage.getItem(TASKS_STORAGE_KEY);
+			if (!raw) {
+				return false;
+			}
+			const parsed: unknown = JSON.parse(raw);
+			if (typeof parsed !== 'object' || parsed === null) {
+				return false;
+			}
+			const envelope = parsed as Record<string, unknown>;
+			return typeof envelope.version === 'number' && envelope.version > TASKS_STORAGE_VERSION;
 		} catch {
-			// Gracefully handle DOMException / SecurityError / QuotaExceededError
+			return false;
 		}
 	}
 }
