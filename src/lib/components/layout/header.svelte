@@ -3,24 +3,36 @@
 	import Settings from '@lucide/svelte/icons/settings';
 	import { cn } from '$lib/utils.js';
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
+	import {
+		navigationState as defaultNavigationState,
+		type NavigationState,
+		type NavigationTab
+	} from '$lib/state/navigation.svelte';
 
 	interface Props {
 		timerState?: TimerState;
+		navigationState?: NavigationState;
 		onSettingsClick?: () => void;
 		settingsOpen?: boolean;
 	}
 
 	let {
 		timerState = defaultTimerState,
+		navigationState = defaultNavigationState,
 		onSettingsClick,
 		settingsOpen = $bindable(false)
 	}: Props = $props();
 
 	const isRunning = $derived(timerState.isRunning);
+	const activeTab = $derived(navigationState.activeTab);
 
 	function handleSettingsClick() {
 		settingsOpen = true;
 		onSettingsClick?.();
+	}
+
+	function handleTabClick(tab: NavigationTab) {
+		navigationState.setTab(tab);
 	}
 </script>
 
@@ -47,24 +59,35 @@
 			<button
 				type="button"
 				role="tab"
-				aria-selected="true"
-				class="inline-flex items-center gap-1.5 rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-sm"
+				id="tab-timer"
+				aria-controls="tabpanel-timer"
+				aria-selected={activeTab === 'timer'}
+				onclick={() => handleTabClick('timer')}
+				class={cn(
+					'inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-sm',
+					activeTab === 'timer'
+						? 'bg-background text-foreground shadow-xs'
+						: 'text-muted-foreground/80 hover:text-foreground'
+				)}
 			>
-				<span>Temporizador</span>
+				<span>Timer</span>
 			</button>
 
 			<button
 				type="button"
 				role="tab"
-				aria-selected="false"
-				aria-disabled="true"
-				disabled
-				class="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground/60 transition-colors focus-visible:outline-none sm:text-sm"
+				id="tab-planning"
+				aria-controls="tabpanel-planning"
+				aria-selected={activeTab === 'planning'}
+				onclick={() => handleTabClick('planning')}
+				class={cn(
+					'inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-sm',
+					activeTab === 'planning'
+						? 'bg-background text-foreground shadow-xs'
+						: 'text-muted-foreground/80 hover:text-foreground'
+				)}
 			>
 				<span>Planning</span>
-				<span class="hidden font-mono text-[10px] text-muted-foreground/40 sm:inline">
-					(en v0.2)
-				</span>
 			</button>
 
 			<button
@@ -75,9 +98,9 @@
 				disabled
 				class="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground/60 transition-colors focus-visible:outline-none sm:text-sm"
 			>
-				<span>Métricas</span>
+				<span>Metrics</span>
 				<span class="hidden font-mono text-[10px] text-muted-foreground/40 sm:inline">
-					(en v0.2)
+					(in v0.2)
 				</span>
 			</button>
 		</div>
