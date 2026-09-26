@@ -16,9 +16,9 @@
   - _Files_: `src/lib/domain/tasks/task.entity.ts`, `src/lib/domain/tasks/task.entity.test.ts`
   - _Route_: Delegated writer
   - _Verification_: `pnpm test:unit`
-  - _Commit_: `feat(domain): add FocusTask entity and domain invariant operations`
+  - _Commit_: `d4a7df9` `feat(domain): add FocusTask entity and domain invariant operations`
 
-- [ ] **TASK-02**: Define `ITaskRepository` port with async contract, deterministic sorting rules, and isolated purge method.
+- [x] **TASK-02**: Define `ITaskRepository` port with async contract, deterministic sorting rules, and isolated purge method.
   - _Files_: `src/lib/domain/ports/task-repository.port.ts`, `src/lib/domain/ports/task-repository.port.test.ts`
   - _Route_: Delegated writer
   - _Verification_: `pnpm test:unit`
@@ -39,4 +39,5 @@
 - Branch: `feat/22-task-entities-and-storage`
 - Base: `main`
 - Initial test suite: 172 passed across 9 test files.
-- TASK-01 verified: 23 new unit tests in `src/lib/domain/tasks/task.entity.test.ts` (195 passed across 10 test files).
+- TASK-01 verified and committed (`d4a7df9`): 23 new unit tests in `src/lib/domain/tasks/task.entity.test.ts` (195 passed across 10 test files).
+- TASK-02 verified: 10 new unit tests in `src/lib/domain/ports/task-repository.port.test.ts` (205 passed across 11 test files).
