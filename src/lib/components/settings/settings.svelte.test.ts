@@ -116,6 +116,12 @@ describe('SettingsDrawer (Client Browser)', () => {
 		await expect.element(screen.getByRole('heading', { name: 'Theme' })).toBeVisible();
 		await expect.element(screen.getByRole('heading', { name: 'Sound' })).toBeVisible();
 
+		// Check Rosé Pine interval accent dot indicators
+		expect(screen.container.querySelector('.bg-accent-foam')).not.toBeNull();
+		expect(screen.container.querySelector('.bg-accent-pine')).not.toBeNull();
+		expect(screen.container.querySelector('.bg-accent-iris')).not.toBeNull();
+		expect(screen.container.querySelector('.bg-accent-rose')).not.toBeNull();
+
 		// Check Reset button
 		await expect.element(screen.getByRole('button', { name: /Reset to defaults/i })).toBeVisible();
 	});
