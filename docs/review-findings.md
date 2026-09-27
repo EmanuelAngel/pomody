@@ -64,17 +64,7 @@
 - **Ubicación:** `src/lib/components/settings/settings-drawer.svelte`
 - **Descripción:** El componente acumula múltiples responsabilidades (orquestación del `Sheet`, lógica y duplicación de sliders de intervalos del temporizador, y selector de paletas Rosé Pine). Conviene descomponerlo extrayendo subcomponentes (`interval-settings.svelte` o `interval-slider.svelte`, y `theme-selector.svelte`), preservando el drawer exclusivamente como contenedor de UI.
 
----
-
-## 8. Exploración de Iconos Duo-Tone en Enlaces y Navegación
-
-- **ID Referencia:** UI-01
-- **Ubicación:** `src/lib/components/` (Header, Drawer, enlaces y acciones secundarias)
-- **Descripción:** Pendiente definir y charlar en equipo: evaluar la incorporación de iconos duo-tone en links y botones de navegación, analizando coherencia visual con los tokens Rosé Pine y verificando que no añadan carga cognitiva ni dependencias innecesarias.
-
----
-
-## 9. Internacionalización con Paraglide (Inglés / Español)
+## 8. Internacionalización con Paraglide (Inglés / Español)
 
 - **ID Referencia:** I18N-01
 - **Ubicación:** `src/lib/components/` (layout, settings, timer) y suites de test (`settings.svelte.test.ts`, `timer.svelte.test.ts`)
