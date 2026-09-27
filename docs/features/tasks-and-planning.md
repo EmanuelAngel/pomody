@@ -41,6 +41,7 @@ classDiagram
         +BreakCategory category
         +number durationMinutes
         +boolean isPreset
+        +string guide
     }
 
     class BreakCategory {
@@ -93,6 +94,7 @@ export interface BreakActivity {
 	readonly category: BreakCategory;
 	readonly durationMinutes: number;
 	readonly isPreset: boolean;
+	readonly guide?: string;
 }
 
 export type PlanTargetMode = 'blocks' | 'end_time';
