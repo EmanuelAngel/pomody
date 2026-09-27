@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.4.0...pomody-v0.5.0) (2026-09-27)
+
+
+### Features
+
+* **planning:** session budget and timeline projection by blocks or end time ([#28](https://github.com/EmanuelAngel/pomody/issues/28)) ([#37](https://github.com/EmanuelAngel/pomody/issues/37)) ([9a58c58](https://github.com/EmanuelAngel/pomody/commit/9a58c587bb92572d976118dd0dacbc1029331e90))
+
 ## [0.4.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.3.0...pomody-v0.4.0) (2026-09-27)
 
 
