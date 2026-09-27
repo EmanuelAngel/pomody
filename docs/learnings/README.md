@@ -18,6 +18,7 @@ Cada entrada se numera de forma secuencial (`001-nombre-del-tema.md`) y responde
 
 ## Índice de Aprendizajes
 
-| #                                             | Título                                                                               | Fecha      | Categoría              |
-| --------------------------------------------- | ------------------------------------------------------------------------------------ | ---------- | ---------------------- |
-| [001](001-vitest-ssr-node-vs-browser-mode.md) | Cuellos de botella al testear componentes interactivos en Node (SSR) vs Browser Mode | 2026-09-25 | Testing / Arquitectura |
+| #                                                     | Título                                                                                | Fecha      | Categoría              |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------- | ---------- | ---------------------- |
+| [001](001-vitest-ssr-node-vs-browser-mode.md)         | Cuellos de botella al testear componentes interactivos en Node (SSR) vs Browser Mode  | 2026-09-25 | Testing / Arquitectura |
+| [002](002-floating-ui-stable-triggers-in-svelte-5.md) | Identidad de triggers en primitivas flotantes (bits-ui) y efectos inertes en Svelte 5 | 2026-09-27 | UI / Svelte 5          |

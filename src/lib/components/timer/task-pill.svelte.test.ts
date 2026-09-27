@@ -269,6 +269,73 @@ describe('TaskPill (Client Browser)', () => {
 		expect(tasksState.activeTaskId).toBeNull();
 	});
 
+	it('reopens popover after switching from Free focus to an active task', async () => {
+		const task = createFocusTask({ title: 'Active Task' });
+		const repo = new MockTaskRepository([task]);
+		const tasksState = createTasksState(repo);
+		await tasksState.load();
+
+		const screen = await render(TaskPill, {
+			isRunning: false,
+			tasksState,
+			portalProps: { disabled: true }
+		});
+
+		// 1. Initially Free focus
+		const pill = screen.getByRole('button', { name: 'Select focus task' });
+		await pill.click();
+
+		// 2. Select Active Task
+		const option = screen.getByRole('option', { name: 'Active Task' });
+		await option.click();
+		await expect.element(screen.getByText('Active Task')).toBeVisible();
+
+		// 3. Try to reopen popover
+		const newTrigger = screen.getByRole('button', {
+			name: 'Change active task: Active Task'
+		});
+		await newTrigger.click();
+
+		// 4. Popover should be open again
+		const input = screen.getByRole('textbox', { name: 'Create and pin new task' });
+		await expect.element(input).toBeVisible();
+	});
+
+	it('reopens popover after switching from active task back to Free focus', async () => {
+		const task = createFocusTask({ title: 'Active Task' });
+		const repo = new MockTaskRepository([task]);
+		const tasksState = createTasksState(repo);
+		await tasksState.load();
+		tasksState.setActiveTask(task.id);
+
+		const screen = await render(TaskPill, {
+			isRunning: false,
+			tasksState,
+			portalProps: { disabled: true }
+		});
+
+		// 1. Initially Active Task
+		const trigger = screen.getByRole('button', {
+			name: 'Change active task: Active Task'
+		});
+		await trigger.click();
+
+		// 2. Select Free focus
+		const freeFocusOption = screen.getByRole('option', { name: /Free focus/i });
+		await freeFocusOption.click();
+		await expect.element(screen.getByText('Free focus')).toBeVisible();
+
+		// 3. Try to reopen popover
+		const newTrigger = screen.getByRole('button', {
+			name: 'Select focus task'
+		});
+		await newTrigger.click();
+
+		// 4. Popover should be open again
+		const input = screen.getByRole('textbox', { name: 'Create and pin new task' });
+		await expect.element(input).toBeVisible();
+	});
+
 	it('closes popover when pressing Escape', async () => {
 		const repo = new MockTaskRepository();
 		const tasksState = createTasksState(repo);

@@ -71,16 +71,17 @@
 </script>
 
 <Popover.Root bind:open onOpenChange={handleOpenChange}>
-	{#if activeTask}
-		<div
-			data-slot="task-pill"
-			class={cn(
-				'group inline-flex items-center gap-2 rounded-full border border-border/40 bg-muted/40 px-3 py-1 text-xs shadow-xs transition-all duration-200 sm:text-sm',
-				isRunning
-					? 'opacity-60 transition-opacity hover:opacity-100'
-					: 'opacity-100 hover:bg-muted/60'
-			)}
-		>
+	<div
+		data-slot="task-pill"
+		class={cn(
+			'group inline-flex items-center rounded-full border border-border/40 bg-muted/40 shadow-xs transition-all duration-200 sm:text-sm',
+			activeTask ? 'gap-2 px-3 py-1 text-xs' : 'p-0 text-xs text-muted-foreground/80',
+			isRunning
+				? 'opacity-60 transition-opacity hover:opacity-100'
+				: 'opacity-100 hover:bg-muted/60'
+		)}
+	>
+		{#if activeTask}
 			<button
 				type="button"
 				role="checkbox"
@@ -100,11 +101,21 @@
 					<Check class="size-2.5 stroke-[3]" />
 				{/if}
 			</button>
+		{/if}
 
-			<Popover.Trigger
-				class="inline-flex cursor-pointer items-center gap-1.5 text-foreground select-none focus-visible:outline-none"
-				aria-label={`Change active task: ${activeTask.title}`}
-			>
+		<Popover.Trigger
+			class={cn(
+				'inline-flex cursor-pointer items-center gap-1.5 select-none focus-visible:outline-none',
+				activeTask
+					? 'text-foreground'
+					: cn(
+							'rounded-full px-3.5 py-1 text-muted-foreground/80 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring',
+							isRunning ? 'opacity-60' : 'opacity-100'
+						)
+			)}
+			aria-label={activeTask ? `Change active task: ${activeTask.title}` : 'Select focus task'}
+		>
+			{#if activeTask}
 				<span
 					class={cn(
 						'max-w-[160px] truncate font-medium transition-colors sm:max-w-[220px]',
@@ -113,26 +124,14 @@
 				>
 					{activeTask.title}
 				</span>
-				<ChevronDown
-					class="size-3 text-muted-foreground/60 transition-transform duration-200 group-data-[state=open]:rotate-180"
-				/>
-			</Popover.Trigger>
-		</div>
-	{:else}
-		<Popover.Trigger
-			data-slot="task-pill"
-			class={cn(
-				'group inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-3.5 py-1 text-xs text-muted-foreground/80 shadow-xs transition-all duration-200 select-none hover:bg-muted/60 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none sm:text-sm',
-				isRunning ? 'opacity-60 transition-opacity hover:opacity-100' : 'opacity-100'
-			)}
-			aria-label="Select focus task"
-		>
-			<span class="font-normal">Free focus</span>
+			{:else}
+				<span class="font-normal">Free focus</span>
+			{/if}
 			<ChevronDown
 				class="size-3 text-muted-foreground/60 transition-transform duration-200 group-data-[state=open]:rotate-180"
 			/>
 		</Popover.Trigger>
-	{/if}
+	</div>
 
 	<Popover.Portal {...portalProps}>
 		<Popover.Content
