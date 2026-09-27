@@ -1,0 +1,62 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { tasksState as defaultTasksState, type TasksState } from '$lib/state/tasks.svelte';
+	import {
+		navigationState as defaultNavigationState,
+		type NavigationState
+	} from '$lib/state/navigation.svelte';
+	import ArrowRight from '@lucide/svelte/icons/arrow-right';
+	import PlanningTimeline from './planning-timeline.svelte';
+	import TaskBacklog from './task-backlog.svelte';
+
+	interface Props {
+		tasksState?: TasksState;
+		navigationState?: NavigationState;
+	}
+
+	let { tasksState = defaultTasksState, navigationState = defaultNavigationState }: Props =
+		$props();
+
+	const pendingTasks = $derived(tasksState.pendingTasks);
+	const pendingCount = $derived(pendingTasks.length);
+	const activeTaskTitle = $derived(tasksState.activeTask?.title);
+
+	onMount(() => {
+		if (!tasksState.isLoaded && !tasksState.isLoading) {
+			tasksState.load();
+		}
+	});
+</script>
+
+<div class="mx-auto w-full max-w-5xl space-y-8 px-2 py-4 sm:px-6">
+	<!-- Planning Top Header -->
+	<header
+		class="flex flex-col gap-4 border-b border-border/40 pb-5 sm:flex-row sm:items-center sm:justify-between"
+	>
+		<div>
+			<h2 class="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Planning</h2>
+			<p class="text-xs text-muted-foreground sm:text-sm">
+				{pendingCount} pending {pendingCount === 1 ? 'task' : 'tasks'}
+			</p>
+		</div>
+
+		<button
+			type="button"
+			aria-label="Back to timer"
+			onclick={() => navigationState.setTab('timer')}
+			class="inline-flex cursor-pointer items-center justify-center gap-1.5 self-start rounded-full border border-border/50 bg-muted/40 px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none sm:self-auto"
+		>
+			<ArrowRight class="size-3.5 rotate-180" />
+			<span>Back to timer</span>
+		</button>
+	</header>
+
+	<!-- Main Responsive 2-Column Grid -->
+	<div class="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
+		<!-- Left Column: Session Plan & Timeline (Macro) -->
+		<PlanningTimeline {activeTaskTitle} />
+
+		<!-- Right Column: Task Backlog (Micro) -->
+		<TaskBacklog {tasksState} />
+	</div>
+</div>

@@ -1,0 +1,154 @@
+<script lang="ts">
+	import Check from '@lucide/svelte/icons/check';
+	import Pin from '@lucide/svelte/icons/pin';
+	import Trash from '@lucide/svelte/icons/trash';
+	import { cn } from '$lib/utils';
+	import type { FocusTask } from '$lib/domain/tasks/task.entity';
+
+	interface Props {
+		task: FocusTask;
+		isActive?: boolean;
+		ontoggle?: (taskId: string) => void | Promise<void>;
+		ontogglepin?: (taskId: string) => void;
+		ontitlechange?: (taskId: string, newTitle: string) => void | Promise<void>;
+		ondelete?: (taskId: string) => void | Promise<void>;
+	}
+
+	let { task, isActive = false, ontoggle, ontogglepin, ontitlechange, ondelete }: Props = $props();
+
+	let isEditing = $state(false);
+	let editingTitle = $state('');
+
+	function startEditing() {
+		editingTitle = task.title;
+		isEditing = true;
+	}
+
+	function handleSave() {
+		if (!isEditing) return;
+		const trimmed = editingTitle.trim();
+		isEditing = false;
+		if (trimmed) {
+			ontitlechange?.(task.id, trimmed);
+		}
+	}
+
+	function handleKeyDown(e: KeyboardEvent) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			handleSave();
+		} else if (e.key === 'Escape') {
+			e.preventDefault();
+			isEditing = false;
+			editingTitle = task.title;
+		}
+	}
+</script>
+
+{#if task.completed}
+	<li
+		class="group flex items-center justify-between gap-3 rounded-xl border border-border/20 bg-muted/20 px-3 py-2 text-muted-foreground/70 transition-colors"
+	>
+		<div class="flex min-w-0 flex-1 items-center gap-3">
+			<button
+				type="button"
+				role="checkbox"
+				aria-checked={true}
+				aria-label={`Mark "${task.title}" as pending`}
+				onclick={() => ontoggle?.(task.id)}
+				class="flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-primary bg-primary text-primary-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			>
+				<Check class="size-2.5 stroke-[3]" />
+			</button>
+			<span class="truncate text-sm text-muted-foreground/60 line-through select-none">
+				{task.title}
+			</span>
+		</div>
+
+		<div class="flex shrink-0 items-center gap-1">
+			<button
+				type="button"
+				aria-label={`Delete task "${task.title}"`}
+				title="Delete task"
+				onclick={() => ondelete?.(task.id)}
+				class="flex size-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/40 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			>
+				<Trash class="size-3.5" />
+			</button>
+		</div>
+	</li>
+{:else}
+	<li
+		class={cn(
+			'group flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 transition-all duration-150',
+			isActive
+				? 'border-primary/50 bg-primary/5 shadow-xs'
+				: 'border-border/40 bg-card/40 hover:border-border/80 hover:bg-muted/30'
+		)}
+	>
+		<!-- Left: Checkbox + Title -->
+		<div class="flex min-w-0 flex-1 items-center gap-3">
+			<button
+				type="button"
+				role="checkbox"
+				aria-checked={false}
+				aria-label={`Mark "${task.title}" as completed`}
+				onclick={() => ontoggle?.(task.id)}
+				class="flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-muted-foreground/40 transition-colors hover:border-primary focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			>
+			</button>
+
+			{#if isEditing}
+				<input
+					type="text"
+					aria-label="Edit task title"
+					bind:value={editingTitle}
+					onkeydown={handleKeyDown}
+					onblur={handleSave}
+					class="h-7 w-full rounded border border-ring bg-background px-2 text-sm text-foreground focus:outline-none"
+				/>
+			{:else}
+				<button
+					type="button"
+					aria-label={`Edit task "${task.title}"`}
+					class="min-w-0 flex-1 cursor-text truncate text-left text-sm font-medium text-foreground transition-colors hover:text-foreground/80 focus-visible:outline-none"
+					title="Click to edit"
+					onclick={startEditing}
+				>
+					{task.title}
+				</button>
+			{/if}
+		</div>
+
+		<!-- Right: Pin Active + Delete -->
+		<div class="flex shrink-0 items-center gap-1">
+			<button
+				type="button"
+				aria-label={isActive
+					? `Unset active task "${task.title}"`
+					: `Set as active in timer "${task.title}"`}
+				aria-pressed={isActive}
+				title={isActive ? 'Active in timer' : 'Set as active in timer'}
+				onclick={() => ontogglepin?.(task.id)}
+				class={cn(
+					'flex size-7 cursor-pointer items-center justify-center rounded-lg transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+					isActive
+						? 'bg-primary/15 text-primary hover:bg-primary/25'
+						: 'text-muted-foreground/50 hover:bg-muted hover:text-foreground'
+				)}
+			>
+				<Pin class={cn('size-3.5', isActive && 'fill-primary')} />
+			</button>
+
+			<button
+				type="button"
+				aria-label={`Delete task "${task.title}"`}
+				title="Delete task"
+				onclick={() => ondelete?.(task.id)}
+				class="flex size-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			>
+				<Trash class="size-3.5" />
+			</button>
+		</div>
+	</li>
+{/if}

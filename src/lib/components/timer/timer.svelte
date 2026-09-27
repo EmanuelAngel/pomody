@@ -2,13 +2,16 @@
 	import TimerArc from './timer-arc.svelte';
 	import TimerDisplay from './timer-display.svelte';
 	import TimerControls from './timer-controls.svelte';
+	import TaskPill from './task-pill.svelte';
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
+	import { tasksState as defaultTasksState, type TasksState } from '$lib/state/tasks.svelte';
 
 	interface Props {
 		state?: TimerState;
+		tasksState?: TasksState;
 	}
 
-	let { state = defaultTimerState }: Props = $props();
+	let { state = defaultTimerState, tasksState = defaultTasksState }: Props = $props();
 
 	function handlePlayPause() {
 		if (state.isRunning) {
@@ -46,4 +49,8 @@
 		onReset={handleReset}
 		onSkip={handleSkip}
 	/>
+
+	<div class="mt-6 flex justify-center">
+		<TaskPill isRunning={state.isRunning} {tasksState} />
+	</div>
 </div>
