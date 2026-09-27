@@ -1,17 +1,31 @@
 <script lang="ts">
+	import { fade } from 'svelte/transition';
 	import TimerArc from './timer-arc.svelte';
 	import TimerDisplay from './timer-display.svelte';
 	import TimerControls from './timer-controls.svelte';
 	import TaskPill from './task-pill.svelte';
+	import BreakRevitalization from './break-revitalization.svelte';
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
 	import { tasksState as defaultTasksState, type TasksState } from '$lib/state/tasks.svelte';
+	import { breaksState as defaultBreaksState, type BreaksState } from '$lib/state/breaks.svelte';
 
 	interface Props {
 		state?: TimerState;
 		tasksState?: TasksState;
+		breaksState?: BreaksState;
 	}
 
-	let { state = defaultTimerState, tasksState = defaultTasksState }: Props = $props();
+	let {
+		state = defaultTimerState,
+		tasksState = defaultTasksState,
+		breaksState = defaultBreaksState
+	}: Props = $props();
+
+	$effect(() => {
+		if (state.mode === 'focus') {
+			breaksState.resetCycle();
+		}
+	});
 
 	function handlePlayPause() {
 		if (state.isRunning) {
@@ -50,7 +64,15 @@
 		onSkip={handleSkip}
 	/>
 
-	<div class="mt-6 flex justify-center">
-		<TaskPill isRunning={state.isRunning} {tasksState} />
+	<div class="mt-6 flex min-h-8 justify-center">
+		{#if state.mode === 'focus'}
+			<div transition:fade={{ duration: 150 }}>
+				<TaskPill isRunning={state.isRunning} {tasksState} />
+			</div>
+		{:else if (state.mode === 'shortBreak' || state.mode === 'longBreak') && state.revitalizationEnabled}
+			<div transition:fade={{ duration: 150 }}>
+				<BreakRevitalization {breaksState} mode={state.mode} currentRound={state.currentRound} />
+			</div>
+		{/if}
 	</div>
 </div>

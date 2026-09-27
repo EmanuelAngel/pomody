@@ -5,6 +5,58 @@ import TimerDisplay from './timer-display.svelte';
 import TimerControls from './timer-controls.svelte';
 import Timer from './timer.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
+import { createBreaksState } from '$lib/state/breaks.svelte';
+import type { IBreakActivityRepository } from '$lib/domain/ports/break-activity-repository.port';
+import { sortBreakActivities } from '$lib/domain/ports/break-activity-repository.port';
+import {
+	createBreakActivity,
+	type BreakActivity,
+	type BreakCategory
+} from '$lib/domain/breaks/break-activity.entity';
+
+class MockBreakActivityRepository implements IBreakActivityRepository {
+	private activities = new Map<string, BreakActivity>();
+
+	constructor(initialActivities: readonly BreakActivity[] = []) {
+		for (const act of initialActivities) {
+			this.activities.set(act.id, act);
+		}
+	}
+
+	async getAll(): Promise<readonly BreakActivity[]> {
+		return sortBreakActivities(Array.from(this.activities.values()));
+	}
+
+	async getByCategory(category: BreakCategory): Promise<readonly BreakActivity[]> {
+		return sortBreakActivities(
+			Array.from(this.activities.values()).filter((a) => a.category === category)
+		);
+	}
+
+	async save(activity: BreakActivity): Promise<void> {
+		this.activities.set(activity.id, activity);
+	}
+
+	async delete(activityId: string): Promise<void> {
+		this.activities.delete(activityId);
+	}
+
+	async resetToDefaults(): Promise<void> {
+		this.activities.clear();
+	}
+
+	async clearAll(): Promise<void> {
+		this.activities.clear();
+	}
+}
+
+const mockActivity = createBreakActivity({
+	id: 'act-phys',
+	title: 'Neck & Shoulder Release',
+	category: 'physical',
+	durationMinutes: 2,
+	guide: '1. Tilt ear.\n2. Roll shoulders.'
+});
 
 describe('TimerArc (Client Browser)', () => {
 	it('renders circular progress arc on dimmed track', async () => {
@@ -168,5 +220,90 @@ describe('Timer Orchestrator Integration (Client Browser)', () => {
 		await expect.element(resumeBtn).toBeVisible();
 		await resumeBtn.click();
 		expect(state.isRunning).toBe(true);
+	});
+});
+
+describe('Timer Slot Mode & BreakRevitalization Integration (Client Browser)', () => {
+	it('swaps between TaskPill and BreakRevitalization based on mode', async () => {
+		const dummyTicker = {
+			isRunning: false,
+			start: vi.fn(),
+			stop: vi.fn(),
+			destroy: vi.fn()
+		};
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, dummyTicker);
+		const breaksRepo = new MockBreakActivityRepository([mockActivity]);
+		const breaksState = createBreaksState(breaksRepo);
+		await breaksState.load();
+
+		const screen = await render(Timer, { state: timerState, breaksState });
+
+		// Focus mode -> TaskPill is visible, BreakRevitalization is not in document
+		expect(screen.container.querySelector('[data-slot="task-pill"]')).not.toBeNull();
+		expect(screen.container.querySelector('[data-slot="break-revitalization"]')).toBeNull();
+
+		// Advance to shortBreak
+		timerState.skip();
+		expect(timerState.mode).toBe('shortBreak');
+
+		await expect.element(screen.getByText('Neck & Shoulder Release')).toBeVisible();
+		expect(screen.container.querySelector('[data-slot="break-revitalization"]')).not.toBeNull();
+		await vi.waitFor(() => {
+			expect(screen.container.querySelector('[data-slot="task-pill"]')).toBeNull();
+		});
+
+		// Advance to focus mode again
+		timerState.skip();
+		expect(timerState.mode).toBe('focus');
+
+		await expect.element(screen.getByText('Free focus')).toBeVisible();
+		expect(screen.container.querySelector('[data-slot="task-pill"]')).not.toBeNull();
+		await vi.waitFor(() => {
+			expect(screen.container.querySelector('[data-slot="break-revitalization"]')).toBeNull();
+		});
+	});
+
+	it('renders empty slot during break when revitalizationEnabled is false', async () => {
+		const dummyTicker = {
+			isRunning: false,
+			start: vi.fn(),
+			stop: vi.fn(),
+			destroy: vi.fn()
+		};
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, dummyTicker);
+		timerState.setRevitalizationEnabled(false);
+		const breaksRepo = new MockBreakActivityRepository([mockActivity]);
+		const breaksState = createBreaksState(breaksRepo);
+		await breaksState.load();
+
+		const screen = await render(Timer, { state: timerState, breaksState });
+
+		// Advance to shortBreak
+		timerState.skip();
+		expect(timerState.mode).toBe('shortBreak');
+
+		// Neither task pill nor break revitalization should be rendered
+		await vi.waitFor(() => {
+			expect(screen.container.querySelector('[data-slot="task-pill"]')).toBeNull();
+		});
+		expect(screen.container.querySelector('[data-slot="break-revitalization"]')).toBeNull();
+	});
+
+	it('calls breaksState.resetCycle() when in focus mode', async () => {
+		const dummyTicker = {
+			isRunning: false,
+			start: vi.fn(),
+			stop: vi.fn(),
+			destroy: vi.fn()
+		};
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, dummyTicker);
+		const breaksRepo = new MockBreakActivityRepository([mockActivity]);
+		const breaksState = createBreaksState(breaksRepo);
+		await breaksState.load();
+		const resetSpy = vi.spyOn(breaksState, 'resetCycle');
+
+		await render(Timer, { state: timerState, breaksState });
+
+		expect(resetSpy).toHaveBeenCalled();
 	});
 });

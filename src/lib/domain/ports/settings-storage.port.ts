@@ -10,6 +10,7 @@ export const THEMES: readonly Theme[] = ['dark', 'dawn', 'oled'] as const;
 export interface UserSettings {
 	readonly timer: TimerConfig;
 	readonly soundEnabled: boolean;
+	readonly revitalizationEnabled: boolean;
 	readonly theme: Theme;
 }
 
@@ -19,6 +20,7 @@ export interface UserSettings {
 export const DEFAULT_USER_SETTINGS: UserSettings = Object.freeze({
 	timer: DEFAULT_TIMER_CONFIG,
 	soundEnabled: true,
+	revitalizationEnabled: true,
 	theme: 'dark'
 });
 

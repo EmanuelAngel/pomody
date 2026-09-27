@@ -20,6 +20,7 @@ export interface StoredSettingsEnvelope {
 	readonly version: number;
 	readonly timer: TimerConfig;
 	readonly soundEnabled: boolean;
+	readonly revitalizationEnabled?: boolean;
 	readonly theme: Theme;
 }
 
@@ -118,6 +119,10 @@ export class LocalSettingsStorage implements ISettingsStorage {
 				...patchTimer
 			},
 			soundEnabled: patch.soundEnabled !== undefined ? patch.soundEnabled : current.soundEnabled,
+			revitalizationEnabled:
+				patch.revitalizationEnabled !== undefined
+					? patch.revitalizationEnabled
+					: current.revitalizationEnabled,
 			theme: patch.theme !== undefined ? patch.theme : current.theme
 		};
 
@@ -127,6 +132,7 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			version: SETTINGS_STORAGE_VERSION,
 			timer: validated.timer,
 			soundEnabled: validated.soundEnabled,
+			revitalizationEnabled: validated.revitalizationEnabled,
 			theme: validated.theme
 		};
 
@@ -203,6 +209,10 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			? obj.soundEnabled
 			: DEFAULT_USER_SETTINGS.soundEnabled;
 
+		const revitalizationEnabled = isValidBoolean(obj.revitalizationEnabled)
+			? obj.revitalizationEnabled
+			: DEFAULT_USER_SETTINGS.revitalizationEnabled;
+
 		const theme = isValidTheme(obj.theme) ? obj.theme : DEFAULT_USER_SETTINGS.theme;
 
 		return {
@@ -213,6 +223,7 @@ export class LocalSettingsStorage implements ISettingsStorage {
 				roundsBeforeLongBreak
 			},
 			soundEnabled,
+			revitalizationEnabled,
 			theme
 		};
 	}

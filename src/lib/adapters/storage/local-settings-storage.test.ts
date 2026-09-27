@@ -86,6 +86,7 @@ describe('LocalSettingsStorage', () => {
 					roundsBeforeLongBreak: 6
 				},
 				soundEnabled: false,
+				revitalizationEnabled: false,
 				theme: 'dawn'
 			};
 
@@ -98,6 +99,7 @@ describe('LocalSettingsStorage', () => {
 			expect(envelope.version).toBe(SETTINGS_STORAGE_VERSION);
 			expect(envelope.timer).toEqual(customSettings.timer);
 			expect(envelope.soundEnabled).toBe(false);
+			expect(envelope.revitalizationEnabled).toBe(false);
 			expect(envelope.theme).toBe('dawn');
 
 			const loaded = storageAdapter.loadSettings();
@@ -171,6 +173,15 @@ describe('LocalSettingsStorage', () => {
 			expect(loaded.timer.shortBreakDurationSeconds).toBe(300);
 			expect(loaded.timer.longBreakDurationSeconds).toBe(900);
 			expect(loaded.timer.roundsBeforeLongBreak).toBe(4);
+		});
+
+		it('preserves revitalizationEnabled when updating other settings', () => {
+			storageAdapter.saveSettings({ revitalizationEnabled: false });
+			expect(storageAdapter.loadSettings().revitalizationEnabled).toBe(false);
+
+			storageAdapter.saveSettings({ theme: 'oled' });
+			expect(storageAdapter.loadSettings().revitalizationEnabled).toBe(false);
+			expect(storageAdapter.loadSettings().theme).toBe('oled');
 		});
 	});
 
@@ -358,6 +369,20 @@ describe('LocalSettingsStorage', () => {
 
 			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ soundEnabled: 0 }));
 			expect(storageAdapter.loadSettings().soundEnabled).toBe(true);
+		});
+
+		it('validates revitalizationEnabled boolean type and falls back to default true', () => {
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ revitalizationEnabled: false }));
+			expect(storageAdapter.loadSettings().revitalizationEnabled).toBe(false);
+
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ revitalizationEnabled: 'false' }));
+			expect(storageAdapter.loadSettings().revitalizationEnabled).toBe(true);
+
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ revitalizationEnabled: 0 }));
+			expect(storageAdapter.loadSettings().revitalizationEnabled).toBe(true);
+
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({}));
+			expect(storageAdapter.loadSettings().revitalizationEnabled).toBe(true);
 		});
 
 		it('validates theme type and falls back invalid themes to default dark', () => {

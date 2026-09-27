@@ -11,7 +11,10 @@ import { WebWorkerTimerTicker } from '../adapters/worker/timer-worker';
 import type { ITimerTicker } from '../domain/ports/timer-ticker.port';
 import type { IAudioNotifier } from '../domain/ports/IAudioNotifier';
 import { WebAudioNotifier } from '../adapters/audio/web-audio-notifier';
-import type { ISettingsStorage } from '../domain/ports/settings-storage.port';
+import {
+	DEFAULT_USER_SETTINGS,
+	type ISettingsStorage
+} from '../domain/ports/settings-storage.port';
 import { LocalSettingsStorage } from '../adapters/storage/local-settings-storage';
 
 /**
@@ -39,6 +42,7 @@ export class TimerState {
 	private readonly unsubscribeEvents: Unsubscribe;
 
 	private _soundEnabled = $state<boolean>(true);
+	private _revitalizationEnabled = $state<boolean>(true);
 
 	private _snapshot = $state<TimerSnapshot>({
 		state: 'idle',
@@ -69,6 +73,20 @@ export class TimerState {
 	public toggleSound(): void {
 		this._soundEnabled = !this._soundEnabled;
 		this.storage?.saveSettings({ soundEnabled: this._soundEnabled });
+	}
+
+	public get revitalizationEnabled(): boolean {
+		return this._revitalizationEnabled;
+	}
+
+	public setRevitalizationEnabled(enabled: boolean): void {
+		this._revitalizationEnabled = enabled;
+		this.storage?.saveSettings({ revitalizationEnabled: this._revitalizationEnabled });
+	}
+
+	public toggleRevitalization(): void {
+		this._revitalizationEnabled = !this._revitalizationEnabled;
+		this.storage?.saveSettings({ revitalizationEnabled: this._revitalizationEnabled });
 	}
 
 	public get snapshot(): TimerSnapshot {
@@ -128,6 +146,7 @@ export class TimerState {
 		if (storedSettings !== undefined) {
 			this._soundEnabled = storedSettings.soundEnabled;
 		}
+		this._revitalizationEnabled = storedSettings?.revitalizationEnabled ?? true;
 
 		this.fsm = new TimerFSM(initialConfig);
 		this.ticker = ticker ?? new WebWorkerTimerTicker();
@@ -206,6 +225,20 @@ export class TimerState {
 	public reset(): void {
 		this.ticker.stop();
 		this.fsm.reset();
+	}
+
+	/**
+	 * Resets all user settings back to defaults and persists them to storage.
+	 */
+	public resetSettings(): void {
+		this._revitalizationEnabled = DEFAULT_USER_SETTINGS.revitalizationEnabled;
+		this._soundEnabled = DEFAULT_USER_SETTINGS.soundEnabled;
+		this.fsm.updateConfig(DEFAULT_TIMER_CONFIG);
+		this.storage?.saveSettings({
+			timer: this.fsm.config,
+			soundEnabled: this._soundEnabled,
+			revitalizationEnabled: this._revitalizationEnabled
+		});
 	}
 
 	/**

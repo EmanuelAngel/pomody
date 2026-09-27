@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TimerState, createTimerState, formatTime, timerState } from './timer.svelte';
-import { TimerFSM } from '../domain/timer/timer-fsm';
+import { DEFAULT_TIMER_CONFIG, TimerFSM } from '../domain/timer/timer-fsm';
 import type { ITimerTicker, TickCallback } from '../domain/ports/timer-ticker.port';
 import type { IAudioNotifier } from '../domain/ports/IAudioNotifier';
 import {
@@ -370,6 +370,28 @@ describe('TimerState Composition Root', () => {
 			timer.destroy();
 		});
 
+		it('should default revitalizationEnabled to true', () => {
+			const timer = createTimerState(undefined, mockTicker, mockAudioNotifier);
+			expect(timer.revitalizationEnabled).toBe(true);
+			timer.destroy();
+		});
+
+		it('should update revitalizationEnabled reactively via setRevitalizationEnabled and toggleRevitalization', () => {
+			const timer = createTimerState(undefined, mockTicker, mockAudioNotifier);
+			expect(timer.revitalizationEnabled).toBe(true);
+
+			timer.setRevitalizationEnabled(false);
+			expect(timer.revitalizationEnabled).toBe(false);
+
+			timer.toggleRevitalization();
+			expect(timer.revitalizationEnabled).toBe(true);
+
+			timer.toggleRevitalization();
+			expect(timer.revitalizationEnabled).toBe(false);
+
+			timer.destroy();
+		});
+
 		it('should call mockAudioNotifier.notifyBlockCompleted with "focus" when focus block completes', () => {
 			const timer = createTimerState(undefined, mockTicker, mockAudioNotifier);
 			timer.start();
@@ -476,7 +498,8 @@ describe('TimerState Composition Root', () => {
 						longBreakDurationSeconds: 600,
 						roundsBeforeLongBreak: 3
 					},
-					soundEnabled: false
+					soundEnabled: false,
+					revitalizationEnabled: false
 				})),
 				saveSettings: vi.fn(),
 				resetSettings: vi.fn()
@@ -497,6 +520,7 @@ describe('TimerState Composition Root', () => {
 			expect(timer.durationMs).toBe(1200000);
 			expect(timer.formattedTime).toBe('20:00');
 			expect(timer.soundEnabled).toBe(false);
+			expect(timer.revitalizationEnabled).toBe(false);
 
 			timer.destroy();
 		});
@@ -517,6 +541,7 @@ describe('TimerState Composition Root', () => {
 			});
 			expect(timer.remainingMs).toBe(1800000);
 			expect(timer.soundEnabled).toBe(false);
+			expect(timer.revitalizationEnabled).toBe(false);
 
 			timer.destroy();
 		});
@@ -573,11 +598,67 @@ describe('TimerState Composition Root', () => {
 			timer.destroy();
 		});
 
+		it('should call storage.saveSettings with updated revitalizationEnabled when setRevitalizationEnabled is called', () => {
+			const timer = createTimerState(undefined, mockTicker, undefined, mockStorage);
+			expect(timer.revitalizationEnabled).toBe(false);
+
+			timer.setRevitalizationEnabled(true);
+			expect(timer.revitalizationEnabled).toBe(true);
+			expect(mockStorage.saveSettings).toHaveBeenCalledTimes(1);
+			expect(mockStorage.saveSettings).toHaveBeenCalledWith({ revitalizationEnabled: true });
+
+			timer.setRevitalizationEnabled(false);
+			expect(timer.revitalizationEnabled).toBe(false);
+			expect(mockStorage.saveSettings).toHaveBeenCalledTimes(2);
+			expect(mockStorage.saveSettings).toHaveBeenLastCalledWith({ revitalizationEnabled: false });
+
+			timer.destroy();
+		});
+
+		it('should call storage.saveSettings with toggled revitalizationEnabled when toggleRevitalization is called', () => {
+			const timer = createTimerState(undefined, mockTicker, undefined, mockStorage);
+			expect(timer.revitalizationEnabled).toBe(false);
+
+			timer.toggleRevitalization();
+			expect(timer.revitalizationEnabled).toBe(true);
+			expect(mockStorage.saveSettings).toHaveBeenCalledTimes(1);
+			expect(mockStorage.saveSettings).toHaveBeenCalledWith({ revitalizationEnabled: true });
+
+			timer.toggleRevitalization();
+			expect(timer.revitalizationEnabled).toBe(false);
+			expect(mockStorage.saveSettings).toHaveBeenCalledTimes(2);
+			expect(mockStorage.saveSettings).toHaveBeenLastCalledWith({ revitalizationEnabled: false });
+
+			timer.destroy();
+		});
+
+		it('should reset all settings back to defaults when resetSettings is called', () => {
+			const timer = createTimerState(undefined, mockTicker, undefined, mockStorage);
+			expect(timer.soundEnabled).toBe(false);
+			expect(timer.revitalizationEnabled).toBe(false);
+
+			timer.resetSettings();
+
+			expect(timer.soundEnabled).toBe(true);
+			expect(timer.revitalizationEnabled).toBe(true);
+			expect(timer.config).toEqual(DEFAULT_TIMER_CONFIG);
+			expect(mockStorage.saveSettings).toHaveBeenCalledWith({
+				timer: DEFAULT_TIMER_CONFIG,
+				soundEnabled: true,
+				revitalizationEnabled: true
+			});
+
+			timer.destroy();
+		});
+
 		it('should safely operate without throwing when storage is undefined', () => {
 			const timer = createTimerState(undefined, mockTicker);
 			expect(() => timer.updateConfig({ focusDurationSeconds: 1800 })).not.toThrow();
 			expect(() => timer.setSoundEnabled(false)).not.toThrow();
 			expect(() => timer.toggleSound()).not.toThrow();
+			expect(() => timer.setRevitalizationEnabled(false)).not.toThrow();
+			expect(() => timer.toggleRevitalization()).not.toThrow();
+			expect(() => timer.resetSettings()).not.toThrow();
 			timer.destroy();
 		});
 	});
