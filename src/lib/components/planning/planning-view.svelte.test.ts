@@ -4,9 +4,29 @@ import { userEvent } from 'vitest/browser';
 import PlanningView from './planning-view.svelte';
 import { createTasksState } from '$lib/state/tasks.svelte';
 import { createNavigationState } from '$lib/state/navigation.svelte';
+import { createPlanningState } from '$lib/state/planning.svelte';
+import { createTimerState } from '$lib/state/timer.svelte';
 import type { ITaskRepository } from '$lib/domain/ports/task-repository.port';
 import { sortFocusTasks } from '$lib/domain/ports/task-repository.port';
 import { createFocusTask, toggleFocusTask, type FocusTask } from '$lib/domain/tasks/task.entity';
+import type { ISessionPlanRepository } from '$lib/domain/ports/session-plan-repository.port';
+import type { SessionPlan } from '$lib/domain/planning/session-plan.entity';
+
+class MockSessionPlanRepository implements ISessionPlanRepository {
+	private plan: SessionPlan | null = null;
+
+	async getActivePlan(): Promise<SessionPlan | null> {
+		return this.plan;
+	}
+
+	async saveActivePlan(plan: SessionPlan): Promise<void> {
+		this.plan = plan;
+	}
+
+	async clearActivePlan(): Promise<void> {
+		this.plan = null;
+	}
+}
 
 class MockTaskRepository implements ITaskRepository {
 	private tasks = new Map<string, FocusTask>();
@@ -300,5 +320,180 @@ describe('PlanningView (Client Browser)', () => {
 		await timerNavBtn.click();
 
 		expect(navigationState.activeTab).toBe('timer');
+	});
+
+	it('renders timeline with planningState and 3-metric strip summary display', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, { tasksState, planningState, timerState });
+
+		await expect.element(screen.getByText('Session Timeline')).toBeVisible();
+		await expect.element(screen.getByText('Total Focus')).toBeVisible();
+		await expect.element(screen.getByText('Total Breaks')).toBeVisible();
+		await expect.element(screen.getByText('Estimated Finish')).toBeVisible();
+
+		// Default values: 4 blocks x 25m = 100m -> 1h 40m, breaks: 3 * 5m = 15m
+		await expect.element(screen.getByText('1h 40m')).toBeVisible();
+		await expect.element(screen.getByText('15m').nth(1)).toBeVisible();
+	});
+
+	it('toggles mode between By Blocks and By End Time', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, { tasksState, planningState, timerState });
+
+		expect(planningState.targetMode).toBe('blocks');
+
+		const byEndTimeBtn = screen.getByRole('button', { name: 'By End Time' });
+		await byEndTimeBtn.click();
+		expect(planningState.targetMode).toBe('end_time');
+
+		// Target finish time input should be visible
+		await expect.element(screen.getByLabelText('Target finish time')).toBeVisible();
+
+		const byBlocksBtn = screen.getByRole('button', { name: 'By Blocks' });
+		await byBlocksBtn.click();
+		expect(planningState.targetMode).toBe('blocks');
+	});
+
+	it('adjusts focus duration and block count via steppers', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, { tasksState, planningState, timerState });
+
+		// Increase focus duration by 5m
+		const incFocusBtn = screen.getByRole('button', { name: 'Increase focus duration' });
+		await incFocusBtn.click();
+		expect(planningState.focusMinutes).toBe(30);
+
+		// Decrease block count by 1
+		const decBlockBtn = screen.getByRole('button', { name: 'Decrease block count' });
+		await decBlockBtn.click();
+		expect(planningState.blockCount).toBe(3);
+	});
+
+	it('slots task into block via popover and unassigns it', async () => {
+		const task = createFocusTask({ title: 'Task to Assign' });
+		const repo = new MockTaskRepository([task]);
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, { tasksState, planningState, timerState });
+
+		// Click "Assign task" for Focus Block 1
+		const assignBtn = screen.getByRole('button', { name: 'Assign task to focus block 1' });
+		await assignBtn.click();
+
+		// Select task inside popover using exact name match to avoid backlog action buttons
+		const taskChoiceBtn = screen.getByRole('button', { name: 'Task to Assign', exact: true });
+		await taskChoiceBtn.click();
+
+		// Block 1 should now show assigned task in the Session Timeline
+		const planningSection = screen.getByRole('region', { name: 'Session Planning' });
+		await expect.element(planningSection.getByText('Task to Assign')).toBeVisible();
+		expect(planningState.draftTaskAssignments.get(0)).toBe(task.id);
+
+		// Unassign task
+		const unassignBtn = screen.getByRole('button', {
+			name: 'Unassign task from focus block 1'
+		});
+		await unassignBtn.click();
+		expect(planningState.draftTaskAssignments.has(0)).toBe(false);
+	});
+
+	it('slots task into next available focus block from backlog', async () => {
+		const task = createFocusTask({ title: 'Backlog Quick Slot Task' });
+		const repo = new MockTaskRepository([task]);
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, { tasksState, planningState, timerState });
+
+		const quickSlotBtn = screen.getByRole('button', {
+			name: 'Slot task "Backlog Quick Slot Task" into next focus block'
+		});
+		await quickSlotBtn.click();
+
+		expect(planningState.draftTaskAssignments.get(0)).toBe(task.id);
+	});
+
+	it('starts session and navigates to timer tab when clicking Start Session', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		const navigationState = createNavigationState('planning');
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, {
+			tasksState,
+			planningState,
+			timerState,
+			navigationState
+		});
+
+		const startBtn = screen.getByRole('button', { name: 'Start Session' });
+		await expect.element(startBtn).toBeVisible();
+		await startBtn.click();
+
+		expect(planningState.isSessionActive).toBe(true);
+		expect(navigationState.activeTab).toBe('timer');
+	});
+
+	it('renders active session controls and ends session', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		const navigationState = createNavigationState('planning');
+		await tasksState.load();
+		await planningState.load();
+		await planningState.startSession(timerState, tasksState);
+
+		const screen = await render(PlanningView, {
+			tasksState,
+			planningState,
+			timerState,
+			navigationState
+		});
+
+		// Forward-only notice
+		await expect.element(screen.getByText('Forward-only sync:')).toBeVisible();
+
+		// End session plan
+		const endBtn = screen.getByRole('button', { name: 'End Session Plan' });
+		await expect.element(endBtn).toBeVisible();
+		await endBtn.click();
+
+		expect(planningState.isSessionActive).toBe(false);
 	});
 });

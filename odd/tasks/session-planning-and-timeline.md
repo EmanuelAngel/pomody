@@ -71,11 +71,11 @@ Currently, Pomody only supports open-ended focus cycles. Deep work requires deli
   - Applicable checks: `pnpm test:unit src/lib/state/planning.test.ts` (31/31 passed)
   - Evidence: Commit `1069c6a` (feat(state): implement reactive PlanningState store with Svelte 5 Runes)
 
-- [ ] **TASK-4**: Interactive planning timeline, inline controls, and task backlog slotting
+- [x] **TASK-4**: Interactive planning timeline, inline controls, and task backlog slotting
   - Route: delegated direct (writer trigger: updates multiple Svelte components, bits-ui integration, styling)
   - Target files: `src/lib/components/planning/planning-timeline.svelte`, `src/lib/components/planning/planning-view.svelte`, `src/lib/components/planning/task-backlog.svelte`, `src/lib/components/planning/task-item.svelte`, `src/lib/components/planning/planning-view.svelte.test.ts`
-  - Applicable checks: `pnpm check`, `pnpm test:unit`, `pnpm test:browser`
-  - Evidence: Pending
+  - Applicable checks: `pnpm check` (0 errors), `pnpm test:unit` (486/486 passed), `pnpm test:browser` (84/84 passed)
+  - Evidence: Commit `0c86731` (feat(ui): interactive planning timeline, inline controls, and task backlog slotting)
 
 - [ ] **TASK-5**: End-to-end verification, type check, lint & build
   - Route: direct inline (bounded verification check)

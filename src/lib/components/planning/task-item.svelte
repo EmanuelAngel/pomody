@@ -2,6 +2,7 @@
 	import Check from '@lucide/svelte/icons/check';
 	import Pin from '@lucide/svelte/icons/pin';
 	import Trash from '@lucide/svelte/icons/trash';
+	import CalendarPlus from '@lucide/svelte/icons/calendar-plus';
 	import { cn } from '$lib/utils';
 	import type { FocusTask } from '$lib/domain/tasks/task.entity';
 
@@ -12,9 +13,18 @@
 		ontogglepin?: (taskId: string) => void;
 		ontitlechange?: (taskId: string, newTitle: string) => void | Promise<void>;
 		ondelete?: (taskId: string) => void | Promise<void>;
+		onslot?: (taskId: string) => void;
 	}
 
-	let { task, isActive = false, ontoggle, ontogglepin, ontitlechange, ondelete }: Props = $props();
+	let {
+		task,
+		isActive = false,
+		ontoggle,
+		ontogglepin,
+		ontitlechange,
+		ondelete,
+		onslot
+	}: Props = $props();
 
 	let isEditing = $state(false);
 	let editingTitle = $state('');
@@ -120,8 +130,19 @@
 			{/if}
 		</div>
 
-		<!-- Right: Pin Active + Delete -->
+		<!-- Right: Quick Slot + Pin Active + Delete -->
 		<div class="flex shrink-0 items-center gap-1">
+			{#if onslot}
+				<button
+					type="button"
+					aria-label={`Slot task "${task.title}" into next focus block`}
+					title="Slot into next focus block"
+					onclick={() => onslot?.(task.id)}
+					class="flex size-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				>
+					<CalendarPlus class="size-3.5" />
+				</button>
+			{/if}
 			<button
 				type="button"
 				aria-label={isActive
