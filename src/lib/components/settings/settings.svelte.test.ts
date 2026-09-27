@@ -115,6 +115,19 @@ describe('SettingsDrawer (Client Browser)', () => {
 		await expect.element(screen.getByRole('heading', { name: 'Intervals' })).toBeVisible();
 		await expect.element(screen.getByRole('heading', { name: 'Theme' })).toBeVisible();
 		await expect.element(screen.getByRole('heading', { name: 'Sound' })).toBeVisible();
+		await expect
+			.element(screen.getByRole('heading', { name: 'Break Revitalization' }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByText('Show restorative micro-habits and guides during breaks.'))
+			.toBeVisible();
+		await expect.element(screen.getByText('Mindful suggestions')).toBeVisible();
+		await expect
+			.element(screen.getByText('Physical stretches, breathwork, and hydration reminders'))
+			.toBeVisible();
+		await expect
+			.element(screen.getByRole('switch', { name: 'Mindful break suggestions' }))
+			.toBeChecked();
 
 		// Check Rosé Pine interval accent dot indicators
 		expect(screen.container.querySelector('.bg-accent-foam')).not.toBeNull();
@@ -244,6 +257,7 @@ describe('SettingsDrawer (Client Browser)', () => {
 			ticker
 		);
 		timerState.setSoundEnabled(false);
+		timerState.setRevitalizationEnabled(false);
 		const themeState = createThemeState('dawn');
 
 		const defaultFocus = Math.round(DEFAULT_TIMER_CONFIG.focusDurationSeconds / 60);
@@ -267,6 +281,9 @@ describe('SettingsDrawer (Client Browser)', () => {
 		const switchEl = screen.getByRole('switch', { name: 'Sound alerts' });
 		await expect.element(switchEl).not.toBeChecked();
 
+		const revSwitchEl = screen.getByRole('switch', { name: 'Mindful break suggestions' });
+		await expect.element(revSwitchEl).not.toBeChecked();
+
 		const dawnRadio = screen.getByRole('radio', { name: 'Dawn theme' });
 		await expect.element(dawnRadio).toHaveAttribute('data-state', 'on');
 		expect(themeState.current).toBe('dawn');
@@ -287,6 +304,7 @@ describe('SettingsDrawer (Client Browser)', () => {
 			DEFAULT_TIMER_CONFIG.roundsBeforeLongBreak
 		);
 		expect(timerState.soundEnabled).toBe(true);
+		expect(timerState.revitalizationEnabled).toBe(true);
 
 		await expect.element(screen.getByText(`${defaultFocus} min`, { exact: true })).toBeVisible();
 		await expect.element(screen.getByText(`${defaultShort} min`, { exact: true })).toBeVisible();
@@ -295,6 +313,7 @@ describe('SettingsDrawer (Client Browser)', () => {
 			.element(screen.getByText(`${defaultRounds} rounds`, { exact: true }))
 			.toBeVisible();
 		await expect.element(switchEl).toBeChecked();
+		await expect.element(revSwitchEl).toBeChecked();
 
 		// Active theme is preserved
 		expect(themeState.current).toBe('dawn');
@@ -490,6 +509,73 @@ describe('SettingsDrawer (Client Browser)', () => {
 
 		// Verify sound alerts switch resets to checked and timerState.soundEnabled is true
 		expect(timerState.soundEnabled).toBe(true);
+		await expect.element(switchEl).toBeChecked();
+	});
+
+	it('toggles break revitalization switch and updates timerState revitalizationEnabled', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+		const themeState = createThemeState();
+
+		const screen = await render(SettingsDrawer, {
+			open: true,
+			timerState,
+			themeState,
+			portalProps: { disabled: true }
+		});
+
+		await expect
+			.element(screen.getByRole('heading', { name: 'Break Revitalization' }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByText('Show restorative micro-habits and guides during breaks.'))
+			.toBeVisible();
+
+		// Verify the mindful suggestions switch renders and is accessible
+		const switchEl = screen.getByRole('switch', { name: 'Mindful break suggestions' });
+		await expect.element(switchEl).toBeVisible();
+
+		// Verify the switch is checked by default
+		expect(timerState.revitalizationEnabled).toBe(true);
+		await expect.element(switchEl).toBeChecked();
+
+		// Click the switch and verify timerState.revitalizationEnabled toggles to false and switch is unchecked
+		await switchEl.click();
+		expect(timerState.revitalizationEnabled).toBe(false);
+		await expect.element(switchEl).not.toBeChecked();
+
+		// Click the switch again and verify timerState.revitalizationEnabled toggles back to true and switch is checked
+		await switchEl.click();
+		expect(timerState.revitalizationEnabled).toBe(true);
+		await expect.element(switchEl).toBeChecked();
+	});
+
+	it('resets break revitalization switch to checked on clicking Reset to defaults', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+		const themeState = createThemeState();
+
+		// Set revitalization to disabled first
+		timerState.setRevitalizationEnabled(false);
+
+		const screen = await render(SettingsDrawer, {
+			open: true,
+			timerState,
+			themeState,
+			portalProps: { disabled: true }
+		});
+
+		const switchEl = screen.getByRole('switch', { name: 'Mindful break suggestions' });
+		await expect.element(switchEl).toBeVisible();
+		await expect.element(switchEl).not.toBeChecked();
+		expect(timerState.revitalizationEnabled).toBe(false);
+
+		// Click Reset to defaults
+		const resetBtn = screen.getByRole('button', { name: /Reset to defaults/i });
+		await resetBtn.click();
+
+		// Verify revitalization switch resets to checked and timerState.revitalizationEnabled is true
+		expect(timerState.revitalizationEnabled).toBe(true);
 		await expect.element(switchEl).toBeChecked();
 	});
 });

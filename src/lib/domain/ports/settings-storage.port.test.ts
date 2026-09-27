@@ -15,14 +15,16 @@ describe('Settings Storage Port & UserSettings Model', () => {
 	});
 
 	describe('DEFAULT_USER_SETTINGS', () => {
-		it('should match DEFAULT_TIMER_CONFIG, soundEnabled true, and dark theme', () => {
+		it('should match DEFAULT_TIMER_CONFIG, soundEnabled true, revitalizationEnabled true, and dark theme', () => {
 			expect(DEFAULT_USER_SETTINGS).toEqual({
 				timer: DEFAULT_TIMER_CONFIG,
 				soundEnabled: true,
+				revitalizationEnabled: true,
 				theme: 'dark'
 			});
 			expect(DEFAULT_USER_SETTINGS.timer).toBe(DEFAULT_TIMER_CONFIG);
 			expect(DEFAULT_USER_SETTINGS.soundEnabled).toBe(true);
+			expect(DEFAULT_USER_SETTINGS.revitalizationEnabled).toBe(true);
 			expect(DEFAULT_USER_SETTINGS.theme).toBe('dark');
 		});
 
@@ -48,9 +50,14 @@ describe('Settings Storage Port & UserSettings Model', () => {
 
 			expect(mockStorage.loadSettings()).toEqual(DEFAULT_USER_SETTINGS);
 
-			mockStorage.saveSettings({ theme: 'dawn', soundEnabled: false });
+			mockStorage.saveSettings({
+				theme: 'dawn',
+				soundEnabled: false,
+				revitalizationEnabled: false
+			});
 			expect(mockStorage.loadSettings().theme).toBe('dawn');
 			expect(mockStorage.loadSettings().soundEnabled).toBe(false);
+			expect(mockStorage.loadSettings().revitalizationEnabled).toBe(false);
 
 			mockStorage.resetSettings();
 			expect(mockStorage.loadSettings()).toEqual(DEFAULT_USER_SETTINGS);

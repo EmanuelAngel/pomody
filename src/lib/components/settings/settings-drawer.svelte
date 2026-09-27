@@ -110,6 +110,7 @@
 			roundsBeforeLongBreak: DEFAULT_TIMER_CONFIG.roundsBeforeLongBreak
 		});
 		timerState.setSoundEnabled(true);
+		timerState.setRevitalizationEnabled(true);
 	}
 
 	let selectedTheme = $derived(themeState.current);
@@ -329,6 +330,34 @@
 						checked={timerState.soundEnabled}
 						onCheckedChange={(checked) => timerState.setSoundEnabled(checked)}
 						aria-label="Sound alerts"
+					/>
+				</div>
+			</div>
+
+			<Separator />
+
+			<!-- Section: Break Revitalization -->
+			<div class="flex flex-col gap-3">
+				<div>
+					<h3 class="text-sm font-semibold tracking-wide text-foreground">Break Revitalization</h3>
+					<p class="mt-0.5 text-xs text-muted-foreground">
+						Show restorative micro-habits and guides during breaks.
+					</p>
+				</div>
+
+				<div
+					class="flex items-center justify-between rounded-lg border border-border p-3.5 shadow-xs"
+				>
+					<div class="flex flex-col gap-0.5">
+						<span class="text-xs font-medium text-foreground">Mindful suggestions</span>
+						<span class="text-xs text-muted-foreground"
+							>Physical stretches, breathwork, and hydration reminders</span
+						>
+					</div>
+					<Switch
+						checked={timerState.revitalizationEnabled}
+						onCheckedChange={(checked) => timerState.setRevitalizationEnabled(checked)}
+						aria-label="Mindful break suggestions"
 					/>
 				</div>
 			</div>
