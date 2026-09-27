@@ -632,6 +632,7 @@
 														{#each tasksState.pendingTasks as task (task.id)}
 															<button
 																type="button"
+																aria-label={`Assign task: ${task.title}`}
 																class="flex w-full cursor-pointer items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted focus-visible:outline-none"
 																onclick={() => {
 																	planningState.assignTaskToBlock(block.index, task.id);

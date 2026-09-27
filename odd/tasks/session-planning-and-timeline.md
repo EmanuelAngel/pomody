@@ -32,17 +32,17 @@ Currently, Pomody only supports open-ended focus cycles. Deep work requires deli
 
 ## Acceptance Criteria
 
-- [ ] `calculateSessionBudgetByBlocks` and `calculateSessionBudgetByEndTime` correctly compute block sequences terminating on final focus block.
-- [ ] End-time budget underflow (< 1 focus block) emits safe empty blocks and residual margin without fractional blocks.
-- [ ] Multiple blocks can reference the same task ID without backlog duplication.
-- [ ] `LocalStoragePlanRepository` reliably persists and restores active plan with schema versioning.
-- [ ] `PlanningState` coordinates draft editing, session launch, block progression on timer events, and forward-only hot edits.
-- [ ] Mode switcher toggles between By Blocks and By End Time with immediate reactive recalculation.
-- [ ] Timeline track renders discrete focus blocks, breaks with Smart Revitalization badges, and terminal Free Margin.
-- [ ] Launch CTA starts session, configures timer for Block 1, assigns initial task to Task Pill, and navigates to Timer.
-- [ ] Active session displays lock on running block; modifying upcoming blocks applies forward-only.
-- [ ] Completing last focus block displays clear session completion feedback.
-- [ ] 100% test coverage for domain projections, repository adapter, state store, and UI components.
+- [x] `calculateSessionBudgetByBlocks` and `calculateSessionBudgetByEndTime` correctly compute block sequences terminating on final focus block.
+- [x] End-time budget underflow (< 1 focus block) emits safe empty blocks and residual margin without fractional blocks.
+- [x] Multiple blocks can reference the same task ID without backlog duplication.
+- [x] `LocalStoragePlanRepository` reliably persists and restores active plan with schema versioning.
+- [x] `PlanningState` coordinates draft editing, session launch, block progression on timer events, and forward-only hot edits.
+- [x] Mode switcher toggles between By Blocks and By End Time with immediate reactive recalculation.
+- [x] Timeline track renders discrete focus blocks, breaks with Smart Revitalization badges, and terminal Free Margin.
+- [x] Launch CTA starts session, configures timer for Block 1, assigns initial task to Task Pill, and navigates to Timer.
+- [x] Active session displays lock on running block; modifying upcoming blocks applies forward-only.
+- [x] Completing last focus block displays clear session completion feedback.
+- [x] 100% test coverage for domain projections, repository adapter, state store, and UI components.
 
 ## Delivery Strategy
 
@@ -57,28 +57,28 @@ Currently, Pomody only supports open-ended focus cycles. Deep work requires deli
   - Route: delegated direct (writer trigger: creates domain contracts, budget calculations, and extensive unit tests)
   - Target files: `src/lib/domain/planning/session-plan.entity.ts`, `src/lib/domain/planning/session-plan.test.ts`, `src/lib/domain/planning/index.ts`
   - Applicable checks: `pnpm test:unit src/lib/domain/planning/session-plan.test.ts` (44/44 passed)
-  - Evidence: Commit `2b03552` (feat(domain): add SessionPlan entity, contracts, and budget projection engine)
+  - Evidence: Commit `b4d8a13` (feat(domain): add SessionPlan entity, contracts, and budget projection engine)
 
 - [x] **TASK-2**: Repository port and localStorage persistence adapter
   - Route: delegated direct (writer trigger: creates port, storage adapter, and unit tests)
   - Target files: `src/lib/domain/ports/session-plan-repository.port.ts`, `src/lib/adapters/storage/local-session-plan-repository.ts`, `src/lib/adapters/storage/local-session-plan-repository.test.ts`
   - Applicable checks: `pnpm test:unit src/lib/adapters/storage/local-session-plan-repository.test.ts` (39/39 passed)
-  - Evidence: Commit `3a9172d` (feat(storage): implement ISessionPlanRepository and LocalStoragePlanRepository)
+  - Evidence: Commit `704e14d` (feat(storage): implement ISessionPlanRepository and LocalStoragePlanRepository)
 
 - [x] **TASK-3**: Reactive `PlanningState` store and timer lifecycle orchestration
   - Route: delegated direct (writer trigger: creates Svelte 5 state class, timer synchronization bridge, and unit tests)
   - Target files: `src/lib/state/planning.svelte.ts`, `src/lib/state/planning.test.ts`, `src/lib/state/index.ts`
   - Applicable checks: `pnpm test:unit src/lib/state/planning.test.ts` (31/31 passed)
-  - Evidence: Commit `1069c6a` (feat(state): implement reactive PlanningState store with Svelte 5 Runes)
+  - Evidence: Commit `d22052f` (feat(state): implement reactive PlanningState store with Svelte 5 Runes)
 
 - [x] **TASK-4**: Interactive planning timeline, inline controls, and task backlog slotting
   - Route: delegated direct (writer trigger: updates multiple Svelte components, bits-ui integration, styling)
   - Target files: `src/lib/components/planning/planning-timeline.svelte`, `src/lib/components/planning/planning-view.svelte`, `src/lib/components/planning/task-backlog.svelte`, `src/lib/components/planning/task-item.svelte`, `src/lib/components/planning/planning-view.svelte.test.ts`
   - Applicable checks: `pnpm check` (0 errors), `pnpm test:unit` (486/486 passed), `pnpm test:browser` (84/84 passed)
-  - Evidence: Commit `0c86731` (feat(ui): interactive planning timeline, inline controls, and task backlog slotting)
+  - Evidence: Commit `afa33b1` (feat(ui): interactive planning timeline, inline controls, and task backlog slotting)
 
-- [ ] **TASK-5**: End-to-end verification, type check, lint & build
+- [x] **TASK-5**: End-to-end verification, type check, lint & build
   - Route: direct inline (bounded verification check)
-  - Target files: Full repository verification
-  - Applicable checks: `pnpm check` (0 errors), `pnpm lint` (0 errors), `pnpm test` (all tests passed), `pnpm build` (clean build)
-  - Evidence: Pending
+  - Target files: Full repository verification, `e2e/planning.e2e.ts`
+  - Applicable checks: `pnpm check` (0 errors), `pnpm lint` (0 errors), `pnpm test` (570/570 passed), `pnpm test:e2e` (4/4 passed), `pnpm build` (clean SPA build)
+  - Evidence: Commit `28183cc` (test(e2e): add session planning and timeline projection journey test)
