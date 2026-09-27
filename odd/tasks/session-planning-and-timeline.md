@@ -65,11 +65,11 @@ Currently, Pomody only supports open-ended focus cycles. Deep work requires deli
   - Applicable checks: `pnpm test:unit src/lib/adapters/storage/local-session-plan-repository.test.ts` (39/39 passed)
   - Evidence: Commit `3a9172d` (feat(storage): implement ISessionPlanRepository and LocalStoragePlanRepository)
 
-- [ ] **TASK-3**: Reactive `PlanningState` store and timer lifecycle orchestration
+- [x] **TASK-3**: Reactive `PlanningState` store and timer lifecycle orchestration
   - Route: delegated direct (writer trigger: creates Svelte 5 state class, timer synchronization bridge, and unit tests)
   - Target files: `src/lib/state/planning.svelte.ts`, `src/lib/state/planning.test.ts`, `src/lib/state/index.ts`
-  - Applicable checks: `pnpm test:unit src/lib/state/planning.test.ts`
-  - Evidence: Pending
+  - Applicable checks: `pnpm test:unit src/lib/state/planning.test.ts` (31/31 passed)
+  - Evidence: Commit `1069c6a` (feat(state): implement reactive PlanningState store with Svelte 5 Runes)
 
 - [ ] **TASK-4**: Interactive planning timeline, inline controls, and task backlog slotting
   - Route: delegated direct (writer trigger: updates multiple Svelte components, bits-ui integration, styling)
