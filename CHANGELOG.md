@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.5.3...pomody-v0.6.0) (2026-09-28)
+
+
+### Features
+
+* **planning:** synchronize timeline, task assignments and timer settings ([#48](https://github.com/EmanuelAngel/pomody/issues/48)) ([e996915](https://github.com/EmanuelAngel/pomody/commit/e996915a52a5ccff46dde2563289f59ce045058f))
+
 ## [0.5.3](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.5.2...pomody-v0.5.3) (2026-09-28)
 
 
