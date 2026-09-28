@@ -9,7 +9,7 @@
 	import Minus from '@lucide/svelte/icons/minus';
 	import AlertCircle from '@lucide/svelte/icons/alert-circle';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import { Popover } from 'bits-ui';
+	import * as Popover from '$lib/components/ui/popover';
 	import { cn } from '$lib/utils';
 	import {
 		planningState as defaultPlanningState,
@@ -613,42 +613,40 @@
 											<Plus class="size-3" />
 											<span>Assign task</span>
 										</Popover.Trigger>
-										<Popover.Portal>
-											<Popover.Content
-												side="bottom"
-												sideOffset={6}
-												align="end"
-												class="z-50 w-72 rounded-xl border border-border/60 bg-popover/95 p-3 text-popover-foreground shadow-lg backdrop-blur-md fade-in-0 outline-none zoom-in-95 data-[side=bottom]:slide-in-from-top-2 sm:w-80"
-											>
-												<div class="mb-2 text-xs font-semibold text-foreground">
-													Select task for Focus Block {focusIndex}
+										<Popover.Content
+											side="bottom"
+											sideOffset={6}
+											align="end"
+											class="z-50 w-72 rounded-xl border border-border/60 bg-popover/95 p-3 text-popover-foreground shadow-lg backdrop-blur-md fade-in-0 outline-none zoom-in-95 data-[side=bottom]:slide-in-from-top-2 sm:w-80"
+										>
+											<div class="mb-2 text-xs font-semibold text-foreground">
+												Select task for Focus Block {focusIndex}
+											</div>
+											{#if tasksState.pendingTasks.length === 0}
+												<p class="py-3 text-center text-xs text-muted-foreground">
+													No pending tasks in backlog. Create one or run Free Focus.
+												</p>
+											{:else}
+												<div class="max-h-56 space-y-1 overflow-y-auto">
+													{#each tasksState.pendingTasks as task (task.id)}
+														<button
+															type="button"
+															aria-label={`Assign task: ${task.title}`}
+															class="flex w-full cursor-pointer items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted focus-visible:outline-none"
+															onclick={() => {
+																planningState.assignTaskToBlock(block.index, task.id);
+																openPopoverBlockIndex = null;
+															}}
+														>
+															<span class="truncate font-medium text-foreground">
+																{task.title}
+															</span>
+															<ChevronRight class="size-3 text-muted-foreground/60" />
+														</button>
+													{/each}
 												</div>
-												{#if tasksState.pendingTasks.length === 0}
-													<p class="py-3 text-center text-xs text-muted-foreground">
-														No pending tasks in backlog. Create one or run Free Focus.
-													</p>
-												{:else}
-													<div class="max-h-56 space-y-1 overflow-y-auto">
-														{#each tasksState.pendingTasks as task (task.id)}
-															<button
-																type="button"
-																aria-label={`Assign task: ${task.title}`}
-																class="flex w-full cursor-pointer items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted focus-visible:outline-none"
-																onclick={() => {
-																	planningState.assignTaskToBlock(block.index, task.id);
-																	openPopoverBlockIndex = null;
-																}}
-															>
-																<span class="truncate font-medium text-foreground">
-																	{task.title}
-																</span>
-																<ChevronRight class="size-3 text-muted-foreground/60" />
-															</button>
-														{/each}
-													</div>
-												{/if}
-											</Popover.Content>
-										</Popover.Portal>
+											{/if}
+										</Popover.Content>
 									</Popover.Root>
 								{/if}
 							</div>
