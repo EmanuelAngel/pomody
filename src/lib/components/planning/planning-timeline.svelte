@@ -134,7 +134,7 @@
 							<button
 								type="button"
 								aria-label="Decrease focus duration"
-								disabled={planningState.isSessionActive || planningState.focusMinutes <= 5}
+								disabled={planningState.focusMinutes <= 5}
 								onclick={() => planningState.setFocusMinutes(planningState.focusMinutes - 5)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 							>
@@ -146,7 +146,7 @@
 							<button
 								type="button"
 								aria-label="Increase focus duration"
-								disabled={planningState.isSessionActive || planningState.focusMinutes >= 120}
+								disabled={planningState.focusMinutes >= 120}
 								onclick={() => planningState.setFocusMinutes(planningState.focusMinutes + 5)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 							>
@@ -190,7 +190,7 @@
 							<button
 								type="button"
 								aria-label="Decrease short break duration"
-								disabled={planningState.isSessionActive || planningState.shortBreakMinutes <= 1}
+								disabled={planningState.shortBreakMinutes <= 1}
 								onclick={() =>
 									planningState.setShortBreakMinutes(planningState.shortBreakMinutes - 1)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -203,7 +203,7 @@
 							<button
 								type="button"
 								aria-label="Increase short break duration"
-								disabled={planningState.isSessionActive || planningState.shortBreakMinutes >= 60}
+								disabled={planningState.shortBreakMinutes >= 60}
 								onclick={() =>
 									planningState.setShortBreakMinutes(planningState.shortBreakMinutes + 1)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -220,7 +220,7 @@
 							<button
 								type="button"
 								aria-label="Decrease long break duration"
-								disabled={planningState.isSessionActive || planningState.longBreakMinutes <= 5}
+								disabled={planningState.longBreakMinutes <= 5}
 								onclick={() =>
 									planningState.setLongBreakMinutes(planningState.longBreakMinutes - 5)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -233,7 +233,7 @@
 							<button
 								type="button"
 								aria-label="Increase long break duration"
-								disabled={planningState.isSessionActive || planningState.longBreakMinutes >= 90}
+								disabled={planningState.longBreakMinutes >= 90}
 								onclick={() =>
 									planningState.setLongBreakMinutes(planningState.longBreakMinutes + 5)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -250,7 +250,7 @@
 							<button
 								type="button"
 								aria-label="Decrease long break interval"
-								disabled={planningState.isSessionActive || planningState.longBreakInterval <= 1}
+								disabled={planningState.longBreakInterval <= 1}
 								onclick={() =>
 									planningState.setLongBreakInterval(planningState.longBreakInterval - 1)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -263,7 +263,7 @@
 							<button
 								type="button"
 								aria-label="Increase long break interval"
-								disabled={planningState.isSessionActive || planningState.longBreakInterval >= 12}
+								disabled={planningState.longBreakInterval >= 12}
 								onclick={() =>
 									planningState.setLongBreakInterval(planningState.longBreakInterval + 1)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -339,7 +339,7 @@
 								<button
 									type="button"
 									aria-label="Decrease focus duration"
-									disabled={planningState.isSessionActive || planningState.focusMinutes <= 5}
+									disabled={planningState.focusMinutes <= 5}
 									onclick={() => planningState.setFocusMinutes(planningState.focusMinutes - 5)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 								>
@@ -351,7 +351,7 @@
 								<button
 									type="button"
 									aria-label="Increase focus duration"
-									disabled={planningState.isSessionActive || planningState.focusMinutes >= 120}
+									disabled={planningState.focusMinutes >= 120}
 									onclick={() => planningState.setFocusMinutes(planningState.focusMinutes + 5)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 								>
@@ -367,7 +367,7 @@
 								<button
 									type="button"
 									aria-label="Decrease short break duration"
-									disabled={planningState.isSessionActive || planningState.shortBreakMinutes <= 1}
+									disabled={planningState.shortBreakMinutes <= 1}
 									onclick={() =>
 										planningState.setShortBreakMinutes(planningState.shortBreakMinutes - 1)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -380,7 +380,7 @@
 								<button
 									type="button"
 									aria-label="Increase short break duration"
-									disabled={planningState.isSessionActive || planningState.shortBreakMinutes >= 60}
+									disabled={planningState.shortBreakMinutes >= 60}
 									onclick={() =>
 										planningState.setShortBreakMinutes(planningState.shortBreakMinutes + 1)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -397,7 +397,7 @@
 								<button
 									type="button"
 									aria-label="Decrease long break duration"
-									disabled={planningState.isSessionActive || planningState.longBreakMinutes <= 5}
+									disabled={planningState.longBreakMinutes <= 5}
 									onclick={() =>
 										planningState.setLongBreakMinutes(planningState.longBreakMinutes - 5)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -410,7 +410,7 @@
 								<button
 									type="button"
 									aria-label="Increase long break duration"
-									disabled={planningState.isSessionActive || planningState.longBreakMinutes >= 90}
+									disabled={planningState.longBreakMinutes >= 90}
 									onclick={() =>
 										planningState.setLongBreakMinutes(planningState.longBreakMinutes + 5)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -427,7 +427,7 @@
 								<button
 									type="button"
 									aria-label="Decrease long break interval"
-									disabled={planningState.isSessionActive || planningState.longBreakInterval <= 1}
+									disabled={planningState.longBreakInterval <= 1}
 									onclick={() =>
 										planningState.setLongBreakInterval(planningState.longBreakInterval - 1)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -440,7 +440,7 @@
 								<button
 									type="button"
 									aria-label="Increase long break interval"
-									disabled={planningState.isSessionActive || planningState.longBreakInterval >= 12}
+									disabled={planningState.longBreakInterval >= 12}
 									onclick={() =>
 										planningState.setLongBreakInterval(planningState.longBreakInterval + 1)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
