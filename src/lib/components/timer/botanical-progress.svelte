@@ -52,14 +52,33 @@
 	);
 	const label = $derived(`${model.label}: ${Math.round(growth * 100)}% grown this Pomodoro cycle`);
 
-	const SCENE_WIDTH = 'min(40vh, 26vw)';
 	// The timer controls sit this far below the viewport centre; the grass line aligns with them.
 	const CONTROLS_OFFSET = '11.75rem';
-	const sceneTop = $derived(
-		`calc(50vh + ${CONTROLS_OFFSET} - ${SCENE_WIDTH} * ${(model.groundY + 0.5) / model.width})`
+	// Half the timer column (max-w-md): the free space on the left ends here.
+	const TIMER_HALF = '14rem';
+	const CANOPY_CLEARANCE = '4rem';
+	const ISLAND_CLEARANCE = '1.5rem';
+	const GUTTER_GAP = '2rem';
+
+	/** Rows the fully grown plant rises above the grass; the scene is sized so it always fits. */
+	const matureRows = $derived.by(() => {
+		const last = composeScene(model, {
+			tick: 0,
+			animated: false,
+			activity: 'calm',
+			frameIndex: model.frames.length - 1,
+			harvestAge: null
+		}).rows;
+		const top = last.findIndex((row, y) => y < model.groundY && /[^.]/.test(row));
+		return model.groundY - Math.max(0, top);
+	});
+	/** The scene is as wide as the free space allows, as long as the canopy and the island tip stay on screen. */
+	const sceneWidth = $derived(
+		`min(50vw - ${TIMER_HALF} - ${GUTTER_GAP}, (50vh + ${CONTROLS_OFFSET} - ${CANOPY_CLEARANCE}) * ${model.width / (matureRows + 0.5)}, (50vh - ${CONTROLS_OFFSET} - ${ISLAND_CLEARANCE}) * ${model.width / (model.height - model.groundY - 0.5)})`
 	);
-	const soilFade = $derived(
-		`linear-gradient(to bottom, black ${((model.groundY + 3) / model.height) * 100}%, transparent)`
+	const sceneLeft = `max(0px, (50vw - ${TIMER_HALF} - var(--scene-w)) / 2)`;
+	const sceneTop = $derived(
+		`calc(50vh + ${CONTROLS_OFFSET} - var(--scene-w) * ${(model.groundY + 0.5) / model.width})`
 	);
 
 	$effect(() => {
@@ -138,6 +157,8 @@
 		data-animated={animated}
 		data-harvesting={harvestAge !== null}
 		aria-hidden={hiddenInZen}
+		style:--scene-w={sceneWidth}
+		style:left={sceneLeft}
 		style:top={sceneTop}
 		class={cn(
 			'pointer-events-none transition-opacity duration-300 ease-out select-none motion-reduce:transition-none',
@@ -153,8 +174,7 @@
 				width={model.width}
 				height={model.height}
 				class="block h-auto [image-rendering:pixelated]"
-				style:width={SCENE_WIDTH}
-				style:mask-image={soilFade}
+				style:width="var(--scene-w)"
 			></canvas>
 		</div>
 	</div>

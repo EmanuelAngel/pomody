@@ -1,4 +1,5 @@
 import { PixelCanvas, pixelHash } from './pixel-canvas';
+import { islandShape } from './island';
 import {
 	bee,
 	bird,
@@ -11,10 +12,13 @@ import {
 } from './fauna';
 import type { IdleInk, PlantModel } from './types';
 
-const W = 48;
-const H = 136;
-const CX = 23;
+const W = 60;
+const H = 126;
+const CX = 29;
 const GROUND = 96;
+/** Rows of soil below the grass before the floating island tapers to its tip. */
+const ISLAND_DEPTH = 22;
+const HANGING_ROOTS = 6;
 const TREE_HEIGHT = 44;
 
 type Tip = 'sprout' | 'shoot' | 'bud' | 'flower' | 'bloom';
@@ -62,16 +66,20 @@ interface FrameSpec {
 const TUFTS: readonly (readonly [x: number, fromFrame: number])[] = [
 	[4, 0],
 	[10, 0],
-	[38, 0],
-	[44, 0],
-	[15, 3],
-	[32, 3],
+	[17, 0],
+	[42, 0],
+	[49, 0],
+	[55, 0],
+	[13, 3],
+	[45, 3],
 	[7, 6],
-	[41, 6],
-	[29, 9],
-	[17, 10],
-	[1, 12],
-	[46, 12]
+	[52, 6],
+	[21, 9],
+	[38, 9],
+	[2, 12],
+	[57, 12],
+	[25, 14],
+	[34, 14]
 ];
 
 const WILDFLOWERS: readonly (readonly [
@@ -80,47 +88,85 @@ const WILDFLOWERS: readonly (readonly [
 	petal: string,
 	height: number
 ])[] = [
-	[6, 3, 'y', 3],
-	[40, 3, 'o', 4],
-	[13, 6, 'i', 5],
-	[35, 9, 'y', 3],
-	[45, 12, 'i', 4],
-	[2, 14, 'o', 5],
-	[19, 15, 'y', 3]
+	[7, 3, 'y', 3],
+	[48, 3, 'o', 4],
+	[18, 6, 'i', 5],
+	[41, 9, 'y', 3],
+	[54, 12, 'i', 4],
+	[3, 14, 'o', 5],
+	[23, 15, 'y', 3],
+	[37, 5, 'o', 3],
+	[12, 10, 'i', 4],
+	[51, 15, 'y', 5]
 ];
 
 const MUSHROOMS: readonly (readonly [x: number, fromFrame: number])[] = [
-	[36, 5],
-	[33, 8]
+	[44, 5],
+	[40, 8],
+	[15, 12]
 ];
 
 const PEBBLES: readonly (readonly [number, number])[] = [
-	[5, 99],
-	[17, 103],
-	[33, 98],
-	[41, 106],
-	[9, 112],
-	[29, 115],
-	[44, 101],
-	[2, 108],
-	[38, 117],
-	[21, 110],
-	[12, 122],
-	[35, 126],
-	[6, 131],
-	[27, 129]
+	[8, 99],
+	[20, 103],
+	[40, 98],
+	[46, 104],
+	[14, 107],
+	[33, 111],
+	[51, 100],
+	[5, 101],
+	[25, 106],
+	[38, 108],
+	[22, 113],
+	[31, 116]
 ];
 
-function drawGround(c: PixelCanvas, frame: number): void {
-	c.hline(0, W - 1, GROUND, 'g');
-	for (let x = 0; x < W; x++) if (pixelHash(x, GROUND) < 20) c.put(x, GROUND, 'l');
-	for (let y = GROUND + 1; y <= GROUND + 4; y++) c.hline(0, W - 1, y, 'd');
-	for (let y = GROUND + 5; y <= GROUND + 12; y++) c.hline(0, W - 1, y, 'e');
-	for (let y = GROUND + 13; y < H; y++) c.hline(0, W - 1, y, 'E');
-	for (const [x, y] of PEBBLES) {
-		c.put(x, y, 'D');
-		c.put(x + 1, y, 'D');
+const island = islandShape({ width: W, centerX: CX + 0.5, groundY: GROUND, depth: ISLAND_DEPTH });
+const islandHalfWidth = island.halfWidth;
+const insideIsland = island.inside;
+const islandBottom = island.bottom;
+
+function drawIsland(c: PixelCanvas): void {
+	for (let y = GROUND + 1; y <= GROUND + ISLAND_DEPTH; y++) {
+		const d = y - GROUND;
+		const ink = d <= 4 ? 'd' : d <= 12 ? 'e' : 'E';
+		for (let x = 0; x < W; x++) {
+			if (!insideIsland(x, y)) continue;
+			const edge = !insideIsland(x - 1, y) || !insideIsland(x + 1, y) || !insideIsland(x, y + 1);
+			c.put(x, y, edge && d > 1 ? 'k' : ink);
+		}
 	}
+	const hw = islandHalfWidth(1);
+	const left = Math.round(CX + 0.5 - hw);
+	const right = Math.round(CX + 0.5 + hw);
+	c.hline(left, right, GROUND, 'g');
+	for (let x = left; x <= right; x++) if (pixelHash(x, GROUND) < 20) c.put(x, GROUND, 'l');
+	c.put(left - 1, GROUND, 'g');
+	c.put(right + 1, GROUND, 'g');
+	c.put(left, GROUND + 1, 'g');
+	c.put(left, GROUND + 2, 'G');
+	c.put(right, GROUND + 1, 'g');
+	c.put(right - 1, GROUND + 2, 'G');
+
+	for (const [x, y] of PEBBLES) {
+		if (insideIsland(x, y) && insideIsland(x + 1, y)) {
+			c.put(x, y, 'D');
+			c.put(x + 1, y, 'D');
+		}
+	}
+	// loose clods drifting under the island sell the floating feel
+	for (const [x, y] of [
+		[CX - 13, GROUND + ISLAND_DEPTH - 3],
+		[CX + 15, GROUND + ISLAND_DEPTH - 7]
+	]) {
+		c.put(x, y, 'k');
+		c.put(x + 1, y, 'D');
+		c.put(x, y + 1, 'k');
+	}
+}
+
+function drawGround(c: PixelCanvas, frame: number): void {
+	drawIsland(c);
 
 	for (const [x, from] of TUFTS) {
 		if (frame < from) continue;
@@ -152,19 +198,32 @@ function drawGround(c: PixelCanvas, frame: number): void {
 		c.put(x - 1, GROUND - 3, 'o');
 	}
 
+	if (frame >= 8) {
+		c.hline(9, 11, GROUND - 1, 'B');
+		c.put(10, GROUND - 2, 'b');
+	}
+
 	if (frame >= 10) {
-		drawCluster(c, 5, GROUND - 4, 5, 3.5);
+		drawCluster(c, 6, GROUND - 4, 5, 3.5);
 		if (frame >= 15) {
-			c.put(3, GROUND - 5, 'r');
-			c.put(7, GROUND - 6, 'r');
-			c.put(5, GROUND - 3, 'r');
+			c.put(4, GROUND - 5, 'r');
+			c.put(8, GROUND - 6, 'r');
+			c.put(6, GROUND - 3, 'r');
 		}
 	}
 
 	if (frame >= 12) {
-		c.hline(40, 44, GROUND - 1, 'B');
-		c.hline(41, 43, GROUND - 2, 'b');
-		c.put(41, GROUND - 1, 'k');
+		c.hline(46, 50, GROUND - 1, 'B');
+		c.hline(47, 49, GROUND - 2, 'b');
+		c.put(46, GROUND - 1, 'k');
+	}
+
+	if (frame >= 13) {
+		drawCluster(c, 54, GROUND - 3, 4, 3);
+		if (frame >= 15) {
+			c.put(53, GROUND - 5, 'r');
+			c.put(56, GROUND - 3, 'r');
+		}
 	}
 }
 
@@ -375,7 +434,17 @@ function rasterize(path: RootStrand['path']): [number, number][] {
 	return pixels;
 }
 
-const ROOT_PIXELS = ROOT_STRANDS.map((strand) => rasterize(strand.path));
+const ROOT_DEPTH_SCALE = 0.7;
+const ROOT_PIXELS = ROOT_STRANDS.map((strand) =>
+	rasterize(strand.path.map(([dx, dy]) => [dx, Math.round(dy * ROOT_DEPTH_SCALE)] as const))
+);
+
+/** Roots live inside the island, or dangle a little below its underside. */
+function rootVisible(x: number, y: number): boolean {
+	if (insideIsland(x, y)) return true;
+	const bottom = islandBottom(x);
+	return bottom >= 0 && y > bottom && y - bottom <= HANGING_ROOTS;
+}
 
 function drawRoots(c: PixelCanvas, frame: number, isTree: boolean): void {
 	ROOT_STRANDS.forEach((strand, i) => {
@@ -384,8 +453,11 @@ function drawRoots(c: PixelCanvas, frame: number, isTree: boolean): void {
 		const reach = Math.min(1, (frame - strand.from + 1) / (strand.full - strand.from + 1));
 		const count = Math.max(1, Math.round(pixels.length * reach));
 		pixels.slice(0, count).forEach(([dx, dy], k) => {
-			c.put(CX + dx, GROUND + dy, 'b');
-			if (isTree && strand.thick && k < 10) c.put(CX + dx + 1, GROUND + dy, 'B');
+			const x = CX + dx;
+			const y = GROUND + dy;
+			if (!rootVisible(x, y)) return;
+			c.put(x, y, 'b');
+			if (isTree && strand.thick && k < 10 && rootVisible(x + 1, y)) c.put(x + 1, y, 'B');
 		});
 	});
 }
@@ -536,7 +608,11 @@ const CLUSTERS: readonly (readonly [number, number, number, number])[] = [
 	[5, 6, 8, 5],
 	[-9, 17, 6, 4],
 	[9, 18, 6, 4],
-	[0, 14, 7, 4]
+	[0, 14, 7, 4],
+	[-24, 8, 4, 3],
+	[24, 7, 4, 3],
+	[-22, -7, 4, 4],
+	[22, -8, 4, 4]
 ];
 
 const BRANCHES: readonly (readonly [number, number, number, number])[] = [
@@ -881,19 +957,19 @@ export const seedToTree: PlantModel = Object.freeze({
 	}),
 	frames: Object.freeze(FRAME_SPECS.map(buildFrame)),
 	actors: Object.freeze([
-		pollen({ originX: 8, originY: GROUND - 3, ink: 'p' }),
-		ladybug({ groundY: GROUND - 1, shell: 'r', head: 'B' }),
+		pollen({ originX: 10, originY: GROUND - 3, ink: 'p' }),
+		ladybug({ groundY: GROUND - 1, shell: 'r', head: 'B', width: W }),
 		butterfly({
 			wing: 'm',
 			body: 'B',
 			seed: 0,
-			centerX: 24,
+			centerX: 30,
 			centerY: 62,
-			rangeX: 16,
+			rangeX: 22,
 			rangeY: 14,
 			visitsWhenCalm: true
 		}),
-		butterfly({ wing: 'n', body: 'B', seed: 1, centerX: 22, centerY: 70, rangeX: 17, rangeY: 12 }),
+		butterfly({ wing: 'n', body: 'B', seed: 1, centerX: 28, centerY: 70, rangeX: 24, rangeY: 12 }),
 		climber({
 			fromFrame: 2,
 			toFrame: 5,
@@ -932,8 +1008,8 @@ export const seedToTree: PlantModel = Object.freeze({
 			wing: 'm',
 			body: 'B'
 		}),
-		bird({ fromFrame: 11, toFrame: 13, column: 14, body: 'B', wing: 'l', beak: 'y' }),
-		bird({ fromFrame: 14, column: 31, body: 'B', wing: 'l', beak: 'y' }),
+		bird({ fromFrame: 11, toFrame: 13, column: CX - 9, body: 'B', wing: 'l', beak: 'y' }),
+		bird({ fromFrame: 14, column: CX + 8, body: 'B', wing: 'l', beak: 'y' }),
 		harvestDrop({
 			from: { x: CX + 6, y: 40 },
 			to: { x: CX, y: GROUND + 2 },

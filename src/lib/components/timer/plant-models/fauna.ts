@@ -39,11 +39,17 @@ export function butterfly(o: ButterflyOptions): SceneActor {
 }
 
 /** Crosses the grass line from left to right every so often. */
-export function ladybug(o: { groundY: number; shell: string; head: string }): SceneActor {
+export function ladybug(o: {
+	groundY: number;
+	shell: string;
+	head: string;
+	width: number;
+}): SceneActor {
+	const walk = o.width * 2 + 12;
 	return {
 		draw(p, s) {
-			const cycle = s.tick % 300;
-			if (cycle >= 110) return;
+			const cycle = s.tick % (walk * 2 + 80);
+			if (cycle >= walk) return;
 			const x = Math.floor(cycle / 2) - 3;
 			p.put(x, o.groundY, o.shell);
 			p.put(x + 1, o.groundY, o.shell);

@@ -106,10 +106,11 @@ export function composeScene(
 		}
 	}
 
-	if (state.animated) {
-		const full: SceneState = { ...state, frame };
-		for (const actor of model.actors ?? []) actor.draw(canvas, full);
-	}
+	const full: SceneState = { ...state, frame };
+	const actors = state.animated ? (model.actors ?? []) : [];
+	for (const actor of actors) if (actor.layer === 'back') actor.draw(canvas, full);
+	model.hero?.draw(canvas, state.animated ? full : { ...full, tick: 0 });
+	for (const actor of actors) if (actor.layer !== 'back') actor.draw(canvas, full);
 
 	return { rows: canvas.toRows(), frame };
 }

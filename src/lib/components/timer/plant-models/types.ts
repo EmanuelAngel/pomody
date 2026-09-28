@@ -36,6 +36,11 @@ export interface ScenePainter {
 
 /** Anything drawn on top of the base frame each tick: fauna, particles, one-shot moments. */
 export interface SceneActor {
+	/**
+	 * 'back' draws before the hero (animated scenery: fans, towels, lights) so it never covers it;
+	 * 'front' (default) draws after it (fauna passing by, sweat, sparks).
+	 */
+	readonly layer?: 'back' | 'front';
 	draw(painter: ScenePainter, state: SceneState): void;
 }
 
@@ -56,5 +61,11 @@ export interface PlantModel {
 	readonly idle?: Readonly<Record<string, IdleInk>>;
 	/** Ordered growth frames: the first starts a cycle, the last is full maturity. */
 	readonly frames: readonly (readonly string[])[];
+	/**
+	 * Main character drawn on every render, including static mode (with the clock held at 0),
+	 * so it never disappears. Use it when the protagonist animates instead of living in frames.
+	 */
+	readonly hero?: SceneActor;
+	/** Fauna and one-shot moments, only drawn while the scene is animated. */
 	readonly actors?: readonly SceneActor[];
 }
