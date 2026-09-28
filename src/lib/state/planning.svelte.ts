@@ -456,10 +456,16 @@ export class PlanningState {
 
 	public setFocusMinutes(minutes: number): void {
 		if (typeof minutes === 'number' && Number.isFinite(minutes)) {
-			this._focusMinutes = Math.max(1, Math.min(120, Math.round(minutes)));
-			if (!this.isSessionActive && this.timerState) {
-				if (this.timerState.config.focusDurationSeconds !== this._focusMinutes * 60) {
-					this.timerState.updateConfig({ focusDurationSeconds: this._focusMinutes * 60 });
+			const valid = Math.max(1, Math.min(120, Math.round(minutes)));
+			if (this.isSessionActive && this._activePlan) {
+				void this.updateUpcomingPlanForwardOnly({ focusDurationSeconds: valid * 60 });
+			} else {
+				this._focusMinutes = valid;
+				if (this.timerState) {
+					const seconds = valid * 60;
+					if (this.timerState.config.focusDurationSeconds !== seconds) {
+						this.timerState.updateConfig({ focusDurationSeconds: seconds });
+					}
 				}
 			}
 		}
@@ -467,10 +473,16 @@ export class PlanningState {
 
 	public setShortBreakMinutes(minutes: number): void {
 		if (typeof minutes === 'number' && Number.isFinite(minutes)) {
-			this._shortBreakMinutes = Math.max(1, Math.min(60, Math.round(minutes)));
-			if (!this.isSessionActive && this.timerState) {
-				if (this.timerState.config.shortBreakDurationSeconds !== this._shortBreakMinutes * 60) {
-					this.timerState.updateConfig({ shortBreakDurationSeconds: this._shortBreakMinutes * 60 });
+			const valid = Math.max(1, Math.min(60, Math.round(minutes)));
+			if (this.isSessionActive && this._activePlan) {
+				void this.updateUpcomingPlanForwardOnly({ shortBreakDurationSeconds: valid * 60 });
+			} else {
+				this._shortBreakMinutes = valid;
+				if (this.timerState) {
+					const seconds = valid * 60;
+					if (this.timerState.config.shortBreakDurationSeconds !== seconds) {
+						this.timerState.updateConfig({ shortBreakDurationSeconds: seconds });
+					}
 				}
 			}
 		}
@@ -478,10 +490,16 @@ export class PlanningState {
 
 	public setLongBreakMinutes(minutes: number): void {
 		if (typeof minutes === 'number' && Number.isFinite(minutes)) {
-			this._longBreakMinutes = Math.max(1, Math.min(90, Math.round(minutes)));
-			if (!this.isSessionActive && this.timerState) {
-				if (this.timerState.config.longBreakDurationSeconds !== this._longBreakMinutes * 60) {
-					this.timerState.updateConfig({ longBreakDurationSeconds: this._longBreakMinutes * 60 });
+			const valid = Math.max(1, Math.min(90, Math.round(minutes)));
+			if (this.isSessionActive && this._activePlan) {
+				void this.updateUpcomingPlanForwardOnly({ longBreakDurationSeconds: valid * 60 });
+			} else {
+				this._longBreakMinutes = valid;
+				if (this.timerState) {
+					const seconds = valid * 60;
+					if (this.timerState.config.longBreakDurationSeconds !== seconds) {
+						this.timerState.updateConfig({ longBreakDurationSeconds: seconds });
+					}
 				}
 			}
 		}
@@ -489,10 +507,15 @@ export class PlanningState {
 
 	public setLongBreakInterval(interval: number): void {
 		if (typeof interval === 'number' && Number.isFinite(interval)) {
-			this._longBreakInterval = Math.max(1, Math.min(12, Math.round(interval)));
-			if (!this.isSessionActive && this.timerState) {
-				if (this.timerState.config.roundsBeforeLongBreak !== this._longBreakInterval) {
-					this.timerState.updateConfig({ roundsBeforeLongBreak: this._longBreakInterval });
+			const valid = Math.max(1, Math.min(12, Math.round(interval)));
+			if (this.isSessionActive && this._activePlan) {
+				void this.updateUpcomingPlanForwardOnly({ roundsBeforeLongBreak: valid });
+			} else {
+				this._longBreakInterval = valid;
+				if (this.timerState) {
+					if (this.timerState.config.roundsBeforeLongBreak !== valid) {
+						this.timerState.updateConfig({ roundsBeforeLongBreak: valid });
+					}
 				}
 			}
 		}
@@ -854,7 +877,6 @@ export class PlanningState {
 
 		validateSessionPlan(updatedPlan);
 		this._activePlan = updatedPlan;
-		await this.repository.saveActivePlan(this._activePlan);
 
 		const timer = this.timerState;
 		if (timer) {
@@ -873,6 +895,8 @@ export class PlanningState {
 				timer.updateConfig(newConfig);
 			}
 		}
+
+		await this.repository.saveActivePlan(this._activePlan);
 	}
 }
 

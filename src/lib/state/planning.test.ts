@@ -974,4 +974,135 @@ describe('PlanningState', () => {
 			expect(testState.longBreakInterval).toBe(2);
 		});
 	});
+
+	describe('Active session duration setters (forward-only)', () => {
+		it('should invoke updateUpcomingPlanForwardOnly and update future focus blocks when setFocusMinutes is called during active session', async () => {
+			await state.startSession();
+
+			// Advance to block 1 (short break)
+			timer.skip();
+			expect(state.activeBlockIndex).toBe(1);
+			expect(state.activeBlock?.mode).toBe('shortBreak');
+
+			const initialBlock0Duration = state.activePlan!.blocks[0].durationSeconds;
+			const initialBlock1Duration = state.activePlan!.blocks[1].durationSeconds;
+			const initialTotalFocus = state.totalFocusMinutes;
+
+			const updateSpy = vi.spyOn(state, 'updateUpcomingPlanForwardOnly');
+
+			state.setFocusMinutes(45);
+
+			expect(updateSpy).toHaveBeenCalledWith({ focusDurationSeconds: 45 * 60 });
+			expect(state.focusMinutes).toBe(45);
+			expect(timer.config.focusDurationSeconds).toBe(45 * 60);
+
+			const activePlan = state.activePlan!;
+			// Past block preserved
+			expect(activePlan.blocks[0].durationSeconds).toBe(initialBlock0Duration);
+			// Currently active block preserved
+			expect(activePlan.blocks[1].durationSeconds).toBe(initialBlock1Duration);
+			// Future focus blocks updated to 45m
+			expect(activePlan.blocks[2].durationSeconds).toBe(45 * 60);
+			expect(activePlan.blocks[4].durationSeconds).toBe(45 * 60);
+			expect(activePlan.blocks[6].durationSeconds).toBe(45 * 60);
+
+			// Derived session stats updated: block 0 (25m) + blocks 2,4,6 (3 * 45m) = 25 + 135 = 160m
+			expect(state.totalFocusMinutes).toBe(160);
+			expect(state.totalFocusMinutes).not.toBe(initialTotalFocus);
+		});
+
+		it('should invoke updateUpcomingPlanForwardOnly and update future break blocks when setShortBreakMinutes is called during active session', async () => {
+			await state.startSession();
+			expect(state.activeBlockIndex).toBe(0);
+
+			const updateSpy = vi.spyOn(state, 'updateUpcomingPlanForwardOnly');
+
+			state.setShortBreakMinutes(10);
+
+			expect(updateSpy).toHaveBeenCalledWith({ shortBreakDurationSeconds: 10 * 60 });
+			expect(state.shortBreakMinutes).toBe(10);
+			expect(timer.config.shortBreakDurationSeconds).toBe(10 * 60);
+
+			const activePlan = state.activePlan!;
+			// Active focus block 0 preserved
+			expect(activePlan.blocks[0].durationSeconds).toBe(25 * 60);
+			// Future short break blocks updated to 10m
+			expect(activePlan.blocks[1].durationSeconds).toBe(10 * 60);
+			expect(activePlan.blocks[3].durationSeconds).toBe(10 * 60);
+			expect(activePlan.blocks[5].durationSeconds).toBe(10 * 60);
+			// Derived total break minutes updated (3 short breaks * 10m = 30m)
+			expect(state.totalBreakMinutes).toBe(30);
+		});
+
+		it('should invoke updateUpcomingPlanForwardOnly and update future long break when setLongBreakMinutes is called during active session', async () => {
+			state.setLongBreakInterval(2);
+			await state.startSession();
+
+			const updateSpy = vi.spyOn(state, 'updateUpcomingPlanForwardOnly');
+
+			state.setLongBreakMinutes(30);
+
+			expect(updateSpy).toHaveBeenCalledWith({ longBreakDurationSeconds: 30 * 60 });
+			expect(state.longBreakMinutes).toBe(30);
+			expect(timer.config.longBreakDurationSeconds).toBe(30 * 60);
+
+			const activePlan = state.activePlan!;
+			// Block 3 is longBreak (preceded by 2 focus blocks: 0 and 2)
+			expect(activePlan.blocks[3].mode).toBe('longBreak');
+			expect(activePlan.blocks[3].durationSeconds).toBe(30 * 60);
+		});
+
+		it('should invoke updateUpcomingPlanForwardOnly and recompute break modes when setLongBreakInterval is called during active session', async () => {
+			// Initially interval is 4. Plan has 4 focus blocks (0, 2, 4, 6), breaks are 1, 3, 5.
+			await state.startSession();
+			expect(state.activePlan!.blocks[3].mode).toBe('shortBreak');
+
+			const updateSpy = vi.spyOn(state, 'updateUpcomingPlanForwardOnly');
+
+			state.setLongBreakInterval(2);
+
+			expect(updateSpy).toHaveBeenCalledWith({ roundsBeforeLongBreak: 2 });
+			expect(state.longBreakInterval).toBe(2);
+			expect(timer.config.roundsBeforeLongBreak).toBe(2);
+
+			// Preceding focus count for block 3 is 2 (blocks 0 and 2). 2 % 2 === 0 => now longBreak!
+			expect(state.activePlan!.blocks[3].mode).toBe('longBreak');
+		});
+
+		it('should clamp values properly when duration setters are called during active session', async () => {
+			await state.startSession();
+
+			state.setFocusMinutes(0); // Clamped to 1
+			expect(state.focusMinutes).toBe(1);
+			expect(timer.config.focusDurationSeconds).toBe(60);
+
+			state.setFocusMinutes(999); // Clamped to 120
+			expect(state.focusMinutes).toBe(120);
+			expect(timer.config.focusDurationSeconds).toBe(120 * 60);
+
+			state.setShortBreakMinutes(-5); // Clamped to 1
+			expect(state.shortBreakMinutes).toBe(1);
+			expect(timer.config.shortBreakDurationSeconds).toBe(60);
+
+			state.setShortBreakMinutes(100); // Clamped to 60
+			expect(state.shortBreakMinutes).toBe(60);
+			expect(timer.config.shortBreakDurationSeconds).toBe(60 * 60);
+
+			state.setLongBreakMinutes(0); // Clamped to 1
+			expect(state.longBreakMinutes).toBe(1);
+			expect(timer.config.longBreakDurationSeconds).toBe(60);
+
+			state.setLongBreakMinutes(200); // Clamped to 90
+			expect(state.longBreakMinutes).toBe(90);
+			expect(timer.config.longBreakDurationSeconds).toBe(90 * 60);
+
+			state.setLongBreakInterval(0); // Clamped to 1
+			expect(state.longBreakInterval).toBe(1);
+			expect(timer.config.roundsBeforeLongBreak).toBe(1);
+
+			state.setLongBreakInterval(50); // Clamped to 12
+			expect(state.longBreakInterval).toBe(12);
+			expect(timer.config.roundsBeforeLongBreak).toBe(12);
+		});
+	});
 });
