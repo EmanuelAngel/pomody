@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Popover } from 'bits-ui';
+	import * as Tooltip from '$lib/components/ui/tooltip';
 	import Check from '@lucide/svelte/icons/check';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Plus from '@lucide/svelte/icons/plus';
@@ -116,19 +117,42 @@
 			aria-label={activeTask ? `Change active task: ${activeTask.title}` : 'Select focus task'}
 		>
 			{#if activeTask}
-				<span
-					class={cn(
-						'max-w-[160px] truncate font-medium transition-colors sm:max-w-[220px]',
-						activeTask.completed && 'text-muted-foreground/60 line-through'
-					)}
-				>
-					{activeTask.title}
-				</span>
+				{#if !open}
+					<Tooltip.Provider delayDuration={300}>
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								{#snippet child({ props })}
+									<span
+										{...props}
+										class={cn(
+											'inline-block max-w-[160px] truncate font-medium transition-colors sm:max-w-[220px]',
+											activeTask.completed && 'text-muted-foreground/60 line-through'
+										)}
+									>
+										{activeTask.title}
+									</span>
+								{/snippet}
+							</Tooltip.Trigger>
+							<Tooltip.Content side="top" sideOffset={6} class="max-w-xs text-center font-normal">
+								{activeTask.title}
+							</Tooltip.Content>
+						</Tooltip.Root>
+					</Tooltip.Provider>
+				{:else}
+					<span
+						class={cn(
+							'inline-block max-w-[160px] truncate font-medium transition-colors sm:max-w-[220px]',
+							activeTask.completed && 'text-muted-foreground/60 line-through'
+						)}
+					>
+						{activeTask.title}
+					</span>
+				{/if}
 			{:else}
 				<span class="font-normal">Free focus</span>
 			{/if}
 			<ChevronDown
-				class="size-3 text-muted-foreground/60 transition-transform duration-200 group-data-[state=open]:rotate-180"
+				class="size-3 shrink-0 text-muted-foreground/60 transition-transform duration-200 group-data-[state=open]:rotate-180"
 			/>
 		</Popover.Trigger>
 	</div>
