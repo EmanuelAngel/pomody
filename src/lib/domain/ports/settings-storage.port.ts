@@ -11,6 +11,10 @@ export interface UserSettings {
 	readonly timer: TimerConfig;
 	readonly soundEnabled: boolean;
 	readonly revitalizationEnabled: boolean;
+	readonly botanicalEnabled: boolean;
+	readonly botanicalHideInZen: boolean;
+	readonly botanicalStatic: boolean;
+	readonly botanicalModel: string;
 	readonly theme: Theme;
 }
 
@@ -21,6 +25,10 @@ export const DEFAULT_USER_SETTINGS: UserSettings = Object.freeze({
 	timer: DEFAULT_TIMER_CONFIG,
 	soundEnabled: true,
 	revitalizationEnabled: true,
+	botanicalEnabled: true,
+	botanicalHideInZen: true,
+	botanicalStatic: false,
+	botanicalModel: 'seed-to-tree',
 	theme: 'dark'
 });
 

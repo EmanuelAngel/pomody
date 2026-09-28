@@ -6,6 +6,8 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
 	import { Switch } from '$lib/components/ui/switch';
+	import * as Select from '$lib/components/ui/select';
+	import { PLANT_MODELS, getPlantModel } from '$lib/components/timer/plant-models';
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
@@ -111,7 +113,13 @@
 		});
 		timerState.setSoundEnabled(true);
 		timerState.setRevitalizationEnabled(true);
+		timerState.setBotanicalEnabled(true);
+		timerState.setBotanicalHideInZen(true);
+		timerState.setBotanicalStatic(false);
 	}
+
+	const selectedModel = $derived(getPlantModel(timerState.botanicalModel));
+	const selectPortalProps = $derived(portalProps ? { disabled: portalProps.disabled } : undefined);
 
 	let selectedTheme = $derived(themeState.current);
 
@@ -359,6 +367,79 @@
 						onCheckedChange={(checked) => timerState.setRevitalizationEnabled(checked)}
 						aria-label="Mindful break suggestions"
 					/>
+				</div>
+			</div>
+
+			<Separator />
+
+			<!-- Section: Focus Plant -->
+			<div class="flex flex-col gap-3">
+				<div>
+					<h3 class="text-sm font-semibold tracking-wide text-foreground">Focus Plant</h3>
+					<p class="mt-0.5 text-xs text-muted-foreground">
+						A pixel plant that grows from seed to fruit across each Pomodoro cycle.
+					</p>
+				</div>
+
+				<div class="flex flex-col rounded-lg border border-border shadow-xs">
+					<div class="flex items-center justify-between p-3.5">
+						<div class="flex flex-col gap-0.5">
+							<span class="text-xs font-medium text-foreground">Show plant</span>
+							<span class="text-xs text-muted-foreground">Visible on wide screens only</span>
+						</div>
+						<Switch
+							checked={timerState.botanicalEnabled}
+							onCheckedChange={(checked) => timerState.setBotanicalEnabled(checked)}
+							aria-label="Focus plant illustration"
+						/>
+					</div>
+					<div class="flex items-center justify-between border-t border-border p-3.5">
+						<div class="flex flex-col gap-0.5">
+							<span class="text-xs font-medium text-foreground">Hide while focusing</span>
+							<span class="text-xs text-muted-foreground">Fade it out in Zen mode</span>
+						</div>
+						<Switch
+							checked={timerState.botanicalHideInZen}
+							disabled={!timerState.botanicalEnabled}
+							onCheckedChange={(checked) => timerState.setBotanicalHideInZen(checked)}
+							aria-label="Hide plant in Zen mode"
+						/>
+					</div>
+					<div class="flex items-center justify-between gap-4 border-t border-border p-3.5">
+						<div class="flex flex-col gap-0.5">
+							<span id="plant-model-label" class="text-xs font-medium text-foreground">Model</span>
+							<span class="text-xs text-muted-foreground">How your plant grows</span>
+						</div>
+						<Select.Root
+							type="single"
+							value={selectedModel.id}
+							disabled={!timerState.botanicalEnabled}
+							onValueChange={(id) => timerState.setBotanicalModel(id)}
+						>
+							<Select.Trigger size="sm" aria-labelledby="plant-model-label" class="min-w-40">
+								{selectedModel.label}
+							</Select.Trigger>
+							<Select.Content portalProps={selectPortalProps} align="end">
+								{#each PLANT_MODELS as model (model.id)}
+									<Select.Item value={model.id} label={model.label} />
+								{/each}
+								<Select.Separator />
+								<Select.Item value="__more" label="More models soon" disabled />
+							</Select.Content>
+						</Select.Root>
+					</div>
+					<div class="flex items-center justify-between border-t border-border p-3.5">
+						<div class="flex flex-col gap-0.5">
+							<span class="text-xs font-medium text-foreground">Static plant</span>
+							<span class="text-xs text-muted-foreground">Freeze the idle motion</span>
+						</div>
+						<Switch
+							checked={timerState.botanicalStatic}
+							disabled={!timerState.botanicalEnabled}
+							onCheckedChange={(checked) => timerState.setBotanicalStatic(checked)}
+							aria-label="Static plant animation"
+						/>
+					</div>
 				</div>
 			</div>
 		</div>

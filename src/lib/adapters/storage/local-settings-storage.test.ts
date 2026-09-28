@@ -87,6 +87,10 @@ describe('LocalSettingsStorage', () => {
 				},
 				soundEnabled: false,
 				revitalizationEnabled: false,
+				botanicalEnabled: false,
+				botanicalHideInZen: false,
+				botanicalStatic: true,
+				botanicalModel: 'future-model',
 				theme: 'dawn'
 			};
 
@@ -383,6 +387,48 @@ describe('LocalSettingsStorage', () => {
 
 			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({}));
 			expect(storageAdapter.loadSettings().revitalizationEnabled).toBe(true);
+		});
+
+		it('validates botanical booleans and falls back to default true', () => {
+			mockStorage.setItem(
+				SETTINGS_STORAGE_KEY,
+				JSON.stringify({ botanicalEnabled: false, botanicalHideInZen: false })
+			);
+			expect(storageAdapter.loadSettings().botanicalEnabled).toBe(false);
+			expect(storageAdapter.loadSettings().botanicalHideInZen).toBe(false);
+
+			mockStorage.setItem(
+				SETTINGS_STORAGE_KEY,
+				JSON.stringify({ botanicalEnabled: 'no', botanicalHideInZen: 0 })
+			);
+			expect(storageAdapter.loadSettings().botanicalEnabled).toBe(true);
+			expect(storageAdapter.loadSettings().botanicalHideInZen).toBe(true);
+		});
+
+		it('validates botanicalStatic and botanicalModel with safe fallbacks', () => {
+			mockStorage.setItem(
+				SETTINGS_STORAGE_KEY,
+				JSON.stringify({ botanicalStatic: true, botanicalModel: 'bonsai-v2' })
+			);
+			expect(storageAdapter.loadSettings().botanicalStatic).toBe(true);
+			expect(storageAdapter.loadSettings().botanicalModel).toBe('bonsai-v2');
+
+			mockStorage.setItem(
+				SETTINGS_STORAGE_KEY,
+				JSON.stringify({ botanicalStatic: 'yes', botanicalModel: '<script>' })
+			);
+			expect(storageAdapter.loadSettings().botanicalStatic).toBe(false);
+			expect(storageAdapter.loadSettings().botanicalModel).toBe('seed-to-tree');
+
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ botanicalModel: 42 }));
+			expect(storageAdapter.loadSettings().botanicalModel).toBe('seed-to-tree');
+		});
+
+		it('preserves botanical preferences when updating other settings', () => {
+			storageAdapter.saveSettings({ botanicalEnabled: false, botanicalHideInZen: false });
+			storageAdapter.saveSettings({ theme: 'oled' });
+			expect(storageAdapter.loadSettings().botanicalEnabled).toBe(false);
+			expect(storageAdapter.loadSettings().botanicalHideInZen).toBe(false);
 		});
 
 		it('validates theme type and falls back invalid themes to default dark', () => {

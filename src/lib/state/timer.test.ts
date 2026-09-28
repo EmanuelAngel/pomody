@@ -645,9 +645,66 @@ describe('TimerState Composition Root', () => {
 			expect(mockStorage.saveSettings).toHaveBeenCalledWith({
 				timer: DEFAULT_TIMER_CONFIG,
 				soundEnabled: true,
-				revitalizationEnabled: true
+				revitalizationEnabled: true,
+				botanicalEnabled: true,
+				botanicalHideInZen: true,
+				botanicalStatic: false,
+				botanicalModel: 'seed-to-tree'
 			});
 
+			timer.destroy();
+		});
+
+		it('should load botanical preferences from storage and persist changes', () => {
+			vi.mocked(mockStorage.loadSettings).mockReturnValue({
+				...DEFAULT_USER_SETTINGS,
+				botanicalEnabled: false,
+				botanicalHideInZen: false
+			});
+			const timer = createTimerState(undefined, mockTicker, undefined, mockStorage);
+			expect(timer.botanicalEnabled).toBe(false);
+			expect(timer.botanicalHideInZen).toBe(false);
+
+			timer.setBotanicalEnabled(true);
+			expect(timer.botanicalEnabled).toBe(true);
+			expect(mockStorage.saveSettings).toHaveBeenLastCalledWith({ botanicalEnabled: true });
+
+			timer.setBotanicalHideInZen(true);
+			expect(timer.botanicalHideInZen).toBe(true);
+			expect(mockStorage.saveSettings).toHaveBeenLastCalledWith({ botanicalHideInZen: true });
+
+			timer.destroy();
+		});
+
+		it('should persist the static animation flag and selected plant model', () => {
+			const timer = createTimerState(undefined, mockTicker, undefined, mockStorage);
+			expect(timer.botanicalStatic).toBe(false);
+			expect(timer.botanicalModel).toBe('seed-to-tree');
+
+			timer.setBotanicalStatic(true);
+			expect(timer.botanicalStatic).toBe(true);
+			expect(mockStorage.saveSettings).toHaveBeenLastCalledWith({ botanicalStatic: true });
+
+			timer.setBotanicalModel('future-model');
+			expect(timer.botanicalModel).toBe('future-model');
+			expect(mockStorage.saveSettings).toHaveBeenLastCalledWith({ botanicalModel: 'future-model' });
+
+			timer.destroy();
+		});
+
+		it('should restore botanical preferences to defaults on resetSettings', () => {
+			const timer = createTimerState(undefined, mockTicker, undefined, mockStorage);
+			timer.setBotanicalEnabled(false);
+			timer.setBotanicalHideInZen(false);
+			timer.setBotanicalStatic(true);
+			timer.setBotanicalModel('future-model');
+
+			timer.resetSettings();
+
+			expect(timer.botanicalEnabled).toBe(true);
+			expect(timer.botanicalHideInZen).toBe(true);
+			expect(timer.botanicalStatic).toBe(false);
+			expect(timer.botanicalModel).toBe('seed-to-tree');
 			timer.destroy();
 		});
 
@@ -659,6 +716,8 @@ describe('TimerState Composition Root', () => {
 			expect(() => timer.setRevitalizationEnabled(false)).not.toThrow();
 			expect(() => timer.toggleRevitalization()).not.toThrow();
 			expect(() => timer.resetSettings()).not.toThrow();
+			expect(() => timer.setBotanicalEnabled(false)).not.toThrow();
+			expect(() => timer.setBotanicalHideInZen(false)).not.toThrow();
 			timer.destroy();
 		});
 	});

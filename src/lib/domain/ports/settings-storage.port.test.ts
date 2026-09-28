@@ -15,11 +15,15 @@ describe('Settings Storage Port & UserSettings Model', () => {
 	});
 
 	describe('DEFAULT_USER_SETTINGS', () => {
-		it('should match DEFAULT_TIMER_CONFIG, soundEnabled true, revitalizationEnabled true, and dark theme', () => {
+		it('should match DEFAULT_TIMER_CONFIG, soundEnabled true, revitalizationEnabled true, botanical on and hidden in zen, and dark theme', () => {
 			expect(DEFAULT_USER_SETTINGS).toEqual({
 				timer: DEFAULT_TIMER_CONFIG,
 				soundEnabled: true,
 				revitalizationEnabled: true,
+				botanicalEnabled: true,
+				botanicalHideInZen: true,
+				botanicalStatic: false,
+				botanicalModel: 'seed-to-tree',
 				theme: 'dark'
 			});
 			expect(DEFAULT_USER_SETTINGS.timer).toBe(DEFAULT_TIMER_CONFIG);

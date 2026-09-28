@@ -21,7 +21,15 @@ export interface StoredSettingsEnvelope {
 	readonly timer: TimerConfig;
 	readonly soundEnabled: boolean;
 	readonly revitalizationEnabled?: boolean;
+	readonly botanicalEnabled?: boolean;
+	readonly botanicalHideInZen?: boolean;
+	readonly botanicalStatic?: boolean;
+	readonly botanicalModel?: string;
 	readonly theme: Theme;
+}
+
+function isValidModelId(value: unknown): value is string {
+	return typeof value === 'string' && /^[a-z0-9-]{1,64}$/.test(value);
 }
 
 function isValidIntegerInRange(value: unknown, min: number, max: number): value is number {
@@ -123,6 +131,16 @@ export class LocalSettingsStorage implements ISettingsStorage {
 				patch.revitalizationEnabled !== undefined
 					? patch.revitalizationEnabled
 					: current.revitalizationEnabled,
+			botanicalEnabled:
+				patch.botanicalEnabled !== undefined ? patch.botanicalEnabled : current.botanicalEnabled,
+			botanicalHideInZen:
+				patch.botanicalHideInZen !== undefined
+					? patch.botanicalHideInZen
+					: current.botanicalHideInZen,
+			botanicalStatic:
+				patch.botanicalStatic !== undefined ? patch.botanicalStatic : current.botanicalStatic,
+			botanicalModel:
+				patch.botanicalModel !== undefined ? patch.botanicalModel : current.botanicalModel,
 			theme: patch.theme !== undefined ? patch.theme : current.theme
 		};
 
@@ -133,6 +151,10 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			timer: validated.timer,
 			soundEnabled: validated.soundEnabled,
 			revitalizationEnabled: validated.revitalizationEnabled,
+			botanicalEnabled: validated.botanicalEnabled,
+			botanicalHideInZen: validated.botanicalHideInZen,
+			botanicalStatic: validated.botanicalStatic,
+			botanicalModel: validated.botanicalModel,
 			theme: validated.theme
 		};
 
@@ -213,6 +235,22 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			? obj.revitalizationEnabled
 			: DEFAULT_USER_SETTINGS.revitalizationEnabled;
 
+		const botanicalEnabled = isValidBoolean(obj.botanicalEnabled)
+			? obj.botanicalEnabled
+			: DEFAULT_USER_SETTINGS.botanicalEnabled;
+
+		const botanicalHideInZen = isValidBoolean(obj.botanicalHideInZen)
+			? obj.botanicalHideInZen
+			: DEFAULT_USER_SETTINGS.botanicalHideInZen;
+
+		const botanicalStatic = isValidBoolean(obj.botanicalStatic)
+			? obj.botanicalStatic
+			: DEFAULT_USER_SETTINGS.botanicalStatic;
+
+		const botanicalModel = isValidModelId(obj.botanicalModel)
+			? obj.botanicalModel
+			: DEFAULT_USER_SETTINGS.botanicalModel;
+
 		const theme = isValidTheme(obj.theme) ? obj.theme : DEFAULT_USER_SETTINGS.theme;
 
 		return {
@@ -224,6 +262,10 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			},
 			soundEnabled,
 			revitalizationEnabled,
+			botanicalEnabled,
+			botanicalHideInZen,
+			botanicalStatic,
+			botanicalModel,
 			theme
 		};
 	}

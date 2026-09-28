@@ -129,7 +129,7 @@ describe('SettingsDrawer (Client Browser)', () => {
 			.element(screen.getByRole('switch', { name: 'Mindful break suggestions' }))
 			.toBeChecked();
 
-		// Check Rosé Pine interval accent dot indicators
+		// Check RosÃ© Pine interval accent dot indicators
 		expect(screen.container.querySelector('.bg-accent-foam')).not.toBeNull();
 		expect(screen.container.querySelector('.bg-accent-pine')).not.toBeNull();
 		expect(screen.container.querySelector('.bg-accent-iris')).not.toBeNull();
@@ -548,6 +548,72 @@ describe('SettingsDrawer (Client Browser)', () => {
 		await switchEl.click();
 		expect(timerState.revitalizationEnabled).toBe(true);
 		await expect.element(switchEl).toBeChecked();
+	});
+
+	it('toggles focus plant switches and disables hide-in-zen when the plant is off', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+		const themeState = createThemeState();
+
+		const screen = await render(SettingsDrawer, {
+			open: true,
+			timerState,
+			themeState,
+			portalProps: { disabled: true }
+		});
+
+		await expect.element(screen.getByRole('heading', { name: 'Focus Plant' })).toBeVisible();
+		const showSwitch = screen.getByRole('switch', { name: 'Focus plant illustration' });
+		const zenSwitch = screen.getByRole('switch', { name: 'Hide plant in Zen mode' });
+		await expect.element(showSwitch).toBeChecked();
+		await expect.element(zenSwitch).toBeChecked();
+
+		await zenSwitch.click();
+		expect(timerState.botanicalHideInZen).toBe(false);
+		await expect.element(zenSwitch).not.toBeChecked();
+
+		await showSwitch.click();
+		expect(timerState.botanicalEnabled).toBe(false);
+		await expect.element(showSwitch).not.toBeChecked();
+		await expect.element(zenSwitch).toBeDisabled();
+
+		await expect
+			.element(screen.getByRole('switch', { name: 'Static plant animation' }))
+			.toBeDisabled();
+		await expect.element(screen.getByRole('button', { name: 'Model' })).toBeDisabled();
+
+		await screen.getByRole('button', { name: /Reset to defaults/i }).click();
+		expect(timerState.botanicalEnabled).toBe(true);
+		expect(timerState.botanicalHideInZen).toBe(true);
+		await expect.element(showSwitch).toBeChecked();
+		await expect.element(zenSwitch).toBeChecked();
+	});
+
+	it('lists plant models in a dropdown and toggles the static animation', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+		const themeState = createThemeState();
+
+		const screen = await render(SettingsDrawer, {
+			open: true,
+			timerState,
+			themeState,
+			portalProps: { disabled: true }
+		});
+
+		const trigger = screen.getByRole('button', { name: 'Model' });
+		await expect.element(trigger).toHaveTextContent('Seed to fruit tree');
+		await trigger.click();
+		await expect.element(screen.getByRole('option', { name: 'Seed to fruit tree' })).toBeVisible();
+		await expect
+			.element(screen.getByRole('option', { name: 'More models soon' }))
+			.toHaveAttribute('data-disabled');
+		await userEvent.keyboard('{Escape}');
+
+		const staticSwitch = screen.getByRole('switch', { name: 'Static plant animation' });
+		await expect.element(staticSwitch).not.toBeChecked();
+		await staticSwitch.click();
+		expect(timerState.botanicalStatic).toBe(true);
 	});
 
 	it('resets break revitalization switch to checked on clicking Reset to defaults', async () => {

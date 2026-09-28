@@ -43,6 +43,10 @@ export class TimerState {
 
 	private _soundEnabled = $state<boolean>(true);
 	private _revitalizationEnabled = $state<boolean>(true);
+	private _botanicalEnabled = $state<boolean>(true);
+	private _botanicalHideInZen = $state<boolean>(true);
+	private _botanicalStatic = $state<boolean>(false);
+	private _botanicalModel = $state<string>(DEFAULT_USER_SETTINGS.botanicalModel);
 
 	private _snapshot = $state<TimerSnapshot>({
 		state: 'idle',
@@ -87,6 +91,42 @@ export class TimerState {
 	public toggleRevitalization(): void {
 		this._revitalizationEnabled = !this._revitalizationEnabled;
 		this.storage?.saveSettings({ revitalizationEnabled: this._revitalizationEnabled });
+	}
+
+	public get botanicalEnabled(): boolean {
+		return this._botanicalEnabled;
+	}
+
+	public setBotanicalEnabled(enabled: boolean): void {
+		this._botanicalEnabled = enabled;
+		this.storage?.saveSettings({ botanicalEnabled: enabled });
+	}
+
+	public get botanicalHideInZen(): boolean {
+		return this._botanicalHideInZen;
+	}
+
+	public setBotanicalHideInZen(hide: boolean): void {
+		this._botanicalHideInZen = hide;
+		this.storage?.saveSettings({ botanicalHideInZen: hide });
+	}
+
+	public get botanicalStatic(): boolean {
+		return this._botanicalStatic;
+	}
+
+	public setBotanicalStatic(isStatic: boolean): void {
+		this._botanicalStatic = isStatic;
+		this.storage?.saveSettings({ botanicalStatic: isStatic });
+	}
+
+	public get botanicalModel(): string {
+		return this._botanicalModel;
+	}
+
+	public setBotanicalModel(modelId: string): void {
+		this._botanicalModel = modelId;
+		this.storage?.saveSettings({ botanicalModel: modelId });
 	}
 
 	public get snapshot(): TimerSnapshot {
@@ -147,6 +187,13 @@ export class TimerState {
 			this._soundEnabled = storedSettings.soundEnabled;
 		}
 		this._revitalizationEnabled = storedSettings?.revitalizationEnabled ?? true;
+		this._botanicalEnabled =
+			storedSettings?.botanicalEnabled ?? DEFAULT_USER_SETTINGS.botanicalEnabled;
+		this._botanicalHideInZen =
+			storedSettings?.botanicalHideInZen ?? DEFAULT_USER_SETTINGS.botanicalHideInZen;
+		this._botanicalStatic =
+			storedSettings?.botanicalStatic ?? DEFAULT_USER_SETTINGS.botanicalStatic;
+		this._botanicalModel = storedSettings?.botanicalModel ?? DEFAULT_USER_SETTINGS.botanicalModel;
 
 		this.fsm = new TimerFSM(initialConfig);
 		this.ticker = ticker ?? new WebWorkerTimerTicker();
@@ -233,11 +280,19 @@ export class TimerState {
 	public resetSettings(): void {
 		this._revitalizationEnabled = DEFAULT_USER_SETTINGS.revitalizationEnabled;
 		this._soundEnabled = DEFAULT_USER_SETTINGS.soundEnabled;
+		this._botanicalEnabled = DEFAULT_USER_SETTINGS.botanicalEnabled;
+		this._botanicalHideInZen = DEFAULT_USER_SETTINGS.botanicalHideInZen;
+		this._botanicalStatic = DEFAULT_USER_SETTINGS.botanicalStatic;
+		this._botanicalModel = DEFAULT_USER_SETTINGS.botanicalModel;
 		this.fsm.updateConfig(DEFAULT_TIMER_CONFIG);
 		this.storage?.saveSettings({
 			timer: this.fsm.config,
 			soundEnabled: this._soundEnabled,
-			revitalizationEnabled: this._revitalizationEnabled
+			revitalizationEnabled: this._revitalizationEnabled,
+			botanicalEnabled: this._botanicalEnabled,
+			botanicalHideInZen: this._botanicalHideInZen,
+			botanicalStatic: this._botanicalStatic,
+			botanicalModel: this._botanicalModel
 		});
 	}
 
