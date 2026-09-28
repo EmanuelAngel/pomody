@@ -12,7 +12,7 @@ import {
 	updateBlockStatus,
 	validateSessionPlan
 } from '../domain/planning/session-plan.entity';
-import type { TimerConfig, TimerMode } from '../domain/timer/timer-fsm';
+import type { DomainEvent, TimerConfig, TimerMode } from '../domain/timer/timer-fsm';
 import { validateTimerConfig } from '../domain/timer/timer-fsm';
 import type { ISessionPlanRepository } from '../domain/ports/session-plan-repository.port';
 import { LocalStoragePlanRepository } from '../adapters/storage/local-session-plan-repository';
@@ -60,8 +60,10 @@ function parseTimeToTimestamp(timeStr: string, baseDate = new SvelteDate()): num
  */
 export class PlanningState {
 	private readonly repository: ISessionPlanRepository;
-	private readonly timerState?: TimerState;
-	private readonly tasksState?: TasksState;
+	private timerState?: TimerState;
+	private tasksState?: TasksState;
+	private _timerUnsubscribe?: () => void;
+	private _tasksUnsubscribe?: () => void;
 
 	private _targetMode = $state<PlanTargetMode>('blocks');
 	private _blockCount = $state<number>(4);
@@ -97,7 +99,7 @@ export class PlanningState {
 		if (this._activePlan === null || this._activePlan.blocks.length === 0) {
 			return false;
 		}
-		return this._activePlan.blocks.every((b) => b.status === 'completed');
+		return this._activePlan.blocks.every((b) => b.status === 'completed' || b.status === 'skipped');
 	});
 
 	public readonly isSessionActive = $derived.by<boolean>(() => {
@@ -185,6 +187,166 @@ export class PlanningState {
 			this.timerState = timerState;
 			this.tasksState = tasksState;
 		}
+
+		if (this.timerState) {
+			this.connectTimer(this.timerState);
+		}
+		if (this.tasksState) {
+			this.connectTasks(this.tasksState);
+		}
+	}
+
+	/**
+	 * Connects and subscribes to a TimerState instance for domain events.
+	 */
+	public connectTimer(timer: TimerState): () => void {
+		this._timerUnsubscribe?.();
+		this.timerState = timer;
+		const unsubEvents = timer.onEvent((event) => {
+			void this.handleTimerDomainEvent(event);
+		});
+		const unsubConfig = timer.onConfigChange((config) => {
+			void this.handleTimerConfigChange(config);
+		});
+		this._timerUnsubscribe = () => {
+			unsubEvents();
+			unsubConfig();
+		};
+
+		if (!this._activePlan) {
+			void this.handleTimerConfigChange(timer.config);
+		}
+
+		return () => {
+			this._timerUnsubscribe?.();
+			this._timerUnsubscribe = undefined;
+		};
+	}
+
+	/**
+	 * Connects and subscribes to a TasksState instance for bidirectional task synchronization.
+	 */
+	public connectTasks(tasks: TasksState): () => void {
+		this._tasksUnsubscribe?.();
+		this.tasksState = tasks;
+		this._tasksUnsubscribe = tasks.onActiveTaskChange((taskId) => {
+			this.handleActiveTaskChange(taskId);
+		});
+		return () => {
+			this._tasksUnsubscribe?.();
+			this._tasksUnsubscribe = undefined;
+		};
+	}
+
+	/**
+	 * Handles domain events from the TimerFSM.
+	 */
+	public async handleTimerDomainEvent(event: DomainEvent): Promise<void> {
+		if (!this.isSessionActive || !this._activePlan) {
+			return;
+		}
+		if (event.type === 'block-completed') {
+			await this.onTimerBlockCompleted(event.mode);
+		} else if (event.type === 'block-skipped') {
+			await this.onTimerBlockSkipped(event.mode);
+		}
+	}
+
+	/**
+	 * Handles timer configuration changes (e.g. from SettingsDrawer or TimerState updates).
+	 * If active session: applies forward-only update to upcoming blocks if config differs.
+	 * If draft mode: aligns draft minutes and interval, automatically updating projected plan & stats.
+	 */
+	public async handleTimerConfigChange(config: TimerConfig): Promise<void> {
+		if (this.isSessionActive && this._activePlan) {
+			const current = this._activePlan.sessionConfig;
+			if (
+				current.focusDurationSeconds !== config.focusDurationSeconds ||
+				current.shortBreakDurationSeconds !== config.shortBreakDurationSeconds ||
+				current.longBreakDurationSeconds !== config.longBreakDurationSeconds ||
+				current.roundsBeforeLongBreak !== config.roundsBeforeLongBreak
+			) {
+				await this.updateUpcomingPlanForwardOnly(config);
+			}
+		} else {
+			const focusM = Math.round(config.focusDurationSeconds / 60);
+			const shortM = Math.round(config.shortBreakDurationSeconds / 60);
+			const longM = Math.round(config.longBreakDurationSeconds / 60);
+			const interval = config.roundsBeforeLongBreak;
+
+			if (this._focusMinutes !== focusM) {
+				this._focusMinutes = focusM;
+			}
+			if (this._shortBreakMinutes !== shortM) {
+				this._shortBreakMinutes = shortM;
+			}
+			if (this._longBreakMinutes !== longM) {
+				this._longBreakMinutes = longM;
+			}
+			if (this._longBreakInterval !== interval) {
+				this._longBreakInterval = interval;
+			}
+		}
+	}
+
+	/**
+	 * Handles changes to active task in TasksState (from TaskPill or Backlog Pin/Unpin).
+	 * Enforces rules:
+	 * - During active session in focus mode: assigns to active block.
+	 * - During active session in break mode: assigns to first subsequent focus block.
+	 * - In draft mode: assigns to block 0 (first focus block).
+	 * - When cleared (null): unassigns from the corresponding block.
+	 * - Uses equality guards to avoid circular loops.
+	 */
+	public handleActiveTaskChange(taskId: string | null): void {
+		if (this.isSessionActive && this._activePlan) {
+			const activeBlock = this.activeBlock;
+			if (!activeBlock) return;
+
+			if (activeBlock.mode === 'focus') {
+				if (taskId !== null) {
+					if (activeBlock.assignedTaskId === taskId) return;
+					this.assignTaskToBlock(this._activeBlockIndex, taskId);
+				} else {
+					if (!activeBlock.assignedTaskId) return;
+					this.unassignTaskFromBlock(this._activeBlockIndex);
+				}
+			} else {
+				// During break: find first subsequent focus block in timeline
+				const nextFocusBlock = this._activePlan.blocks
+					.slice(this._activeBlockIndex + 1)
+					.find((b) => b.mode === 'focus');
+				if (!nextFocusBlock) return;
+
+				if (taskId !== null) {
+					if (nextFocusBlock.assignedTaskId === taskId) return;
+					this.assignTaskToBlock(nextFocusBlock.index, taskId);
+				} else {
+					if (!nextFocusBlock.assignedTaskId) return;
+					this.unassignTaskFromBlock(nextFocusBlock.index);
+				}
+			}
+		} else if (!this._activePlan) {
+			// In draft mode: target first focus block (block 0)
+			if (taskId !== null) {
+				const currentAssignment = this._draftTaskAssignments.get(0);
+				if (currentAssignment === taskId) return;
+				this.assignTaskToBlock(0, taskId);
+			} else {
+				if (!this._draftTaskAssignments.has(0)) return;
+				this.unassignTaskFromBlock(0);
+			}
+		}
+	}
+
+	/**
+	 * Cleans up timer and tasks event listeners.
+	 */
+	public destroy(): void {
+		this._timerUnsubscribe?.();
+		this._timerUnsubscribe = undefined;
+		this._tasksUnsubscribe?.();
+		this._tasksUnsubscribe = undefined;
 	}
 
 	private buildPlanFromDraft(): SessionPlan {
@@ -270,6 +432,9 @@ export class PlanningState {
 				this._draftTaskAssignments = draftMap;
 			} else {
 				this._activePlan = null;
+				if (this.timerState) {
+					await this.handleTimerConfigChange(this.timerState.config);
+				}
 			}
 			this._isLoaded = true;
 		} finally {
@@ -291,25 +456,68 @@ export class PlanningState {
 
 	public setFocusMinutes(minutes: number): void {
 		if (typeof minutes === 'number' && Number.isFinite(minutes)) {
-			this._focusMinutes = Math.max(1, Math.min(120, Math.round(minutes)));
+			const valid = Math.max(1, Math.min(120, Math.round(minutes)));
+			if (this.isSessionActive && this._activePlan) {
+				void this.updateUpcomingPlanForwardOnly({ focusDurationSeconds: valid * 60 });
+			} else {
+				this._focusMinutes = valid;
+				if (this.timerState) {
+					const seconds = valid * 60;
+					if (this.timerState.config.focusDurationSeconds !== seconds) {
+						this.timerState.updateConfig({ focusDurationSeconds: seconds });
+					}
+				}
+			}
 		}
 	}
 
 	public setShortBreakMinutes(minutes: number): void {
 		if (typeof minutes === 'number' && Number.isFinite(minutes)) {
-			this._shortBreakMinutes = Math.max(1, Math.min(60, Math.round(minutes)));
+			const valid = Math.max(1, Math.min(60, Math.round(minutes)));
+			if (this.isSessionActive && this._activePlan) {
+				void this.updateUpcomingPlanForwardOnly({ shortBreakDurationSeconds: valid * 60 });
+			} else {
+				this._shortBreakMinutes = valid;
+				if (this.timerState) {
+					const seconds = valid * 60;
+					if (this.timerState.config.shortBreakDurationSeconds !== seconds) {
+						this.timerState.updateConfig({ shortBreakDurationSeconds: seconds });
+					}
+				}
+			}
 		}
 	}
 
 	public setLongBreakMinutes(minutes: number): void {
 		if (typeof minutes === 'number' && Number.isFinite(minutes)) {
-			this._longBreakMinutes = Math.max(1, Math.min(90, Math.round(minutes)));
+			const valid = Math.max(1, Math.min(90, Math.round(minutes)));
+			if (this.isSessionActive && this._activePlan) {
+				void this.updateUpcomingPlanForwardOnly({ longBreakDurationSeconds: valid * 60 });
+			} else {
+				this._longBreakMinutes = valid;
+				if (this.timerState) {
+					const seconds = valid * 60;
+					if (this.timerState.config.longBreakDurationSeconds !== seconds) {
+						this.timerState.updateConfig({ longBreakDurationSeconds: seconds });
+					}
+				}
+			}
 		}
 	}
 
 	public setLongBreakInterval(interval: number): void {
 		if (typeof interval === 'number' && Number.isFinite(interval)) {
-			this._longBreakInterval = Math.max(1, Math.min(12, Math.round(interval)));
+			const valid = Math.max(1, Math.min(12, Math.round(interval)));
+			if (this.isSessionActive && this._activePlan) {
+				void this.updateUpcomingPlanForwardOnly({ roundsBeforeLongBreak: valid });
+			} else {
+				this._longBreakInterval = valid;
+				if (this.timerState) {
+					if (this.timerState.config.roundsBeforeLongBreak !== valid) {
+						this.timerState.updateConfig({ roundsBeforeLongBreak: valid });
+					}
+				}
+			}
 		}
 	}
 
@@ -339,9 +547,17 @@ export class PlanningState {
 			if (targetBlock && targetBlock.mode !== 'focus') {
 				return;
 			}
+			const trimmed = taskId.trim();
+			if (this._draftTaskAssignments.get(blockIndex) === trimmed) {
+				return;
+			}
 			const updated = new SvelteMap(this._draftTaskAssignments);
-			updated.set(blockIndex, taskId.trim());
+			updated.set(blockIndex, trimmed);
 			this._draftTaskAssignments = updated;
+
+			if (blockIndex === 0 && this.tasksState) {
+				this.tasksState.setActiveTask(trimmed);
+			}
 			return;
 		}
 
@@ -354,11 +570,16 @@ export class PlanningState {
 			return;
 		}
 
-		this._activePlan = assignTaskToBlock(this._activePlan, blockIndex, taskId);
+		const trimmed = taskId.trim();
+		if (targetBlock.assignedTaskId === trimmed) {
+			return;
+		}
+
+		this._activePlan = assignTaskToBlock(this._activePlan, blockIndex, trimmed);
 		void this.repository.saveActivePlan(this._activePlan);
 
 		if (blockIndex === this._activeBlockIndex && this.tasksState) {
-			this.tasksState.setActiveTask(taskId.trim());
+			this.tasksState.setActiveTask(trimmed);
 		}
 	}
 
@@ -368,13 +589,25 @@ export class PlanningState {
 	 */
 	public unassignTaskFromBlock(blockIndex: number): void {
 		if (this._activePlan === null) {
+			if (!this._draftTaskAssignments.has(blockIndex)) {
+				return;
+			}
 			const updated = new SvelteMap(this._draftTaskAssignments);
 			updated.delete(blockIndex);
 			this._draftTaskAssignments = updated;
+
+			if (blockIndex === 0 && this.tasksState) {
+				this.tasksState.setActiveTask(null);
+			}
 			return;
 		}
 
 		if (blockIndex < this._activeBlockIndex || blockIndex >= this._activePlan.blocks.length) {
+			return;
+		}
+
+		const targetBlock = this._activePlan.blocks[blockIndex];
+		if (!targetBlock.assignedTaskId) {
 			return;
 		}
 
@@ -426,6 +659,13 @@ export class PlanningState {
 		customTimerState?: TimerState,
 		customTasksState?: TasksState
 	): Promise<SessionPlan> {
+		if (customTimerState && customTimerState !== this.timerState) {
+			this.connectTimer(customTimerState);
+		}
+		if (customTasksState && customTasksState !== this.tasksState) {
+			this.connectTasks(customTasksState);
+		}
+
 		let plan = this.buildPlanFromDraft();
 
 		if (plan.blocks.length > 0) {
@@ -440,8 +680,12 @@ export class PlanningState {
 		const timer = customTimerState ?? this.timerState;
 		const tasks = customTasksState ?? this.tasksState;
 
-		if (plan.blocks.length > 0 && plan.blocks[0].assignedTaskId && tasks) {
-			tasks.setActiveTask(plan.blocks[0].assignedTaskId);
+		if (plan.blocks.length > 0 && tasks) {
+			if (plan.blocks[0].assignedTaskId) {
+				tasks.setActiveTask(plan.blocks[0].assignedTaskId);
+			} else {
+				tasks.setActiveTask(null);
+			}
 		}
 
 		if (timer) {
@@ -467,13 +711,19 @@ export class PlanningState {
 	}
 
 	/**
-	 * Handles timer block completion:
-	 * Marks current block completed, advances activeBlockIndex to next block if available,
-	 * sets in_progress on new block, updates task on tasksState if new block is focus,
-	 * or marks plan completed if no next block, and persists updated plan.
+	 * Advances the active block upon natural timer block completion or manual skip.
+	 * Marks current block with targetStatus ('completed' | 'skipped').
+	 * If there is a next block:
+	 *   - Increments activeBlockIndex by 1.
+	 *   - Marks next block as 'in_progress'.
+	 *   - If next block is 'focus' and has assignedTaskId, sets active task on tasksState.
+	 *   - If next block is 'focus' and has no assignedTaskId, clears active task on tasksState.
+	 * If last block completed or skipped:
+	 *   - Pauses the timer to prevent infinite cycles outside the plan budget.
+	 * Persists updated plan to repository.
 	 */
-	public async onTimerBlockCompleted(
-		completedMode?: TimerMode,
+	private async advanceActiveBlock(
+		targetStatus: 'completed' | 'skipped',
 		customTimerState?: TimerState,
 		customTasksState?: TasksState
 	): Promise<void> {
@@ -485,21 +735,58 @@ export class PlanningState {
 			return;
 		}
 
-		let updatedPlan = updateBlockStatus(this._activePlan, this._activeBlockIndex, 'completed');
+		let updatedPlan = updateBlockStatus(this._activePlan, this._activeBlockIndex, targetStatus);
+		const timer = customTimerState ?? this.timerState;
+		const tasks = customTasksState ?? this.tasksState;
 
 		if (this._activeBlockIndex + 1 < updatedPlan.blocks.length) {
 			this._activeBlockIndex++;
 			updatedPlan = updateBlockStatus(updatedPlan, this._activeBlockIndex, 'in_progress');
 
 			const nextBlock = updatedPlan.blocks[this._activeBlockIndex];
-			const tasks = customTasksState ?? this.tasksState;
-			if (nextBlock.mode === 'focus' && nextBlock.assignedTaskId && tasks) {
-				tasks.setActiveTask(nextBlock.assignedTaskId);
+			if (nextBlock.mode === 'focus') {
+				if (nextBlock.assignedTaskId && tasks) {
+					tasks.setActiveTask(nextBlock.assignedTaskId);
+				} else if (tasks) {
+					tasks.setActiveTask(null);
+				}
+			}
+		} else {
+			if (timer) {
+				timer.pause();
 			}
 		}
 
 		this._activePlan = updatedPlan;
 		await this.repository.saveActivePlan(this._activePlan);
+	}
+
+	/**
+	 * Handles timer block completion:
+	 * Marks current block completed, advances activeBlockIndex to next block if available,
+	 * sets in_progress on new block, updates task on tasksState if new block is focus,
+	 * or pauses timer if session plan is finished, and persists updated plan.
+	 */
+	public async onTimerBlockCompleted(
+		completedMode?: TimerMode,
+		customTimerState?: TimerState,
+		customTasksState?: TasksState
+	): Promise<void> {
+		await this.advanceActiveBlock('completed', customTimerState, customTasksState);
+	}
+
+	/**
+	 * Handles timer block skip:
+	 * Marks current block skipped, advances activeBlockIndex to next block if available,
+	 * sets in_progress on new block, updates task on tasksState if new block is focus,
+	 * or pauses timer if session plan is finished, and persists updated plan.
+	 */
+	public async onTimerBlockSkipped(
+		skippedMode?: TimerMode,
+		customTimerState?: TimerState,
+		customTasksState?: TasksState
+	): Promise<void> {
+		await this.advanceActiveBlock('skipped', customTimerState, customTasksState);
 	}
 
 	/**
@@ -535,17 +822,26 @@ export class PlanningState {
 				return b;
 			}
 
-			let newDuration = b.durationSeconds;
-			if (b.mode === 'focus' && newConfig.focusDurationSeconds !== undefined) {
-				newDuration = newConfig.focusDurationSeconds;
-			} else if (b.mode === 'shortBreak' && newConfig.shortBreakDurationSeconds !== undefined) {
-				newDuration = newConfig.shortBreakDurationSeconds;
-			} else if (b.mode === 'longBreak' && newConfig.longBreakDurationSeconds !== undefined) {
-				newDuration = newConfig.longBreakDurationSeconds;
+			if (b.mode === 'focus') {
+				const newDuration = updatedConfig.focusDurationSeconds;
+				return Object.freeze({
+					...b,
+					durationSeconds: newDuration
+				});
 			}
+
+			const precedingFocusCount = this._activePlan!.blocks.slice(0, b.index).filter(
+				(x) => x.mode === 'focus'
+			).length;
+			const isLongBreak = precedingFocusCount % updatedConfig.roundsBeforeLongBreak === 0;
+			const newMode = isLongBreak ? 'longBreak' : 'shortBreak';
+			const newDuration = isLongBreak
+				? updatedConfig.longBreakDurationSeconds
+				: updatedConfig.shortBreakDurationSeconds;
 
 			return Object.freeze({
 				...b,
+				mode: newMode,
 				durationSeconds: newDuration
 			});
 		});
@@ -581,12 +877,26 @@ export class PlanningState {
 
 		validateSessionPlan(updatedPlan);
 		this._activePlan = updatedPlan;
-		await this.repository.saveActivePlan(this._activePlan);
 
 		const timer = this.timerState;
 		if (timer) {
-			timer.updateConfig(newConfig);
+			const tc = timer.config;
+			const hasDifference =
+				(newConfig.focusDurationSeconds !== undefined &&
+					tc.focusDurationSeconds !== newConfig.focusDurationSeconds) ||
+				(newConfig.shortBreakDurationSeconds !== undefined &&
+					tc.shortBreakDurationSeconds !== newConfig.shortBreakDurationSeconds) ||
+				(newConfig.longBreakDurationSeconds !== undefined &&
+					tc.longBreakDurationSeconds !== newConfig.longBreakDurationSeconds) ||
+				(newConfig.roundsBeforeLongBreak !== undefined &&
+					tc.roundsBeforeLongBreak !== newConfig.roundsBeforeLongBreak);
+
+			if (hasDifference) {
+				timer.updateConfig(newConfig);
+			}
 		}
+
+		await this.repository.saveActivePlan(this._activePlan);
 	}
 }
 

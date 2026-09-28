@@ -520,4 +520,589 @@ describe('PlanningState', () => {
 			expect(planningState).toBeInstanceOf(PlanningState);
 		});
 	});
+
+	describe('Planning & Timer / Tasks Synchronization Specification', () => {
+		it('should advance active block and mark block as skipped on timer.skip() domain event', async () => {
+			await state.startSession();
+			expect(state.activeBlockIndex).toBe(0);
+			expect(state.activeBlock?.status).toBe('in_progress');
+
+			// Skip block 0 (focus) via timer
+			timer.skip();
+
+			expect(state.activeBlockIndex).toBe(1);
+			expect(state.activePlan?.blocks[0].status).toBe('skipped');
+			expect(state.activePlan?.blocks[1].status).toBe('in_progress');
+			expect(state.activeBlock?.mode).toBe('shortBreak');
+		});
+
+		it('should advance active block and mark block as completed on block-completed domain event', async () => {
+			await state.startSession();
+			expect(state.activeBlockIndex).toBe(0);
+
+			await state.handleTimerDomainEvent({
+				type: 'block-completed',
+				mode: 'focus',
+				round: 1,
+				totalRoundsCompleted: 1,
+				completedAt: new Date()
+			});
+
+			expect(state.activeBlockIndex).toBe(1);
+			expect(state.activePlan?.blocks[0].status).toBe('completed');
+			expect(state.activePlan?.blocks[1].status).toBe('in_progress');
+		});
+
+		it('should pause timer and complete plan when the last block is completed', async () => {
+			state.setBlockCount(1); // 1 focus block
+			await state.startSession();
+
+			const pauseSpy = vi.spyOn(timer, 'pause');
+
+			await state.handleTimerDomainEvent({
+				type: 'block-completed',
+				mode: 'focus',
+				round: 1,
+				totalRoundsCompleted: 1,
+				completedAt: new Date()
+			});
+
+			expect(pauseSpy).toHaveBeenCalled();
+			expect(state.activePlan?.blocks[0].status).toBe('completed');
+			expect(state.isPlanCompleted).toBe(true);
+			expect(state.isSessionActive).toBe(false);
+		});
+
+		it('should pause timer and complete plan when the last block is skipped', async () => {
+			state.setBlockCount(1); // 1 focus block
+			await state.startSession();
+
+			const pauseSpy = vi.spyOn(timer, 'pause');
+
+			timer.skip();
+
+			expect(pauseSpy).toHaveBeenCalled();
+			expect(state.activePlan?.blocks[0].status).toBe('skipped');
+			expect(state.isPlanCompleted).toBe(true);
+			expect(state.isSessionActive).toBe(false);
+		});
+
+		it('should accurately evaluate isPlanCompleted with mixed completed and skipped blocks', async () => {
+			state.setBlockCount(2); // 3 blocks: focus, shortBreak, focus
+			await state.startSession();
+
+			// Skip block 0 (focus)
+			timer.skip();
+			expect(state.isPlanCompleted).toBe(false);
+
+			// Complete block 1 (shortBreak)
+			await state.handleTimerDomainEvent({
+				type: 'block-completed',
+				mode: 'shortBreak',
+				round: 1,
+				totalRoundsCompleted: 0,
+				completedAt: new Date()
+			});
+			expect(state.isPlanCompleted).toBe(false);
+
+			// Skip block 2 (focus - last block)
+			timer.skip();
+
+			expect(state.isPlanCompleted).toBe(true);
+			expect(state.activePlan?.blocks[0].status).toBe('skipped');
+			expect(state.activePlan?.blocks[1].status).toBe('completed');
+			expect(state.activePlan?.blocks[2].status).toBe('skipped');
+		});
+
+		it('should sync active task in draft mode to block 0', async () => {
+			await tasks.createTask('Draft Focus Task');
+			const taskId = tasks.pendingTasks[0].id;
+
+			// Pin task in tasksState
+			tasks.setActiveTask(taskId);
+
+			expect(state.draftTaskAssignments.get(0)).toBe(taskId);
+			expect(state.projectedPlan.blocks[0].assignedTaskId).toBe(taskId);
+
+			// Unpin task in tasksState
+			tasks.setActiveTask(null);
+
+			expect(state.draftTaskAssignments.has(0)).toBe(false);
+			expect(state.projectedPlan.blocks[0].assignedTaskId).toBeUndefined();
+		});
+
+		it('should sync active task to focus block during active session', async () => {
+			await tasks.createTask('Session Task 1');
+			await tasks.createTask('Session Task 2');
+			const [task1, task2] = tasks.pendingTasks;
+
+			await state.startSession();
+			expect(state.activeBlockIndex).toBe(0);
+			expect(state.activeBlock?.mode).toBe('focus');
+
+			// Pin task 1
+			tasks.setActiveTask(task1.id);
+			expect(state.activeBlock?.assignedTaskId).toBe(task1.id);
+			expect(state.activePlan?.blocks[0].assignedTaskId).toBe(task1.id);
+
+			// Change to task 2 via TaskPill
+			tasks.setActiveTask(task2.id);
+			expect(state.activeBlock?.assignedTaskId).toBe(task2.id);
+			expect(state.activePlan?.blocks[0].assignedTaskId).toBe(task2.id);
+
+			// Free focus (unassign)
+			tasks.setActiveTask(null);
+			expect(state.activeBlock?.assignedTaskId).toBeUndefined();
+			expect(state.activePlan?.blocks[0].assignedTaskId).toBeUndefined();
+		});
+
+		it('should sync active task to next focus block when currently in break', async () => {
+			await tasks.createTask('Break Planning Task');
+			const taskId = tasks.pendingTasks[0].id;
+
+			await state.startSession();
+			// Advance to block 1 (short break)
+			timer.skip();
+			expect(state.activeBlockIndex).toBe(1);
+			expect(state.activeBlock?.mode).toBe('shortBreak');
+
+			// Pin task while in break
+			tasks.setActiveTask(taskId);
+
+			// Break block must NOT receive assignedTaskId
+			expect(state.activePlan?.blocks[1].assignedTaskId).toBeUndefined();
+			// Next focus block (index 2) must receive assignedTaskId
+			expect(state.activePlan?.blocks[2].assignedTaskId).toBe(taskId);
+
+			// Unpin task while in break
+			tasks.setActiveTask(null);
+			expect(state.activePlan?.blocks[2].assignedTaskId).toBeUndefined();
+		});
+
+		it('should update tasksState active task when timeline assigns/unassigns on active block', async () => {
+			await tasks.createTask('Timeline Task');
+			const taskId = tasks.pendingTasks[0].id;
+
+			// In draft mode
+			state.assignTaskToBlock(0, taskId);
+			expect(tasks.activeTaskId).toBe(taskId);
+
+			state.unassignTaskFromBlock(0);
+			expect(tasks.activeTaskId).toBeNull();
+
+			// In active session
+			await state.startSession();
+			state.assignTaskToBlock(0, taskId);
+			expect(tasks.activeTaskId).toBe(taskId);
+
+			state.unassignTaskFromBlock(0);
+			expect(tasks.activeTaskId).toBeNull();
+		});
+
+		it('should automatically set active task when advancing into a focus block with assigned task', async () => {
+			await tasks.createTask('Assigned Next Task');
+			const taskId = tasks.pendingTasks[0].id;
+
+			// Assign task to block 2
+			state.assignTaskToBlock(2, taskId);
+			await state.startSession();
+
+			// Currently in block 0 (free focus)
+			expect(tasks.activeTaskId).toBeNull();
+
+			// Skip block 0 -> shortBreak (block 1)
+			timer.skip();
+			expect(state.activeBlockIndex).toBe(1);
+
+			// Skip block 1 (shortBreak) -> focus block 2 (assigned)
+			timer.skip();
+			expect(state.activeBlockIndex).toBe(2);
+			expect(state.activeBlock?.mode).toBe('focus');
+			expect(tasks.activeTaskId).toBe(taskId);
+		});
+
+		it('should clear active task when advancing into a focus block without assigned task (Free Focus)', async () => {
+			await tasks.createTask('First Task');
+			const taskId = tasks.pendingTasks[0].id;
+
+			state.assignTaskToBlock(0, taskId);
+			await state.startSession();
+			expect(tasks.activeTaskId).toBe(taskId);
+
+			// Skip block 0 -> block 1 (break)
+			timer.skip();
+			// Skip block 1 -> block 2 (focus, unassigned)
+			timer.skip();
+			expect(state.activeBlockIndex).toBe(2);
+			expect(state.activeBlock?.mode).toBe('focus');
+			expect(state.activeBlock?.assignedTaskId).toBeUndefined();
+			expect(tasks.activeTaskId).toBeNull();
+		});
+	});
+
+	describe('TimerConfig Synchronization (TASK-2)', () => {
+		it('should align initial draft state immediately with connected timer config', () => {
+			const customTimer = new TimerState(
+				{
+					focusDurationSeconds: 45 * 60,
+					shortBreakDurationSeconds: 8 * 60,
+					longBreakDurationSeconds: 20 * 60,
+					roundsBeforeLongBreak: 3
+				},
+				new MockTicker(),
+				new MockAudioNotifier()
+			);
+
+			const customState = createPlanningState(repo, customTimer, tasks);
+			expect(customState.focusMinutes).toBe(45);
+			expect(customState.shortBreakMinutes).toBe(8);
+			expect(customState.longBreakMinutes).toBe(20);
+			expect(customState.longBreakInterval).toBe(3);
+		});
+
+		it('should synchronize timer config changes to draft state and recalculate projected plan and stats', () => {
+			const initialEstimate = state.estimatedFinishTime;
+			expect(state.focusMinutes).toBe(25);
+			expect(state.totalFocusMinutes).toBe(100);
+
+			timer.updateConfig({
+				focusDurationSeconds: 30 * 60,
+				shortBreakDurationSeconds: 10 * 60,
+				longBreakDurationSeconds: 20 * 60,
+				roundsBeforeLongBreak: 2
+			});
+
+			expect(state.focusMinutes).toBe(30);
+			expect(state.shortBreakMinutes).toBe(10);
+			expect(state.longBreakMinutes).toBe(20);
+			expect(state.longBreakInterval).toBe(2);
+
+			expect(state.totalFocusMinutes).toBe(120);
+			expect(state.totalBreakMinutes).toBe(40);
+
+			expect(state.projectedPlan.blocks[0].durationSeconds).toBe(30 * 60);
+			expect(state.projectedPlan.blocks[1].mode).toBe('shortBreak');
+			expect(state.projectedPlan.blocks[1].durationSeconds).toBe(10 * 60);
+			expect(state.projectedPlan.blocks[3].mode).toBe('longBreak');
+			expect(state.projectedPlan.blocks[3].durationSeconds).toBe(20 * 60);
+
+			expect(state.estimatedFinishTime).not.toBe(initialEstimate);
+		});
+
+		it('should reset draft inputs when timer settings are reset', () => {
+			timer.updateConfig({
+				focusDurationSeconds: 40 * 60,
+				shortBreakDurationSeconds: 7 * 60
+			});
+			expect(state.focusMinutes).toBe(40);
+			expect(state.shortBreakMinutes).toBe(7);
+
+			timer.resetSettings();
+
+			expect(state.focusMinutes).toBe(25);
+			expect(state.shortBreakMinutes).toBe(5);
+			expect(state.longBreakMinutes).toBe(15);
+			expect(state.longBreakInterval).toBe(4);
+		});
+
+		it('should recalculate upcoming blocks forward-only in active session, preserving past/current blocks', async () => {
+			await state.startSession();
+
+			// Advance to block 1 (short break)
+			timer.skip();
+			expect(state.activeBlockIndex).toBe(1);
+			expect(state.activeBlock?.mode).toBe('shortBreak');
+			const initialActiveBlockDuration = state.activeBlock?.durationSeconds;
+			const initialEstimatedFinish = state.estimatedFinishTime;
+
+			// Update timer config during active session
+			timer.updateConfig({
+				focusDurationSeconds: 40 * 60,
+				shortBreakDurationSeconds: 10 * 60,
+				longBreakDurationSeconds: 20 * 60,
+				roundsBeforeLongBreak: 2
+			});
+
+			const activePlan = state.activePlan!;
+			expect(activePlan).not.toBeNull();
+
+			// Past block 0: focus, preserved
+			expect(activePlan.blocks[0].durationSeconds).toBe(25 * 60);
+			expect(activePlan.blocks[0].status).toBe('skipped');
+
+			// Current active block 1: shortBreak, preserved
+			expect(activePlan.blocks[1].durationSeconds).toBe(initialActiveBlockDuration);
+			expect(activePlan.blocks[1].mode).toBe('shortBreak');
+			expect(activePlan.blocks[1].status).toBe('in_progress');
+
+			// Future block 2: focus, updated to 40m
+			expect(activePlan.blocks[2].durationSeconds).toBe(40 * 60);
+			expect(activePlan.blocks[2].mode).toBe('focus');
+
+			// Future block 3: break. Preceding focus blocks: block 0 and block 2 (count = 2).
+			// 2 % 2 === 0 => Mode changed to longBreak! Duration is 20m.
+			expect(activePlan.blocks[3].mode).toBe('longBreak');
+			expect(activePlan.blocks[3].durationSeconds).toBe(20 * 60);
+
+			// Future block 4: focus, updated to 40m
+			expect(activePlan.blocks[4].durationSeconds).toBe(40 * 60);
+
+			// Future block 5: break. Preceding focus blocks count = 3. 3 % 2 !== 0 => shortBreak, 10m.
+			expect(activePlan.blocks[5].mode).toBe('shortBreak');
+			expect(activePlan.blocks[5].durationSeconds).toBe(10 * 60);
+
+			// Future block 6: focus, updated to 40m
+			expect(activePlan.blocks[6].durationSeconds).toBe(40 * 60);
+
+			expect(state.estimatedFinishTime).not.toBe(initialEstimatedFinish);
+			expect(repo.saveActivePlanCallCount).toBeGreaterThanOrEqual(2);
+		});
+
+		it('should prevent circular loops between TimerState and PlanningState with equality guards', async () => {
+			await state.startSession();
+
+			const timerUpdateSpy = vi.spyOn(timer, 'updateConfig');
+			const planUpdateSpy = vi.spyOn(state, 'updateUpcomingPlanForwardOnly');
+
+			// 1. TimerState initiates config change
+			timer.updateConfig({
+				focusDurationSeconds: 35 * 60
+			});
+
+			expect(planUpdateSpy).toHaveBeenCalledTimes(1);
+			expect(timerUpdateSpy).toHaveBeenCalledTimes(1);
+
+			// 2. PlanningState initiates updateUpcomingPlanForwardOnly directly
+			await state.updateUpcomingPlanForwardOnly({
+				shortBreakDurationSeconds: 8 * 60
+			});
+
+			expect(timerUpdateSpy).toHaveBeenCalledTimes(2);
+			expect(planUpdateSpy).toHaveBeenCalledTimes(2);
+		});
+
+		it('should stop receiving timer config changes after unsubscribe', () => {
+			const disconnect = state.connectTimer(timer);
+			disconnect();
+
+			timer.updateConfig({
+				focusDurationSeconds: 50 * 60
+			});
+
+			expect(state.focusMinutes).not.toBe(50);
+		});
+	});
+
+	describe('Bidirectional Draft Sync & Initial Load Alignment (TASK-3)', () => {
+		it('should update connected timer focusDurationSeconds to 2700 when setFocusMinutes(45) is called in draft mode', () => {
+			expect(timer.config.focusDurationSeconds).toBe(25 * 60);
+
+			state.setFocusMinutes(45);
+
+			expect(state.focusMinutes).toBe(45);
+			expect(timer.config.focusDurationSeconds).toBe(2700);
+		});
+
+		it('should update connected timer shortBreakDurationSeconds to 480 when setShortBreakMinutes(8) is called in draft mode', () => {
+			expect(timer.config.shortBreakDurationSeconds).toBe(5 * 60);
+
+			state.setShortBreakMinutes(8);
+
+			expect(state.shortBreakMinutes).toBe(8);
+			expect(timer.config.shortBreakDurationSeconds).toBe(480);
+		});
+
+		it('should update connected timer longBreakDurationSeconds to 1200 when setLongBreakMinutes(20) is called in draft mode', () => {
+			expect(timer.config.longBreakDurationSeconds).toBe(15 * 60);
+
+			state.setLongBreakMinutes(20);
+
+			expect(state.longBreakMinutes).toBe(20);
+			expect(timer.config.longBreakDurationSeconds).toBe(1200);
+		});
+
+		it('should update connected timer roundsBeforeLongBreak to 6 when setLongBreakInterval(6) is called in draft mode', () => {
+			expect(timer.config.roundsBeforeLongBreak).toBe(4);
+
+			state.setLongBreakInterval(6);
+
+			expect(state.longBreakInterval).toBe(6);
+			expect(timer.config.roundsBeforeLongBreak).toBe(6);
+		});
+
+		it('should not cause infinite loops when draft setters trigger timerState.updateConfig', () => {
+			const timerUpdateSpy = vi.spyOn(timer, 'updateConfig');
+
+			state.setFocusMinutes(50);
+			expect(timerUpdateSpy).toHaveBeenCalledTimes(1);
+
+			state.setShortBreakMinutes(10);
+			expect(timerUpdateSpy).toHaveBeenCalledTimes(2);
+
+			state.setLongBreakMinutes(25);
+			expect(timerUpdateSpy).toHaveBeenCalledTimes(3);
+
+			state.setLongBreakInterval(5);
+			expect(timerUpdateSpy).toHaveBeenCalledTimes(4);
+
+			// Calling with identical values shouldn't re-trigger timer updateConfig
+			state.setFocusMinutes(50);
+			expect(timerUpdateSpy).toHaveBeenCalledTimes(4);
+		});
+
+		it('should align draft inputs with connected timerState.config when load() is called with no active plan', async () => {
+			const customTimer = new TimerState(
+				{
+					focusDurationSeconds: 33 * 60,
+					shortBreakDurationSeconds: 6 * 60,
+					longBreakDurationSeconds: 22 * 60,
+					roundsBeforeLongBreak: 2
+				},
+				new MockTicker(),
+				new MockAudioNotifier()
+			);
+
+			const emptyRepo = new MockSessionPlanRepository(null);
+			const testState = createPlanningState(emptyRepo, customTimer, tasks);
+
+			await testState.load();
+
+			expect(testState.activePlan).toBeNull();
+			expect(testState.focusMinutes).toBe(33);
+			expect(testState.shortBreakMinutes).toBe(6);
+			expect(testState.longBreakMinutes).toBe(22);
+			expect(testState.longBreakInterval).toBe(2);
+		});
+	});
+
+	describe('Active session duration setters (forward-only)', () => {
+		it('should invoke updateUpcomingPlanForwardOnly and update future focus blocks when setFocusMinutes is called during active session', async () => {
+			await state.startSession();
+
+			// Advance to block 1 (short break)
+			timer.skip();
+			expect(state.activeBlockIndex).toBe(1);
+			expect(state.activeBlock?.mode).toBe('shortBreak');
+
+			const initialBlock0Duration = state.activePlan!.blocks[0].durationSeconds;
+			const initialBlock1Duration = state.activePlan!.blocks[1].durationSeconds;
+			const initialTotalFocus = state.totalFocusMinutes;
+
+			const updateSpy = vi.spyOn(state, 'updateUpcomingPlanForwardOnly');
+
+			state.setFocusMinutes(45);
+
+			expect(updateSpy).toHaveBeenCalledWith({ focusDurationSeconds: 45 * 60 });
+			expect(state.focusMinutes).toBe(45);
+			expect(timer.config.focusDurationSeconds).toBe(45 * 60);
+
+			const activePlan = state.activePlan!;
+			// Past block preserved
+			expect(activePlan.blocks[0].durationSeconds).toBe(initialBlock0Duration);
+			// Currently active block preserved
+			expect(activePlan.blocks[1].durationSeconds).toBe(initialBlock1Duration);
+			// Future focus blocks updated to 45m
+			expect(activePlan.blocks[2].durationSeconds).toBe(45 * 60);
+			expect(activePlan.blocks[4].durationSeconds).toBe(45 * 60);
+			expect(activePlan.blocks[6].durationSeconds).toBe(45 * 60);
+
+			// Derived session stats updated: block 0 (25m) + blocks 2,4,6 (3 * 45m) = 25 + 135 = 160m
+			expect(state.totalFocusMinutes).toBe(160);
+			expect(state.totalFocusMinutes).not.toBe(initialTotalFocus);
+		});
+
+		it('should invoke updateUpcomingPlanForwardOnly and update future break blocks when setShortBreakMinutes is called during active session', async () => {
+			await state.startSession();
+			expect(state.activeBlockIndex).toBe(0);
+
+			const updateSpy = vi.spyOn(state, 'updateUpcomingPlanForwardOnly');
+
+			state.setShortBreakMinutes(10);
+
+			expect(updateSpy).toHaveBeenCalledWith({ shortBreakDurationSeconds: 10 * 60 });
+			expect(state.shortBreakMinutes).toBe(10);
+			expect(timer.config.shortBreakDurationSeconds).toBe(10 * 60);
+
+			const activePlan = state.activePlan!;
+			// Active focus block 0 preserved
+			expect(activePlan.blocks[0].durationSeconds).toBe(25 * 60);
+			// Future short break blocks updated to 10m
+			expect(activePlan.blocks[1].durationSeconds).toBe(10 * 60);
+			expect(activePlan.blocks[3].durationSeconds).toBe(10 * 60);
+			expect(activePlan.blocks[5].durationSeconds).toBe(10 * 60);
+			// Derived total break minutes updated (3 short breaks * 10m = 30m)
+			expect(state.totalBreakMinutes).toBe(30);
+		});
+
+		it('should invoke updateUpcomingPlanForwardOnly and update future long break when setLongBreakMinutes is called during active session', async () => {
+			state.setLongBreakInterval(2);
+			await state.startSession();
+
+			const updateSpy = vi.spyOn(state, 'updateUpcomingPlanForwardOnly');
+
+			state.setLongBreakMinutes(30);
+
+			expect(updateSpy).toHaveBeenCalledWith({ longBreakDurationSeconds: 30 * 60 });
+			expect(state.longBreakMinutes).toBe(30);
+			expect(timer.config.longBreakDurationSeconds).toBe(30 * 60);
+
+			const activePlan = state.activePlan!;
+			// Block 3 is longBreak (preceded by 2 focus blocks: 0 and 2)
+			expect(activePlan.blocks[3].mode).toBe('longBreak');
+			expect(activePlan.blocks[3].durationSeconds).toBe(30 * 60);
+		});
+
+		it('should invoke updateUpcomingPlanForwardOnly and recompute break modes when setLongBreakInterval is called during active session', async () => {
+			// Initially interval is 4. Plan has 4 focus blocks (0, 2, 4, 6), breaks are 1, 3, 5.
+			await state.startSession();
+			expect(state.activePlan!.blocks[3].mode).toBe('shortBreak');
+
+			const updateSpy = vi.spyOn(state, 'updateUpcomingPlanForwardOnly');
+
+			state.setLongBreakInterval(2);
+
+			expect(updateSpy).toHaveBeenCalledWith({ roundsBeforeLongBreak: 2 });
+			expect(state.longBreakInterval).toBe(2);
+			expect(timer.config.roundsBeforeLongBreak).toBe(2);
+
+			// Preceding focus count for block 3 is 2 (blocks 0 and 2). 2 % 2 === 0 => now longBreak!
+			expect(state.activePlan!.blocks[3].mode).toBe('longBreak');
+		});
+
+		it('should clamp values properly when duration setters are called during active session', async () => {
+			await state.startSession();
+
+			state.setFocusMinutes(0); // Clamped to 1
+			expect(state.focusMinutes).toBe(1);
+			expect(timer.config.focusDurationSeconds).toBe(60);
+
+			state.setFocusMinutes(999); // Clamped to 120
+			expect(state.focusMinutes).toBe(120);
+			expect(timer.config.focusDurationSeconds).toBe(120 * 60);
+
+			state.setShortBreakMinutes(-5); // Clamped to 1
+			expect(state.shortBreakMinutes).toBe(1);
+			expect(timer.config.shortBreakDurationSeconds).toBe(60);
+
+			state.setShortBreakMinutes(100); // Clamped to 60
+			expect(state.shortBreakMinutes).toBe(60);
+			expect(timer.config.shortBreakDurationSeconds).toBe(60 * 60);
+
+			state.setLongBreakMinutes(0); // Clamped to 1
+			expect(state.longBreakMinutes).toBe(1);
+			expect(timer.config.longBreakDurationSeconds).toBe(60);
+
+			state.setLongBreakMinutes(200); // Clamped to 90
+			expect(state.longBreakMinutes).toBe(90);
+			expect(timer.config.longBreakDurationSeconds).toBe(90 * 60);
+
+			state.setLongBreakInterval(0); // Clamped to 1
+			expect(state.longBreakInterval).toBe(1);
+			expect(timer.config.roundsBeforeLongBreak).toBe(1);
+
+			state.setLongBreakInterval(50); // Clamped to 12
+			expect(state.longBreakInterval).toBe(12);
+			expect(timer.config.roundsBeforeLongBreak).toBe(12);
+		});
+	});
 });

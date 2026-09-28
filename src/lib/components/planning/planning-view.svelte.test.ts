@@ -498,4 +498,67 @@ describe('PlanningView (Client Browser)', () => {
 
 		expect(planningState.isSessionActive).toBe(false);
 	});
+
+	it('keeps duration steppers enabled and allows updating durations during an active session', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		const navigationState = createNavigationState('planning');
+		await tasksState.load();
+		await planningState.load();
+		await planningState.startSession(timerState, tasksState);
+
+		expect(planningState.isSessionActive).toBe(true);
+
+		const screen = await render(PlanningView, {
+			tasksState,
+			planningState,
+			timerState,
+			navigationState
+		});
+
+		// Duration steppers should be enabled
+		const incFocusBtn = screen.getByRole('button', { name: 'Increase focus duration' });
+		const decFocusBtn = screen.getByRole('button', { name: 'Decrease focus duration' });
+		const incShortBreakBtn = screen.getByRole('button', { name: 'Increase short break duration' });
+		const decShortBreakBtn = screen.getByRole('button', { name: 'Decrease short break duration' });
+		const incLongBreakBtn = screen.getByRole('button', { name: 'Increase long break duration' });
+		const decLongBreakBtn = screen.getByRole('button', { name: 'Decrease long break duration' });
+		const incIntervalBtn = screen.getByRole('button', { name: 'Increase long break interval' });
+		const decIntervalBtn = screen.getByRole('button', { name: 'Decrease long break interval' });
+
+		await expect.element(incFocusBtn).not.toBeDisabled();
+		await expect.element(decFocusBtn).not.toBeDisabled();
+		await expect.element(incShortBreakBtn).not.toBeDisabled();
+		await expect.element(decShortBreakBtn).not.toBeDisabled();
+		await expect.element(incLongBreakBtn).not.toBeDisabled();
+		await expect.element(decLongBreakBtn).not.toBeDisabled();
+		await expect.element(incIntervalBtn).not.toBeDisabled();
+		await expect.element(decIntervalBtn).not.toBeDisabled();
+
+		// Structural block count steppers should remain disabled
+		const incBlockBtn = screen.getByRole('button', { name: 'Increase block count' });
+		const decBlockBtn = screen.getByRole('button', { name: 'Decrease block count' });
+		await expect.element(incBlockBtn).toBeDisabled();
+		await expect.element(decBlockBtn).toBeDisabled();
+
+		// Test clicking duration steppers updates state forward-only
+		const initialFocus = planningState.focusMinutes;
+		await incFocusBtn.click();
+		expect(planningState.focusMinutes).toBe(initialFocus + 5);
+
+		const initialShortBreak = planningState.shortBreakMinutes;
+		await incShortBreakBtn.click();
+		expect(planningState.shortBreakMinutes).toBe(initialShortBreak + 1);
+
+		const initialLongBreak = planningState.longBreakMinutes;
+		await incLongBreakBtn.click();
+		expect(planningState.longBreakMinutes).toBe(initialLongBreak + 5);
+
+		const initialInterval = planningState.longBreakInterval;
+		await incIntervalBtn.click();
+		expect(planningState.longBreakInterval).toBe(initialInterval + 1);
+	});
 });

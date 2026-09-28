@@ -1,3 +1,4 @@
+import { SvelteSet } from 'svelte/reactivity';
 import {
 	createFocusTask,
 	toggleFocusTask,
@@ -8,12 +9,15 @@ import {
 import { type ITaskRepository, sortFocusTasks } from '../domain/ports/task-repository.port';
 import { LocalStorageTaskRepository } from '../adapters/storage/local-task-repository';
 
+export type ActiveTaskSubscriber = (taskId: string | null) => void;
+
 /**
  * Reactive state store managing Focus Tasks with Svelte 5 Runes ($state, $derived).
  * Connects the pure domain FocusTask entity operations with ITaskRepository persistence.
  */
 export class TasksState {
 	private readonly repository: ITaskRepository;
+	private readonly _activeTaskSubscribers = new SvelteSet<ActiveTaskSubscriber>();
 
 	private _tasks = $state<readonly FocusTask[]>([]);
 	private _activeTaskId = $state<string | null>(null);
@@ -49,6 +53,7 @@ export class TasksState {
 
 			if (this._activeTaskId && !tasks.some((t) => t.id === this._activeTaskId)) {
 				this._activeTaskId = null;
+				this.notifyActiveTaskChange(null);
 			}
 		} finally {
 			this._isLoading = false;
@@ -86,6 +91,7 @@ export class TasksState {
 		await this.repository.delete(taskId);
 		if (this._activeTaskId === taskId) {
 			this._activeTaskId = null;
+			this.notifyActiveTaskChange(null);
 		}
 		this._tasks = this._tasks.filter((t) => t.id !== taskId);
 	}
@@ -96,14 +102,38 @@ export class TasksState {
 		this._tasks = reordered;
 	}
 
+	public onActiveTaskChange(subscriber: ActiveTaskSubscriber): () => void {
+		this._activeTaskSubscribers.add(subscriber);
+		return () => {
+			this._activeTaskSubscribers.delete(subscriber);
+		};
+	}
+
+	private notifyActiveTaskChange(taskId: string | null): void {
+		if (this._activeTaskSubscribers.size === 0) return;
+		for (const subscriber of this._activeTaskSubscribers) {
+			try {
+				subscriber(taskId);
+			} catch (error) {
+				console.error(error);
+			}
+		}
+	}
+
 	public setActiveTask(taskId: string | null): void {
 		if (taskId === null) {
-			this._activeTaskId = null;
+			if (this._activeTaskId !== null) {
+				this._activeTaskId = null;
+				this.notifyActiveTaskChange(null);
+			}
 			return;
 		}
 		const task = this._tasks.find((t) => t.id === taskId);
 		if (task) {
-			this._activeTaskId = taskId;
+			if (this._activeTaskId !== taskId) {
+				this._activeTaskId = taskId;
+				this.notifyActiveTaskChange(taskId);
+			}
 		}
 	}
 
@@ -113,6 +143,7 @@ export class TasksState {
 			const active = this._tasks.find((t) => t.id === this._activeTaskId);
 			if (active?.completed) {
 				this._activeTaskId = null;
+				this.notifyActiveTaskChange(null);
 			}
 		}
 		this._tasks = this._tasks.filter((t) => !t.completed);
@@ -120,7 +151,10 @@ export class TasksState {
 
 	public async clearAll(): Promise<void> {
 		await this.repository.clearAll();
-		this._activeTaskId = null;
+		if (this._activeTaskId !== null) {
+			this._activeTaskId = null;
+			this.notifyActiveTaskChange(null);
+		}
 		this._tasks = [];
 	}
 }

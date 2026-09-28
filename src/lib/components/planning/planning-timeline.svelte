@@ -134,7 +134,7 @@
 							<button
 								type="button"
 								aria-label="Decrease focus duration"
-								disabled={planningState.isSessionActive || planningState.focusMinutes <= 5}
+								disabled={planningState.focusMinutes <= 5}
 								onclick={() => planningState.setFocusMinutes(planningState.focusMinutes - 5)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 							>
@@ -146,7 +146,7 @@
 							<button
 								type="button"
 								aria-label="Increase focus duration"
-								disabled={planningState.isSessionActive || planningState.focusMinutes >= 120}
+								disabled={planningState.focusMinutes >= 120}
 								onclick={() => planningState.setFocusMinutes(planningState.focusMinutes + 5)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 							>
@@ -190,7 +190,7 @@
 							<button
 								type="button"
 								aria-label="Decrease short break duration"
-								disabled={planningState.isSessionActive || planningState.shortBreakMinutes <= 1}
+								disabled={planningState.shortBreakMinutes <= 1}
 								onclick={() =>
 									planningState.setShortBreakMinutes(planningState.shortBreakMinutes - 1)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -203,7 +203,7 @@
 							<button
 								type="button"
 								aria-label="Increase short break duration"
-								disabled={planningState.isSessionActive || planningState.shortBreakMinutes >= 60}
+								disabled={planningState.shortBreakMinutes >= 60}
 								onclick={() =>
 									planningState.setShortBreakMinutes(planningState.shortBreakMinutes + 1)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -220,7 +220,7 @@
 							<button
 								type="button"
 								aria-label="Decrease long break duration"
-								disabled={planningState.isSessionActive || planningState.longBreakMinutes <= 5}
+								disabled={planningState.longBreakMinutes <= 5}
 								onclick={() =>
 									planningState.setLongBreakMinutes(planningState.longBreakMinutes - 5)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -233,7 +233,7 @@
 							<button
 								type="button"
 								aria-label="Increase long break duration"
-								disabled={planningState.isSessionActive || planningState.longBreakMinutes >= 90}
+								disabled={planningState.longBreakMinutes >= 90}
 								onclick={() =>
 									planningState.setLongBreakMinutes(planningState.longBreakMinutes + 5)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -250,7 +250,7 @@
 							<button
 								type="button"
 								aria-label="Decrease long break interval"
-								disabled={planningState.isSessionActive || planningState.longBreakInterval <= 1}
+								disabled={planningState.longBreakInterval <= 1}
 								onclick={() =>
 									planningState.setLongBreakInterval(planningState.longBreakInterval - 1)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -263,7 +263,7 @@
 							<button
 								type="button"
 								aria-label="Increase long break interval"
-								disabled={planningState.isSessionActive || planningState.longBreakInterval >= 12}
+								disabled={planningState.longBreakInterval >= 12}
 								onclick={() =>
 									planningState.setLongBreakInterval(planningState.longBreakInterval + 1)}
 								class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -339,7 +339,7 @@
 								<button
 									type="button"
 									aria-label="Decrease focus duration"
-									disabled={planningState.isSessionActive || planningState.focusMinutes <= 5}
+									disabled={planningState.focusMinutes <= 5}
 									onclick={() => planningState.setFocusMinutes(planningState.focusMinutes - 5)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 								>
@@ -351,7 +351,7 @@
 								<button
 									type="button"
 									aria-label="Increase focus duration"
-									disabled={planningState.isSessionActive || planningState.focusMinutes >= 120}
+									disabled={planningState.focusMinutes >= 120}
 									onclick={() => planningState.setFocusMinutes(planningState.focusMinutes + 5)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 								>
@@ -367,7 +367,7 @@
 								<button
 									type="button"
 									aria-label="Decrease short break duration"
-									disabled={planningState.isSessionActive || planningState.shortBreakMinutes <= 1}
+									disabled={planningState.shortBreakMinutes <= 1}
 									onclick={() =>
 										planningState.setShortBreakMinutes(planningState.shortBreakMinutes - 1)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -380,7 +380,7 @@
 								<button
 									type="button"
 									aria-label="Increase short break duration"
-									disabled={planningState.isSessionActive || planningState.shortBreakMinutes >= 60}
+									disabled={planningState.shortBreakMinutes >= 60}
 									onclick={() =>
 										planningState.setShortBreakMinutes(planningState.shortBreakMinutes + 1)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -397,7 +397,7 @@
 								<button
 									type="button"
 									aria-label="Decrease long break duration"
-									disabled={planningState.isSessionActive || planningState.longBreakMinutes <= 5}
+									disabled={planningState.longBreakMinutes <= 5}
 									onclick={() =>
 										planningState.setLongBreakMinutes(planningState.longBreakMinutes - 5)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -410,7 +410,7 @@
 								<button
 									type="button"
 									aria-label="Increase long break duration"
-									disabled={planningState.isSessionActive || planningState.longBreakMinutes >= 90}
+									disabled={planningState.longBreakMinutes >= 90}
 									onclick={() =>
 										planningState.setLongBreakMinutes(planningState.longBreakMinutes + 5)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -427,7 +427,7 @@
 								<button
 									type="button"
 									aria-label="Decrease long break interval"
-									disabled={planningState.isSessionActive || planningState.longBreakInterval <= 1}
+									disabled={planningState.longBreakInterval <= 1}
 									onclick={() =>
 										planningState.setLongBreakInterval(planningState.longBreakInterval - 1)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -440,7 +440,7 @@
 								<button
 									type="button"
 									aria-label="Increase long break interval"
-									disabled={planningState.isSessionActive || planningState.longBreakInterval >= 12}
+									disabled={planningState.longBreakInterval >= 12}
 									onclick={() =>
 										planningState.setLongBreakInterval(planningState.longBreakInterval + 1)}
 									class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -515,13 +515,22 @@
 									? 'border-primary/50 bg-primary/20 text-primary'
 									: block.status === 'completed'
 										? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-500'
-										: 'border-border/60 bg-muted text-muted-foreground'
+										: block.status === 'skipped'
+											? 'border-border/40 bg-muted/50 text-muted-foreground/50'
+											: 'border-border/60 bg-muted text-muted-foreground'
 							)}
 						>
 							{#if block.status === 'completed'}
 								<Check class="size-2.5 stroke-[3]" />
 							{:else}
-								<span class="text-[10px] font-bold">{focusIndex}</span>
+								<span
+									class={cn(
+										'text-[10px] font-bold',
+										block.status === 'skipped' && 'text-muted-foreground/60 line-through'
+									)}
+								>
+									{focusIndex}
+								</span>
 							{/if}
 						</div>
 
@@ -531,7 +540,9 @@
 								'rounded-xl border p-3 transition-colors',
 								block.status === 'in_progress'
 									? 'border-primary/40 bg-primary/5'
-									: 'border-border/40 bg-card/60'
+									: block.status === 'skipped'
+										? 'border-border/30 bg-muted/20 opacity-70'
+										: 'border-border/40 bg-card/60'
 							)}
 						>
 							<!-- Header & Status Badge -->
@@ -557,6 +568,12 @@
 									>
 										<Check class="size-2.5 stroke-[2.5]" />
 										<span>Completed</span>
+									</span>
+								{:else if block.status === 'skipped'}
+									<span
+										class="rounded-full bg-muted/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground line-through"
+									>
+										Skipped
 									</span>
 								{:else}
 									<span class="text-[11px] text-muted-foreground/60">Upcoming</span>
@@ -656,15 +673,35 @@
 					<!-- Break Block -->
 					<div class="group relative">
 						<div
-							class="absolute top-2.5 -left-6 flex size-5.5 items-center justify-center rounded-full border border-border/60 bg-muted text-muted-foreground"
+							class={cn(
+								'absolute top-2.5 -left-6 flex size-5.5 items-center justify-center rounded-full border shadow-xs',
+								block.status === 'in_progress'
+									? 'border-primary/50 bg-primary/20 text-primary'
+									: block.status === 'completed'
+										? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-500'
+										: block.status === 'skipped'
+											? 'border-border/40 bg-muted/50 text-muted-foreground/50'
+											: 'border-border/60 bg-muted text-muted-foreground'
+							)}
 						>
-							{#if block.mode === 'shortBreak'}
+							{#if block.status === 'completed'}
+								<Check class="size-2.5 stroke-[3]" />
+							{:else if block.mode === 'shortBreak'}
 								<Coffee class="size-3" />
 							{:else}
 								<Clock class="size-3" />
 							{/if}
 						</div>
-						<div class="rounded-xl border border-border/30 bg-muted/20 p-2.5 transition-colors">
+						<div
+							class={cn(
+								'rounded-xl border p-2.5 transition-colors',
+								block.status === 'in_progress'
+									? 'border-primary/40 bg-primary/5'
+									: block.status === 'skipped'
+										? 'border-border/30 bg-muted/20 opacity-70'
+										: 'border-border/30 bg-muted/20'
+							)}
+						>
 							<div class="flex items-center justify-between gap-2">
 								<div class="flex items-center gap-2">
 									<span class="text-xs font-medium text-muted-foreground">
@@ -676,10 +713,31 @@
 										{Math.round(block.durationSeconds / 60)}m
 									</span>
 								</div>
-								<span class="flex items-center gap-1 text-[11px] text-muted-foreground/70">
-									<Sparkles class="size-3 text-amber-500/80" />
-									<span>Smart Revitalization</span>
-								</span>
+								{#if block.status === 'in_progress'}
+									<span
+										class="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary"
+									>
+										Active break
+									</span>
+								{:else if block.status === 'completed'}
+									<span
+										class="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-500"
+									>
+										<Check class="size-2.5 stroke-[2.5]" />
+										<span>Completed</span>
+									</span>
+								{:else if block.status === 'skipped'}
+									<span
+										class="rounded-full bg-muted/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground line-through"
+									>
+										Skipped
+									</span>
+								{:else}
+									<span class="flex items-center gap-1 text-[11px] text-muted-foreground/70">
+										<Sparkles class="size-3 text-amber-500/80" />
+										<span>Smart Revitalization</span>
+									</span>
+								{/if}
 							</div>
 							<p class="mt-0.5 text-[11px] text-muted-foreground/80">
 								Guided pause: physical reset, mindful breath, or hydration

@@ -662,4 +662,65 @@ describe('TimerState Composition Root', () => {
 			timer.destroy();
 		});
 	});
+
+	describe('onConfigChange configuration subscription', () => {
+		it('registers a callback that receives updated TimerConfig when updateConfig is called', () => {
+			const timer = createTimerState(undefined, mockTicker);
+			const subscriber = vi.fn();
+
+			timer.onConfigChange(subscriber);
+			timer.updateConfig({ focusDurationSeconds: 1800 });
+
+			expect(subscriber).toHaveBeenCalledTimes(1);
+			expect(subscriber).toHaveBeenCalledWith(
+				expect.objectContaining({
+					focusDurationSeconds: 1800,
+					shortBreakDurationSeconds: DEFAULT_TIMER_CONFIG.shortBreakDurationSeconds,
+					longBreakDurationSeconds: DEFAULT_TIMER_CONFIG.longBreakDurationSeconds,
+					roundsBeforeLongBreak: DEFAULT_TIMER_CONFIG.roundsBeforeLongBreak
+				})
+			);
+
+			timer.destroy();
+		});
+
+		it('removes the callback when calling the returned unsubscribe function so it no longer receives updates', () => {
+			const timer = createTimerState(undefined, mockTicker);
+			const subscriber = vi.fn();
+
+			const unsubscribe = timer.onConfigChange(subscriber);
+			timer.updateConfig({ focusDurationSeconds: 1800 });
+			expect(subscriber).toHaveBeenCalledTimes(1);
+
+			unsubscribe();
+			timer.updateConfig({ focusDurationSeconds: 1200 });
+			expect(subscriber).toHaveBeenCalledTimes(1);
+
+			timer.destroy();
+		});
+
+		it('notifies registered subscribers with the default configuration when resetSettings is called', () => {
+			const timer = createTimerState({ focusDurationSeconds: 1800 }, mockTicker);
+			const subscriber = vi.fn();
+
+			timer.onConfigChange(subscriber);
+			timer.resetSettings();
+
+			expect(subscriber).toHaveBeenCalledTimes(1);
+			expect(subscriber).toHaveBeenCalledWith(DEFAULT_TIMER_CONFIG);
+
+			timer.destroy();
+		});
+
+		it('clears subscribers when destroy is called', () => {
+			const timer = createTimerState(undefined, mockTicker);
+			const subscriber = vi.fn();
+
+			timer.onConfigChange(subscriber);
+			timer.destroy();
+
+			timer.updateConfig({ focusDurationSeconds: 1800 });
+			expect(subscriber).not.toHaveBeenCalled();
+		});
+	});
 });
