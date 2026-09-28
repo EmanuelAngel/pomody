@@ -1,6 +1,6 @@
 [package]
 name = "pomody-desktop"
-version = "0.5.2"
+version = "0.5.3"
 description = "Minimalist focus timer designed for deep work"
 authors = ["Pomody Contributors"]
 license = ""
