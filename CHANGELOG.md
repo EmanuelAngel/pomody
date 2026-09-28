@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.5.1...pomody-v0.5.2) (2026-09-28)
+
+
+### Performance Improvements
+
+* **tooling:** add persistent cache to lint and format scripts ([e8c1fb0](https://github.com/EmanuelAngel/pomody/commit/e8c1fb05f884d52cc771f0456491423307411307))
+
 ## [0.5.1](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.5.0...pomody-v0.5.1) (2026-09-28)
 
 
