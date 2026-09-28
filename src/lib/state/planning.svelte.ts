@@ -202,9 +202,21 @@ export class PlanningState {
 	public connectTimer(timer: TimerState): () => void {
 		this._timerUnsubscribe?.();
 		this.timerState = timer;
-		this._timerUnsubscribe = timer.onEvent((event) => {
+		const unsubEvents = timer.onEvent((event) => {
 			void this.handleTimerDomainEvent(event);
 		});
+		const unsubConfig = timer.onConfigChange((config) => {
+			void this.handleTimerConfigChange(config);
+		});
+		this._timerUnsubscribe = () => {
+			unsubEvents();
+			unsubConfig();
+		};
+
+		if (!this._activePlan) {
+			void this.handleTimerConfigChange(timer.config);
+		}
+
 		return () => {
 			this._timerUnsubscribe?.();
 			this._timerUnsubscribe = undefined;
@@ -237,6 +249,43 @@ export class PlanningState {
 			await this.onTimerBlockCompleted(event.mode);
 		} else if (event.type === 'block-skipped') {
 			await this.onTimerBlockSkipped(event.mode);
+		}
+	}
+
+	/**
+	 * Handles timer configuration changes (e.g. from SettingsDrawer or TimerState updates).
+	 * If active session: applies forward-only update to upcoming blocks if config differs.
+	 * If draft mode: aligns draft minutes and interval, automatically updating projected plan & stats.
+	 */
+	public async handleTimerConfigChange(config: TimerConfig): Promise<void> {
+		if (this.isSessionActive && this._activePlan) {
+			const current = this._activePlan.sessionConfig;
+			if (
+				current.focusDurationSeconds !== config.focusDurationSeconds ||
+				current.shortBreakDurationSeconds !== config.shortBreakDurationSeconds ||
+				current.longBreakDurationSeconds !== config.longBreakDurationSeconds ||
+				current.roundsBeforeLongBreak !== config.roundsBeforeLongBreak
+			) {
+				await this.updateUpcomingPlanForwardOnly(config);
+			}
+		} else {
+			const focusM = Math.round(config.focusDurationSeconds / 60);
+			const shortM = Math.round(config.shortBreakDurationSeconds / 60);
+			const longM = Math.round(config.longBreakDurationSeconds / 60);
+			const interval = config.roundsBeforeLongBreak;
+
+			if (this._focusMinutes !== focusM) {
+				this._focusMinutes = focusM;
+			}
+			if (this._shortBreakMinutes !== shortM) {
+				this._shortBreakMinutes = shortM;
+			}
+			if (this._longBreakMinutes !== longM) {
+				this._longBreakMinutes = longM;
+			}
+			if (this._longBreakInterval !== interval) {
+				this._longBreakInterval = interval;
+			}
 		}
 	}
 
@@ -727,17 +776,26 @@ export class PlanningState {
 				return b;
 			}
 
-			let newDuration = b.durationSeconds;
-			if (b.mode === 'focus' && newConfig.focusDurationSeconds !== undefined) {
-				newDuration = newConfig.focusDurationSeconds;
-			} else if (b.mode === 'shortBreak' && newConfig.shortBreakDurationSeconds !== undefined) {
-				newDuration = newConfig.shortBreakDurationSeconds;
-			} else if (b.mode === 'longBreak' && newConfig.longBreakDurationSeconds !== undefined) {
-				newDuration = newConfig.longBreakDurationSeconds;
+			if (b.mode === 'focus') {
+				const newDuration = updatedConfig.focusDurationSeconds;
+				return Object.freeze({
+					...b,
+					durationSeconds: newDuration
+				});
 			}
+
+			const precedingFocusCount = this._activePlan!.blocks.slice(0, b.index).filter(
+				(x) => x.mode === 'focus'
+			).length;
+			const isLongBreak = precedingFocusCount % updatedConfig.roundsBeforeLongBreak === 0;
+			const newMode = isLongBreak ? 'longBreak' : 'shortBreak';
+			const newDuration = isLongBreak
+				? updatedConfig.longBreakDurationSeconds
+				: updatedConfig.shortBreakDurationSeconds;
 
 			return Object.freeze({
 				...b,
+				mode: newMode,
 				durationSeconds: newDuration
 			});
 		});
@@ -777,7 +835,20 @@ export class PlanningState {
 
 		const timer = this.timerState;
 		if (timer) {
-			timer.updateConfig(newConfig);
+			const tc = timer.config;
+			const hasDifference =
+				(newConfig.focusDurationSeconds !== undefined &&
+					tc.focusDurationSeconds !== newConfig.focusDurationSeconds) ||
+				(newConfig.shortBreakDurationSeconds !== undefined &&
+					tc.shortBreakDurationSeconds !== newConfig.shortBreakDurationSeconds) ||
+				(newConfig.longBreakDurationSeconds !== undefined &&
+					tc.longBreakDurationSeconds !== newConfig.longBreakDurationSeconds) ||
+				(newConfig.roundsBeforeLongBreak !== undefined &&
+					tc.roundsBeforeLongBreak !== newConfig.roundsBeforeLongBreak);
+
+			if (hasDifference) {
+				timer.updateConfig(newConfig);
+			}
 		}
 	}
 }
