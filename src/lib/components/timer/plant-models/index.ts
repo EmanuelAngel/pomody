@@ -1,8 +1,15 @@
 import { seedToTree } from './seed-to-tree';
 import type { PlantModel } from './types';
 
-export type { PlantModel, PixelRun, PixelInk, IdleRole } from './types';
-export { selectFrameIndex, toPixelRuns } from './pixel-canvas';
+export type {
+	PlantModel,
+	SceneActor,
+	SceneActivity,
+	ScenePainter,
+	SceneState,
+	IdleInk
+} from './types';
+export { composeScene, selectFrameIndex } from './pixel-canvas';
 
 /** Registry of selectable plant models. Register new models here; the first is the fallback. */
 export const PLANT_MODELS: readonly PlantModel[] = Object.freeze([seedToTree]);

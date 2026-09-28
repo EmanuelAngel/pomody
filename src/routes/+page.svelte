@@ -16,7 +16,7 @@
 	{#if activeTab === 'timer'}
 		<div role="tabpanel" id="tabpanel-timer" aria-labelledby="tab-timer" class="w-full">
 			<Timer />
-			<BotanicalProgress class="fixed bottom-8 left-8 hidden lg:block" />
+			<BotanicalProgress class="fixed left-0 hidden lg:block" />
 		</div>
 	{:else if activeTab === 'planning'}
 		<div role="tabpanel" id="tabpanel-planning" aria-labelledby="tab-planning" class="w-full">

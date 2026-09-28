@@ -1,8 +1,14 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { cn } from '$lib/utils';
 	import { getCycleGrowth, isHarvest } from '$lib/domain/botanical/cycle-growth';
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
-	import { getPlantModel, selectFrameIndex, toPixelRuns } from './plant-models';
+	import {
+		composeScene,
+		getPlantModel,
+		selectFrameIndex,
+		type SceneActivity
+	} from './plant-models';
 
 	interface Props {
 		timerState?: TimerState;
@@ -10,6 +16,16 @@
 	}
 
 	let { timerState = defaultTimerState, class: className }: Props = $props();
+
+	const TICK_MS = 250;
+	const HARVEST_TICKS = 16;
+
+	let canvas = $state<HTMLCanvasElement | null>(null);
+	let probe = $state<HTMLSpanElement | null>(null);
+	let colors = $state<Record<string, string> | null>(null);
+	let tick = $state(0);
+	let harvestStart = $state<number | null>(null);
+	let prefersReducedMotion = $state(false);
 
 	const model = $derived(getPlantModel(timerState.botanicalModel));
 	const growth = $derived(
@@ -21,182 +37,125 @@
 		})
 	);
 	const frameIndex = $derived(selectFrameIndex(model.frames.length, growth));
-	const runs = $derived(toPixelRuns(model.frames[frameIndex], model.palette));
-	const animated = $derived(!timerState.botanicalStatic);
-	const hiddenInZen = $derived(timerState.isRunning && timerState.botanicalHideInZen);
-	const percent = $derived(Math.round(growth * 100));
-	const label = $derived(`${model.label}: ${percent}% grown this Pomodoro cycle`);
+	const activity: SceneActivity = $derived(
+		timerState.isRunning && timerState.mode !== 'focus' ? 'break' : 'calm'
+	);
+	const animated = $derived(!timerState.botanicalStatic && !prefersReducedMotion);
+	const hiddenInZen = $derived(
+		timerState.isRunning && timerState.mode === 'focus' && timerState.botanicalHideInZen
+	);
+	const harvestAge = $derived(
+		harvestStart !== null && tick - harvestStart <= HARVEST_TICKS ? tick - harvestStart : null
+	);
+	const scene = $derived(
+		composeScene(model, { tick, animated, activity, frameIndex, harvestAge }).rows
+	);
+	const label = $derived(`${model.label}: ${Math.round(growth * 100)}% grown this Pomodoro cycle`);
 
-	let harvestCount = $state(0);
-	let previousGrowth: number | null = null;
+	const SCENE_WIDTH = 'min(40vh, 26vw)';
+	// The timer controls sit this far below the viewport centre; the grass line aligns with them.
+	const CONTROLS_OFFSET = '11.75rem';
+	const sceneTop = $derived(
+		`calc(50vh + ${CONTROLS_OFFSET} - ${SCENE_WIDTH} * ${(model.groundY + 0.5) / model.width})`
+	);
+	const soilFade = $derived(
+		`linear-gradient(to bottom, black ${((model.groundY + 3) / model.height) * 100}%, transparent)`
+	);
 
 	$effect(() => {
+		const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+		prefersReducedMotion = query.matches;
+		const onChange = () => (prefersReducedMotion = query.matches);
+		query.addEventListener('change', onChange);
+		return () => query.removeEventListener('change', onChange);
+	});
+
+	$effect(() => {
+		if (!animated || hiddenInZen || !timerState.botanicalEnabled) return;
+		const id = setInterval(() => {
+			if (!document.hidden) tick++;
+		}, TICK_MS);
+		return () => clearInterval(id);
+	});
+
+	let previousGrowth: number | null = null;
+	$effect(() => {
 		const current = growth;
-		if (previousGrowth !== null && animated && isHarvest(previousGrowth, current)) {
-			harvestCount++;
+		if (previousGrowth !== null && isHarvest(previousGrowth, current) && untrack(() => animated)) {
+			harvestStart = untrack(() => tick);
 		}
 		previousGrowth = current;
 	});
 
-	function glintDelay(x: number, y: number): string {
-		return `${-(((x * 7 + y * 13) % 17) * 0.35).toFixed(2)}s`;
+	/** Canvas cannot read CSS variables, so each ink is resolved through a hidden probe element. */
+	function resolveColors(el: HTMLElement, palette: Readonly<Record<string, string>>) {
+		const resolved: Record<string, string> = {};
+		for (const [ink, value] of Object.entries(palette)) {
+			el.style.color = value;
+			resolved[ink] = getComputedStyle(el).color;
+		}
+		return resolved;
 	}
+
+	$effect(() => {
+		const el = probe;
+		const palette = model.palette;
+		if (!el) return;
+		colors = resolveColors(el, palette);
+		const observer = new MutationObserver(() => (colors = resolveColors(el, palette)));
+		observer.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ['data-theme', 'class']
+		});
+		return () => observer.disconnect();
+	});
+
+	$effect(() => {
+		const ctx = canvas?.getContext('2d');
+		if (!ctx || !colors) return;
+		ctx.clearRect(0, 0, model.width, model.height);
+		scene.forEach((row, y) => {
+			let x = 0;
+			while (x < row.length) {
+				const ink = row[x];
+				let end = x + 1;
+				while (end < row.length && row[end] === ink) end++;
+				const color = colors![ink];
+				if (color) {
+					ctx.fillStyle = color;
+					ctx.fillRect(x, y, end - x, 1);
+				}
+				x = end;
+			}
+		});
+	});
 </script>
 
 {#if timerState.botanicalEnabled}
 	<div
 		data-frame={frameIndex}
+		data-activity={activity}
 		data-animated={animated}
+		data-harvesting={harvestAge !== null}
 		aria-hidden={hiddenInZen}
+		style:top={sceneTop}
 		class={cn(
-			'botanical pointer-events-none transition-opacity duration-300 ease-out select-none motion-reduce:transition-none',
-			hiddenInZen ? 'is-paused opacity-0' : timerState.isRunning ? 'opacity-60' : 'opacity-100',
+			'pointer-events-none transition-opacity duration-300 ease-out select-none motion-reduce:transition-none',
+			hiddenInZen ? 'opacity-0' : 'opacity-100',
 			className
 		)}
 	>
-		<svg
-			role="img"
-			aria-label={label}
-			viewBox="0 0 {model.width} {model.height}"
-			shape-rendering="crispEdges"
-			class="h-auto w-24 xl:w-32"
-		>
-			{#each runs as run (`${run.x}-${run.y}`)}
-				<rect
-					x={run.x}
-					y={run.y}
-					width={run.width}
-					height="1"
-					class={animated && run.idle ? `idle-${run.idle}` : undefined}
-					style:fill={run.fill}
-					style:animation-delay={animated && run.idle === 'glint'
-						? glintDelay(run.x, run.y)
-						: undefined}
-				/>
-			{/each}
-
-			{#if animated && model.particle}
-				<rect
-					class="idle-particle"
-					x={model.particle.origin.x}
-					y={model.particle.origin.y}
-					width="1"
-					height="1"
-					style:fill={model.particle.fill}
-				/>
-			{/if}
-
-			{#if animated && model.harvest}
-				{#key harvestCount}
-					{#if harvestCount > 0}
-						<rect
-							class="harvest-drop"
-							data-testid="harvest-drop"
-							x={model.harvest.from.x}
-							y={model.harvest.from.y}
-							width="2"
-							height="2"
-							style:fill={model.harvest.fill}
-							style:--drop-x="{model.harvest.to.x - model.harvest.from.x}px"
-							style:--drop-y="{model.harvest.to.y - model.harvest.from.y}px"
-						/>
-					{/if}
-				{/key}
-			{/if}
-		</svg>
+		<span bind:this={probe} class="hidden" aria-hidden="true"></span>
+		<div role="img" aria-label={label}>
+			<canvas
+				bind:this={canvas}
+				aria-hidden="true"
+				width={model.width}
+				height={model.height}
+				class="block h-auto [image-rendering:pixelated]"
+				style:width={SCENE_WIDTH}
+				style:mask-image={soilFade}
+			></canvas>
+		</div>
 	</div>
 {/if}
-
-<style>
-	.idle-sway-a {
-		animation: sway-a 1.8s steps(1, end) infinite;
-	}
-	.idle-sway-b {
-		animation: sway-b 1.8s steps(1, end) infinite;
-	}
-	.idle-glint {
-		animation: glint 6s steps(1, end) infinite;
-	}
-	.idle-particle {
-		opacity: 0;
-		animation: drift 11s steps(1, end) infinite;
-	}
-	.harvest-drop {
-		animation: harvest 1.4s steps(9, end) forwards;
-	}
-	.is-paused :global(rect) {
-		animation-play-state: paused;
-	}
-
-	@keyframes sway-a {
-		0% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0;
-		}
-	}
-	@keyframes sway-b {
-		0% {
-			opacity: 0;
-		}
-		50% {
-			opacity: 1;
-		}
-	}
-	@keyframes glint {
-		0% {
-			fill: var(--accent-foam);
-		}
-		84% {
-			fill: var(--accent-pine);
-		}
-	}
-	@keyframes drift {
-		0% {
-			opacity: 0;
-			transform: translate(0, 0);
-		}
-		8% {
-			opacity: 0.9;
-			transform: translate(1px, -1px);
-		}
-		14% {
-			transform: translate(1px, -3px);
-		}
-		20% {
-			transform: translate(3px, -4px);
-		}
-		26% {
-			transform: translate(3px, -6px);
-		}
-		32% {
-			opacity: 0.6;
-			transform: translate(5px, -7px);
-		}
-		38% {
-			opacity: 0;
-			transform: translate(5px, -9px);
-		}
-	}
-	@keyframes harvest {
-		0% {
-			transform: translate(0, 0);
-			opacity: 1;
-		}
-		80% {
-			transform: translate(var(--drop-x), var(--drop-y));
-			opacity: 1;
-		}
-		100% {
-			transform: translate(var(--drop-x), var(--drop-y));
-			opacity: 0;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		rect {
-			animation: none !important;
-		}
-	}
-</style>
