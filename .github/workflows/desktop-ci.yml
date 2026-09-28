@@ -1,11 +1,6 @@
 name: Desktop CI (Windows)
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src-tauri/**'
-      - '.github/workflows/desktop-ci.yml'
   pull_request:
     branches: [main]
     paths:
@@ -33,11 +28,7 @@ jobs:
   build-windows:
     name: Build Windows Desktop App
     runs-on: windows-latest
-    if: |
-      github.event_name == 'workflow_call' ||
-      github.event_name == 'workflow_dispatch' ||
-      ((github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please')) &&
-       (github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(main): release')))
+    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
