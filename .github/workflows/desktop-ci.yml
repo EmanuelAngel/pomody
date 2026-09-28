@@ -34,8 +34,10 @@ jobs:
     name: Build Windows Desktop App
     runs-on: windows-latest
     if: |
-      (github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please')) &&
-      (github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(main): release'))
+      github.event_name == 'workflow_call' ||
+      github.event_name == 'workflow_dispatch' ||
+      ((github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please')) &&
+       (github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(main): release')))
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
