@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.5.2...pomody-v0.5.3) (2026-09-28)
+
+
+### Bug Fixes
+
+* **ui:** eliminate layout shift when transitioning between timer pills ([#46](https://github.com/EmanuelAngel/pomody/issues/46)) ([3ed2e69](https://github.com/EmanuelAngel/pomody/commit/3ed2e697f6f74f1e348c34c65694f4e0f6e8459f))
+
 ## [0.5.2](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.5.1...pomody-v0.5.2) (2026-09-28)
 
 
