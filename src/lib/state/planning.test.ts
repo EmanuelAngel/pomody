@@ -892,4 +892,86 @@ describe('PlanningState', () => {
 			expect(state.focusMinutes).not.toBe(50);
 		});
 	});
+
+	describe('Bidirectional Draft Sync & Initial Load Alignment (TASK-3)', () => {
+		it('should update connected timer focusDurationSeconds to 2700 when setFocusMinutes(45) is called in draft mode', () => {
+			expect(timer.config.focusDurationSeconds).toBe(25 * 60);
+
+			state.setFocusMinutes(45);
+
+			expect(state.focusMinutes).toBe(45);
+			expect(timer.config.focusDurationSeconds).toBe(2700);
+		});
+
+		it('should update connected timer shortBreakDurationSeconds to 480 when setShortBreakMinutes(8) is called in draft mode', () => {
+			expect(timer.config.shortBreakDurationSeconds).toBe(5 * 60);
+
+			state.setShortBreakMinutes(8);
+
+			expect(state.shortBreakMinutes).toBe(8);
+			expect(timer.config.shortBreakDurationSeconds).toBe(480);
+		});
+
+		it('should update connected timer longBreakDurationSeconds to 1200 when setLongBreakMinutes(20) is called in draft mode', () => {
+			expect(timer.config.longBreakDurationSeconds).toBe(15 * 60);
+
+			state.setLongBreakMinutes(20);
+
+			expect(state.longBreakMinutes).toBe(20);
+			expect(timer.config.longBreakDurationSeconds).toBe(1200);
+		});
+
+		it('should update connected timer roundsBeforeLongBreak to 6 when setLongBreakInterval(6) is called in draft mode', () => {
+			expect(timer.config.roundsBeforeLongBreak).toBe(4);
+
+			state.setLongBreakInterval(6);
+
+			expect(state.longBreakInterval).toBe(6);
+			expect(timer.config.roundsBeforeLongBreak).toBe(6);
+		});
+
+		it('should not cause infinite loops when draft setters trigger timerState.updateConfig', () => {
+			const timerUpdateSpy = vi.spyOn(timer, 'updateConfig');
+
+			state.setFocusMinutes(50);
+			expect(timerUpdateSpy).toHaveBeenCalledTimes(1);
+
+			state.setShortBreakMinutes(10);
+			expect(timerUpdateSpy).toHaveBeenCalledTimes(2);
+
+			state.setLongBreakMinutes(25);
+			expect(timerUpdateSpy).toHaveBeenCalledTimes(3);
+
+			state.setLongBreakInterval(5);
+			expect(timerUpdateSpy).toHaveBeenCalledTimes(4);
+
+			// Calling with identical values shouldn't re-trigger timer updateConfig
+			state.setFocusMinutes(50);
+			expect(timerUpdateSpy).toHaveBeenCalledTimes(4);
+		});
+
+		it('should align draft inputs with connected timerState.config when load() is called with no active plan', async () => {
+			const customTimer = new TimerState(
+				{
+					focusDurationSeconds: 33 * 60,
+					shortBreakDurationSeconds: 6 * 60,
+					longBreakDurationSeconds: 22 * 60,
+					roundsBeforeLongBreak: 2
+				},
+				new MockTicker(),
+				new MockAudioNotifier()
+			);
+
+			const emptyRepo = new MockSessionPlanRepository(null);
+			const testState = createPlanningState(emptyRepo, customTimer, tasks);
+
+			await testState.load();
+
+			expect(testState.activePlan).toBeNull();
+			expect(testState.focusMinutes).toBe(33);
+			expect(testState.shortBreakMinutes).toBe(6);
+			expect(testState.longBreakMinutes).toBe(22);
+			expect(testState.longBreakInterval).toBe(2);
+		});
+	});
 });

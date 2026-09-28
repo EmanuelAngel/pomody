@@ -432,6 +432,9 @@ export class PlanningState {
 				this._draftTaskAssignments = draftMap;
 			} else {
 				this._activePlan = null;
+				if (this.timerState) {
+					await this.handleTimerConfigChange(this.timerState.config);
+				}
 			}
 			this._isLoaded = true;
 		} finally {
@@ -454,24 +457,44 @@ export class PlanningState {
 	public setFocusMinutes(minutes: number): void {
 		if (typeof minutes === 'number' && Number.isFinite(minutes)) {
 			this._focusMinutes = Math.max(1, Math.min(120, Math.round(minutes)));
+			if (!this.isSessionActive && this.timerState) {
+				if (this.timerState.config.focusDurationSeconds !== this._focusMinutes * 60) {
+					this.timerState.updateConfig({ focusDurationSeconds: this._focusMinutes * 60 });
+				}
+			}
 		}
 	}
 
 	public setShortBreakMinutes(minutes: number): void {
 		if (typeof minutes === 'number' && Number.isFinite(minutes)) {
 			this._shortBreakMinutes = Math.max(1, Math.min(60, Math.round(minutes)));
+			if (!this.isSessionActive && this.timerState) {
+				if (this.timerState.config.shortBreakDurationSeconds !== this._shortBreakMinutes * 60) {
+					this.timerState.updateConfig({ shortBreakDurationSeconds: this._shortBreakMinutes * 60 });
+				}
+			}
 		}
 	}
 
 	public setLongBreakMinutes(minutes: number): void {
 		if (typeof minutes === 'number' && Number.isFinite(minutes)) {
 			this._longBreakMinutes = Math.max(1, Math.min(90, Math.round(minutes)));
+			if (!this.isSessionActive && this.timerState) {
+				if (this.timerState.config.longBreakDurationSeconds !== this._longBreakMinutes * 60) {
+					this.timerState.updateConfig({ longBreakDurationSeconds: this._longBreakMinutes * 60 });
+				}
+			}
 		}
 	}
 
 	public setLongBreakInterval(interval: number): void {
 		if (typeof interval === 'number' && Number.isFinite(interval)) {
 			this._longBreakInterval = Math.max(1, Math.min(12, Math.round(interval)));
+			if (!this.isSessionActive && this.timerState) {
+				if (this.timerState.config.roundsBeforeLongBreak !== this._longBreakInterval) {
+					this.timerState.updateConfig({ roundsBeforeLongBreak: this._longBreakInterval });
+				}
+			}
 		}
 	}
 
