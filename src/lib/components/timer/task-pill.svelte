@@ -75,8 +75,8 @@
 	<div
 		data-slot="task-pill"
 		class={cn(
-			'group inline-flex items-center rounded-full border border-border/40 bg-muted/40 shadow-xs transition-all duration-200 sm:text-sm',
-			activeTask ? 'gap-2 px-3 py-1 text-xs' : 'p-0 text-xs text-muted-foreground/80',
+			'group inline-flex h-8 items-center rounded-full border border-border/40 bg-muted/40 shadow-xs transition-all duration-200 sm:text-sm',
+			activeTask ? 'gap-2 px-3 text-xs' : 'p-0 text-xs text-muted-foreground/80',
 			isRunning
 				? 'opacity-60 transition-opacity hover:opacity-100'
 				: 'opacity-100 hover:bg-muted/60'
@@ -106,11 +106,11 @@
 
 		<Popover.Trigger
 			class={cn(
-				'inline-flex cursor-pointer items-center gap-1.5 select-none focus-visible:outline-none',
+				'inline-flex h-full cursor-pointer items-center gap-1.5 select-none focus-visible:outline-none',
 				activeTask
 					? 'text-foreground'
 					: cn(
-							'rounded-full px-3.5 py-1 text-muted-foreground/80 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring',
+							'rounded-full px-3.5 text-muted-foreground/80 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring',
 							isRunning ? 'opacity-60' : 'opacity-100'
 						)
 			)}

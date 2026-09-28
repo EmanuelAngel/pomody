@@ -59,7 +59,7 @@
 
 <div
 	data-slot="break-revitalization"
-	class="group inline-flex items-center gap-2 rounded-full border border-border/40 bg-muted/40 px-3 py-1 text-xs shadow-xs transition-all duration-200 sm:text-sm"
+	class="group inline-flex h-8 items-center gap-2 rounded-full border border-border/40 bg-muted/40 px-3 text-xs shadow-xs transition-all duration-200 sm:text-sm"
 >
 	{#if activeActivity}
 		<!-- Category badge with icon and label -->
