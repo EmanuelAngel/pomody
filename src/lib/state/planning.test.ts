@@ -520,4 +520,223 @@ describe('PlanningState', () => {
 			expect(planningState).toBeInstanceOf(PlanningState);
 		});
 	});
+
+	describe('Planning & Timer / Tasks Synchronization Specification', () => {
+		it('should advance active block and mark block as skipped on timer.skip() domain event', async () => {
+			await state.startSession();
+			expect(state.activeBlockIndex).toBe(0);
+			expect(state.activeBlock?.status).toBe('in_progress');
+
+			// Skip block 0 (focus) via timer
+			timer.skip();
+
+			expect(state.activeBlockIndex).toBe(1);
+			expect(state.activePlan?.blocks[0].status).toBe('skipped');
+			expect(state.activePlan?.blocks[1].status).toBe('in_progress');
+			expect(state.activeBlock?.mode).toBe('shortBreak');
+		});
+
+		it('should advance active block and mark block as completed on block-completed domain event', async () => {
+			await state.startSession();
+			expect(state.activeBlockIndex).toBe(0);
+
+			await state.handleTimerDomainEvent({
+				type: 'block-completed',
+				mode: 'focus',
+				round: 1,
+				totalRoundsCompleted: 1,
+				completedAt: new Date()
+			});
+
+			expect(state.activeBlockIndex).toBe(1);
+			expect(state.activePlan?.blocks[0].status).toBe('completed');
+			expect(state.activePlan?.blocks[1].status).toBe('in_progress');
+		});
+
+		it('should pause timer and complete plan when the last block is completed', async () => {
+			state.setBlockCount(1); // 1 focus block
+			await state.startSession();
+
+			const pauseSpy = vi.spyOn(timer, 'pause');
+
+			await state.handleTimerDomainEvent({
+				type: 'block-completed',
+				mode: 'focus',
+				round: 1,
+				totalRoundsCompleted: 1,
+				completedAt: new Date()
+			});
+
+			expect(pauseSpy).toHaveBeenCalled();
+			expect(state.activePlan?.blocks[0].status).toBe('completed');
+			expect(state.isPlanCompleted).toBe(true);
+			expect(state.isSessionActive).toBe(false);
+		});
+
+		it('should pause timer and complete plan when the last block is skipped', async () => {
+			state.setBlockCount(1); // 1 focus block
+			await state.startSession();
+
+			const pauseSpy = vi.spyOn(timer, 'pause');
+
+			timer.skip();
+
+			expect(pauseSpy).toHaveBeenCalled();
+			expect(state.activePlan?.blocks[0].status).toBe('skipped');
+			expect(state.isPlanCompleted).toBe(true);
+			expect(state.isSessionActive).toBe(false);
+		});
+
+		it('should accurately evaluate isPlanCompleted with mixed completed and skipped blocks', async () => {
+			state.setBlockCount(2); // 3 blocks: focus, shortBreak, focus
+			await state.startSession();
+
+			// Skip block 0 (focus)
+			timer.skip();
+			expect(state.isPlanCompleted).toBe(false);
+
+			// Complete block 1 (shortBreak)
+			await state.handleTimerDomainEvent({
+				type: 'block-completed',
+				mode: 'shortBreak',
+				round: 1,
+				totalRoundsCompleted: 0,
+				completedAt: new Date()
+			});
+			expect(state.isPlanCompleted).toBe(false);
+
+			// Skip block 2 (focus - last block)
+			timer.skip();
+
+			expect(state.isPlanCompleted).toBe(true);
+			expect(state.activePlan?.blocks[0].status).toBe('skipped');
+			expect(state.activePlan?.blocks[1].status).toBe('completed');
+			expect(state.activePlan?.blocks[2].status).toBe('skipped');
+		});
+
+		it('should sync active task in draft mode to block 0', async () => {
+			await tasks.createTask('Draft Focus Task');
+			const taskId = tasks.pendingTasks[0].id;
+
+			// Pin task in tasksState
+			tasks.setActiveTask(taskId);
+
+			expect(state.draftTaskAssignments.get(0)).toBe(taskId);
+			expect(state.projectedPlan.blocks[0].assignedTaskId).toBe(taskId);
+
+			// Unpin task in tasksState
+			tasks.setActiveTask(null);
+
+			expect(state.draftTaskAssignments.has(0)).toBe(false);
+			expect(state.projectedPlan.blocks[0].assignedTaskId).toBeUndefined();
+		});
+
+		it('should sync active task to focus block during active session', async () => {
+			await tasks.createTask('Session Task 1');
+			await tasks.createTask('Session Task 2');
+			const [task1, task2] = tasks.pendingTasks;
+
+			await state.startSession();
+			expect(state.activeBlockIndex).toBe(0);
+			expect(state.activeBlock?.mode).toBe('focus');
+
+			// Pin task 1
+			tasks.setActiveTask(task1.id);
+			expect(state.activeBlock?.assignedTaskId).toBe(task1.id);
+			expect(state.activePlan?.blocks[0].assignedTaskId).toBe(task1.id);
+
+			// Change to task 2 via TaskPill
+			tasks.setActiveTask(task2.id);
+			expect(state.activeBlock?.assignedTaskId).toBe(task2.id);
+			expect(state.activePlan?.blocks[0].assignedTaskId).toBe(task2.id);
+
+			// Free focus (unassign)
+			tasks.setActiveTask(null);
+			expect(state.activeBlock?.assignedTaskId).toBeUndefined();
+			expect(state.activePlan?.blocks[0].assignedTaskId).toBeUndefined();
+		});
+
+		it('should sync active task to next focus block when currently in break', async () => {
+			await tasks.createTask('Break Planning Task');
+			const taskId = tasks.pendingTasks[0].id;
+
+			await state.startSession();
+			// Advance to block 1 (short break)
+			timer.skip();
+			expect(state.activeBlockIndex).toBe(1);
+			expect(state.activeBlock?.mode).toBe('shortBreak');
+
+			// Pin task while in break
+			tasks.setActiveTask(taskId);
+
+			// Break block must NOT receive assignedTaskId
+			expect(state.activePlan?.blocks[1].assignedTaskId).toBeUndefined();
+			// Next focus block (index 2) must receive assignedTaskId
+			expect(state.activePlan?.blocks[2].assignedTaskId).toBe(taskId);
+
+			// Unpin task while in break
+			tasks.setActiveTask(null);
+			expect(state.activePlan?.blocks[2].assignedTaskId).toBeUndefined();
+		});
+
+		it('should update tasksState active task when timeline assigns/unassigns on active block', async () => {
+			await tasks.createTask('Timeline Task');
+			const taskId = tasks.pendingTasks[0].id;
+
+			// In draft mode
+			state.assignTaskToBlock(0, taskId);
+			expect(tasks.activeTaskId).toBe(taskId);
+
+			state.unassignTaskFromBlock(0);
+			expect(tasks.activeTaskId).toBeNull();
+
+			// In active session
+			await state.startSession();
+			state.assignTaskToBlock(0, taskId);
+			expect(tasks.activeTaskId).toBe(taskId);
+
+			state.unassignTaskFromBlock(0);
+			expect(tasks.activeTaskId).toBeNull();
+		});
+
+		it('should automatically set active task when advancing into a focus block with assigned task', async () => {
+			await tasks.createTask('Assigned Next Task');
+			const taskId = tasks.pendingTasks[0].id;
+
+			// Assign task to block 2
+			state.assignTaskToBlock(2, taskId);
+			await state.startSession();
+
+			// Currently in block 0 (free focus)
+			expect(tasks.activeTaskId).toBeNull();
+
+			// Skip block 0 -> shortBreak (block 1)
+			timer.skip();
+			expect(state.activeBlockIndex).toBe(1);
+
+			// Skip block 1 (shortBreak) -> focus block 2 (assigned)
+			timer.skip();
+			expect(state.activeBlockIndex).toBe(2);
+			expect(state.activeBlock?.mode).toBe('focus');
+			expect(tasks.activeTaskId).toBe(taskId);
+		});
+
+		it('should clear active task when advancing into a focus block without assigned task (Free Focus)', async () => {
+			await tasks.createTask('First Task');
+			const taskId = tasks.pendingTasks[0].id;
+
+			state.assignTaskToBlock(0, taskId);
+			await state.startSession();
+			expect(tasks.activeTaskId).toBe(taskId);
+
+			// Skip block 0 -> block 1 (break)
+			timer.skip();
+			// Skip block 1 -> block 2 (focus, unassigned)
+			timer.skip();
+			expect(state.activeBlockIndex).toBe(2);
+			expect(state.activeBlock?.mode).toBe('focus');
+			expect(state.activeBlock?.assignedTaskId).toBeUndefined();
+			expect(tasks.activeTaskId).toBeNull();
+		});
+	});
 });

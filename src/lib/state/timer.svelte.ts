@@ -1,6 +1,7 @@
 import {
 	DEFAULT_TIMER_CONFIG,
 	TimerFSM,
+	type DomainEvent,
 	type TimerConfig,
 	type TimerMode,
 	type TimerSnapshot,
@@ -239,6 +240,13 @@ export class TimerState {
 			soundEnabled: this._soundEnabled,
 			revitalizationEnabled: this._revitalizationEnabled
 		});
+	}
+
+	/**
+	 * Subscribes to domain lifecycle events emitted by the underlying TimerFSM.
+	 */
+	public onEvent(subscriber: (event: DomainEvent) => void): Unsubscribe {
+		return this.fsm.onEvent(subscriber);
 	}
 
 	/**
