@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.5.0...pomody-v0.5.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* **ui:** prevent task title truncation in planning view and add tooltip in task pill ([#40](https://github.com/EmanuelAngel/pomody/issues/40)) ([2de8395](https://github.com/EmanuelAngel/pomody/commit/2de8395ea030899ba832748c731c056161a1f2a4))
+
 ## [0.5.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.4.0...pomody-v0.5.0) (2026-09-27)
 
 
