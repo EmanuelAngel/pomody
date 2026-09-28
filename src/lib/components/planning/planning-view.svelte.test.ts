@@ -406,8 +406,10 @@ describe('PlanningView (Client Browser)', () => {
 		const assignBtn = screen.getByRole('button', { name: 'Assign task to focus block 1' });
 		await assignBtn.click();
 
-		// Select task inside popover using exact name match to avoid backlog action buttons
-		const taskChoiceBtn = screen.getByRole('button', { name: 'Task to Assign', exact: true });
+		// Select task inside popover using its accessible label
+		const taskChoiceBtn = screen.getByRole('button', {
+			name: 'Assign task: Task to Assign'
+		});
 		await taskChoiceBtn.click();
 
 		// Block 1 should now show assigned task in the Session Timeline
