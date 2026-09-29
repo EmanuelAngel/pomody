@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.6.0...pomody-v0.6.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* **ui:** improve mode badge contrast and dynamic document title (JD-05, JD-15) ([#55](https://github.com/EmanuelAngel/pomody/issues/55)) ([1a2003a](https://github.com/EmanuelAngel/pomody/commit/1a2003af9f643d9ed6c90c2e0d65e4d0f1484d11)), closes [#21](https://github.com/EmanuelAngel/pomody/issues/21)
+
 ## [0.6.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.5.3...pomody-v0.6.0) (2026-09-28)
 
 
