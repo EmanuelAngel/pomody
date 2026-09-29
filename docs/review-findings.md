@@ -10,14 +10,6 @@
 
 ---
 
-## 1. Contraste de Color en Etiquetas de Modo (Paleta Rosé Pine)
-
-- **ID Referencia:** JD-05
-- **Ubicación:** `src/lib/components/timer/timer-display.svelte`
-- **Descripción:** Las etiquetas superiores de modo (`FOCUS`, `SHORT BREAK`, `LONG BREAK`) emplean colores de acento directos de Rosé Pine (`--accent-foam` `#56949f`, `--accent-iris` `#907aa9` y `--accent-pine` `#31748f`). En temas claros como _Dawn_ (`#faf4ed`) y oscuros como _Dark_ (`#191724`), el ratio de contraste contra el fondo base ronda entre 3.08:1 y 3.47:1, por debajo del estándar formal WCAG 2.1 AA (4.5:1 para texto menor a 18pt).
-
----
-
 ## 2. Artefacto de Trazado SVG a 0% de Progreso (Punto Fantasma)
 
 - **ID Referencia:** JD-02
@@ -31,14 +23,6 @@
 - **ID Referencia:** JD-13
 - **Ubicación:** `src/lib/components/timer/timer-controls.svelte`
 - **Descripción:** Se utilizan clases utilitarias (`class="size-12"`, `class="size-16"`) combinadas con variantes de tamaño de shadcn-svelte (`size="icon"`, `size="icon-lg"`), así como tamaños fijos en iconos Lucide (`size-5`, `size-7`).
-
----
-
-## 4. Título Dinámico del Documento durante la Cuenta Regresiva
-
-- **ID Referencia:** JD-15
-- **Ubicación:** `src/routes/+page.svelte`
-- **Descripción:** El elemento `<title>` en `<svelte:head>` permanece estático (`Pomody — Minimalist Focus Timer`) y no refleja el tiempo restante ni el modo en ejecución, impidiendo monitorear el temporizador desde la pestaña del navegador.
 
 ---
 
