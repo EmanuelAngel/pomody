@@ -41,6 +41,17 @@
 		}
 	});
 
+	const modeTextColor = $derived.by(() => {
+		switch (mode) {
+			case 'shortBreak':
+				return 'var(--mode-short-break-text)';
+			case 'longBreak':
+				return 'var(--mode-long-break-text)';
+			default:
+				return 'var(--mode-focus-text)';
+		}
+	});
+
 	const safeRoundsBeforeLongBreak = $derived(Math.max(1, Math.floor(roundsBeforeLongBreak || 4)));
 
 	const completedInCycle = $derived.by(() => {
@@ -58,7 +69,7 @@
 	<!-- Mode label above time -->
 	<span
 		class="mb-2 text-xs font-semibold tracking-[0.25em] uppercase transition-colors duration-300 sm:text-sm"
-		style:color={modeColor}
+		style:color={modeTextColor}
 	>
 		{modeLabel}
 	</span>
