@@ -56,22 +56,6 @@
 
 ---
 
-## 9. Acción de Recuperación Directa ante Ventana de Tiempo Insuficiente en Planificación
-
-- **ID Referencia:** UX-01
-- **Ubicación:** `src/lib/components/planning/planning-timeline.svelte`
-- **Descripción:** Al configurar un horario final demasiado ajustado en el modo "Por Hora Final", la interfaz alerta que el tiempo no alcanza (`"Time window is too short for a full focus block"`), pero no provee un camino de salida accionable (Heurística #9 de Nielsen: _Help users recognize, diagnose, and recover from errors_). Conviene agregar un botón de acción directa en la alerta (por ejemplo: _"Ajustar horario mínimo (+30m)"_ o _"Ajustar bloque a 15m"_) que resuelva la restricción con un solo clic en lugar de forzar al usuario a calcular y modificar manualmente los selectores.
-
----
-
-## 10. Diálogo de Confirmación para "End Session Plan" (Guardia Destructiva)
-
-- **ID Referencia:** UX-02
-- **Ubicación:** `src/lib/components/planning/planning-timeline.svelte`
-- **Descripción:** El botón de cancelar la sesión activa ejecuta `planningState.endSession(timerState)` inmediatamente sin confirmación (Heurística #3: _User Control and Freedom_ y Heurística #5: _Error Prevention_). Un toque accidental destruye la proyección activa y resetea el temporizador en curso. Se debe agregar una confirmación de dos pasos (modal o popover con advertencia explícita de reseteo) antes de ejecutar el reseteo del plan.
-
----
-
 ## 11. Contexto y Creación Rápida en Popover de Asignación de Tareas
 
 - **ID Referencia:** UX-03

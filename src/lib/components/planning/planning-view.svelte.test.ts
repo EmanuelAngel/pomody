@@ -470,7 +470,7 @@ describe('PlanningView (Client Browser)', () => {
 		expect(navigationState.activeTab).toBe('timer');
 	});
 
-	it('renders active session controls and ends session', async () => {
+	it('renders active session controls and confirms ending session via alert dialog (UX-02)', async () => {
 		const repo = new MockTaskRepository();
 		const tasksState = createTasksState(repo);
 		const planRepo = new MockSessionPlanRepository();
@@ -491,12 +491,78 @@ describe('PlanningView (Client Browser)', () => {
 		// Forward-only notice
 		await expect.element(screen.getByText('Forward-only sync:')).toBeVisible();
 
-		// End session plan
+		// Click End Session Plan trigger
 		const endBtn = screen.getByRole('button', { name: 'End Session Plan' });
 		await expect.element(endBtn).toBeVisible();
 		await endBtn.click();
 
+		// Alert dialog should open with title, description, and action buttons
+		await expect.element(screen.getByText('End Active Session?')).toBeVisible();
+		await expect
+			.element(
+				screen.getByText(
+					'This will cancel your ongoing session plan, clear block progression, and reset the active timer.'
+				)
+			)
+			.toBeVisible();
+
+		// Cancel button dismisses dialog without ending session
+		const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+		await expect.element(cancelBtn).toBeVisible();
+		await cancelBtn.click();
+
+		expect(planningState.isSessionActive).toBe(true);
+
+		// Click End Session Plan trigger again and confirm
+		await endBtn.click();
+		const confirmBtn = screen.getByRole('button', { name: 'End Session', exact: true });
+		await expect.element(confirmBtn).toBeVisible();
+		await confirmBtn.click();
+
 		expect(planningState.isSessionActive).toBe(false);
+	});
+
+	it('displays quick recovery button when time window is insufficient and adjusts to minimum viable window (UX-01)', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		const navigationState = createNavigationState('planning');
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, {
+			tasksState,
+			planningState,
+			timerState,
+			navigationState
+		});
+
+		// Switch to By End Time mode
+		const byEndTimeBtn = screen.getByRole('button', { name: 'By End Time' });
+		await byEndTimeBtn.click();
+		expect(planningState.targetMode).toBe('end_time');
+
+		// Set scheduled start and tight target finish time (10 min < 25 min focus)
+		planningState.setScheduledStartTime('10:00');
+		planningState.setFocusMinutes(25);
+		planningState.setTargetEndTime('10:10');
+
+		// Underflow alert should be visible with quick recovery button
+		await expect
+			.element(screen.getByText('Time window is too short for a full focus block.'))
+			.toBeVisible();
+		const adjustBtn = screen.getByRole('button', { name: /Adjust to minimum/i });
+		await expect.element(adjustBtn).toBeVisible();
+
+		// Clicking recovery button auto-adjusts target end time to fit at least 1 focus block
+		await adjustBtn.click();
+
+		expect(planningState.projectedPlan.blocks.length).toBeGreaterThanOrEqual(1);
+		await expect
+			.element(screen.getByText('Time window is too short for a full focus block.'))
+			.not.toBeInTheDocument();
 	});
 
 	it('keeps duration steppers enabled and allows updating durations during an active session', async () => {
