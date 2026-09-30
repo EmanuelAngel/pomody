@@ -340,7 +340,7 @@ describe('PlanningView (Client Browser)', () => {
 
 		// Default values: 4 blocks x 25m = 100m -> 1h 40m, breaks: 3 * 5m = 15m
 		await expect.element(screen.getByText('1h 40m')).toBeVisible();
-		await expect.element(screen.getByText('15m').nth(1)).toBeVisible();
+		await expect.element(screen.getByText('15m')).toBeVisible();
 	});
 
 	it('toggles mode between By Blocks and By End Time', async () => {
@@ -368,7 +368,7 @@ describe('PlanningView (Client Browser)', () => {
 		expect(planningState.targetMode).toBe('blocks');
 	});
 
-	it('adjusts focus duration and block count via steppers', async () => {
+	it('adjusts focus duration and block count via presets and progressive disclosure steppers', async () => {
 		const repo = new MockTaskRepository();
 		const tasksState = createTasksState(repo);
 		const planRepo = new MockSessionPlanRepository();
@@ -379,7 +379,23 @@ describe('PlanningView (Client Browser)', () => {
 
 		const screen = await render(PlanningView, { tasksState, planningState, timerState });
 
-		// Increase focus duration by 5m
+		// Select 50/10 Foco Profundo preset chip
+		const deepFocusBtn = screen.getByRole('button', { name: /50\/10/i });
+		await deepFocusBtn.click();
+		expect(planningState.focusMinutes).toBe(50);
+		expect(planningState.shortBreakMinutes).toBe(10);
+
+		// Switch back to 25/5 Clásico preset chip
+		const classicBtn = screen.getByRole('button', { name: /25\/5/i });
+		await classicBtn.click();
+		expect(planningState.focusMinutes).toBe(25);
+		expect(planningState.shortBreakMinutes).toBe(5);
+
+		// Expand progressive disclosure panel
+		const customizeBtn = screen.getByRole('button', { name: 'Customize cadence' });
+		await customizeBtn.click();
+
+		// Increase focus duration by 5m via manual stepper
 		const incFocusBtn = screen.getByRole('button', { name: 'Increase focus duration' });
 		await incFocusBtn.click();
 		expect(planningState.focusMinutes).toBe(30);
@@ -584,6 +600,10 @@ describe('PlanningView (Client Browser)', () => {
 			timerState,
 			navigationState
 		});
+
+		// Expand progressive disclosure panel to access manual duration steppers
+		const customizeBtn = screen.getByRole('button', { name: 'Customize cadence' });
+		await customizeBtn.click();
 
 		// Duration steppers should be enabled
 		const incFocusBtn = screen.getByRole('button', { name: 'Increase focus duration' });
