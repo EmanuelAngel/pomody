@@ -72,14 +72,6 @@
 
 ---
 
-## 13. Presets de Cadencia (25/5, 50/10, 90/20) y Revelación Progresiva en Reemplazo de Steppers
-
-- **ID Referencia:** UX-05
-- **Ubicación:** `src/lib/components/planning/planning-timeline.svelte`
-- **Descripción:** La cabecera expone cinco selectores numéricos con diez botones `+`/`-`, forzando cálculos aritméticos antes de trabajar y saturando la carga cognitiva (Heurísticas #7 y #8). Se deben reemplazar los steppers rígidos por chips de presets de cadencia estándar (`25/5 Clásico`, `50/10 Foco Profundo`, `90/20 Ritmo Ultradiano`), comprobados y soportados por el dominio (`timer-fsm.ts` y `session-plan.entity.ts`), manteniendo visible solo el parámetro principal (bloques u hora de fin) y dejando la configuración manual bajo un panel de revelación progresiva colapsable.
-
----
-
 ## 14. Depuración de Boilerplate y Redundancia Visual en Tarjetas de Descanso
 
 - **ID Referencia:** UX-06

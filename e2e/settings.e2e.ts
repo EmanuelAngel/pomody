@@ -127,4 +127,51 @@ test.describe('Settings Drawer Integration', () => {
 		await expect(timerDisplay).toHaveText('25:00');
 		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dawn');
 	});
+
+	test('preserves ultradian 90/20 cadence configured in planning across settings drawer opening and timer view', async ({
+		page
+	}) => {
+		// 1. Visit Pomody root
+		await page.goto('/');
+		const timerDisplay = page.getByRole('timer');
+		await expect(timerDisplay).toHaveText('25:00');
+
+		// 2. Navigate to Planning view
+		const planningTab = page.getByRole('tab', { name: 'Planning' });
+		await planningTab.click();
+		await expect(page.getByRole('heading', { name: 'Planning' })).toBeVisible();
+
+		// 3. Select 90/20 Ultradian Rhythm preset chip
+		const ultradianChip = page.getByRole('button', { name: /90\/20/i });
+		await expect(ultradianChip).toBeVisible();
+		await ultradianChip.click();
+
+		// 4. Open Settings drawer from header
+		const openSettingsButton = page.getByRole('button', { name: 'Open settings' });
+		await expect(openSettingsButton).toBeVisible();
+		await openSettingsButton.click();
+
+		const settingsHeading = page.getByRole('heading', { name: 'Settings' });
+		await expect(settingsHeading).toBeVisible();
+
+		// 5. Verify Focus slider shows 90 min and is not clamped to 60
+		const focusSlider = page.getByLabel('Focus duration').getByRole('slider');
+		await expect(focusSlider).toHaveAttribute('aria-valuenow', '90');
+		await expect(page.getByText('90 min', { exact: true })).toBeVisible();
+
+		// 6. Verify Short Break slider shows 20 min
+		const shortBreakSlider = page.getByLabel('Short break duration').getByRole('slider');
+		await expect(shortBreakSlider).toHaveAttribute('aria-valuenow', '20');
+		await expect(page.getByText('20 min', { exact: true })).toBeVisible();
+
+		// 7. Close settings drawer
+		const closeButton = page.getByRole('button', { name: 'Close' });
+		await closeButton.click();
+		await expect(settingsHeading).not.toBeVisible();
+
+		// 8. Navigate back to Timer view and verify timer reflects 90:00
+		const timerTab = page.getByRole('tab', { name: 'Timer' });
+		await timerTab.click();
+		await expect(timerDisplay).toHaveText('90:00');
+	});
 });

@@ -76,8 +76,12 @@ test.describe('Session Planning & Timeline Projection Journey', () => {
 		const endPlanButton = timelineSection.getByRole('button', { name: 'End Session Plan' });
 		await expect(endPlanButton).toBeVisible();
 
-		// 11. End session plan
+		// 11. End session plan via confirmation dialog (UX-02)
 		await endPlanButton.click();
+		const confirmEndButton = page.getByRole('button', { name: 'End Session', exact: true });
+		await expect(confirmEndButton).toBeVisible();
+		await confirmEndButton.click();
+
 		await expect(timelineSection.getByRole('button', { name: 'Start Session' })).toBeVisible();
 	});
 });

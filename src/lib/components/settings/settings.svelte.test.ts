@@ -139,6 +139,31 @@ describe('SettingsDrawer (Client Browser)', () => {
 		await expect.element(screen.getByRole('button', { name: /Reset to defaults/i })).toBeVisible();
 	});
 
+	it('preserves ultradian 90m focus duration without clamping to 60m when opened', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState(
+			{
+				focusDurationSeconds: 5400, // 90 min
+				shortBreakDurationSeconds: 1200, // 20 min
+				longBreakDurationSeconds: 1800 // 30 min
+			},
+			ticker
+		);
+		const themeState = createThemeState();
+
+		const screen = await render(SettingsDrawer, {
+			open: true,
+			timerState,
+			themeState,
+			portalProps: { disabled: true }
+		});
+
+		await expect.element(screen.getByText('90 min', { exact: true })).toBeVisible();
+		await expect.element(screen.getByText('20 min', { exact: true })).toBeVisible();
+		expect(timerState.config.focusDurationSeconds).toBe(5400);
+		expect(timerState.config.shortBreakDurationSeconds).toBe(1200);
+	});
+
 	it('adjusts focus slider via keyboard arrows and updates timer config', async () => {
 		const ticker = createDummyTicker(false);
 		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker); // 25 min
@@ -437,16 +462,16 @@ describe('SettingsDrawer (Client Browser)', () => {
 		await expect.element(focusThumb).toHaveAttribute('aria-valuenow', '1');
 		expect(timerState.config.focusDurationSeconds).toBe(1 * 60);
 
-		// End key jumps to maximum (60 min)
+		// End key jumps to maximum (120 min)
 		await userEvent.keyboard('{End}');
-		await expect.element(focusThumb).toHaveAttribute('aria-valuenow', '60');
-		await expect.element(screen.getByText('60 min', { exact: true })).toBeVisible();
-		expect(timerState.config.focusDurationSeconds).toBe(60 * 60);
+		await expect.element(focusThumb).toHaveAttribute('aria-valuenow', '120');
+		await expect.element(screen.getByText('120 min', { exact: true })).toBeVisible();
+		expect(timerState.config.focusDurationSeconds).toBe(120 * 60);
 
-		// ArrowRight at maximum does not exceed 60 min
+		// ArrowRight at maximum does not exceed 120 min
 		await userEvent.keyboard('{ArrowRight}');
-		await expect.element(focusThumb).toHaveAttribute('aria-valuenow', '60');
-		expect(timerState.config.focusDurationSeconds).toBe(60 * 60);
+		await expect.element(focusThumb).toHaveAttribute('aria-valuenow', '120');
+		expect(timerState.config.focusDurationSeconds).toBe(120 * 60);
 	});
 
 	it('toggles sound alerts switch and updates timerState soundEnabled', async () => {
