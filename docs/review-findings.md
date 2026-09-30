@@ -26,14 +26,6 @@
 
 ---
 
-## 3. Sobrescritura de Tamaños y Dimensionamiento de Iconos en Botones
-
-- **ID Referencia:** JD-13
-- **Ubicación:** `src/lib/components/timer/timer-controls.svelte`
-- **Descripción:** Se utilizan clases utilitarias (`class="size-12"`, `class="size-16"`) combinadas con variantes de tamaño de shadcn-svelte (`size="icon"`, `size="icon-lg"`), así como tamaños fijos en iconos Lucide (`size-5`, `size-7`).
-
----
-
 ## 4. Título Dinámico del Documento durante la Cuenta Regresiva
 
 - **ID Referencia:** JD-15

@@ -21,7 +21,6 @@
 	<!-- Reset button (Ghost, secondary — fades in Zen mode) -->
 	<Button
 		variant="ghost"
-		size="icon"
 		aria-label="Reset timer"
 		disabled={isRunning}
 		tabindex={isRunning ? -1 : undefined}
@@ -38,7 +37,6 @@
 	<!-- Play / Pause button (Primary, always visible) -->
 	<Button
 		variant="default"
-		size="icon-lg"
 		aria-label={isRunning ? 'Pause timer' : isPaused ? 'Resume timer' : 'Start timer'}
 		onclick={onPlayPause}
 		class="size-16 cursor-pointer rounded-full shadow-md transition-transform duration-200 hover:scale-105 active:scale-95"
@@ -53,7 +51,6 @@
 	<!-- Skip button (Ghost, secondary — fades in Zen mode) -->
 	<Button
 		variant="ghost"
-		size="icon"
 		aria-label="Skip to next session"
 		disabled={isRunning}
 		tabindex={isRunning ? -1 : undefined}
