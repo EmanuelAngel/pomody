@@ -1,0 +1,13 @@
+- Visibility of System Status: Agregado a revisión en [review findings](../../docs/review-findings.md) (UX-10).
+- Match Between System and Real World: Agregado a revisión en [review findings](../../docs/review-findings.md) (UX-09).
+- User Control and Freedom: OK. Sugiero modal de confirmación para 'End Session Plan' (UX-02).
+- Consistency and Standards: Agregado a revisión en [review findings](../../docs/review-findings.md) (UX-07).
+- Error Prevention: Mismo que user control (UX-02).
+- Recognition Rather Than Recall: Agregado a revisión en [review findings](../../docs/review-findings.md) (UX-03).
+- Flexibility and Efficiency of Use:
+  - drag-and-drop anotado en [review findings](../../docs/review-findings.md) (UX-04).
+  - keyboard shortcuts: anotado en [review findings](../../docs/review-findings.md) (UX-04).
+  - Reemplazo de los 5 steppers por chips de presets de cadencia (25/5 Clásico, 50/10 Foco Profundo, 90/20 Ritmo Ultradiano) + revelación progresiva para personalización manual (UX-05). Verificado que el dominio (`timer-fsm.ts` y `session-plan.entity.ts`) soporta estas duraciones sin restricciones (enteros positivos > 0).
+- Aesthetic and Minimalist Design: OK. Quitar boilerplate, badges redundantes (UX-06).
+- Help Users Recognize, Diagnose, and Recover from Errors: anotado en [review findings](../../docs/review-findings.md) (UX-01).
+- Help and Documentation: Agregado a revisión en [review findings](../../docs/review-findings.md) (UX-09).

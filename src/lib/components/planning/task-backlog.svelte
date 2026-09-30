@@ -6,13 +6,22 @@
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import { cn } from '$lib/utils';
 	import { tasksState as defaultTasksState, type TasksState } from '$lib/state/tasks.svelte';
+	import {
+		planningState as defaultPlanningState,
+		type PlanningState
+	} from '$lib/state/planning.svelte';
 
 	interface Props {
 		tasksState?: TasksState;
+		planningState?: PlanningState;
 		class?: string;
 	}
 
-	let { tasksState = defaultTasksState, class: className = '' }: Props = $props();
+	let {
+		tasksState = defaultTasksState,
+		planningState = defaultPlanningState,
+		class: className = ''
+	}: Props = $props();
 
 	let newTaskTitle = $state('');
 	let isCompletedOpen = $state(true);
@@ -132,6 +141,7 @@
 						ontogglepin={handleTogglePin}
 						ontitlechange={handleTitleChange}
 						ondelete={handleDelete}
+						onslot={(taskId) => planningState.slotTaskIntoNextAvailableBlock(taskId)}
 					/>
 				{/each}
 			</ul>

@@ -1,6 +1,7 @@
 import {
 	DEFAULT_TIMER_CONFIG,
 	TimerFSM,
+	type DomainEvent,
 	type TimerConfig,
 	type TimerMode,
 	type TimerSnapshot,
@@ -16,6 +17,7 @@ import {
 	type ISettingsStorage
 } from '../domain/ports/settings-storage.port';
 import { LocalSettingsStorage } from '../adapters/storage/local-settings-storage';
+import { SvelteSet } from 'svelte/reactivity';
 
 /**
  * Formats a duration in milliseconds to MM:SS string representation.
@@ -43,6 +45,7 @@ export class TimerState {
 
 	private _soundEnabled = $state<boolean>(true);
 	private _revitalizationEnabled = $state<boolean>(true);
+	private _configSubscribers = new SvelteSet<(config: TimerConfig) => void>();
 
 	private _snapshot = $state<TimerSnapshot>({
 		state: 'idle',
@@ -217,6 +220,10 @@ export class TimerState {
 	public updateConfig(config: Partial<TimerConfig>): void {
 		this.fsm.updateConfig(config);
 		this.storage?.saveSettings({ timer: this.fsm.config });
+		this._config = this.fsm.config;
+		for (const subscriber of this._configSubscribers) {
+			subscriber(this._config);
+		}
 	}
 
 	/**
@@ -239,6 +246,27 @@ export class TimerState {
 			soundEnabled: this._soundEnabled,
 			revitalizationEnabled: this._revitalizationEnabled
 		});
+		this._config = this.fsm.config;
+		for (const subscriber of this._configSubscribers) {
+			subscriber(this._config);
+		}
+	}
+
+	/**
+	 * Subscribes to domain lifecycle events emitted by the underlying TimerFSM.
+	 */
+	public onEvent(subscriber: (event: DomainEvent) => void): Unsubscribe {
+		return this.fsm.onEvent(subscriber);
+	}
+
+	/**
+	 * Subscribes to timer configuration changes.
+	 */
+	public onConfigChange(subscriber: (config: TimerConfig) => void): () => void {
+		this._configSubscribers.add(subscriber);
+		return () => {
+			this._configSubscribers.delete(subscriber);
+		};
 	}
 
 	/**
@@ -247,6 +275,7 @@ export class TimerState {
 	public destroy(): void {
 		this.unsubscribe();
 		this.unsubscribeEvents();
+		this._configSubscribers.clear();
 		this.ticker.destroy();
 	}
 }

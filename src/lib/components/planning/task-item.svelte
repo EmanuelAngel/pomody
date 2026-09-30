@@ -2,6 +2,7 @@
 	import Check from '@lucide/svelte/icons/check';
 	import Pin from '@lucide/svelte/icons/pin';
 	import Trash from '@lucide/svelte/icons/trash';
+	import CalendarPlus from '@lucide/svelte/icons/calendar-plus';
 	import { cn } from '$lib/utils';
 	import type { FocusTask } from '$lib/domain/tasks/task.entity';
 
@@ -12,9 +13,18 @@
 		ontogglepin?: (taskId: string) => void;
 		ontitlechange?: (taskId: string, newTitle: string) => void | Promise<void>;
 		ondelete?: (taskId: string) => void | Promise<void>;
+		onslot?: (taskId: string) => void;
 	}
 
-	let { task, isActive = false, ontoggle, ontogglepin, ontitlechange, ondelete }: Props = $props();
+	let {
+		task,
+		isActive = false,
+		ontoggle,
+		ontogglepin,
+		ontitlechange,
+		ondelete,
+		onslot
+	}: Props = $props();
 
 	let isEditing = $state(false);
 	let editingTitle = $state('');
@@ -47,20 +57,22 @@
 
 {#if task.completed}
 	<li
-		class="group flex items-center justify-between gap-3 rounded-xl border border-border/20 bg-muted/20 px-3 py-2 text-muted-foreground/70 transition-colors"
+		class="group flex items-start justify-between gap-3 rounded-xl border border-border/20 bg-muted/20 px-3 py-2 text-muted-foreground/70 transition-colors"
 	>
-		<div class="flex min-w-0 flex-1 items-center gap-3">
+		<div class="flex min-w-0 flex-1 items-start gap-3">
 			<button
 				type="button"
 				role="checkbox"
 				aria-checked={true}
 				aria-label={`Mark "${task.title}" as pending`}
 				onclick={() => ontoggle?.(task.id)}
-				class="flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-primary bg-primary text-primary-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="mt-0.5 flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-primary bg-primary text-primary-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				<Check class="size-2.5 stroke-[3]" />
 			</button>
-			<span class="truncate text-sm text-muted-foreground/60 line-through select-none">
+			<span
+				class="min-w-0 flex-1 text-sm leading-snug break-words text-muted-foreground/60 line-through select-none"
+			>
 				{task.title}
 			</span>
 		</div>
@@ -80,21 +92,21 @@
 {:else}
 	<li
 		class={cn(
-			'group flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 transition-all duration-150',
+			'group flex items-start justify-between gap-3 rounded-xl border px-3 py-2.5 transition-all duration-150',
 			isActive
 				? 'border-primary/50 bg-primary/5 shadow-xs'
 				: 'border-border/40 bg-card/40 hover:border-border/80 hover:bg-muted/30'
 		)}
 	>
 		<!-- Left: Checkbox + Title -->
-		<div class="flex min-w-0 flex-1 items-center gap-3">
+		<div class="flex min-w-0 flex-1 items-start gap-3">
 			<button
 				type="button"
 				role="checkbox"
 				aria-checked={false}
 				aria-label={`Mark "${task.title}" as completed`}
 				onclick={() => ontoggle?.(task.id)}
-				class="flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-muted-foreground/40 transition-colors hover:border-primary focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="mt-0.5 flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-muted-foreground/40 transition-colors hover:border-primary focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 			</button>
 
@@ -111,7 +123,7 @@
 				<button
 					type="button"
 					aria-label={`Edit task "${task.title}"`}
-					class="min-w-0 flex-1 cursor-text truncate text-left text-sm font-medium text-foreground transition-colors hover:text-foreground/80 focus-visible:outline-none"
+					class="min-w-0 flex-1 cursor-text text-left text-sm leading-snug font-medium break-words text-foreground transition-colors hover:text-foreground/80 focus-visible:outline-none"
 					title="Click to edit"
 					onclick={startEditing}
 				>
@@ -120,8 +132,19 @@
 			{/if}
 		</div>
 
-		<!-- Right: Pin Active + Delete -->
-		<div class="flex shrink-0 items-center gap-1">
+		<!-- Right: Quick Slot + Pin Active + Delete -->
+		<div class="-mt-0.5 flex shrink-0 items-center gap-1">
+			{#if onslot}
+				<button
+					type="button"
+					aria-label={`Slot task "${task.title}" into next focus block`}
+					title="Slot into next focus block"
+					onclick={() => onslot?.(task.id)}
+					class="flex size-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				>
+					<CalendarPlus class="size-3.5" />
+				</button>
+			{/if}
 			<button
 				type="button"
 				aria-label={isActive

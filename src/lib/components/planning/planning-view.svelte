@@ -5,17 +5,28 @@
 		navigationState as defaultNavigationState,
 		type NavigationState
 	} from '$lib/state/navigation.svelte';
+	import {
+		planningState as defaultPlanningState,
+		type PlanningState
+	} from '$lib/state/planning.svelte';
+	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import PlanningTimeline from './planning-timeline.svelte';
 	import TaskBacklog from './task-backlog.svelte';
 
 	interface Props {
+		planningState?: PlanningState;
 		tasksState?: TasksState;
+		timerState?: TimerState;
 		navigationState?: NavigationState;
 	}
 
-	let { tasksState = defaultTasksState, navigationState = defaultNavigationState }: Props =
-		$props();
+	let {
+		planningState = defaultPlanningState,
+		tasksState = defaultTasksState,
+		timerState = defaultTimerState,
+		navigationState = defaultNavigationState
+	}: Props = $props();
 
 	const pendingTasks = $derived(tasksState.pendingTasks);
 	const pendingCount = $derived(pendingTasks.length);
@@ -24,6 +35,9 @@
 	onMount(() => {
 		if (!tasksState.isLoaded && !tasksState.isLoading) {
 			tasksState.load();
+		}
+		if (!planningState.isLoaded && !planningState.isLoading) {
+			planningState.load();
 		}
 	});
 </script>
@@ -54,9 +68,15 @@
 	<!-- Main Responsive 2-Column Grid -->
 	<div class="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
 		<!-- Left Column: Session Plan & Timeline (Macro) -->
-		<PlanningTimeline {activeTaskTitle} />
+		<PlanningTimeline
+			{planningState}
+			{tasksState}
+			{timerState}
+			{navigationState}
+			{activeTaskTitle}
+		/>
 
 		<!-- Right Column: Task Backlog (Micro) -->
-		<TaskBacklog {tasksState} />
+		<TaskBacklog {tasksState} {planningState} />
 	</div>
 </div>

@@ -4,6 +4,7 @@ import {
 	InvalidTimerConfigError,
 	TimerFSM,
 	type BlockCompletedEvent,
+	type BlockSkippedEvent,
 	type DomainEvent
 } from './timer-fsm';
 
@@ -911,7 +912,7 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 			round: 2,
 			totalRoundsCompleted: 2
 		});
-		expect(events[3].completedAt).toBeInstanceOf(Date);
+		expect((events[3] as BlockCompletedEvent).completedAt).toBeInstanceOf(Date);
 	});
 
 	it('should NOT emit BlockCompletedEvent on intermediate ticks (when remainingMs > 0)', () => {
@@ -957,12 +958,81 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 
 		fsm.skip();
 		expect(fsm.mode).toBe('shortBreak');
-		expect(events).toHaveLength(0);
+		expect(events.filter((e) => e.type === 'block-completed')).toHaveLength(0);
 
 		fsm.start();
 		fsm.skip();
 		expect(fsm.mode).toBe('focus');
-		expect(events).toHaveLength(0);
+		expect(events.filter((e) => e.type === 'block-completed')).toHaveLength(0);
+	});
+
+	it('should emit BlockSkippedEvent on skip() with correct mode, round, totalRoundsCompleted, and skippedAt', () => {
+		const fsm = new TimerFSM();
+		const events: DomainEvent[] = [];
+		const startTime = new Date();
+
+		fsm.onEvent((event) => {
+			events.push(event);
+		});
+
+		// Skip from focus mode round 1
+		fsm.skip();
+
+		expect(events).toHaveLength(1);
+		const event1 = events[0] as BlockSkippedEvent;
+		expect(event1.type).toBe('block-skipped');
+		expect(event1.mode).toBe('focus');
+		expect(event1.round).toBe(1);
+		expect(event1.totalRoundsCompleted).toBe(0);
+		expect(event1.skippedAt).toBeInstanceOf(Date);
+		expect(event1.skippedAt.getTime()).toBeGreaterThanOrEqual(startTime.getTime());
+		expect(event1.skippedAt.getTime()).toBeLessThanOrEqual(Date.now());
+
+		// Now in shortBreak mode round 1, skip it
+		fsm.skip();
+
+		expect(events).toHaveLength(2);
+		const event2 = events[1] as BlockSkippedEvent;
+		expect(event2.type).toBe('block-skipped');
+		expect(event2.mode).toBe('shortBreak');
+		expect(event2.round).toBe(1);
+		expect(event2.totalRoundsCompleted).toBe(0);
+	});
+
+	it('should emit BlockSkippedEvent when skipping while running or paused', () => {
+		const fsm = new TimerFSM();
+		const events: DomainEvent[] = [];
+
+		fsm.onEvent((event) => {
+			events.push(event);
+		});
+
+		// Running skip
+		fsm.start();
+		fsm.tick(200000);
+		fsm.skip();
+
+		expect(events).toHaveLength(1);
+		expect(events[0]).toMatchObject({
+			type: 'block-skipped',
+			mode: 'focus',
+			round: 1,
+			totalRoundsCompleted: 0
+		});
+
+		// Paused skip
+		fsm.start();
+		fsm.tick(100000);
+		fsm.pause();
+		fsm.skip();
+
+		expect(events).toHaveLength(2);
+		expect(events[1]).toMatchObject({
+			type: 'block-skipped',
+			mode: 'shortBreak',
+			round: 1,
+			totalRoundsCompleted: 0
+		});
 	});
 
 	it('should return unsubscribe function which removes listener', () => {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Popover } from 'bits-ui';
+	import * as Popover from '$lib/components/ui/popover';
 	import Activity from '@lucide/svelte/icons/activity';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import Droplet from '@lucide/svelte/icons/droplet';
@@ -59,7 +59,7 @@
 
 <div
 	data-slot="break-revitalization"
-	class="group inline-flex items-center gap-2 rounded-full border border-border/40 bg-muted/40 px-3 py-1 text-xs shadow-xs transition-all duration-200 sm:text-sm"
+	class="group inline-flex h-8 items-center gap-2 rounded-full border border-border/40 bg-muted/40 px-3 text-xs shadow-xs transition-all duration-200 sm:text-sm"
 >
 	{#if activeActivity}
 		<!-- Category badge with icon and label -->
@@ -96,37 +96,36 @@
 			>
 				<BookOpen class="size-3.5" />
 			</Popover.Trigger>
-			<Popover.Portal {...portalProps}>
-				<Popover.Content
-					side="bottom"
-					sideOffset={8}
-					align="center"
-					class="z-50 w-72 animate-in rounded-xl border border-border/60 bg-popover/95 p-3 text-popover-foreground shadow-lg backdrop-blur-md fade-in-0 outline-none zoom-in-95 data-[side=bottom]:slide-in-from-top-2 sm:w-80"
-				>
-					<div class="mb-2 flex items-center justify-between gap-2 border-b border-border/40 pb-2">
-						<span class="truncate text-xs font-semibold text-foreground">
-							{activeActivity.title}
-						</span>
-						<span
-							class={cn(
-								'shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase',
-								categoryBadgeClasses[activeActivity.category]
-							)}
-						>
-							{categoryLabels[activeActivity.category]}
-						</span>
+			<Popover.Content
+				{portalProps}
+				side="bottom"
+				sideOffset={8}
+				align="center"
+				class="z-50 w-72 animate-in rounded-xl border border-border/60 bg-popover/95 p-3 text-popover-foreground shadow-lg backdrop-blur-md fade-in-0 outline-none zoom-in-95 data-[side=bottom]:slide-in-from-top-2 sm:w-80"
+			>
+				<div class="mb-2 flex items-center justify-between gap-2 border-b border-border/40 pb-2">
+					<span class="truncate text-xs font-semibold text-foreground">
+						{activeActivity.title}
+					</span>
+					<span
+						class={cn(
+							'shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase',
+							categoryBadgeClasses[activeActivity.category]
+						)}
+					>
+						{categoryLabels[activeActivity.category]}
+					</span>
+				</div>
+				{#if activeActivity.guide}
+					<div class="text-xs leading-relaxed whitespace-pre-line text-muted-foreground">
+						{activeActivity.guide}
 					</div>
-					{#if activeActivity.guide}
-						<div class="text-xs leading-relaxed whitespace-pre-line text-muted-foreground">
-							{activeActivity.guide}
-						</div>
-					{:else}
-						<p class="text-xs text-muted-foreground italic">
-							No instructions available for this activity.
-						</p>
-					{/if}
-				</Popover.Content>
-			</Popover.Portal>
+				{:else}
+					<p class="text-xs text-muted-foreground italic">
+						No instructions available for this activity.
+					</p>
+				{/if}
+			</Popover.Content>
 		</Popover.Root>
 
 		<!-- Shuffle button with tactile animation -->
