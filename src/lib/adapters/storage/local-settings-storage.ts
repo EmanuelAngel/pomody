@@ -9,10 +9,11 @@ import { DEFAULT_TIMER_CONFIG, type TimerConfig } from '../../domain/timer/timer
 export const SETTINGS_STORAGE_KEY = 'pomody:settings';
 export const SETTINGS_STORAGE_VERSION = 1;
 
+/** Must match the slider ranges in the settings drawer, or saved values reset on reload. */
 export const SETTINGS_BOUNDS = {
-	focusDuration: { min: 60, max: 3600 },
-	shortBreakDuration: { min: 60, max: 1800 },
-	longBreakDuration: { min: 60, max: 3600 },
+	focusDuration: { min: 60, max: 7200 },
+	shortBreakDuration: { min: 60, max: 3600 },
+	longBreakDuration: { min: 60, max: 5400 },
 	roundsBeforeLongBreak: { min: 1, max: 12 }
 } as const;
 
