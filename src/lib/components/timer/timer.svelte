@@ -64,13 +64,13 @@
 		onSkip={handleSkip}
 	/>
 
-	<div class="mt-6 flex min-h-8 justify-center">
+	<div class="mt-6 grid h-8 place-items-center">
 		{#if state.mode === 'focus'}
-			<div transition:fade={{ duration: 150 }}>
+			<div class="col-start-1 row-start-1" transition:fade={{ duration: 150 }}>
 				<TaskPill isRunning={state.isRunning} {tasksState} />
 			</div>
 		{:else if (state.mode === 'shortBreak' || state.mode === 'longBreak') && state.revitalizationEnabled}
-			<div transition:fade={{ duration: 150 }}>
+			<div class="col-start-1 row-start-1" transition:fade={{ duration: 150 }}>
 				<BreakRevitalization {breaksState} mode={state.mode} currentRound={state.currentRound} />
 			</div>
 		{/if}

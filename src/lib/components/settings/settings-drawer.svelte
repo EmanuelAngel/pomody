@@ -73,30 +73,38 @@
 	});
 
 	function handleFocusChange(val: number) {
-		if (Number.isInteger(val) && val >= 1 && val <= 60) {
+		if (Number.isInteger(val) && val >= 1 && val <= 120) {
 			localFocus = val;
-			timerState.updateConfig({ focusDurationSeconds: val * 60 });
+			if (timerState.config.focusDurationSeconds !== val * 60) {
+				timerState.updateConfig({ focusDurationSeconds: val * 60 });
+			}
 		}
 	}
 
 	function handleShortBreakChange(val: number) {
-		if (Number.isInteger(val) && val >= 1 && val <= 30) {
+		if (Number.isInteger(val) && val >= 1 && val <= 60) {
 			localShortBreak = val;
-			timerState.updateConfig({ shortBreakDurationSeconds: val * 60 });
+			if (timerState.config.shortBreakDurationSeconds !== val * 60) {
+				timerState.updateConfig({ shortBreakDurationSeconds: val * 60 });
+			}
 		}
 	}
 
 	function handleLongBreakChange(val: number) {
-		if (Number.isInteger(val) && val >= 1 && val <= 60) {
+		if (Number.isInteger(val) && val >= 1 && val <= 90) {
 			localLongBreak = val;
-			timerState.updateConfig({ longBreakDurationSeconds: val * 60 });
+			if (timerState.config.longBreakDurationSeconds !== val * 60) {
+				timerState.updateConfig({ longBreakDurationSeconds: val * 60 });
+			}
 		}
 	}
 
 	function handleRoundsChange(val: number) {
 		if (Number.isInteger(val) && val >= 1 && val <= 12) {
 			localRounds = val;
-			timerState.updateConfig({ roundsBeforeLongBreak: val });
+			if (timerState.config.roundsBeforeLongBreak !== val) {
+				timerState.updateConfig({ roundsBeforeLongBreak: val });
+			}
 		}
 	}
 
@@ -170,7 +178,7 @@
 							type="single"
 							value={focusMinutes}
 							min={1}
-							max={60}
+							max={120}
 							step={1}
 							aria-label="Focus duration"
 							onValueChange={handleFocusChange}
@@ -193,7 +201,7 @@
 							type="single"
 							value={shortBreakMinutes}
 							min={1}
-							max={30}
+							max={60}
 							step={1}
 							aria-label="Short break duration"
 							onValueChange={handleShortBreakChange}
@@ -216,7 +224,7 @@
 							type="single"
 							value={longBreakMinutes}
 							min={1}
-							max={60}
+							max={90}
 							step={1}
 							aria-label="Long break duration"
 							onValueChange={handleLongBreakChange}

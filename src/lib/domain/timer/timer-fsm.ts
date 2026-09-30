@@ -1,6 +1,10 @@
-import type { DomainEvent, BlockCompletedEvent } from '../events/block-completed.event';
+import type {
+	DomainEvent,
+	BlockCompletedEvent,
+	BlockSkippedEvent
+} from '../events/block-completed.event';
 
-export type { DomainEvent, BlockCompletedEvent };
+export type { DomainEvent, BlockCompletedEvent, BlockSkippedEvent };
 export type TimerState = 'idle' | 'running' | 'paused' | 'completed';
 export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
@@ -265,8 +269,18 @@ export class TimerFSM {
 	}
 
 	public skip(): void {
+		const mode = this._mode;
+		const round = this._currentRound;
+		const totalRoundsCompleted = this._totalRoundsCompleted;
 		this.advanceMode();
 		this._state = 'idle';
+		this.emitEvent({
+			type: 'block-skipped',
+			mode,
+			round,
+			totalRoundsCompleted,
+			skippedAt: new Date()
+		});
 		this.notify();
 	}
 

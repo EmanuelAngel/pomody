@@ -8,4 +8,12 @@ export interface BlockCompletedEvent {
 	readonly completedAt: Date;
 }
 
-export type DomainEvent = BlockCompletedEvent;
+export interface BlockSkippedEvent {
+	readonly type: 'block-skipped';
+	readonly mode: TimerMode;
+	readonly round: number;
+	readonly totalRoundsCompleted: number;
+	readonly skippedAt: Date;
+}
+
+export type DomainEvent = BlockCompletedEvent | BlockSkippedEvent;

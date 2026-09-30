@@ -146,4 +146,19 @@ describe('TaskItem (Client Browser)', () => {
 		expect(ondelete).toHaveBeenCalledTimes(1);
 		expect(ondelete).toHaveBeenCalledWith(task.id);
 	});
+
+	it('calls onslot when clicking slot button on pending task', async () => {
+		const task = createFocusTask({ title: 'Slot Me' });
+		const onslot = vi.fn();
+		const screen = await render(TaskItem, { task, onslot });
+
+		const slotBtn = screen.getByRole('button', {
+			name: 'Slot task "Slot Me" into next focus block'
+		});
+		await expect.element(slotBtn).toBeVisible();
+		await slotBtn.click();
+
+		expect(onslot).toHaveBeenCalledTimes(1);
+		expect(onslot).toHaveBeenCalledWith(task.id);
+	});
 });

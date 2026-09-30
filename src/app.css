@@ -22,6 +22,11 @@
 	--accent-iris: #c4a7e7;
 	--accent-gold: #f6c177;
 
+	/* Mode label text (WCAG AA >= 4.5:1 on --bg-base) */
+	--mode-focus-text: #9ccfd8;
+	--mode-short-break-text: #4a9dbd;
+	--mode-long-break-text: #c4a7e7;
+
 	/* shadcn-svelte UI mappings */
 	--background: #191724;
 	--foreground: #e0def4;
@@ -59,6 +64,11 @@
 	--accent-iris: #907aa9;
 	--accent-gold: #ea9d34;
 
+	/* Mode label text (WCAG AA >= 4.5:1 on --bg-base) */
+	--mode-focus-text: #3a7882;
+	--mode-short-break-text: #286983;
+	--mode-long-break-text: #78628f;
+
 	/* shadcn-svelte UI mappings */
 	--background: #faf4ed;
 	--foreground: #575279;
@@ -95,6 +105,11 @@
 	--accent-foam: #67e8f9;
 	--accent-iris: #c084fc;
 	--accent-gold: #facc15;
+
+	/* Mode label text (WCAG AA >= 4.5:1 on --bg-base) */
+	--mode-focus-text: #67e8f9;
+	--mode-short-break-text: #38bdf8;
+	--mode-long-break-text: #c084fc;
 
 	/* shadcn-svelte UI mappings */
 	--background: #000000;

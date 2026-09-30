@@ -3,12 +3,25 @@
 	import PlanningView from '$lib/components/planning/planning-view.svelte';
 	import BotanicalProgress from '$lib/components/timer/botanical-progress.svelte';
 	import { navigationState } from '$lib/state/navigation.svelte';
+	import { timerState } from '$lib/state/timer.svelte';
 
 	const activeTab = $derived(navigationState.activeTab);
+
+	const modeTitles = {
+		focus: 'Focus',
+		shortBreak: 'Short Break',
+		longBreak: 'Long Break'
+	} as const;
+
+	const documentTitle = $derived(
+		timerState.state === 'idle'
+			? 'Pomody — Minimalist Focus Timer'
+			: `${timerState.formattedRemainingTime} ${modeTitles[timerState.mode]} — Pomody`
+	);
 </script>
 
 <svelte:head>
-	<title>Pomody — Minimalist Focus Timer</title>
+	<title>{documentTitle}</title>
 </svelte:head>
 
 <main class="flex min-h-screen w-full flex-col items-center justify-center p-4 pt-16 sm:p-8">

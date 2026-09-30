@@ -33,6 +33,22 @@
 | **Auto-format**          | `pnpm format`          | Runs Prettier write                                    |
 | **Build SPA**            | `pnpm build`           | Static build output to `build/index.html`              |
 
+### Verification & Feedback Strategy
+
+To maintain sub-second feedback during development without sacrificing regression safety, align commands with the workflow phase:
+
+- **Inner Loop (Active Coding / TDD Red-Green-Refactor)**:
+  - Run **targeted tests only** for the file or module under active development:
+    - Domain & State: `pnpm vitest run path/to/file.test.ts` (~1s)
+    - UI Component: `pnpm vitest run path/to/component.svelte.test.ts --project client`
+  - Do not run full project test suites (`pnpm test:browser` or global `pnpm test`) on intermediate edits.
+  - Rely on `lint-staged` via Git hooks for incremental formatting and linting.
+- **Verification Gate (SDD Verify Phase / ODD Review Gate / Task Completion)**:
+  - Run the full suite to guarantee zero regressions before submitting work:
+    - Type check: `pnpm check`
+    - Lint & style: `pnpm lint`
+    - Full test suite: `pnpm test` (or `pnpm test:unit` and `pnpm test:browser`)
+
 ## Environment & Minimum Versions
 
 | Tool                    | Minimum Version     | Recommended        | Notes                                                  |

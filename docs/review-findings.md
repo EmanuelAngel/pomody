@@ -10,14 +10,6 @@
 
 ---
 
-## 1. Contraste de Color en Etiquetas de Modo (Paleta Rosé Pine)
-
-- **ID Referencia:** JD-05
-- **Ubicación:** `src/lib/components/timer/timer-display.svelte`
-- **Descripción:** Las etiquetas superiores de modo (`FOCUS`, `SHORT BREAK`, `LONG BREAK`) emplean colores de acento directos de Rosé Pine (`--accent-foam` `#56949f`, `--accent-iris` `#907aa9` y `--accent-pine` `#31748f`). En temas claros como _Dawn_ (`#faf4ed`) y oscuros como _Dark_ (`#191724`), el ratio de contraste contra el fondo base ronda entre 3.08:1 y 3.47:1, por debajo del estándar formal WCAG 2.1 AA (4.5:1 para texto menor a 18pt).
-
----
-
 ## 2. Artefacto de Trazado SVG a 0% de Progreso (Punto Fantasma)
 
 - **ID Referencia:** JD-02
@@ -31,14 +23,6 @@
 - **ID Referencia:** JD-13
 - **Ubicación:** `src/lib/components/timer/timer-controls.svelte`
 - **Descripción:** Se utilizan clases utilitarias (`class="size-12"`, `class="size-16"`) combinadas con variantes de tamaño de shadcn-svelte (`size="icon"`, `size="icon-lg"`), así como tamaños fijos en iconos Lucide (`size-5`, `size-7`).
-
----
-
-## 4. Título Dinámico del Documento durante la Cuenta Regresiva
-
-- **ID Referencia:** JD-15
-- **Ubicación:** `src/routes/+page.svelte`
-- **Descripción:** El elemento `<title>` en `<svelte:head>` permanece estático (`Pomody — Minimalist Focus Timer`) y no refleja el tiempo restante ni el modo en ejecución, impidiendo monitorear el temporizador desde la pestaña del navegador.
 
 ---
 
@@ -69,3 +53,37 @@
 - **ID Referencia:** I18N-01
 - **Ubicación:** `src/lib/components/` (layout, settings, timer) y suites de test (`settings.svelte.test.ts`, `timer.svelte.test.ts`)
 - **Descripción:** Evaluar e incorporar soporte bilingüe (EN/ES) usando Paraglide para SvelteKit. Estimación preliminar: riesgo bajo (usando estrategia de estado/storage para no romper SPA estática ni Tauri), dificultad baja (~30 keys), energía baja y tiempo estimado de 3 a 3.5 horas. Requiere especial atención a la actualización y cobertura de tests de UI existentes que asertan copys exactos (`aria-label`, headings, textos de botones).
+
+---
+
+## 11. Contexto y Creación Rápida en Popover de Asignación de Tareas
+
+- **ID Referencia:** UX-03
+- **Ubicación:** `src/lib/components/planning/planning-timeline.svelte`
+- **Descripción:** El popover para asociar tareas a bloques de foco muestra la lista de tareas pendientes pero carece de contexto de reconocimiento inmediato (Heurística #6: _Recognition Rather Than Recall_): no informa el estado actual de la tarea asignada ni qué ocurre si se completa a mitad de bloque. Además, si el backlog está vacío, deja un mensaje pasivo sin ofrecer un input inline para crear una tarea rápidamente desde el mismo popover.
+
+---
+
+## 12. Atajos de Teclado y Drag-and-Drop en Timeline de Planificación
+
+- **ID Referencia:** UX-04
+- **Ubicación:** `src/lib/components/planning/planning-timeline.svelte`
+- **Descripción:** La interacción con el timeline es exclusivamente mediante clics en botones diminutos, sin aceleradores para usuarios avanzados (Heurística #7: _Flexibility and Efficiency of Use_). Se debe dar soporte a navegación por teclado/atajos (e.g. iniciar sesión, saltar bloque) y permitir asignar tareas al timeline arrastrándolas directamente desde la lista de backlog (drag-and-drop).
+
+---
+
+---
+
+## 16. Accesibilidad, Marcado Semántico y Desborde de Medianoche en Timeline
+
+- **ID Referencia:** UX-08
+- **Ubicación:** `src/lib/components/planning/planning-timeline.svelte`
+- **Descripción:** El contenedor del timeline se implementa mediante elementos genéricos `<div>` sin estructura de lista secuencial para tecnologías asistivas, y carece de atributos `aria-current="step"` para indicar el bloque activo (Heurística #1 y WCAG 1.3.1). Además, en el modo "Por Hora Final", seleccionar un horario anterior a la hora actual calcula el término al día siguiente (+24h) de forma transparente pero sin advertencia visual explícita (insignia `+1 día` o `"Mañana, HH:mm"`). Se debe reestructurar el contenedor a `<ol>` y `<li>`, marcar el paso activo y mostrar feedback claro ante cruces de medianoche.
+
+---
+
+## 18. Indicador de Estado y Progreso en Bloque Activo del Timeline
+
+- **ID Referencia:** UX-10
+- **Ubicación:** `src/lib/components/planning/planning-timeline.svelte`
+- **Descripción:** Los bloques del timeline muestran etiquetas pasivas de estado ("Active block", "Upcoming"), pero no reflejan el progreso dinámico ni la cuenta regresiva del intervalo en curso (Heurística #1: _Visibility of System Status_). Para conocer el avance del bloque activo, el usuario se ve forzado a cambiar de pestaña al temporizador principal. Conviene integrar una barra sutil de avance o tiempo restante en la tarjeta del bloque activo sincronizada con el timer.

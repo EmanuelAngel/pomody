@@ -4,9 +4,29 @@ import { userEvent } from 'vitest/browser';
 import PlanningView from './planning-view.svelte';
 import { createTasksState } from '$lib/state/tasks.svelte';
 import { createNavigationState } from '$lib/state/navigation.svelte';
+import { createPlanningState } from '$lib/state/planning.svelte';
+import { createTimerState } from '$lib/state/timer.svelte';
 import type { ITaskRepository } from '$lib/domain/ports/task-repository.port';
 import { sortFocusTasks } from '$lib/domain/ports/task-repository.port';
 import { createFocusTask, toggleFocusTask, type FocusTask } from '$lib/domain/tasks/task.entity';
+import type { ISessionPlanRepository } from '$lib/domain/ports/session-plan-repository.port';
+import type { SessionPlan } from '$lib/domain/planning/session-plan.entity';
+
+class MockSessionPlanRepository implements ISessionPlanRepository {
+	private plan: SessionPlan | null = null;
+
+	async getActivePlan(): Promise<SessionPlan | null> {
+		return this.plan;
+	}
+
+	async saveActivePlan(plan: SessionPlan): Promise<void> {
+		this.plan = plan;
+	}
+
+	async clearActivePlan(): Promise<void> {
+		this.plan = null;
+	}
+}
 
 class MockTaskRepository implements ITaskRepository {
 	private tasks = new Map<string, FocusTask>();
@@ -300,5 +320,331 @@ describe('PlanningView (Client Browser)', () => {
 		await timerNavBtn.click();
 
 		expect(navigationState.activeTab).toBe('timer');
+	});
+
+	it('renders timeline with planningState and 3-metric strip summary display', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, { tasksState, planningState, timerState });
+
+		await expect.element(screen.getByText('Session Timeline')).toBeVisible();
+		await expect.element(screen.getByText('Total Focus')).toBeVisible();
+		await expect.element(screen.getByText('Total Breaks')).toBeVisible();
+		await expect.element(screen.getByText('Estimated Finish')).toBeVisible();
+
+		// Default values: 4 blocks x 25m = 100m -> 1h 40m, breaks: 3 * 5m = 15m
+		await expect.element(screen.getByText('1h 40m')).toBeVisible();
+		await expect.element(screen.getByText('15m')).toBeVisible();
+	});
+
+	it('toggles mode between By Blocks and By End Time', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, { tasksState, planningState, timerState });
+
+		expect(planningState.targetMode).toBe('blocks');
+
+		const byEndTimeBtn = screen.getByRole('button', { name: 'By End Time' });
+		await byEndTimeBtn.click();
+		expect(planningState.targetMode).toBe('end_time');
+
+		// Target finish time input should be visible
+		await expect.element(screen.getByLabelText('Target finish time')).toBeVisible();
+
+		const byBlocksBtn = screen.getByRole('button', { name: 'By Blocks' });
+		await byBlocksBtn.click();
+		expect(planningState.targetMode).toBe('blocks');
+	});
+
+	it('adjusts focus duration and block count via presets and progressive disclosure steppers', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, { tasksState, planningState, timerState });
+
+		// Select 50/10 Foco Profundo preset chip
+		const deepFocusBtn = screen.getByRole('button', { name: /50\/10/i });
+		await deepFocusBtn.click();
+		expect(planningState.focusMinutes).toBe(50);
+		expect(planningState.shortBreakMinutes).toBe(10);
+
+		// Switch back to 25/5 Clásico preset chip
+		const classicBtn = screen.getByRole('button', { name: /25\/5/i });
+		await classicBtn.click();
+		expect(planningState.focusMinutes).toBe(25);
+		expect(planningState.shortBreakMinutes).toBe(5);
+
+		// Expand progressive disclosure panel
+		const customizeBtn = screen.getByRole('button', { name: 'Customize cadence' });
+		await customizeBtn.click();
+
+		// Increase focus duration by 5m via manual stepper
+		const incFocusBtn = screen.getByRole('button', { name: 'Increase focus duration' });
+		await incFocusBtn.click();
+		expect(planningState.focusMinutes).toBe(30);
+
+		// Decrease block count by 1
+		const decBlockBtn = screen.getByRole('button', { name: 'Decrease block count' });
+		await decBlockBtn.click();
+		expect(planningState.blockCount).toBe(3);
+	});
+
+	it('slots task into block via popover and unassigns it', async () => {
+		const task = createFocusTask({ title: 'Task to Assign' });
+		const repo = new MockTaskRepository([task]);
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, { tasksState, planningState, timerState });
+
+		// Click "Assign task" for Focus Block 1
+		const assignBtn = screen.getByRole('button', { name: 'Assign task to focus block 1' });
+		await assignBtn.click();
+
+		// Select task inside popover using its accessible label
+		const taskChoiceBtn = screen.getByRole('button', {
+			name: 'Assign task: Task to Assign'
+		});
+		await taskChoiceBtn.click();
+
+		// Block 1 should now show assigned task in the Session Timeline
+		const planningSection = screen.getByRole('region', { name: 'Session Planning' });
+		await expect.element(planningSection.getByText('Task to Assign')).toBeVisible();
+		expect(planningState.draftTaskAssignments.get(0)).toBe(task.id);
+
+		// Unassign task
+		const unassignBtn = screen.getByRole('button', {
+			name: 'Unassign task from focus block 1'
+		});
+		await unassignBtn.click();
+		expect(planningState.draftTaskAssignments.has(0)).toBe(false);
+	});
+
+	it('slots task into next available focus block from backlog', async () => {
+		const task = createFocusTask({ title: 'Backlog Quick Slot Task' });
+		const repo = new MockTaskRepository([task]);
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, { tasksState, planningState, timerState });
+
+		const quickSlotBtn = screen.getByRole('button', {
+			name: 'Slot task "Backlog Quick Slot Task" into next focus block'
+		});
+		await quickSlotBtn.click();
+
+		expect(planningState.draftTaskAssignments.get(0)).toBe(task.id);
+	});
+
+	it('starts session and navigates to timer tab when clicking Start Session', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		const navigationState = createNavigationState('planning');
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, {
+			tasksState,
+			planningState,
+			timerState,
+			navigationState
+		});
+
+		const startBtn = screen.getByRole('button', { name: 'Start Session' });
+		await expect.element(startBtn).toBeVisible();
+		await startBtn.click();
+
+		expect(planningState.isSessionActive).toBe(true);
+		expect(navigationState.activeTab).toBe('timer');
+	});
+
+	it('renders active session controls and confirms ending session via alert dialog (UX-02)', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		const navigationState = createNavigationState('planning');
+		await tasksState.load();
+		await planningState.load();
+		await planningState.startSession(timerState, tasksState);
+
+		const screen = await render(PlanningView, {
+			tasksState,
+			planningState,
+			timerState,
+			navigationState
+		});
+
+		// Forward-only notice
+		await expect.element(screen.getByText('Forward-only sync:')).toBeVisible();
+
+		// Click End Session Plan trigger
+		const endBtn = screen.getByRole('button', { name: 'End Session Plan' });
+		await expect.element(endBtn).toBeVisible();
+		await endBtn.click();
+
+		// Alert dialog should open with title, description, and action buttons
+		await expect.element(screen.getByText('End Active Session?')).toBeVisible();
+		await expect
+			.element(
+				screen.getByText(
+					'This will cancel your ongoing session plan, clear block progression, and reset the active timer.'
+				)
+			)
+			.toBeVisible();
+
+		// Cancel button dismisses dialog without ending session
+		const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+		await expect.element(cancelBtn).toBeVisible();
+		await cancelBtn.click();
+
+		expect(planningState.isSessionActive).toBe(true);
+
+		// Click End Session Plan trigger again and confirm
+		await endBtn.click();
+		const confirmBtn = screen.getByRole('button', { name: 'End Session', exact: true });
+		await expect.element(confirmBtn).toBeVisible();
+		await confirmBtn.click();
+
+		expect(planningState.isSessionActive).toBe(false);
+	});
+
+	it('displays quick recovery button when time window is insufficient and adjusts to minimum viable window (UX-01)', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		const navigationState = createNavigationState('planning');
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, {
+			tasksState,
+			planningState,
+			timerState,
+			navigationState
+		});
+
+		// Switch to By End Time mode
+		const byEndTimeBtn = screen.getByRole('button', { name: 'By End Time' });
+		await byEndTimeBtn.click();
+		expect(planningState.targetMode).toBe('end_time');
+
+		// Set scheduled start and tight target finish time (10 min < 25 min focus)
+		planningState.setScheduledStartTime('10:00');
+		planningState.setFocusMinutes(25);
+		planningState.setTargetEndTime('10:10');
+
+		// Underflow alert should be visible with quick recovery button
+		await expect
+			.element(screen.getByText('Time window is too short for a full focus block.'))
+			.toBeVisible();
+		const adjustBtn = screen.getByRole('button', { name: /Adjust to minimum/i });
+		await expect.element(adjustBtn).toBeVisible();
+
+		// Clicking recovery button auto-adjusts target end time to fit at least 1 focus block
+		await adjustBtn.click();
+
+		expect(planningState.projectedPlan.blocks.length).toBeGreaterThanOrEqual(1);
+		await expect
+			.element(screen.getByText('Time window is too short for a full focus block.'))
+			.not.toBeInTheDocument();
+	});
+
+	it('keeps duration steppers enabled and allows updating durations during an active session', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		const navigationState = createNavigationState('planning');
+		await tasksState.load();
+		await planningState.load();
+		await planningState.startSession(timerState, tasksState);
+
+		expect(planningState.isSessionActive).toBe(true);
+
+		const screen = await render(PlanningView, {
+			tasksState,
+			planningState,
+			timerState,
+			navigationState
+		});
+
+		// Expand progressive disclosure panel to access manual duration steppers
+		const customizeBtn = screen.getByRole('button', { name: 'Customize cadence' });
+		await customizeBtn.click();
+
+		// Duration steppers should be enabled
+		const incFocusBtn = screen.getByRole('button', { name: 'Increase focus duration' });
+		const decFocusBtn = screen.getByRole('button', { name: 'Decrease focus duration' });
+		const incShortBreakBtn = screen.getByRole('button', { name: 'Increase short break duration' });
+		const decShortBreakBtn = screen.getByRole('button', { name: 'Decrease short break duration' });
+		const incLongBreakBtn = screen.getByRole('button', { name: 'Increase long break duration' });
+		const decLongBreakBtn = screen.getByRole('button', { name: 'Decrease long break duration' });
+		const incIntervalBtn = screen.getByRole('button', { name: 'Increase long break interval' });
+		const decIntervalBtn = screen.getByRole('button', { name: 'Decrease long break interval' });
+
+		await expect.element(incFocusBtn).not.toBeDisabled();
+		await expect.element(decFocusBtn).not.toBeDisabled();
+		await expect.element(incShortBreakBtn).not.toBeDisabled();
+		await expect.element(decShortBreakBtn).not.toBeDisabled();
+		await expect.element(incLongBreakBtn).not.toBeDisabled();
+		await expect.element(decLongBreakBtn).not.toBeDisabled();
+		await expect.element(incIntervalBtn).not.toBeDisabled();
+		await expect.element(decIntervalBtn).not.toBeDisabled();
+
+		// Structural block count steppers should remain disabled
+		const incBlockBtn = screen.getByRole('button', { name: 'Increase block count' });
+		const decBlockBtn = screen.getByRole('button', { name: 'Decrease block count' });
+		await expect.element(incBlockBtn).toBeDisabled();
+		await expect.element(decBlockBtn).toBeDisabled();
+
+		// Test clicking duration steppers updates state forward-only
+		const initialFocus = planningState.focusMinutes;
+		await incFocusBtn.click();
+		expect(planningState.focusMinutes).toBe(initialFocus + 5);
+
+		const initialShortBreak = planningState.shortBreakMinutes;
+		await incShortBreakBtn.click();
+		expect(planningState.shortBreakMinutes).toBe(initialShortBreak + 1);
+
+		const initialLongBreak = planningState.longBreakMinutes;
+		await incLongBreakBtn.click();
+		expect(planningState.longBreakMinutes).toBe(initialLongBreak + 5);
+
+		const initialInterval = planningState.longBreakInterval;
+		await incIntervalBtn.click();
+		expect(planningState.longBreakInterval).toBe(initialInterval + 1);
 	});
 });
