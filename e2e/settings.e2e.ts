@@ -128,7 +128,7 @@ test.describe('Settings Drawer Integration', () => {
 		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dawn');
 	});
 
-	test('preserves ultradian 90/20 cadence configured in planning across settings drawer opening and timer view', async ({
+	test('preserves ultradian 90/20 cadence configured in planning across settings drawer, timer view, and reload', async ({
 		page
 	}) => {
 		// 1. Visit Pomody root
@@ -173,5 +173,15 @@ test.describe('Settings Drawer Integration', () => {
 		const timerTab = page.getByRole('tab', { name: 'Timer' });
 		await timerTab.click();
 		await expect(timerDisplay).toHaveText('90:00');
+
+		// 9. Reload page and verify that interval values above old bounds persist
+		await page.reload();
+		await expect(timerDisplay).toHaveText('90:00');
+
+		// 10. Re-open settings drawer and verify sliders retain 90 min and 20 min
+		await openSettingsButton.click();
+		await expect(settingsHeading).toBeVisible();
+		await expect(focusSlider).toHaveAttribute('aria-valuenow', '90');
+		await expect(shortBreakSlider).toHaveAttribute('aria-valuenow', '20');
 	});
 });

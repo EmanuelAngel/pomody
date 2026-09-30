@@ -233,7 +233,7 @@ describe('LocalSettingsStorage', () => {
 			expect(loaded.theme).toBe(DEFAULT_USER_SETTINGS.theme);
 		});
 
-		it('validates focusDurationSeconds boundary [60, 3600]', () => {
+		it('validates focusDurationSeconds boundary [60, 7200] (up to 120 min)', () => {
 			// Below minimum (59)
 			mockStorage.setItem(
 				SETTINGS_STORAGE_KEY,
@@ -248,17 +248,17 @@ describe('LocalSettingsStorage', () => {
 			);
 			expect(storageAdapter.loadSettings().timer.focusDurationSeconds).toBe(60);
 
-			// Upper bound (3600)
+			// Upper bound (7200)
 			mockStorage.setItem(
 				SETTINGS_STORAGE_KEY,
-				JSON.stringify({ timer: { focusDurationSeconds: 3600 } })
+				JSON.stringify({ timer: { focusDurationSeconds: 7200 } })
 			);
-			expect(storageAdapter.loadSettings().timer.focusDurationSeconds).toBe(3600);
+			expect(storageAdapter.loadSettings().timer.focusDurationSeconds).toBe(7200);
 
-			// Above maximum (3601)
+			// Above maximum (7201)
 			mockStorage.setItem(
 				SETTINGS_STORAGE_KEY,
-				JSON.stringify({ timer: { focusDurationSeconds: 3601 } })
+				JSON.stringify({ timer: { focusDurationSeconds: 7201 } })
 			);
 			expect(storageAdapter.loadSettings().timer.focusDurationSeconds).toBe(1500);
 
@@ -270,7 +270,7 @@ describe('LocalSettingsStorage', () => {
 			expect(storageAdapter.loadSettings().timer.focusDurationSeconds).toBe(1500);
 		});
 
-		it('validates shortBreakDurationSeconds boundary [60, 1800]', () => {
+		it('validates shortBreakDurationSeconds boundary [60, 3600] (up to 60 min)', () => {
 			// Below minimum (59)
 			mockStorage.setItem(
 				SETTINGS_STORAGE_KEY,
@@ -285,22 +285,22 @@ describe('LocalSettingsStorage', () => {
 			);
 			expect(storageAdapter.loadSettings().timer.shortBreakDurationSeconds).toBe(60);
 
-			// Upper bound (1800)
+			// Upper bound (3600)
 			mockStorage.setItem(
 				SETTINGS_STORAGE_KEY,
-				JSON.stringify({ timer: { shortBreakDurationSeconds: 1800 } })
+				JSON.stringify({ timer: { shortBreakDurationSeconds: 3600 } })
 			);
-			expect(storageAdapter.loadSettings().timer.shortBreakDurationSeconds).toBe(1800);
+			expect(storageAdapter.loadSettings().timer.shortBreakDurationSeconds).toBe(3600);
 
-			// Above maximum (1801)
+			// Above maximum (3601)
 			mockStorage.setItem(
 				SETTINGS_STORAGE_KEY,
-				JSON.stringify({ timer: { shortBreakDurationSeconds: 1801 } })
+				JSON.stringify({ timer: { shortBreakDurationSeconds: 3601 } })
 			);
 			expect(storageAdapter.loadSettings().timer.shortBreakDurationSeconds).toBe(300);
 		});
 
-		it('validates longBreakDurationSeconds boundary [60, 3600]', () => {
+		it('validates longBreakDurationSeconds boundary [60, 5400] (up to 90 min)', () => {
 			// Below minimum (59)
 			mockStorage.setItem(
 				SETTINGS_STORAGE_KEY,
@@ -315,19 +315,35 @@ describe('LocalSettingsStorage', () => {
 			);
 			expect(storageAdapter.loadSettings().timer.longBreakDurationSeconds).toBe(60);
 
-			// Upper bound (3600)
+			// Upper bound (5400)
 			mockStorage.setItem(
 				SETTINGS_STORAGE_KEY,
-				JSON.stringify({ timer: { longBreakDurationSeconds: 3600 } })
+				JSON.stringify({ timer: { longBreakDurationSeconds: 5400 } })
 			);
-			expect(storageAdapter.loadSettings().timer.longBreakDurationSeconds).toBe(3600);
+			expect(storageAdapter.loadSettings().timer.longBreakDurationSeconds).toBe(5400);
 
-			// Above maximum (3601)
+			// Above maximum (5401)
 			mockStorage.setItem(
 				SETTINGS_STORAGE_KEY,
-				JSON.stringify({ timer: { longBreakDurationSeconds: 3601 } })
+				JSON.stringify({ timer: { longBreakDurationSeconds: 5401 } })
 			);
 			expect(storageAdapter.loadSettings().timer.longBreakDurationSeconds).toBe(900);
+		});
+
+		it('keeps interval values chosen above the old limits after a reload', () => {
+			storageAdapter.saveSettings({
+				timer: {
+					focusDurationSeconds: 90 * 60,
+					shortBreakDurationSeconds: 45 * 60,
+					longBreakDurationSeconds: 75 * 60,
+					roundsBeforeLongBreak: 4
+				}
+			});
+
+			const reloaded = new LocalSettingsStorage(mockStorage).loadSettings();
+			expect(reloaded.timer.focusDurationSeconds).toBe(90 * 60);
+			expect(reloaded.timer.shortBreakDurationSeconds).toBe(45 * 60);
+			expect(reloaded.timer.longBreakDurationSeconds).toBe(75 * 60);
 		});
 
 		it('validates roundsBeforeLongBreak boundary [1, 12]', () => {
