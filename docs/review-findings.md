@@ -72,20 +72,6 @@
 
 ---
 
-## 14. Depuración de Boilerplate y Redundancia Visual en Tarjetas de Descanso
-
-- **ID Referencia:** UX-06
-- **Ubicación:** `src/lib/components/planning/planning-timeline.svelte`
-- **Descripción:** Las tarjetas de descanso repiten texto genérico de marketing (_"Smart Revitalization: Guided pause: physical reset, mindful breath, or hydration"_) acompañado de íconos `Sparkles` y badges de estado redundantes, generando saturación visual contraria al minimalismo Zen de Pomody (Heurística #8: _Aesthetic and Minimalist Design_). Se debe remover el microcopy repetitivo y simplificar las tarjetas a indicadores sutiles y limpios (_"Short Break · 5m"_).
-
----
-
-## 15. Consistencia de Tokens Rosé Pine en Indicadores y Badges del Timeline
-
-- **ID Referencia:** UX-07
-- **Ubicación:** `src/lib/components/planning/planning-timeline.svelte`
-- **Descripción:** El componente utiliza utilidades directas de Tailwind (`emerald-500`, `emerald-600`, `amber-500`, `amber-600`) para bloques completados, banners y advertencias de margen, violando el sistema de diseño semántico de Rosé Pine (Heurística #4: _Consistency and Standards_). En los temas `dawn` (claro) y `oled` (negro puro), estos colores desentonan con saturación inapropiada. Se deben migrar a tokens semánticos del proyecto (`text-accent-pine`, `bg-accent-pine/10`, `text-accent-gold`, `bg-accent-gold/10` o equivalentes del tema).
-
 ---
 
 ## 16. Accesibilidad, Marcado Semántico y Desborde de Medianoche en Timeline
@@ -93,14 +79,6 @@
 - **ID Referencia:** UX-08
 - **Ubicación:** `src/lib/components/planning/planning-timeline.svelte`
 - **Descripción:** El contenedor del timeline se implementa mediante elementos genéricos `<div>` sin estructura de lista secuencial para tecnologías asistivas, y carece de atributos `aria-current="step"` para indicar el bloque activo (Heurística #1 y WCAG 1.3.1). Además, en el modo "Por Hora Final", seleccionar un horario anterior a la hora actual calcula el término al día siguiente (+24h) de forma transparente pero sin advertencia visual explícita (insignia `+1 día` o `"Mañana, HH:mm"`). Se debe reestructurar el contenedor a `<ol>` y `<li>`, marcar el paso activo y mostrar feedback claro ante cruces de medianoche.
-
----
-
-## 17. Desacople de Jerga Arquitectónica y Documentación Contextual
-
-- **ID Referencia:** UX-09
-- **Ubicación:** `src/lib/components/planning/planning-timeline.svelte`
-- **Descripción:** La pantalla expone notas explicativas sobre el funcionamiento interno del software (_"Forward-only sync: Editing durations or adding blocks applies starting from your next cycle..."_) y términos de ingeniería (_"Free Margin"_, _"Smart Revitalization"_), saturando al usuario con detalles de arquitectura en lugar de documentación sutil bajo demanda (Heurísticas #2 y #10). Se debe reemplazar la terminología por lenguaje natural (_"Tiempo extra / Margen disponible"_, _"Descanso corto/largo"_) y trasladar la explicación técnica a un tooltip de ayuda contextual discreto.
 
 ---
 
