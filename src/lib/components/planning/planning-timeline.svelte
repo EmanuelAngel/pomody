@@ -7,9 +7,10 @@
 	import X from '@lucide/svelte/icons/x';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Minus from '@lucide/svelte/icons/minus';
-	import AlertCircle from '@lucide/svelte/icons/alert-circle';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import * as Popover from '$lib/components/ui/popover';
+	import UnderflowAlert from './underflow-alert.svelte';
+	import EndSessionDialog from './end-session-dialog.svelte';
 	import { cn } from '$lib/utils';
 	import {
 		planningState as defaultPlanningState,
@@ -487,16 +488,8 @@
 			</div>
 		</div>
 
-		<!-- Underflow Warning Banner -->
-		{#if planningState.targetMode === 'end_time' && planningState.projectedPlan.blocks.length === 0}
-			<div
-				role="alert"
-				class="mt-4 flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400"
-			>
-				<AlertCircle class="size-4 shrink-0" />
-				<span>Time window is too short for a full focus block.</span>
-			</div>
-		{/if}
+		<!-- Underflow Warning Banner with Quick Recovery Action (UX-01) -->
+		<UnderflowAlert {planningState} />
 
 		<!-- Chronological Timeline Track -->
 		<div
@@ -806,13 +799,7 @@
 						>
 							Back to timer
 						</button>
-						<button
-							type="button"
-							class="cursor-pointer rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2.5 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/20 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-							onclick={() => planningState.endSession(timerState)}
-						>
-							End Session Plan
-						</button>
+						<EndSessionDialog {planningState} {timerState} />
 					</div>
 
 					<!-- Forward-Only Architecture Badge / Notice -->

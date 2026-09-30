@@ -1104,5 +1104,37 @@ describe('PlanningState', () => {
 			expect(state.longBreakInterval).toBe(12);
 			expect(timer.config.roundsBeforeLongBreak).toBe(12);
 		});
+
+		it('should adjust targetEndTime to minimum viable window when in end_time mode', () => {
+			state.setTargetMode('end_time');
+			state.setScheduledStartTime('10:00');
+			state.setFocusMinutes(25);
+			// Set target end time to only 10 minutes later (insufficient for 25m focus)
+			state.setTargetEndTime('10:10');
+
+			expect(state.projectedPlan.blocks.length).toBe(0);
+
+			state.adjustTargetEndTimeToMinimum();
+
+			// Default minimum duration is Math.max(30, 25) = 30 minutes -> 10:30
+			expect(state.targetEndTime).toBe('10:30');
+			expect(state.projectedPlan.blocks.length).toBeGreaterThanOrEqual(1);
+			expect(state.projectedPlan.blocks[0].mode).toBe('focus');
+		});
+
+		it('should adjust targetEndTime to accommodate larger focus duration', () => {
+			state.setTargetMode('end_time');
+			state.setScheduledStartTime('14:00');
+			state.setFocusMinutes(45);
+			state.setTargetEndTime('14:15');
+
+			expect(state.projectedPlan.blocks.length).toBe(0);
+
+			state.adjustTargetEndTimeToMinimum();
+
+			// Math.max(30, 45) = 45 minutes -> 14:45
+			expect(state.targetEndTime).toBe('14:45');
+			expect(state.projectedPlan.blocks.length).toBe(1);
+		});
 	});
 });

@@ -527,6 +527,23 @@ export class PlanningState {
 		}
 	}
 
+	/**
+	 * Adjusts targetEndTime so the time window accommodates at least one focus block.
+	 * If scheduledStartTime is 'now', base timestamp is current time; otherwise parsed scheduledStartTime.
+	 * Target end time is set to scheduledStart + additionalMinutes (defaults to Math.max(30, focusMinutes)).
+	 */
+	public adjustTargetEndTimeToMinimum(additionalMinutes?: number): void {
+		const startMs =
+			this._scheduledStartTime === 'now'
+				? Date.now()
+				: parseTimeToTimestamp(this._scheduledStartTime);
+		const durationMinutes = additionalMinutes ?? Math.max(30, this._focusMinutes);
+		const targetDate = new SvelteDate(startMs + durationMinutes * 60 * 1000);
+		const hours = String(targetDate.getHours()).padStart(2, '0');
+		const minutes = String(targetDate.getMinutes()).padStart(2, '0');
+		this.setTargetEndTime(`${hours}:${minutes}`);
+	}
+
 	public setScheduledStartTime(timeStr: string): void {
 		if (typeof timeStr === 'string' && timeStr.trim().length > 0) {
 			this._scheduledStartTime = timeStr.trim();
