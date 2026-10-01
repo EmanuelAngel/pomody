@@ -10,7 +10,7 @@
 	let { freeMarginMinutes, class: className = '' }: Props = $props();
 </script>
 
-<div class={cn('group relative', className)}>
+<li class={cn('group relative list-none', className)} aria-label="Available buffer time">
 	<div
 		class="absolute top-2.5 -left-6 flex size-5.5 items-center justify-center rounded-full border border-dashed border-accent-gold/40 bg-accent-gold/10 text-accent-gold"
 	>
@@ -33,4 +33,4 @@
 			Available buffer before scheduled finish
 		</p>
 	</div>
-</div>
+</li>

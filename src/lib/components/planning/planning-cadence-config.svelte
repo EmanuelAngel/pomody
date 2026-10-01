@@ -147,9 +147,19 @@
 		<div class="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-2">
 			<!-- Target Finish Time Input -->
 			<div class="flex flex-col gap-1">
-				<label for="target-end-time" class="text-[11px] font-medium text-muted-foreground">
-					Target Finish Time
-				</label>
+				<div class="flex items-center justify-between">
+					<label for="target-end-time" class="text-[11px] font-medium text-muted-foreground">
+						Target Finish Time
+					</label>
+					{#if planningState.isCrossesMidnight}
+						<span
+							class="rounded bg-accent-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent-gold"
+							title="Finishes next day (past midnight)"
+						>
+							+1 day
+						</span>
+					{/if}
+				</div>
 				<input
 					id="target-end-time"
 					type="time"

@@ -220,6 +220,17 @@ describe('PlanningState', () => {
 			state.setScheduledStartTime('08:30');
 			expect(state.scheduledStartTime).toBe('08:30');
 		});
+
+		it('should detect when session crosses midnight (UX-08)', () => {
+			state.setScheduledStartTime('23:00');
+			state.setFocusMinutes(50);
+			state.setShortBreakMinutes(10);
+			state.setBlockCount(2);
+			expect(state.isCrossesMidnight).toBe(true);
+
+			state.setScheduledStartTime('09:00');
+			expect(state.isCrossesMidnight).toBe(false);
+		});
 	});
 
 	describe('Task slotting in draft mode', () => {

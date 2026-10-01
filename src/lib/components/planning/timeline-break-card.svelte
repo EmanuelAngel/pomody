@@ -4,16 +4,21 @@
 	import Check from '@lucide/svelte/icons/check';
 	import { cn } from '$lib/utils';
 	import type { PlanBlock } from '$lib/domain/planning/session-plan.entity';
+	import type { TimerState } from '$lib/state/timer.svelte';
 
 	interface Props {
 		block: PlanBlock;
+		timerState?: TimerState;
 		class?: string;
 	}
 
-	let { block, class: className = '' }: Props = $props();
+	let { block, timerState, class: className = '' }: Props = $props();
 </script>
 
-<div class={cn('group relative', className)}>
+<li
+	class={cn('group relative list-none', className)}
+	aria-current={block.status === 'in_progress' ? 'step' : undefined}
+>
 	<!-- Left Circular Badge -->
 	<div
 		class={cn(
@@ -59,9 +64,19 @@
 				</span>
 			</div>
 			{#if block.status === 'in_progress'}
-				<span class="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">
-					Active break
-				</span>
+				<div class="flex items-center gap-1.5">
+					{#if timerState}
+						<span
+							class="font-mono text-xs font-semibold text-primary tabular-nums"
+							aria-label="Remaining break time"
+						>
+							{timerState.formattedRemainingTime}
+						</span>
+					{/if}
+					<span class="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">
+						Active break
+					</span>
+				</div>
 			{:else if block.status === 'completed'}
 				<span
 					class="inline-flex items-center gap-1 rounded-full bg-accent-pine/10 px-2 py-0.5 text-[10px] font-medium text-accent-pine"
@@ -79,5 +94,22 @@
 				<span class="text-[11px] text-muted-foreground/60">Upcoming</span>
 			{/if}
 		</div>
+
+		<!-- Active break dynamic progress bar (UX-10) -->
+		{#if block.status === 'in_progress' && timerState}
+			<div
+				class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-primary/15"
+				role="progressbar"
+				aria-valuenow={Math.round(timerState.progress * 100)}
+				aria-valuemin={0}
+				aria-valuemax={100}
+				aria-label="Break progress"
+			>
+				<div
+					class="h-full rounded-full bg-primary transition-all duration-300 ease-out"
+					style="width: {Math.min(100, Math.max(0, timerState.progress * 100))}%"
+				></div>
+			</div>
+		{/if}
 	</div>
-</div>
+</li>

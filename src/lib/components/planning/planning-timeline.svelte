@@ -138,9 +138,19 @@
 			<div>
 				<span class="block text-[11px] font-medium text-muted-foreground">Estimated Finish</span>
 				<div class="flex flex-col items-center">
-					<span class="text-sm font-semibold tracking-tight text-foreground sm:text-base">
-						{planningState.estimatedFinishTime}
-					</span>
+					<div class="flex items-center gap-1.5">
+						<span class="text-sm font-semibold tracking-tight text-foreground sm:text-base">
+							{planningState.estimatedFinishTime}
+						</span>
+						{#if planningState.isCrossesMidnight}
+							<span
+								class="rounded bg-accent-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent-gold"
+								title="Finishes next day (past midnight)"
+							>
+								+1 day
+							</span>
+						{/if}
+					</div>
 					{#if planningState.targetMode === 'end_time' && planningState.freeMarginMinutes > 0}
 						<span
 							class="mt-0.5 inline-block rounded bg-accent-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent-gold"
@@ -155,9 +165,10 @@
 		<!-- Underflow Warning Banner with Quick Recovery Action (UX-01) -->
 		<UnderflowAlert {planningState} />
 
-		<!-- Chronological Timeline Track -->
-		<div
-			class="relative mt-6 space-y-3.5 pl-6 before:absolute before:top-2 before:bottom-2 before:left-2.5 before:w-0.5 before:bg-border/60"
+		<!-- Chronological Timeline Track (Semantic Ordered List UX-08) -->
+		<ol
+			class="relative mt-6 list-none space-y-3.5 pl-6 before:absolute before:top-2 before:bottom-2 before:left-2.5 before:w-0.5 before:bg-border/60"
+			aria-label="Planned session sequence"
 		>
 			{#each planningState.projectedPlan.blocks as block (block.index)}
 				{#if block.mode === 'focus'}
@@ -176,9 +187,10 @@
 							openPopoverBlockIndex = null;
 						}}
 						onUnassignTask={() => planningState.unassignTaskFromBlock(block.index)}
+						{timerState}
 					/>
 				{:else}
-					<TimelineBreakCard {block} />
+					<TimelineBreakCard {block} {timerState} />
 				{/if}
 			{/each}
 
@@ -186,7 +198,7 @@
 			{#if planningState.targetMode === 'end_time' && planningState.projectedPlan.freeMarginSeconds > 0}
 				<TimelineBufferCard freeMarginMinutes={planningState.freeMarginMinutes} />
 			{/if}
-		</div>
+		</ol>
 
 		<!-- Bottom CTA Section -->
 		<div class="mt-6 border-t border-border/40 pt-5">
