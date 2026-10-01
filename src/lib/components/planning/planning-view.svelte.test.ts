@@ -707,4 +707,110 @@ describe('PlanningView (Client Browser)', () => {
 		const badge = screen.getByText('+1 day').first();
 		await expect.element(badge).toBeVisible();
 	});
+
+	it('allows quick task creation and assignment directly from the popover (UX-03)', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		const navigationState = createNavigationState('planning');
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, {
+			tasksState,
+			planningState,
+			timerState,
+			navigationState
+		});
+
+		// Initially backlog is empty
+		expect(tasksState.tasks.length).toBe(0);
+
+		// Open popover for focus block 1
+		const assignBtn = screen.getByRole('button', { name: 'Assign task to focus block 1' });
+		await assignBtn.click();
+
+		// Quick search/add input should be visible
+		const quickInput = screen.getByRole('textbox', {
+			name: 'Search or create task for Focus Block 1'
+		});
+		await expect.element(quickInput).toBeVisible();
+
+		// Type a new task title and submit
+		await quickInput.fill('Implement auth tokens');
+		await userEvent.keyboard('{Enter}');
+
+		// Task should be created in tasksState and assigned to block 0
+		expect(tasksState.tasks.length).toBe(1);
+		expect(tasksState.tasks[0].title).toBe('Implement auth tokens');
+		expect(planningState.projectedPlan.blocks[0].assignedTaskId).toBe(tasksState.tasks[0].id);
+	});
+
+	it('assigns task to timeline focus block via drag and drop (UX-04)', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		const navigationState = createNavigationState('planning');
+		await tasksState.load();
+		await planningState.load();
+
+		const task = await tasksState.createTask('Write integration tests');
+
+		const screen = await render(PlanningView, {
+			tasksState,
+			planningState,
+			timerState,
+			navigationState
+		});
+
+		// Find the timeline block list item for focus block 1
+		const blockItem = screen
+			.getByRole('list', { name: 'Planned session sequence' })
+			.element()
+			.querySelector('li');
+		expect(blockItem).not.toBeNull();
+
+		// Dispatch drop event with task id
+		const dataTransfer = new DataTransfer();
+		dataTransfer.setData('application/x-pomody-task-id', task.id);
+		const dropEvent = new DragEvent('drop', {
+			bubbles: true,
+			cancelable: true,
+			dataTransfer
+		});
+		blockItem?.dispatchEvent(dropEvent);
+
+		// The block should now be assigned to that task
+		expect(planningState.projectedPlan.blocks[0].assignedTaskId).toBe(task.id);
+	});
+
+	it('focuses new task backlog input via keyboard shortcut (UX-04)', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		const navigationState = createNavigationState('planning');
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, {
+			tasksState,
+			planningState,
+			timerState,
+			navigationState
+		});
+
+		const backlogInput = screen.getByRole('textbox', {
+			name: 'Add a new focus task... (Enter to add)'
+		});
+
+		// Press 'n' to trigger focus
+		await userEvent.keyboard('n');
+		await expect.element(backlogInput).toHaveFocus();
+	});
 });

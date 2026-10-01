@@ -4,6 +4,8 @@
 	import Plus from '@lucide/svelte/icons/plus';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
 	import { cn } from '$lib/utils';
 	import { tasksState as defaultTasksState, type TasksState } from '$lib/state/tasks.svelte';
 	import {
@@ -95,23 +97,24 @@
 
 	<!-- Quick Task Capture -->
 	<div class="relative flex items-center">
-		<input
-			type="text"
+		<Input
+			id="new-task-input"
 			placeholder="Add a new focus task... (Enter to add)"
 			aria-label="Add a new focus task... (Enter to add)"
 			bind:value={newTaskTitle}
 			onkeydown={handleInputKeyDown}
-			class="h-10 w-full rounded-xl border border-input/60 bg-muted/30 px-3.5 pr-10 text-sm text-foreground transition-colors placeholder:text-muted-foreground/60 focus:border-ring focus:bg-background focus:ring-1 focus:ring-ring focus:outline-none"
+			class="h-10 pr-10 text-sm"
 		/>
 		{#if newTaskTitle.trim().length > 0}
-			<button
-				type="button"
+			<Button
+				variant="ghost"
+				size="icon-sm"
 				aria-label="Add task"
 				onclick={handleCreateTask}
-				class="absolute right-1.5 flex size-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="absolute right-1 text-muted-foreground hover:text-foreground"
 			>
 				<Plus class="size-4" />
-			</button>
+			</Button>
 		{/if}
 	</div>
 

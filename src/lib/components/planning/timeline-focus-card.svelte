@@ -4,6 +4,8 @@
 	import Plus from '@lucide/svelte/icons/plus';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import * as Popover from '$lib/components/ui/popover';
+	import { Button, buttonVariants } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
 	import { cn } from '$lib/utils';
 	import type { PlanBlock } from '$lib/domain/planning/session-plan.entity';
 	import type { FocusTask } from '$lib/domain/tasks/task.entity';
@@ -18,6 +20,7 @@
 		isPopoverOpen: boolean;
 		onOpenPopoverChange: (open: boolean) => void;
 		onAssignTask: (taskId: string) => void;
+		onCreateAndAssignTask?: (title: string) => void | Promise<void>;
 		onUnassignTask: () => void;
 		timerState?: TimerState;
 		class?: string;
@@ -32,15 +35,82 @@
 		isPopoverOpen,
 		onOpenPopoverChange,
 		onAssignTask,
+		onCreateAndAssignTask,
 		onUnassignTask,
 		timerState,
 		class: className = ''
 	}: Props = $props();
+
+	let isDragOver = $state(false);
+	let quickSearchQuery = $state('');
+
+	const filteredTasks = $derived.by(() => {
+		const q = quickSearchQuery.trim().toLowerCase();
+		if (!q) return pendingTasks;
+		return pendingTasks.filter((t) => t.title.toLowerCase().includes(q));
+	});
+
+	function handleDragOver(e: DragEvent) {
+		const types = e.dataTransfer?.types;
+		if (types?.includes('application/x-pomody-task-id') || types?.includes('text/plain')) {
+			e.preventDefault();
+			if (e.dataTransfer) {
+				e.dataTransfer.dropEffect = 'copy';
+			}
+			isDragOver = true;
+		}
+	}
+
+	function handleDragLeave(e: DragEvent) {
+		const currentTarget = e.currentTarget as HTMLElement | null;
+		const relatedTarget = e.relatedTarget as Node | null;
+		if (!currentTarget || !relatedTarget || !currentTarget.contains(relatedTarget)) {
+			isDragOver = false;
+		}
+	}
+
+	function handleDrop(e: DragEvent) {
+		e.preventDefault();
+		isDragOver = false;
+		const taskId =
+			e.dataTransfer?.getData('application/x-pomody-task-id') ||
+			e.dataTransfer?.getData('text/plain');
+		if (taskId) {
+			onAssignTask(taskId);
+		}
+	}
+
+	async function handleCreateAndAssign() {
+		const trimmed = quickSearchQuery.trim();
+		if (!trimmed) return;
+		if (onCreateAndAssignTask) {
+			await onCreateAndAssignTask(trimmed);
+			quickSearchQuery = '';
+		}
+	}
+
+	function handleQuickInputKeyDown(e: KeyboardEvent) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			const trimmed = quickSearchQuery.trim();
+			if (!trimmed) return;
+			const exactMatch = pendingTasks.find((t) => t.title.toLowerCase() === trimmed.toLowerCase());
+			if (exactMatch) {
+				onAssignTask(exactMatch.id);
+				quickSearchQuery = '';
+			} else {
+				handleCreateAndAssign();
+			}
+		}
+	}
 </script>
 
 <li
 	class={cn('group relative list-none', className)}
 	aria-current={block.status === 'in_progress' ? 'step' : undefined}
+	ondragover={handleDragOver}
+	ondragleave={handleDragLeave}
+	ondrop={handleDrop}
 >
 	<!-- Left Circular Badge -->
 	<div
@@ -72,12 +142,14 @@
 	<!-- Card Body -->
 	<div
 		class={cn(
-			'rounded-xl border p-3 transition-colors',
-			block.status === 'in_progress'
-				? 'border-primary/40 bg-primary/5'
-				: block.status === 'skipped'
-					? 'border-border/30 bg-muted/20 opacity-70'
-					: 'border-border/40 bg-card/60'
+			'rounded-xl border p-3 transition-all duration-150',
+			isDragOver
+				? 'border-primary bg-primary/10 shadow-sm ring-2 ring-primary/40'
+				: block.status === 'in_progress'
+					? 'border-primary/40 bg-primary/5'
+					: block.status === 'skipped'
+						? 'border-border/30 bg-muted/20 opacity-70'
+						: 'border-border/40 bg-card/60'
 		)}
 	>
 		<!-- Header & Status Badge -->
@@ -123,6 +195,14 @@
 			{/if}
 		</div>
 
+		{#if isDragOver}
+			<div
+				class="mt-2.5 flex animate-pulse items-center justify-center rounded-lg border border-dashed border-primary/50 bg-primary/10 py-1.5 text-xs font-medium text-primary"
+			>
+				<span>Drop task to assign to Focus Block {focusIndex}</span>
+			</div>
+		{/if}
+
 		<!-- Task Slot -->
 		<div class="mt-2 flex items-center justify-between gap-2 text-xs">
 			<div class="flex min-w-0 flex-1 items-center gap-1.5">
@@ -144,15 +224,16 @@
 						</span>
 					{/if}
 
-					<button
-						type="button"
+					<Button
+						variant="ghost"
+						size="icon-xs"
 						aria-label={`Unassign task from focus block ${focusIndex}`}
 						title="Unassign task"
 						onclick={onUnassignTask}
-						class="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						class="size-5 shrink-0 text-muted-foreground/60 hover:text-foreground"
 					>
 						<X class="size-3" />
-					</button>
+					</Button>
 				{:else}
 					<span class="text-muted-foreground/70">Unassigned · Free Focus</span>
 				{/if}
@@ -160,9 +241,18 @@
 
 			{#if !block.assignedTaskId}
 				<!-- Assign task Popover -->
-				<Popover.Root open={isPopoverOpen} onOpenChange={onOpenPopoverChange}>
+				<Popover.Root
+					open={isPopoverOpen}
+					onOpenChange={(open) => {
+						if (!open) quickSearchQuery = '';
+						onOpenPopoverChange(open);
+					}}
+				>
 					<Popover.Trigger
-						class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border/50 bg-background/80 px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						class={cn(
+							buttonVariants({ variant: 'outline', size: 'sm' }),
+							'h-7 gap-1 px-2 text-xs font-medium text-muted-foreground hover:text-foreground'
+						)}
 						aria-label={`Assign task to focus block ${focusIndex}`}
 					>
 						<Plus class="size-3" />
@@ -177,18 +267,61 @@
 						<div class="mb-2 text-xs font-semibold text-foreground">
 							Select task for Focus Block {focusIndex}
 						</div>
-						{#if pendingTasks.length === 0}
-							<p class="py-3 text-center text-xs text-muted-foreground">
-								No pending tasks in backlog. Create one or run Free Focus.
-							</p>
+
+						<!-- Quick Task Search / Add Input (UX-03) -->
+						<div class="relative mb-2.5 flex items-center">
+							<Input
+								placeholder="Search or create task... (Enter)"
+								bind:value={quickSearchQuery}
+								onkeydown={handleQuickInputKeyDown}
+								class="h-8 pr-8 text-xs"
+								aria-label={`Search or create task for Focus Block ${focusIndex}`}
+							/>
+							{#if quickSearchQuery.trim().length > 0}
+								<Button
+									variant="ghost"
+									size="icon-xs"
+									aria-label="Create and assign task"
+									onclick={handleCreateAndAssign}
+									class="absolute right-1 text-muted-foreground hover:text-foreground"
+								>
+									<Plus class="size-3.5" />
+								</Button>
+							{/if}
+						</div>
+
+						{#if filteredTasks.length === 0}
+							{#if quickSearchQuery.trim().length > 0}
+								<div class="py-1">
+									<Button
+										variant="outline"
+										size="sm"
+										aria-label={`Create and assign task "${quickSearchQuery.trim()}"`}
+										onclick={handleCreateAndAssign}
+										class="w-full justify-start gap-2 border-dashed border-primary/40 bg-primary/5 text-xs text-primary hover:bg-primary/10 hover:text-primary"
+									>
+										<Plus class="size-3.5 shrink-0" />
+										<span class="truncate font-medium"
+											>Create & assign "{quickSearchQuery.trim()}"</span
+										>
+									</Button>
+								</div>
+							{:else}
+								<p class="py-3 text-center text-xs text-muted-foreground">
+									No pending tasks in backlog. Type above to create one.
+								</p>
+							{/if}
 						{:else}
 							<div class="max-h-56 space-y-1 overflow-y-auto">
-								{#each pendingTasks as task (task.id)}
+								{#each filteredTasks as task (task.id)}
 									<button
 										type="button"
 										aria-label={`Assign task: ${task.title}`}
 										class="flex w-full cursor-pointer items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted focus-visible:outline-none"
-										onclick={() => onAssignTask(task.id)}
+										onclick={() => {
+											onAssignTask(task.id);
+											quickSearchQuery = '';
+										}}
 									>
 										<span class="truncate font-medium text-foreground">
 											{task.title}
@@ -196,6 +329,20 @@
 										<ChevronRight class="size-3 text-muted-foreground/60" />
 									</button>
 								{/each}
+								{#if quickSearchQuery.trim().length > 0 && !filteredTasks.some((t) => t.title.toLowerCase() === quickSearchQuery
+												.trim()
+												.toLowerCase())}
+									<Button
+										variant="ghost"
+										size="sm"
+										aria-label={`Create and assign task "${quickSearchQuery.trim()}"`}
+										onclick={handleCreateAndAssign}
+										class="mt-1.5 w-full justify-start gap-1.5 border border-dashed border-primary/30 bg-primary/5 text-xs text-primary hover:bg-primary/10 hover:text-primary"
+									>
+										<Plus class="size-3" />
+										<span class="truncate">New: "{quickSearchQuery.trim()}"</span>
+									</Button>
+								{/if}
 							</div>
 						{/if}
 					</Popover.Content>

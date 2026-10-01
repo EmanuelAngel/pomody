@@ -3,6 +3,8 @@
 	import Pin from '@lucide/svelte/icons/pin';
 	import Trash from '@lucide/svelte/icons/trash';
 	import CalendarPlus from '@lucide/svelte/icons/calendar-plus';
+	import GripVertical from '@lucide/svelte/icons/grip-vertical';
+	import { Button } from '$lib/components/ui/button';
 	import { cn } from '$lib/utils';
 	import type { FocusTask } from '$lib/domain/tasks/task.entity';
 
@@ -28,6 +30,24 @@
 
 	let isEditing = $state(false);
 	let editingTitle = $state('');
+	let isDragging = $state(false);
+
+	function handleDragStart(e: DragEvent) {
+		if (isEditing) {
+			e.preventDefault();
+			return;
+		}
+		isDragging = true;
+		if (e.dataTransfer) {
+			e.dataTransfer.setData('application/x-pomody-task-id', task.id);
+			e.dataTransfer.setData('text/plain', task.id);
+			e.dataTransfer.effectAllowed = 'copyMove';
+		}
+	}
+
+	function handleDragEnd() {
+		isDragging = false;
+	}
 
 	function startEditing() {
 		editingTitle = task.title;
@@ -78,28 +98,42 @@
 		</div>
 
 		<div class="flex shrink-0 items-center gap-1">
-			<button
-				type="button"
+			<Button
+				variant="ghost"
+				size="icon-xs"
 				aria-label={`Delete task "${task.title}"`}
 				title="Delete task"
 				onclick={() => ondelete?.(task.id)}
-				class="flex size-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/40 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive"
 			>
 				<Trash class="size-3.5" />
-			</button>
+			</Button>
 		</div>
 	</li>
 {:else}
 	<li
+		draggable={!isEditing}
+		ondragstart={handleDragStart}
+		ondragend={handleDragEnd}
 		class={cn(
 			'group flex items-start justify-between gap-3 rounded-xl border px-3 py-2.5 transition-all duration-150',
+			isDragging && 'border-dashed border-primary/50 opacity-40',
+			!isEditing && 'cursor-grab active:cursor-grabbing',
 			isActive
 				? 'border-primary/50 bg-primary/5 shadow-xs'
 				: 'border-border/40 bg-card/40 hover:border-border/80 hover:bg-muted/30'
 		)}
 	>
-		<!-- Left: Checkbox + Title -->
-		<div class="flex min-w-0 flex-1 items-start gap-3">
+		<!-- Left: Grip + Checkbox + Title -->
+		<div class="flex min-w-0 flex-1 items-start gap-2.5">
+			<div
+				class="mt-1 flex size-3.5 shrink-0 items-center justify-center text-muted-foreground/30 transition-colors select-none group-hover:text-muted-foreground/60"
+				aria-hidden="true"
+				title="Drag task to timeline"
+			>
+				<GripVertical class="size-3.5" />
+			</div>
+
 			<button
 				type="button"
 				role="checkbox"
@@ -135,18 +169,20 @@
 		<!-- Right: Quick Slot + Pin Active + Delete -->
 		<div class="-mt-0.5 flex shrink-0 items-center gap-1">
 			{#if onslot}
-				<button
-					type="button"
+				<Button
+					variant="ghost"
+					size="icon-xs"
 					aria-label={`Slot task "${task.title}" into next focus block`}
 					title="Slot into next focus block"
 					onclick={() => onslot?.(task.id)}
-					class="flex size-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+					class="text-muted-foreground/50 hover:text-foreground"
 				>
 					<CalendarPlus class="size-3.5" />
-				</button>
+				</Button>
 			{/if}
-			<button
-				type="button"
+			<Button
+				variant="ghost"
+				size="icon-xs"
 				aria-label={isActive
 					? `Unset active task "${task.title}"`
 					: `Set as active in timer "${task.title}"`}
@@ -154,24 +190,25 @@
 				title={isActive ? 'Active in timer' : 'Set as active in timer'}
 				onclick={() => ontogglepin?.(task.id)}
 				class={cn(
-					'flex size-7 cursor-pointer items-center justify-center rounded-lg transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+					'transition-colors',
 					isActive
-						? 'bg-primary/15 text-primary hover:bg-primary/25'
-						: 'text-muted-foreground/50 hover:bg-muted hover:text-foreground'
+						? 'bg-primary/15 text-primary hover:bg-primary/25 hover:text-primary'
+						: 'text-muted-foreground/50 hover:text-foreground'
 				)}
 			>
 				<Pin class={cn('size-3.5', isActive && 'fill-primary')} />
-			</button>
+			</Button>
 
-			<button
-				type="button"
+			<Button
+				variant="ghost"
+				size="icon-xs"
 				aria-label={`Delete task "${task.title}"`}
 				title="Delete task"
 				onclick={() => ondelete?.(task.id)}
-				class="flex size-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive"
 			>
 				<Trash class="size-3.5" />
-			</button>
+			</Button>
 		</div>
 	</li>
 {/if}
