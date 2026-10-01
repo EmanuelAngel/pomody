@@ -63,19 +63,3 @@
 - **Descripción:** La interacción con el timeline es exclusivamente mediante clics en botones diminutos, sin aceleradores para usuarios avanzados (Heurística #7: _Flexibility and Efficiency of Use_). Se debe dar soporte a navegación por teclado/atajos (e.g. iniciar sesión, saltar bloque) y permitir asignar tareas al timeline arrastrándolas directamente desde la lista de backlog (drag-and-drop).
 
 ---
-
----
-
-## 16. Accesibilidad, Marcado Semántico y Desborde de Medianoche en Timeline
-
-- **ID Referencia:** UX-08
-- **Ubicación:** `src/lib/components/planning/planning-timeline.svelte`
-- **Descripción:** El contenedor del timeline se implementa mediante elementos genéricos `<div>` sin estructura de lista secuencial para tecnologías asistivas, y carece de atributos `aria-current="step"` para indicar el bloque activo (Heurística #1 y WCAG 1.3.1). Además, en el modo "Por Hora Final", seleccionar un horario anterior a la hora actual calcula el término al día siguiente (+24h) de forma transparente pero sin advertencia visual explícita (insignia `+1 día` o `"Mañana, HH:mm"`). Se debe reestructurar el contenedor a `<ol>` y `<li>`, marcar el paso activo y mostrar feedback claro ante cruces de medianoche.
-
----
-
-## 18. Indicador de Estado y Progreso en Bloque Activo del Timeline
-
-- **ID Referencia:** UX-10
-- **Ubicación:** `src/lib/components/planning/planning-timeline.svelte`
-- **Descripción:** Los bloques del timeline muestran etiquetas pasivas de estado ("Active block", "Upcoming"), pero no reflejan el progreso dinámico ni la cuenta regresiva del intervalo en curso (Heurística #1: _Visibility of System Status_). Para conocer el avance del bloque activo, el usuario se ve forzado a cambiar de pestaña al temporizador principal. Conviene integrar una barra sutil de avance o tiempo restante en la tarjeta del bloque activo sincronizada con el timer.

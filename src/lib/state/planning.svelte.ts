@@ -145,15 +145,32 @@ export class PlanningState {
 		return Math.round(breakSeconds / 60);
 	});
 
-	public readonly estimatedFinishTime = $derived.by<string>(() => {
+	public readonly estimatedFinishTimestamp = $derived.by<number>(() => {
 		const plan = this.projectedPlan;
-		const endMs =
+		return (
 			plan.targetEndTimestamp ??
 			(plan.scheduledStartTimestamp ?? Date.now()) +
 				plan.blocks.reduce((acc, b) => acc + b.durationSeconds, 0) * 1000 +
-				plan.freeMarginSeconds * 1000;
+				plan.freeMarginSeconds * 1000
+		);
+	});
 
-		const d = new SvelteDate(endMs);
+	public readonly isCrossesMidnight = $derived.by<boolean>(() => {
+		const plan = this.projectedPlan;
+		const startMs = plan.scheduledStartTimestamp ?? Date.now();
+		const endMs = this.estimatedFinishTimestamp;
+		const startDate = new SvelteDate(startMs);
+		const endDate = new SvelteDate(endMs);
+		return (
+			endDate.getDate() !== startDate.getDate() ||
+			endDate.getMonth() !== startDate.getMonth() ||
+			endDate.getFullYear() !== startDate.getFullYear() ||
+			endMs - startMs >= 24 * 60 * 60 * 1000
+		);
+	});
+
+	public readonly estimatedFinishTime = $derived.by<string>(() => {
+		const d = new SvelteDate(this.estimatedFinishTimestamp);
 		const hours = String(d.getHours()).padStart(2, '0');
 		const minutes = String(d.getMinutes()).padStart(2, '0');
 		return `${hours}:${minutes}`;

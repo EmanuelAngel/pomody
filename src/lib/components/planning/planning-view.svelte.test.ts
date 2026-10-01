@@ -647,4 +647,64 @@ describe('PlanningView (Client Browser)', () => {
 		await incIntervalBtn.click();
 		expect(planningState.longBreakInterval).toBe(initialInterval + 1);
 	});
+
+	it('renders timeline track as semantic ordered list and marks active step with aria-current (UX-08 & UX-10)', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		const navigationState = createNavigationState('planning');
+		await tasksState.load();
+		await planningState.load();
+
+		const screen = await render(PlanningView, {
+			tasksState,
+			planningState,
+			timerState,
+			navigationState
+		});
+
+		// Timeline track is an ordered list with proper label
+		const timelineList = screen.getByRole('list', { name: 'Planned session sequence' });
+		await expect.element(timelineList).toBeVisible();
+
+		// Start session so block 0 is in_progress
+		await planningState.startSession(timerState, tasksState);
+
+		// Active step should have aria-current="step"
+		const activeStep = timelineList.element().querySelector('li[aria-current="step"]');
+		expect(activeStep).not.toBeNull();
+
+		// Active block shows dynamic progress bar (UX-10)
+		await expect
+			.element(screen.getByRole('progressbar', { name: 'Focus block progress' }))
+			.toBeInTheDocument();
+		await expect.element(screen.getByText('Active block')).toBeInTheDocument();
+	});
+
+	it('displays +1 day badge when finish time crosses midnight in end-time mode (UX-08)', async () => {
+		const repo = new MockTaskRepository();
+		const tasksState = createTasksState(repo);
+		const planRepo = new MockSessionPlanRepository();
+		const timerState = createTimerState();
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+		const navigationState = createNavigationState('planning');
+		await tasksState.load();
+		await planningState.load();
+
+		planningState.setTargetMode('end_time');
+		planningState.setScheduledStartTime('23:30');
+		planningState.setTargetEndTime('01:30');
+
+		const screen = await render(PlanningView, {
+			tasksState,
+			planningState,
+			timerState,
+			navigationState
+		});
+
+		const badge = screen.getByText('+1 day').first();
+		await expect.element(badge).toBeVisible();
+	});
 });
