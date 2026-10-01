@@ -40,7 +40,28 @@
 			planningState.load();
 		}
 	});
+
+	function handleWindowKeyDown(e: KeyboardEvent) {
+		const target = e.target as HTMLElement | null;
+		if (
+			target &&
+			(target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+		) {
+			return;
+		}
+
+		if (e.key === 'c' || e.key === 'n') {
+			e.preventDefault();
+			document.getElementById('new-task-input')?.focus();
+		} else if (e.key === 'Escape') {
+			if (!document.querySelector('[role="dialog"], [role="alertdialog"], [data-state="open"]')) {
+				navigationState.setTab('timer');
+			}
+		}
+	}
 </script>
+
+<svelte:window onkeydown={handleWindowKeyDown} />
 
 <div class="mx-auto w-full max-w-5xl space-y-8 px-2 py-4 sm:px-6">
 	<!-- Planning Top Header -->

@@ -186,6 +186,11 @@
 							planningState.assignTaskToBlock(block.index, taskId);
 							openPopoverBlockIndex = null;
 						}}
+						onCreateAndAssignTask={async (title) => {
+							const newTask = await tasksState.createTask(title);
+							planningState.assignTaskToBlock(block.index, newTask.id);
+							openPopoverBlockIndex = null;
+						}}
 						onUnassignTask={() => planningState.unassignTaskFromBlock(block.index)}
 						{timerState}
 					/>
