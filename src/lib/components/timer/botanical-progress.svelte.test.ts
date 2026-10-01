@@ -9,6 +9,8 @@ import {
 	composeScene,
 	getPlantModel,
 	selectFrameIndex,
+	toInkPaths,
+	type InkPath,
 	type PlantModel,
 	type SceneActivity
 } from './plant-models';
@@ -191,6 +193,55 @@ describe('plant model registry', () => {
 		expect(rootExtent(4).widest).toBeGreaterThanOrEqual(6);
 		expect(rootExtent(16).deepest).toBeGreaterThanOrEqual(24);
 		expect(rootExtent(16).widest).toBeGreaterThanOrEqual(16);
+	});
+});
+
+describe('toInkPaths (SVG rendering)', () => {
+	/** Paints the SVG path data back into a grid so it can be compared pixel by pixel. */
+	const rasterize = (paths: readonly InkPath[], width: number, height: number) => {
+		const grid = Array.from({ length: height }, () => Array<string>(width).fill('.'));
+		for (const { ink, d } of paths) {
+			for (const [, x, y, w] of d.matchAll(/M(\d+) (\d+)h(\d+)v1h-\d+z/g)) {
+				for (let i = 0; i < Number(w); i++) {
+					expect(grid[Number(y)][Number(x) + i], 'pixels never overlap').toBe('.');
+					grid[Number(y)][Number(x) + i] = ink;
+				}
+			}
+		}
+		return grid.map((row) => row.join(''));
+	};
+
+	it.each(PLANT_MODELS.map((m) => [m.id, m] as const))(
+		'%s: the SVG reproduces the composed scene exactly',
+		(_, m) => {
+			for (const frameIndex of [0, 4, 8, 12, 16]) {
+				for (const [tick, activity] of [
+					[0, 'calm'],
+					[7, 'calm'],
+					[37, 'break']
+				] as const) {
+					const rows = composeScene(m, {
+						tick,
+						animated: true,
+						activity,
+						frameIndex,
+						harvestAge: null
+					}).rows;
+					const expected = rows.map((row) =>
+						[...row].map((ch) => (ch in m.palette ? ch : '.')).join('')
+					);
+					expect(rasterize(toInkPaths(rows, m.palette), m.width, m.height)).toEqual(expected);
+				}
+			}
+		}
+	);
+
+	it('emits one path per ink and merges horizontal runs', () => {
+		const paths = toInkPaths(['.aa.b', 'aab..'], { a: 'red', b: 'blue' });
+		expect(paths).toEqual([
+			{ ink: 'a', d: 'M1 0h2v1h-2zM0 1h2v1h-2z' },
+			{ ink: 'b', d: 'M4 0h1v1h-1zM2 1h1v1h-1z' }
+		]);
 	});
 });
 
@@ -621,15 +672,20 @@ describe('BotanicalProgress (Client Browser)', () => {
 		timerState.destroy();
 	});
 
-	it('paints the scene onto a pixelated canvas', async () => {
+	it('renders the scene as a crisp, theme-coloured SVG with one path per ink', async () => {
 		const { timerState } = setup();
 		const screen = await render(BotanicalProgress, { timerState });
-		const canvas = screen.container.querySelector('canvas')!;
-		expect(canvas.width).toBe(model.width);
-		expect(canvas.height).toBe(model.height);
-		await expect
-			.poll(() => canvas.getContext('2d')!.getImageData(CENTER, model.groundY + 2, 1, 1).data[3])
-			.toBeGreaterThan(0);
+		const svg = screen.container.querySelector('svg')!;
+		expect(screen.container.querySelector('canvas')).toBeNull();
+		expect(svg.getAttribute('viewBox')).toBe(`0 0 ${model.width} ${model.height}`);
+		expect(svg.getAttribute('shape-rendering')).toBe('crispEdges');
+		await expect.element(screen.getByRole('img')).toBe(svg);
+
+		const paths = [...svg.querySelectorAll('path')];
+		const inks = Object.keys(model.palette).length;
+		expect(paths.length).toBeGreaterThan(5);
+		expect(paths.length).toBeLessThanOrEqual(inks);
+		for (const path of paths) expect(path.style.fill).toMatch(/var\(--|color-mix/);
 		timerState.destroy();
 	});
 

@@ -71,6 +71,39 @@ export function pixelHash(x: number, y: number): number {
 	return ((h ^ (h >>> 16)) >>> 0) % 100;
 }
 
+export interface InkPath {
+	readonly ink: string;
+	/** SVG path data: one closed 1-pixel-tall rectangle per horizontal run of this ink. */
+	readonly d: string;
+}
+
+/**
+ * Turns a composed pixel grid into one SVG path per palette ink, so a scene of thousands of
+ * pixels renders as a couple of dozen DOM nodes. Unknown inks and '.' stay transparent.
+ */
+export function toInkPaths(
+	rows: readonly string[],
+	palette: Readonly<Record<string, string>>
+): InkPath[] {
+	const segments = new Map<string, string[]>();
+	rows.forEach((row, y) => {
+		let x = 0;
+		while (x < row.length) {
+			const ink = row[x];
+			let end = x + 1;
+			while (end < row.length && row[end] === ink) end++;
+			if (ink in palette) {
+				const width = end - x;
+				let list = segments.get(ink);
+				if (!list) segments.set(ink, (list = []));
+				list.push(`M${x} ${y}h${width}v1h-${width}z`);
+			}
+			x = end;
+		}
+	});
+	return [...segments].map(([ink, parts]) => ({ ink, d: parts.join('') }));
+}
+
 export function selectFrameIndex(frameCount: number, growth: number): number {
 	if (frameCount <= 1 || !Number.isFinite(growth) || growth <= 0) return 0;
 	return Math.min(frameCount - 1, Math.floor(growth * (frameCount - 1) + 1e-6));

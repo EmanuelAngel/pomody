@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { MediaQuery, createSubscriber } from 'svelte/reactivity';
 	import { cn } from '$lib/utils';
 	import { getCycleGrowth, isHarvest } from '$lib/domain/botanical/cycle-growth';
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
@@ -7,6 +8,7 @@
 		composeScene,
 		getPlantModel,
 		selectFrameIndex,
+		toInkPaths,
 		type SceneActivity
 	} from './plant-models';
 
@@ -20,12 +22,33 @@
 	const TICK_MS = 250;
 	const HARVEST_TICKS = 16;
 
-	let canvas = $state<HTMLCanvasElement | null>(null);
-	let probe = $state<HTMLSpanElement | null>(null);
-	let colors = $state<Record<string, string> | null>(null);
-	let tick = $state(0);
-	let harvestStart = $state<number | null>(null);
-	let prefersReducedMotion = $state(false);
+	/** Animation clock that only runs while something reads `running` (the visible, animated scene). */
+	class SceneClock {
+		#tick = 0;
+		#subscribe = createSubscriber((update) => {
+			const id = setInterval(() => {
+				if (document.hidden) return;
+				this.#tick++;
+				update();
+			}, TICK_MS);
+			return () => clearInterval(id);
+		});
+
+		get running(): number {
+			this.#subscribe();
+			return this.#tick;
+		}
+
+		get frozen(): number {
+			return this.#tick;
+		}
+	}
+
+	const clock = new SceneClock();
+	const reducedMotion = new MediaQuery('prefers-reduced-motion: reduce');
+	// Growth history lives in plain closure variables: only `growth` drives the derived below.
+	let previousGrowth: number | null = null;
+	let lastHarvest: number | null = null;
 
 	const model = $derived(getPlantModel(timerState.botanicalModel));
 	const growth = $derived(
@@ -40,16 +63,27 @@
 	const activity: SceneActivity = $derived(
 		timerState.isRunning && timerState.mode !== 'focus' ? 'break' : 'calm'
 	);
-	const animated = $derived(!timerState.botanicalStatic && !prefersReducedMotion);
+	const animated = $derived(!timerState.botanicalStatic && !reducedMotion.current);
 	const hiddenInZen = $derived(
 		timerState.isRunning && timerState.mode === 'focus' && timerState.botanicalHideInZen
 	);
+	const tick = $derived(animated && !hiddenInZen ? clock.running : clock.frozen);
+	/** Tick at which the latest cycle restarted from full maturity (the harvest moment). */
+	const harvestStart = $derived.by(() => {
+		const current = growth;
+		if (previousGrowth !== null && isHarvest(previousGrowth, current) && untrack(() => animated)) {
+			lastHarvest = untrack(() => clock.frozen);
+		}
+		previousGrowth = current;
+		return lastHarvest;
+	});
 	const harvestAge = $derived(
 		harvestStart !== null && tick - harvestStart <= HARVEST_TICKS ? tick - harvestStart : null
 	);
 	const scene = $derived(
 		composeScene(model, { tick, animated, activity, frameIndex, harvestAge }).rows
 	);
+	const paths = $derived(toInkPaths(scene, model.palette));
 	const label = $derived(`${model.label}: ${Math.round(growth * 100)}% grown this Pomodoro cycle`);
 
 	// The timer controls sit this far below the viewport centre; the grass line aligns with them.
@@ -80,74 +114,6 @@
 	const sceneTop = $derived(
 		`calc(50vh + ${CONTROLS_OFFSET} - var(--scene-w) * ${(model.groundY + 0.5) / model.width})`
 	);
-
-	$effect(() => {
-		const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-		prefersReducedMotion = query.matches;
-		const onChange = () => (prefersReducedMotion = query.matches);
-		query.addEventListener('change', onChange);
-		return () => query.removeEventListener('change', onChange);
-	});
-
-	$effect(() => {
-		if (!animated || hiddenInZen || !timerState.botanicalEnabled) return;
-		const id = setInterval(() => {
-			if (!document.hidden) tick++;
-		}, TICK_MS);
-		return () => clearInterval(id);
-	});
-
-	let previousGrowth: number | null = null;
-	$effect(() => {
-		const current = growth;
-		if (previousGrowth !== null && isHarvest(previousGrowth, current) && untrack(() => animated)) {
-			harvestStart = untrack(() => tick);
-		}
-		previousGrowth = current;
-	});
-
-	/** Canvas cannot read CSS variables, so each ink is resolved through a hidden probe element. */
-	function resolveColors(el: HTMLElement, palette: Readonly<Record<string, string>>) {
-		const resolved: Record<string, string> = {};
-		for (const [ink, value] of Object.entries(palette)) {
-			el.style.color = value;
-			resolved[ink] = getComputedStyle(el).color;
-		}
-		return resolved;
-	}
-
-	$effect(() => {
-		const el = probe;
-		const palette = model.palette;
-		if (!el) return;
-		colors = resolveColors(el, palette);
-		const observer = new MutationObserver(() => (colors = resolveColors(el, palette)));
-		observer.observe(document.documentElement, {
-			attributes: true,
-			attributeFilter: ['data-theme', 'class']
-		});
-		return () => observer.disconnect();
-	});
-
-	$effect(() => {
-		const ctx = canvas?.getContext('2d');
-		if (!ctx || !colors) return;
-		ctx.clearRect(0, 0, model.width, model.height);
-		scene.forEach((row, y) => {
-			let x = 0;
-			while (x < row.length) {
-				const ink = row[x];
-				let end = x + 1;
-				while (end < row.length && row[end] === ink) end++;
-				const color = colors![ink];
-				if (color) {
-					ctx.fillStyle = color;
-					ctx.fillRect(x, y, end - x, 1);
-				}
-				x = end;
-			}
-		});
-	});
 </script>
 
 {#if timerState.botanicalEnabled}
@@ -166,16 +132,18 @@
 			className
 		)}
 	>
-		<span bind:this={probe} class="hidden" aria-hidden="true"></span>
-		<div role="img" aria-label={label}>
-			<canvas
-				bind:this={canvas}
-				aria-hidden="true"
-				width={model.width}
-				height={model.height}
-				class="block h-auto [image-rendering:pixelated]"
-				style:width="var(--scene-w)"
-			></canvas>
-		</div>
+		<!-- one viewBox unit = one art pixel; crispEdges keeps the pixel art sharp when scaled -->
+		<svg
+			role="img"
+			aria-label={label}
+			viewBox="0 0 {model.width} {model.height}"
+			shape-rendering="crispEdges"
+			class="block h-auto"
+			style:width="var(--scene-w)"
+		>
+			{#each paths as path (path.ink)}
+				<path d={path.d} style:fill={model.palette[path.ink]} />
+			{/each}
+		</svg>
 	</div>
 {/if}

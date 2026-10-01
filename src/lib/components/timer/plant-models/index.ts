@@ -10,7 +10,7 @@ export type {
 	SceneState,
 	IdleInk
 } from './types';
-export { composeScene, selectFrameIndex } from './pixel-canvas';
+export { composeScene, selectFrameIndex, toInkPaths, type InkPath } from './pixel-canvas';
 
 /** Registry of selectable plant models. Register new models here; the first is the fallback. */
 export const PLANT_MODELS: readonly PlantModel[] = Object.freeze([seedToTree, gymGains]);

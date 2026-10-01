@@ -32,29 +32,11 @@
 		portalProps
 	}: Props = $props();
 
-	// Local reactive override state for slider adjustments
-	let localFocus = $state<number | null>(null);
-	let localShortBreak = $state<number | null>(null);
-	let localLongBreak = $state<number | null>(null);
-	let localRounds = $state<number | null>(null);
-
-	// Derived values defaulting to timerState config
-	const focusMinutes = $derived(
-		localFocus !== null ? localFocus : Math.round(timerState.config.focusDurationSeconds / 60)
-	);
-	const shortBreakMinutes = $derived(
-		localShortBreak !== null
-			? localShortBreak
-			: Math.round(timerState.config.shortBreakDurationSeconds / 60)
-	);
-	const longBreakMinutes = $derived(
-		localLongBreak !== null
-			? localLongBreak
-			: Math.round(timerState.config.longBreakDurationSeconds / 60)
-	);
-	const roundsBeforeLongBreak = $derived(
-		localRounds !== null ? localRounds : timerState.roundsBeforeLongBreak
-	);
+	// Slider values follow the timer config; a drag overrides them until the config changes again.
+	let focusMinutes = $derived(Math.round(timerState.config.focusDurationSeconds / 60));
+	let shortBreakMinutes = $derived(Math.round(timerState.config.shortBreakDurationSeconds / 60));
+	let longBreakMinutes = $derived(Math.round(timerState.config.longBreakDurationSeconds / 60));
+	let roundsBeforeLongBreak = $derived(timerState.roundsBeforeLongBreak);
 
 	const defaultFocus = Math.round(DEFAULT_TIMER_CONFIG.focusDurationSeconds / 60);
 	const defaultShort = Math.round(DEFAULT_TIMER_CONFIG.shortBreakDurationSeconds / 60);
@@ -62,19 +44,9 @@
 	const defaultRounds = DEFAULT_TIMER_CONFIG.roundsBeforeLongBreak;
 	const resetLabel = `Reset to defaults (${defaultFocus} / ${defaultShort} / ${defaultLong} min · ${defaultRounds} rounds)`;
 
-	// Clear temporary slider overrides whenever drawer opens
-	$effect(() => {
-		if (open) {
-			localFocus = null;
-			localShortBreak = null;
-			localLongBreak = null;
-			localRounds = null;
-		}
-	});
-
 	function handleFocusChange(val: number) {
 		if (Number.isInteger(val) && val >= 1 && val <= 120) {
-			localFocus = val;
+			focusMinutes = val;
 			if (timerState.config.focusDurationSeconds !== val * 60) {
 				timerState.updateConfig({ focusDurationSeconds: val * 60 });
 			}
@@ -83,7 +55,7 @@
 
 	function handleShortBreakChange(val: number) {
 		if (Number.isInteger(val) && val >= 1 && val <= 60) {
-			localShortBreak = val;
+			shortBreakMinutes = val;
 			if (timerState.config.shortBreakDurationSeconds !== val * 60) {
 				timerState.updateConfig({ shortBreakDurationSeconds: val * 60 });
 			}
@@ -92,7 +64,7 @@
 
 	function handleLongBreakChange(val: number) {
 		if (Number.isInteger(val) && val >= 1 && val <= 90) {
-			localLongBreak = val;
+			longBreakMinutes = val;
 			if (timerState.config.longBreakDurationSeconds !== val * 60) {
 				timerState.updateConfig({ longBreakDurationSeconds: val * 60 });
 			}
@@ -101,7 +73,7 @@
 
 	function handleRoundsChange(val: number) {
 		if (Number.isInteger(val) && val >= 1 && val <= 12) {
-			localRounds = val;
+			roundsBeforeLongBreak = val;
 			if (timerState.config.roundsBeforeLongBreak !== val) {
 				timerState.updateConfig({ roundsBeforeLongBreak: val });
 			}
@@ -109,10 +81,6 @@
 	}
 
 	function handleResetDefaults() {
-		localFocus = null;
-		localShortBreak = null;
-		localLongBreak = null;
-		localRounds = null;
 		timerState.updateConfig({
 			focusDurationSeconds: DEFAULT_TIMER_CONFIG.focusDurationSeconds,
 			shortBreakDurationSeconds: DEFAULT_TIMER_CONFIG.shortBreakDurationSeconds,

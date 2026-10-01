@@ -11,7 +11,7 @@ La escena es una **recompensa periférica**: muestra en qué punto del ciclo Pom
 - **Progreso = posición en el ciclo**, no logros acumulados. Empieza en cero al comenzar un ciclo y llega a su estado final justo en el descanso largo.
 - **Solo crece**: ningún frame puede verse más chico o más vacío que el anterior.
 - **Viva pero calma**: animación a pocos cuadros por segundo, nunca un bucle a 60 FPS.
-- **Cero bloat**: un `<canvas>` pequeño, sin assets externos, sin dependencias nuevas. Meta global de la app: < 30 MB de RAM.
+- **Cero bloat**: un `<svg>` inline (XML) con un `<path>` por tinta, sin assets externos ni dependencias nuevas. Meta global de la app: < 30 MB de RAM.
 - **Tema visual único**: todos los colores salen de tokens Rosé Pine y se adaptan a los temas Dark, Dawn y OLED.
 
 ---
@@ -20,10 +20,10 @@ La escena es una **recompensa periférica**: muestra en qué punto del ciclo Pom
 
 ```text
 src/lib/domain/botanical/cycle-growth.ts         # Regla pura: ciclo → crecimiento 0..1
-src/lib/components/timer/botanical-progress.svelte # Host: tamaño, posición, reloj, canvas
+src/lib/components/timer/botanical-progress.svelte # Host: tamaño, posición, reloj, render SVG
 src/lib/components/timer/plant-models/
 ├── types.ts          # Contrato PlantModel, SceneActor, SceneState
-├── pixel-canvas.ts   # PixelCanvas (primitivas), composeScene (pura), selectFrameIndex
+├── pixel-canvas.ts   # PixelCanvas (primitivas), composeScene (pura), toInkPaths (grilla → SVG), selectFrameIndex
 ├── fauna.ts          # Actores reutilizables (mariposas, abejas, pájaros, etc.)
 ├── island.ts         # Silueta compartida de la isla flotante (islandShape)
 ├── seed-to-tree.ts   # Modelo de referencia orgánico (protagonista en los frames)
@@ -38,7 +38,8 @@ TimerState (mode, currentRound, progress, roundsBeforeLongBreak)
   → getCycleGrowth()            → growth 0..1
   → selectFrameIndex()          → índice de frame
   → composeScene(model, state)  → grilla de caracteres (frame + píxeles idle + actores)
-  → canvas 2D a resolución nativa, escalado con image-rendering: pixelated
+  → toInkPaths(rows, palette)  → un <path> por tinta (tiras horizontales de 1 px)
+  → <svg viewBox="0 0 ancho alto" shape-rendering="crispEdges">, fill con tokens del tema
 ```
 
 ### Regla de crecimiento (dominio, no modificar por modelo)
@@ -94,7 +95,7 @@ Los frames son `string[]`: cada carácter es un píxel. Se construyen con primit
 
 ## 4. Estilo de Arte
 
-- **Pixel art puro**: píxeles cuadrados y nítidos (`image-rendering: pixelated`), sin antialiasing, degradados ni desenfoques dentro del canvas.
+- **Pixel art puro**: píxeles cuadrados y nítidos (`shape-rendering="crispEdges"`, una unidad del `viewBox` = un píxel de arte), sin antialiasing, degradados ni desenfoques dentro de la escena.
 - **Detalle orgánico determinista**: los bordes irregulares, las hojas sueltas y la textura usan `pixelHash(x, y)`. Nunca `Math.random()`: la imagen debe ser idéntica en cada render.
 - **Volumen con 3 tonos** por material (sombra, medio, luz). Ejemplo del follaje: `G` sombra, `g` medio, `l`/`f` luz. La luz viene de arriba a la izquierda.
 - **Masas en grupos**: follajes y arbustos se arman con muchos grupos elípticos superpuestos (`drawCluster`), dibujados de atrás hacia adelante, con bordes rotos y hojas sueltas en el contorno.
@@ -233,7 +234,9 @@ Referencia de alturas en `seed-to-tree` (filas sobre el suelo, frames 0–16):
 | Model               | `seed-to-tree` | Desplegable del registro; ids desconocidos → primer modelo. |
 | Static plant        | off            | Congela la animación y la fauna.                            |
 
-- `role="img"` en un contenedor con `aria-label` = `"<label>: N% grown this Pomodoro cycle"`. El `<canvas>` va con `aria-hidden`.
+- `role="img"` en el `<svg>` con `aria-label` = `"<label>: N% grown this Pomodoro cycle"`.
+- **Render en SVG**: los `fill` usan los tokens (`var(--accent-pine)`, `color-mix(...)`) directamente, así que el cambio de tema es instantáneo sin resolver colores en JS. El DOM se mantiene chico (≈ 15–30 `<path>` por escena) aunque el lienzo tenga miles de píxeles.
+- El reloj de animación es un `SceneClock` con `createSubscriber` (`svelte/reactivity`): solo corre mientras la escena visible lo lee; `prefers-reduced-motion` se lee con `MediaQuery`.
 - `prefers-reduced-motion` equivale a Static plant.
 
 ---
