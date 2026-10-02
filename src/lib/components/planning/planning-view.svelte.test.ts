@@ -970,5 +970,69 @@ describe('PlanningView (Client Browser)', () => {
 			await expect.element(timelineHeading).toBeVisible();
 			await expect.element(screen.getByText('Total Focus')).toBeVisible();
 		});
+
+		it('switches segment to breaks via "b" keyboard shortcut and returns to tasks via "c" or "n"', async () => {
+			const task = createFocusTask({ title: 'Important Feature Task' });
+			const tasksRepo = new MockTaskRepository([task]);
+			const tasksState = createTasksState(tasksRepo);
+
+			const habit = createBreakActivity({
+				id: 'break-habit-1',
+				title: 'Hydration Sip & Stretch',
+				category: 'hydration',
+				durationMinutes: 2,
+				isPreset: true
+			});
+			const breaksRepo = new MockBreakActivityRepository([habit]);
+			const breaksState = createBreaksState(breaksRepo);
+
+			await tasksState.load();
+			await breaksState.load();
+
+			const screen = await render(PlanningView, { tasksState, breaksState });
+
+			const tasksSegment = screen.getByRole('radio', { name: /Tasks/i });
+			const breaksSegment = screen.getByRole('radio', { name: /Break Habits/i });
+
+			// Initial state: Tasks Backlog is visible
+			expect(tasksSegment.element().getAttribute('aria-checked')).toBe('true');
+			expect(breaksSegment.element().getAttribute('aria-checked')).toBe('false');
+			await expect.element(screen.getByText('Important Feature Task')).toBeVisible();
+
+			// Press 'b' to switch to break habits
+			await userEvent.keyboard('b');
+
+			expect(breaksSegment.element().getAttribute('aria-checked')).toBe('true');
+			expect(tasksSegment.element().getAttribute('aria-checked')).toBe('false');
+			await expect.element(screen.getByText('Hydration Sip & Stretch')).toBeVisible();
+			await expect.element(screen.getByText('Important Feature Task')).not.toBeInTheDocument();
+
+			// Press 'c' to switch back to tasks (which focuses new-task-input)
+			await userEvent.keyboard('c');
+
+			expect(tasksSegment.element().getAttribute('aria-checked')).toBe('true');
+			expect(breaksSegment.element().getAttribute('aria-checked')).toBe('false');
+			await expect.element(screen.getByText('Important Feature Task')).toBeVisible();
+			await expect.element(screen.getByText('Hydration Sip & Stretch')).not.toBeInTheDocument();
+
+			// Verify input guard: pressing 'b' while input is focused does not switch segment
+			const input = document.getElementById('new-task-input') as HTMLInputElement | null;
+			expect(input).not.toBeNull();
+			await userEvent.keyboard('b');
+			expect(tasksSegment.element().getAttribute('aria-checked')).toBe('true');
+
+			// Blur input so global shortcut is enabled again
+			input?.blur();
+
+			// Press 'b' again to switch to breaks
+			await userEvent.keyboard('b');
+			expect(breaksSegment.element().getAttribute('aria-checked')).toBe('true');
+			expect(tasksSegment.element().getAttribute('aria-checked')).toBe('false');
+
+			// Press 'n' to switch back to tasks
+			await userEvent.keyboard('n');
+			expect(tasksSegment.element().getAttribute('aria-checked')).toBe('true');
+			await expect.element(screen.getByText('Important Feature Task')).toBeVisible();
+		});
 	});
 });

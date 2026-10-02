@@ -70,6 +70,9 @@
 			requestAnimationFrame(() => {
 				document.getElementById('new-task-input')?.focus();
 			});
+		} else if (e.key === 'b') {
+			e.preventDefault();
+			activeRightSegment = 'breaks';
 		} else if (e.key === 'Escape') {
 			if (!document.querySelector('[role="dialog"], [role="alertdialog"], [data-state="open"]')) {
 				navigationState.setTab('timer');

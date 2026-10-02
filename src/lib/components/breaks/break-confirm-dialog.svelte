@@ -33,9 +33,11 @@
 		isClosedByAction = true;
 		try {
 			await onConfirm();
-			open = false;
-		} finally {
 			isProcessing = false;
+			open = false;
+		} catch (error) {
+			isProcessing = false;
+			throw error;
 		}
 	}
 
