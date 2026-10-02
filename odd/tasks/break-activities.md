@@ -59,10 +59,10 @@ During session planning and break transitions, users need ready-to-use, restorat
   - Applicable checks: `pnpm test:browser src/lib/components/breaks/` (33/33 tests passed)
   - Evidence: Commit `19cf063` (`feat(ui): add break habit CRUD dialogs and domain validation (#53)`) and Commit `ef78e60` (`refactor(breaks): compose with shadcn-svelte dialog, badge, and form primitives`)
 
-- [ ] **TASK-4**: Integrate catalog segment switch in Planning view (Issue #54)
+- [x] **TASK-4**: Integrate catalog segment switch in Planning view (Issue #54)
   - Route: delegated direct (writer trigger: `planning-view.svelte`, state wiring, and tests)
-  - Applicable checks: `pnpm test:browser src/lib/components/planning/`
-  - Evidence: Pending
+  - Applicable checks: `pnpm test:browser src/lib/components/planning/` (28/28 tests passed)
+  - Evidence: Commit `df18395` (`feat(planning): integrate break habits catalog segment switch (#54)`)
 
 - [ ] **TASK-5**: End-to-end verification, type check, lint & build
   - Route: direct inline (bounded verification check)
