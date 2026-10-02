@@ -26,13 +26,13 @@ During session planning and break transitions, users need ready-to-use, restorat
 
 ## Acceptance Criteria
 
-- [ ] `BreaksState` supports reactive CRUD mutations (`saveActivity`, `deleteActivity`, `resetToDefaults`) with 100% unit test coverage.
-- [ ] Presets are protected against modification or deletion in state and UI.
-- [ ] Catalog provides fluid filtering by category with dynamic counts and clean empty states.
-- [ ] Custom habit creation and edition forms enforce domain validation rules.
-- [ ] Destructive actions (deletion and reset to defaults) require explicit confirmation via accessible dialog.
-- [ ] Planning view smoothly toggles between tasks and break habits in the right lateral column.
-- [ ] Full quality gates pass: `pnpm check` (0 errors), `pnpm lint` (0 errors), `pnpm test` (unit + browser 100% passing).
+- [x] `BreaksState` supports reactive CRUD mutations (`saveActivity`, `deleteActivity`, `resetToDefaults`) with 100% unit test coverage.
+- [x] Presets are protected against modification or deletion in state and UI.
+- [x] Catalog provides fluid filtering by category with dynamic counts and clean empty states.
+- [x] Custom habit creation and edition forms enforce domain validation rules.
+- [x] Destructive actions (deletion and reset to defaults) require explicit confirmation via accessible dialog.
+- [x] Planning view smoothly toggles between tasks and break habits in the right lateral column.
+- [x] Full quality gates pass: `pnpm check` (0 errors), `pnpm lint` (0 errors), `pnpm test` (unit + browser 100% passing).
 
 ## Configuration & Environment
 
@@ -64,7 +64,7 @@ During session planning and break transitions, users need ready-to-use, restorat
   - Applicable checks: `pnpm test:browser src/lib/components/planning/` (28/28 tests passed)
   - Evidence: Commit `df18395` (`feat(planning): integrate break habits catalog segment switch (#54)`)
 
-- [ ] **TASK-5**: End-to-end verification, type check, lint & build
+- [x] **TASK-5**: End-to-end verification, type check, lint & build
   - Route: direct inline (bounded verification check)
-  - Applicable checks: `pnpm check`, `pnpm lint`, `pnpm test`, `pnpm build`
-  - Evidence: Pending
+  - Applicable checks: `pnpm check` (0 errors), `pnpm lint` (0 errors), `pnpm test` (674/674 passed in 34 files), `pnpm build` (clean SPA build in 13.5s)
+  - Evidence: Verified clean on branch `feat/break-activities`
