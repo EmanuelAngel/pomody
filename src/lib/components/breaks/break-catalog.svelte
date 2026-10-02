@@ -216,7 +216,7 @@
 			<p class="text-xs font-medium text-muted-foreground">Loading break activities...</p>
 		</div>
 	{:else if filteredActivities.length > 0}
-		<div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+		<div class="grid grid-cols-1 gap-2.5">
 			{#each filteredActivities as activity (activity.id)}
 				<BreakCard {activity} {actions} onEdit={handleEditHabit} onDelete={handleDeleteHabit} />
 			{/each}
