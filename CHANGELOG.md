@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.7.0...pomody-v0.8.0) (2026-10-02)
+
+
+### Features
+
+* **breaks:** break activities catalog and custom management UI ([#36](https://github.com/EmanuelAngel/pomody/issues/36)) ([#78](https://github.com/EmanuelAngel/pomody/issues/78)) ([15a086c](https://github.com/EmanuelAngel/pomody/commit/15a086c9c1fc941818a16bd874ec844d4ea7feda))
+
 ## [0.7.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.6.1...pomody-v0.7.0) (2026-10-02)
 
 
