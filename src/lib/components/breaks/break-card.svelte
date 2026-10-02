@@ -40,6 +40,7 @@
 
 <article
 	data-slot="break-card"
+	data-preset={activity.isPreset}
 	class={cn(
 		'group flex flex-col justify-between rounded-xl border border-border/50 bg-card p-3.5 shadow-xs transition-colors hover:border-border/80',
 		className
@@ -71,19 +72,6 @@
 				>
 					<Clock data-icon="inline-start" class="opacity-70" />
 					<span>{activity.durationMinutes}m</span>
-				</Badge>
-
-				<!-- Status Badge: System Preset vs Custom Habit -->
-				<Badge
-					variant="outline"
-					class={cn(
-						'text-[10px] tracking-wide uppercase',
-						activity.isPreset
-							? 'border-border/40 bg-muted/30 text-muted-foreground/80'
-							: 'border-accent-rose/40 bg-accent-rose/10 text-accent-rose'
-					)}
-				>
-					{activity.isPreset ? 'Preset' : 'Custom'}
 				</Badge>
 			</div>
 

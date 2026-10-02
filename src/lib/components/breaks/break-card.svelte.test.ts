@@ -30,13 +30,13 @@ const hydrationActivity: BreakActivity = createBreakActivity({
 });
 
 describe('BreakCard (Client Browser)', () => {
-	it('renders physical activity with gold accent badge, duration pill, and preset status', async () => {
+	it('renders physical activity with gold accent badge, duration pill, and no redundant preset badge', async () => {
 		const screen = await render(BreakCard, { activity: physicalActivity });
 
 		await expect.element(screen.getByText('Neck & Shoulder Release')).toBeVisible();
 		await expect.element(screen.getByText('Physical')).toBeVisible();
 		await expect.element(screen.getByText('2m')).toBeVisible();
-		await expect.element(screen.getByText('Preset')).toBeVisible();
+		await expect.element(screen.getByText('Preset')).not.toBeInTheDocument();
 
 		const badge = screen.getByText('Physical').element().parentElement;
 		expect(badge?.className).toContain('text-accent-gold');
@@ -44,13 +44,13 @@ describe('BreakCard (Client Browser)', () => {
 		expect(badge?.className).toContain('border-accent-gold/40');
 	});
 
-	it('renders mindful activity with iris accent badge and custom status', async () => {
+	it('renders mindful activity with iris accent badge without redundant status badge', async () => {
 		const screen = await render(BreakCard, { activity: mindfulActivity });
 
 		await expect.element(screen.getByText('Box Breathing Focus')).toBeVisible();
 		await expect.element(screen.getByText('Mindful')).toBeVisible();
 		await expect.element(screen.getByText('3m')).toBeVisible();
-		await expect.element(screen.getByText('Custom')).toBeVisible();
+		await expect.element(screen.getByText('Custom')).not.toBeInTheDocument();
 
 		const badge = screen.getByText('Mindful').element().parentElement;
 		expect(badge?.className).toContain('text-accent-iris');
