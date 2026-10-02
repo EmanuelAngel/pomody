@@ -49,10 +49,10 @@ During session planning and break transitions, users need ready-to-use, restorat
   - Applicable checks: `pnpm test:unit src/lib/state/breaks.test.ts` (23/23 tests passed)
   - Evidence: Commit `e28cae6` (`feat(state): add reactive CRUD mutations to BreaksState (#51)`)
 
-- [ ] **TASK-2**: Read-only catalog components and expandable break cards (Issue #52)
+- [x] **TASK-2**: Read-only catalog components and expandable break cards (Issue #52)
   - Route: delegated direct (writer trigger: `break-card.svelte`, `break-catalog.svelte`, and browser tests)
-  - Applicable checks: `pnpm test:browser src/lib/components/breaks/`
-  - Evidence: Pending
+  - Applicable checks: `pnpm test:browser src/lib/components/breaks/` (13/13 tests passed)
+  - Evidence: Commit `612190d` (`feat(ui): implement read-only break card and catalog components (#52)`)
 
 - [ ] **TASK-3**: Custom habits CRUD dialogs and domain validation (Issue #53)
   - Route: delegated direct (writer trigger: `break-form-dialog.svelte`, `break-confirm-dialog.svelte`, contextual actions, browser tests)
