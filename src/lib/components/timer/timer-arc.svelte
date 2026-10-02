@@ -35,7 +35,7 @@
 <div
 	class="relative flex aspect-square w-full max-w-[360px] items-center justify-center sm:max-w-[400px]"
 >
-	<svg viewBox="0 0 320 320" class="size-full -rotate-0 transform" aria-hidden="true">
+	<svg viewBox="0 0 320 320" class="size-full" aria-hidden="true">
 		<!-- Dimmed background track -->
 		<circle
 			cx="160"
