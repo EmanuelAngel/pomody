@@ -5,16 +5,20 @@
 	import Droplet from '@lucide/svelte/icons/droplet';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Clock from '@lucide/svelte/icons/clock';
+	import Pencil from '@lucide/svelte/icons/pencil';
+	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import { cn } from '$lib/utils';
 	import type { BreakActivity, BreakCategory } from '$lib/domain/breaks/break-activity.entity';
 
 	interface Props {
 		activity: BreakActivity;
 		actions?: Snippet<[BreakActivity]>;
+		onEdit?: (activity: BreakActivity) => void;
+		onDelete?: (activity: BreakActivity) => void;
 		class?: string;
 	}
 
-	let { activity, actions, class: className = '' }: Props = $props();
+	let { activity, actions, onEdit, onDelete, class: className = '' }: Props = $props();
 
 	let isExpanded = $state(false);
 
@@ -80,8 +84,31 @@
 				</span>
 			</div>
 
-			<!-- Right side: Optional actions snippet and expandable guide toggle -->
+			<!-- Right side: Optional actions snippet, Edit/Delete (custom habits only), and expandable guide toggle -->
 			<div class="flex items-center gap-1">
+				{#if !activity.isPreset}
+					{#if onEdit}
+						<button
+							type="button"
+							aria-label={`Edit habit: ${activity.title}`}
+							onclick={() => onEdit(activity)}
+							class="inline-flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						>
+							<Pencil class="size-3.5" />
+						</button>
+					{/if}
+					{#if onDelete}
+						<button
+							type="button"
+							aria-label={`Delete habit: ${activity.title}`}
+							onclick={() => onDelete(activity)}
+							class="inline-flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						>
+							<Trash2 class="size-3.5" />
+						</button>
+					{/if}
+				{/if}
+
 				{#if actions}
 					{@render actions(activity)}
 				{/if}

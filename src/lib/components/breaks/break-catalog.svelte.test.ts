@@ -205,17 +205,124 @@ describe('BreakCatalog (Client Browser)', () => {
 		expect(onResetDefaults).toHaveBeenCalledTimes(1);
 	});
 
-	it('does not render action buttons when action callbacks are omitted', async () => {
+	it('does not render action buttons when showActions={false}', async () => {
+		const repo = new MockBreakActivityRepository(sampleActivities);
+		const breaksState = createBreaksState(repo);
+		await breaksState.load();
+
+		const screen = await render(BreakCatalog, { breaksState, showActions: false });
+
+		await expect.element(screen.getByRole('button', { name: 'New Habit' })).not.toBeInTheDocument();
+		await expect
+			.element(screen.getByRole('button', { name: 'Reset defaults' }))
+			.not.toBeInTheDocument();
+	});
+
+	it('opens break-form-dialog in creation mode when clicking "New Habit"', async () => {
+		const repo = new MockBreakActivityRepository(sampleActivities);
+		const breaksState = createBreaksState(repo);
+		await breaksState.load();
+
+		const screen = await render(BreakCatalog, {
+			breaksState,
+			portalProps: { disabled: true }
+		});
+
+		const newHabitBtn = screen.getByRole('button', { name: 'New Habit' });
+		await newHabitBtn.click();
+
+		await expect.element(screen.getByText('New Break Habit')).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'Create Habit' })).toBeVisible();
+	});
+
+	it('opens break-confirm-dialog when clicking "Reset defaults" and restores presets on confirm', async () => {
+		const repo = new MockBreakActivityRepository(sampleActivities);
+		const breaksState = createBreaksState(repo);
+		await breaksState.load();
+		const resetSpy = vi.spyOn(breaksState, 'resetToDefaults');
+
+		const screen = await render(BreakCatalog, {
+			breaksState,
+			portalProps: { disabled: true }
+		});
+
+		const resetBtn = screen.getByRole('button', { name: 'Reset defaults' });
+		await resetBtn.click();
+
+		await expect
+			.element(screen.getByRole('heading', { name: 'Reset catalog to defaults?' }))
+			.toBeVisible();
+
+		const confirmResetBtn = screen.getByRole('button', { name: 'Reset', exact: true });
+		await confirmResetBtn.click();
+
+		expect(resetSpy).toHaveBeenCalledTimes(1);
+	});
+
+	it('presets have no edit or delete buttons, while custom habits show them', async () => {
 		const repo = new MockBreakActivityRepository(sampleActivities);
 		const breaksState = createBreaksState(repo);
 		await breaksState.load();
 
 		const screen = await render(BreakCatalog, { breaksState });
 
-		await expect.element(screen.getByRole('button', { name: 'New Habit' })).not.toBeInTheDocument();
+		// Preset habit (phys1: Neck & Shoulder Release)
 		await expect
-			.element(screen.getByRole('button', { name: 'Reset defaults' }))
+			.element(screen.getByRole('button', { name: `Edit habit: ${phys1.title}` }))
 			.not.toBeInTheDocument();
+		await expect
+			.element(screen.getByRole('button', { name: `Delete habit: ${phys1.title}` }))
+			.not.toBeInTheDocument();
+
+		// Custom habit (phys2: Quick Room Stroll)
+		await expect
+			.element(screen.getByRole('button', { name: `Edit habit: ${phys2.title}` }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByRole('button', { name: `Delete habit: ${phys2.title}` }))
+			.toBeVisible();
+	});
+
+	it('opens break-form-dialog in edit mode when clicking Edit on a custom habit', async () => {
+		const repo = new MockBreakActivityRepository(sampleActivities);
+		const breaksState = createBreaksState(repo);
+		await breaksState.load();
+
+		const screen = await render(BreakCatalog, {
+			breaksState,
+			portalProps: { disabled: true }
+		});
+
+		const editBtn = screen.getByRole('button', { name: `Edit habit: ${phys2.title}` });
+		await editBtn.click();
+
+		await expect.element(screen.getByText('Edit Break Habit')).toBeVisible();
+		const titleInput = screen.getByLabelText(/Title/);
+		await expect.element(titleInput).toHaveValue(phys2.title);
+	});
+
+	it('opens break-confirm-dialog when clicking Delete on a custom habit and deletes it on confirm', async () => {
+		const repo = new MockBreakActivityRepository(sampleActivities);
+		const breaksState = createBreaksState(repo);
+		await breaksState.load();
+		const deleteSpy = vi.spyOn(breaksState, 'deleteActivity');
+
+		const screen = await render(BreakCatalog, {
+			breaksState,
+			portalProps: { disabled: true }
+		});
+
+		const deleteBtn = screen.getByRole('button', { name: `Delete habit: ${phys2.title}` });
+		await deleteBtn.click();
+
+		await expect
+			.element(screen.getByRole('heading', { name: 'Delete custom habit?' }))
+			.toBeVisible();
+
+		const confirmDeleteBtn = screen.getByRole('button', { name: 'Delete', exact: true });
+		await confirmDeleteBtn.click();
+
+		expect(deleteSpy).toHaveBeenCalledWith(phys2.id);
 	});
 
 	it('reactively updates counts and list when new activity is saved in breaksState', async () => {

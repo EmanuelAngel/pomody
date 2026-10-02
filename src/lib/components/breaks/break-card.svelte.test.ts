@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import BreakCard from './break-card.svelte';
 import { createBreakActivity, type BreakActivity } from '$lib/domain/breaks/break-activity.entity';
@@ -106,5 +106,52 @@ describe('BreakCard (Client Browser)', () => {
 		const screen = await render(BreakCard, { activity: hydrationActivity });
 
 		await expect.element(screen.getByRole('button', { name: /guide/i })).not.toBeInTheDocument();
+	});
+
+	it('does not render edit or delete buttons for preset activities even if callbacks are passed', async () => {
+		const onEdit = vi.fn();
+		const onDelete = vi.fn();
+
+		const screen = await render(BreakCard, {
+			activity: physicalActivity, // isPreset: true
+			onEdit,
+			onDelete
+		});
+
+		await expect
+			.element(screen.getByRole('button', { name: `Edit habit: ${physicalActivity.title}` }))
+			.not.toBeInTheDocument();
+		await expect
+			.element(screen.getByRole('button', { name: `Delete habit: ${physicalActivity.title}` }))
+			.not.toBeInTheDocument();
+	});
+
+	it('renders edit and delete buttons for custom habits and invokes callbacks', async () => {
+		const onEdit = vi.fn();
+		const onDelete = vi.fn();
+
+		const screen = await render(BreakCard, {
+			activity: mindfulActivity, // isPreset: false
+			onEdit,
+			onDelete
+		});
+
+		const editBtn = screen.getByRole('button', {
+			name: `Edit habit: ${mindfulActivity.title}`
+		});
+		const deleteBtn = screen.getByRole('button', {
+			name: `Delete habit: ${mindfulActivity.title}`
+		});
+
+		await expect.element(editBtn).toBeVisible();
+		await expect.element(deleteBtn).toBeVisible();
+
+		await editBtn.click();
+		expect(onEdit).toHaveBeenCalledTimes(1);
+		expect(onEdit).toHaveBeenCalledWith(mindfulActivity);
+
+		await deleteBtn.click();
+		expect(onDelete).toHaveBeenCalledTimes(1);
+		expect(onDelete).toHaveBeenCalledWith(mindfulActivity);
 	});
 });

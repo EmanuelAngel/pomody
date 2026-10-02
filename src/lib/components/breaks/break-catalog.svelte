@@ -8,29 +8,50 @@
 	import Coffee from '@lucide/svelte/icons/coffee';
 	import { Button } from '$lib/components/ui/button';
 	import BreakCard from './break-card.svelte';
+	import BreakFormDialog from './break-form-dialog.svelte';
+	import BreakConfirmDialog from './break-confirm-dialog.svelte';
 	import { breaksState as defaultBreaksState, type BreaksState } from '$lib/state/breaks.svelte';
-	import type { BreakActivity, BreakCategory } from '$lib/domain/breaks/break-activity.entity';
+	import {
+		createBreakActivity,
+		type BreakActivity,
+		type BreakCategory
+	} from '$lib/domain/breaks/break-activity.entity';
 	import { cn } from '$lib/utils';
 
 	type FilterCategory = 'all' | BreakCategory;
 
 	interface Props {
 		breaksState?: BreaksState;
+		showActions?: boolean;
 		onNewHabit?: () => void;
 		onResetDefaults?: () => void;
 		actions?: Snippet<[BreakActivity]>;
 		class?: string;
+		portalProps?: { disabled?: boolean };
 	}
 
 	let {
 		breaksState = defaultBreaksState,
+		showActions = true,
 		onNewHabit,
 		onResetDefaults,
 		actions,
-		class: className = ''
+		class: className = '',
+		portalProps
 	}: Props = $props();
 
 	let activeFilter = $state<FilterCategory>('all');
+
+	// Dialog states
+	let isFormOpen = $state(false);
+	let formActivity = $state<BreakActivity | null>(null);
+
+	let isConfirmOpen = $state(false);
+	let confirmTitle = $state('');
+	let confirmDescription = $state('');
+	let confirmLabel = $state('Confirm');
+	let confirmVariant = $state<'destructive' | 'default'>('destructive');
+	let confirmAction = $state<() => Promise<void> | void>(() => {});
 
 	onMount(() => {
 		void breaksState.load();
@@ -55,6 +76,66 @@
 			? breaksState.activities
 			: breaksState.activities.filter((a) => a.category === activeFilter)
 	);
+
+	function handleOpenNewHabit() {
+		if (onNewHabit) {
+			onNewHabit();
+			return;
+		}
+		formActivity = null;
+		isFormOpen = true;
+	}
+
+	function handleOpenResetDefaults() {
+		if (onResetDefaults) {
+			onResetDefaults();
+			return;
+		}
+		confirmTitle = 'Reset catalog to defaults?';
+		confirmDescription =
+			'Reset catalog to defaults? All custom habits will be removed and original 10 presets restored.';
+		confirmLabel = 'Reset';
+		confirmVariant = 'destructive';
+		confirmAction = async () => {
+			await breaksState.resetToDefaults();
+		};
+		isConfirmOpen = true;
+	}
+
+	function handleEditHabit(activity: BreakActivity) {
+		formActivity = activity;
+		isFormOpen = true;
+	}
+
+	function handleDeleteHabit(activity: BreakActivity) {
+		confirmTitle = 'Delete custom habit?';
+		confirmDescription = 'Delete custom habit? This cannot be undone.';
+		confirmLabel = 'Delete';
+		confirmVariant = 'destructive';
+		confirmAction = async () => {
+			await breaksState.deleteActivity(activity.id);
+		};
+		isConfirmOpen = true;
+	}
+
+	async function handleSaveHabit(payload: {
+		id?: string;
+		title: string;
+		category: BreakCategory;
+		durationMinutes: number;
+		guide?: string;
+		isPreset: boolean;
+	}) {
+		const activity = createBreakActivity({
+			id: payload.id,
+			title: payload.title,
+			category: payload.category,
+			durationMinutes: payload.durationMinutes,
+			guide: payload.guide,
+			isPreset: payload.isPreset
+		});
+		await breaksState.saveActivity(activity);
+	}
 </script>
 
 <div data-slot="break-catalog" class={cn('space-y-4', className)}>
@@ -98,30 +179,26 @@
 		</div>
 
 		<!-- Action Triggers -->
-		{#if onNewHabit || onResetDefaults}
+		{#if showActions}
 			<div class="flex items-center gap-1.5 self-end sm:self-auto">
-				{#if onResetDefaults}
-					<Button
-						variant="ghost"
-						size="sm"
-						onclick={onResetDefaults}
-						class="h-7 cursor-pointer gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-					>
-						<RotateCcw class="size-3 shrink-0" />
-						<span>Reset defaults</span>
-					</Button>
-				{/if}
+				<Button
+					variant="ghost"
+					size="sm"
+					onclick={handleOpenResetDefaults}
+					class="h-7 cursor-pointer gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+				>
+					<RotateCcw class="size-3 shrink-0" />
+					<span>Reset defaults</span>
+				</Button>
 
-				{#if onNewHabit}
-					<Button
-						size="sm"
-						onclick={onNewHabit}
-						class="h-7 cursor-pointer gap-1 px-2.5 text-xs font-medium"
-					>
-						<Plus class="size-3.5 shrink-0" />
-						<span>New Habit</span>
-					</Button>
-				{/if}
+				<Button
+					size="sm"
+					onclick={handleOpenNewHabit}
+					class="h-7 cursor-pointer gap-1 px-2.5 text-xs font-medium"
+				>
+					<Plus class="size-3.5 shrink-0" />
+					<span>New Habit</span>
+				</Button>
 			</div>
 		{/if}
 	</div>
@@ -138,7 +215,7 @@
 	{:else if filteredActivities.length > 0}
 		<div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
 			{#each filteredActivities as activity (activity.id)}
-				<BreakCard {activity} {actions} />
+				<BreakCard {activity} {actions} onEdit={handleEditHabit} onDelete={handleDeleteHabit} />
 			{/each}
 		</div>
 	{:else}
@@ -169,4 +246,23 @@
 			</p>
 		</div>
 	{/if}
+
+	<!-- Form Dialog for Creating & Editing Custom Habits -->
+	<BreakFormDialog
+		bind:open={isFormOpen}
+		activity={formActivity}
+		onSave={handleSaveHabit}
+		{portalProps}
+	/>
+
+	<!-- Confirmation Dialog for Deletions & Catalog Resets -->
+	<BreakConfirmDialog
+		bind:open={isConfirmOpen}
+		title={confirmTitle}
+		description={confirmDescription}
+		{confirmLabel}
+		variant={confirmVariant}
+		onConfirm={confirmAction}
+		{portalProps}
+	/>
 </div>
