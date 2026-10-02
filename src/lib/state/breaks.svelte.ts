@@ -89,6 +89,62 @@ export class BreaksState {
 	public resetCycle(): void {
 		this._currentBreakCycle = null;
 	}
+
+	/**
+	 * Persists a break activity via repository, updates the reactive activities list (sorted),
+	 * and syncs activeActivity reference if the saved activity matches activeActivity.
+	 */
+	public async saveActivity(activity: BreakActivity): Promise<void> {
+		await this.repository.save(activity);
+
+		const existingIndex = this._activities.findIndex((a) => a.id === activity.id);
+		let next: BreakActivity[];
+		if (existingIndex >= 0) {
+			next = [...this._activities];
+			next[existingIndex] = activity;
+		} else {
+			next = [...this._activities, activity];
+		}
+		this._activities = sortBreakActivities(next);
+
+		if (this._activeActivity?.id === activity.id) {
+			this._activeActivity = activity;
+		}
+	}
+
+	/**
+	 * Deletes a custom break activity.
+	 * Throws an Error if the target activity is a preset ('Cannot delete system preset break activity').
+	 * Removes the activity from repository and reactive activities list.
+	 * Resets activeActivity to null if it matches the deleted activity.
+	 */
+	public async deleteActivity(activityId: string): Promise<void> {
+		let target = this._activities.find((a) => a.id === activityId);
+		if (!target && !this._isLoaded) {
+			const all = await this.repository.getAll();
+			target = all.find((a) => a.id === activityId);
+		}
+
+		if (target?.isPreset) {
+			throw new Error('Cannot delete system preset break activity');
+		}
+
+		await this.repository.delete(activityId);
+		this._activities = this._activities.filter((a) => a.id !== activityId);
+
+		if (this._activeActivity?.id === activityId) {
+			this._activeActivity = null;
+		}
+	}
+
+	/**
+	 * Resets catalog back to default preset break activities via repository and reloads state.
+	 * Resets activeActivity to null if it is no longer present in the reloaded catalog.
+	 */
+	public async resetToDefaults(): Promise<void> {
+		await this.repository.resetToDefaults();
+		await this.load();
+	}
 }
 
 /**
