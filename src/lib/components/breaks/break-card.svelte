@@ -7,6 +7,8 @@
 	import Clock from '@lucide/svelte/icons/clock';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Button } from '$lib/components/ui/button';
 	import { cn } from '$lib/utils';
 	import type { BreakActivity, BreakCategory } from '$lib/domain/breaks/break-activity.entity';
 
@@ -47,65 +49,67 @@
 		<div class="flex items-center justify-between gap-2">
 			<div class="flex flex-wrap items-center gap-1.5">
 				<!-- Category Badge -->
-				<span
-					class={cn(
-						'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase',
-						categoryBadgeClasses[activity.category]
-					)}
+				<Badge
+					variant="outline"
+					class={cn('text-[10px] tracking-wide uppercase', categoryBadgeClasses[activity.category])}
 				>
 					{#if activity.category === 'physical'}
-						<Activity class="size-3 shrink-0" />
+						<Activity data-icon="inline-start" />
 					{:else if activity.category === 'mindful'}
-						<Sparkles class="size-3 shrink-0" />
+						<Sparkles data-icon="inline-start" />
 					{:else if activity.category === 'hydration'}
-						<Droplet class="size-3 shrink-0" />
+						<Droplet data-icon="inline-start" />
 					{/if}
 					<span>{categoryLabels[activity.category]}</span>
-				</span>
+				</Badge>
 
 				<!-- Duration Pill -->
-				<span
-					class="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+				<Badge
+					variant="outline"
+					class="border-border/40 bg-muted/40 text-[10px] font-medium text-muted-foreground"
 				>
-					<Clock class="size-2.5 shrink-0 opacity-70" />
+					<Clock data-icon="inline-start" class="opacity-70" />
 					<span>{activity.durationMinutes}m</span>
-				</span>
+				</Badge>
 
 				<!-- Status Badge: System Preset vs Custom Habit -->
-				<span
+				<Badge
+					variant="outline"
 					class={cn(
-						'rounded-full border px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase',
+						'text-[10px] tracking-wide uppercase',
 						activity.isPreset
 							? 'border-border/40 bg-muted/30 text-muted-foreground/80'
 							: 'border-accent-rose/40 bg-accent-rose/10 text-accent-rose'
 					)}
 				>
 					{activity.isPreset ? 'Preset' : 'Custom'}
-				</span>
+				</Badge>
 			</div>
 
 			<!-- Right side: Optional actions snippet, Edit/Delete (custom habits only), and expandable guide toggle -->
 			<div class="flex items-center gap-1">
 				{#if !activity.isPreset}
 					{#if onEdit}
-						<button
-							type="button"
+						<Button
+							variant="ghost"
+							size="icon-xs"
 							aria-label={`Edit habit: ${activity.title}`}
 							onclick={() => onEdit(activity)}
-							class="inline-flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+							class="text-muted-foreground/70 hover:text-foreground"
 						>
-							<Pencil class="size-3.5" />
-						</button>
+							<Pencil data-icon="inline-start" />
+						</Button>
 					{/if}
 					{#if onDelete}
-						<button
-							type="button"
+						<Button
+							variant="ghost"
+							size="icon-xs"
 							aria-label={`Delete habit: ${activity.title}`}
 							onclick={() => onDelete(activity)}
-							class="inline-flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+							class="text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive"
 						>
-							<Trash2 class="size-3.5" />
-						</button>
+							<Trash2 data-icon="inline-start" />
+						</Button>
 					{/if}
 				{/if}
 
@@ -114,20 +118,22 @@
 				{/if}
 
 				{#if activity.guide && activity.guide.trim().length > 0}
-					<button
-						type="button"
+					<Button
+						variant="ghost"
+						size="icon-xs"
 						aria-label={isExpanded
 							? `Hide guide for ${activity.title}`
 							: `Show guide for ${activity.title}`}
 						aria-expanded={isExpanded}
 						aria-controls={`guide-${activity.id}`}
 						onclick={() => (isExpanded = !isExpanded)}
-						class="inline-flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						class="text-muted-foreground/70 hover:text-foreground"
 					>
 						<ChevronDown
-							class={cn('size-3.5 transition-transform duration-200', isExpanded && 'rotate-180')}
+							data-icon="inline-start"
+							class={cn('transition-transform duration-200', isExpanded && 'rotate-180')}
 						/>
-					</button>
+					</Button>
 				{/if}
 			</div>
 		</div>

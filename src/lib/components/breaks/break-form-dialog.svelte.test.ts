@@ -241,7 +241,7 @@ describe('BreakFormDialog (Client Browser)', () => {
 				portalProps: { disabled: true }
 			});
 
-			const closeBtn = screen.getByRole('button', { name: 'Close dialog' });
+			const closeBtn = screen.getByRole('button', { name: 'Close' });
 			await closeBtn.click();
 
 			expect(onCancel).toHaveBeenCalledTimes(1);

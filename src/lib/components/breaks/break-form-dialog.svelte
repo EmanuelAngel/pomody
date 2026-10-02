@@ -1,17 +1,18 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { Dialog } from 'bits-ui';
-	import X from '@lucide/svelte/icons/x';
 	import Activity from '@lucide/svelte/icons/activity';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import Droplet from '@lucide/svelte/icons/droplet';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import * as Field from '$lib/components/ui/field';
+	import * as ToggleGroup from '$lib/components/ui/toggle-group';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
+	import { Textarea } from '$lib/components/ui/textarea';
 	import { cn } from '$lib/utils';
 	import {
 		type BreakActivity,
 		type BreakCategory,
-		VALID_BREAK_CATEGORIES,
 		BREAK_ACTIVITY_TITLE_MAX_LENGTH,
 		BREAK_ACTIVITY_GUIDE_MAX_LENGTH
 	} from '$lib/domain/breaks/break-activity.entity';
@@ -159,41 +160,26 @@
 </script>
 
 <Dialog.Root bind:open onOpenChange={handleOpenChange}>
-	<Dialog.Portal {...portalProps}>
-		<Dialog.Overlay
-			class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs duration-150 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
-		/>
-		<Dialog.Content
-			class="fixed top-1/2 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border/60 bg-popover p-6 text-popover-foreground shadow-xl duration-150 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
-		>
-			<div class="flex items-center justify-between pb-3">
-				<div>
-					<Dialog.Title class="text-base font-semibold text-foreground">
-						{activity ? 'Edit Break Habit' : 'New Break Habit'}
-					</Dialog.Title>
-					<Dialog.Description class="mt-0.5 text-xs text-muted-foreground">
-						{activity
-							? 'Modify custom habit details and micro-guide instructions.'
-							: 'Add a custom restorative habit with duration and optional guidance.'}
-					</Dialog.Description>
-				</div>
-				<button
-					type="button"
-					aria-label="Close dialog"
-					onclick={handleCancel}
-					class="cursor-pointer rounded-md p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-				>
-					<X class="size-4" />
-				</button>
-			</div>
+	<Dialog.Content {portalProps} class="max-w-lg">
+		<Dialog.Header>
+			<Dialog.Title class="text-base font-semibold text-foreground">
+				{activity ? 'Edit Break Habit' : 'New Break Habit'}
+			</Dialog.Title>
+			<Dialog.Description class="text-xs text-muted-foreground">
+				{activity
+					? 'Modify custom habit details and micro-guide instructions.'
+					: 'Add a custom restorative habit with duration and optional guidance.'}
+			</Dialog.Description>
+		</Dialog.Header>
 
-			<form onsubmit={handleSubmit} class="space-y-4">
+		<form onsubmit={handleSubmit} class="flex flex-col gap-4">
+			<Field.FieldGroup class="gap-4">
 				<!-- Title Field -->
-				<div class="space-y-1.5">
+				<Field.Field data-invalid={showTitleError || undefined} class="gap-1.5">
 					<div class="flex items-center justify-between">
-						<label for="habit-title" class="text-xs font-medium text-foreground">
+						<Field.FieldLabel for="habit-title" class="text-xs font-medium text-foreground">
 							Title <span class="text-destructive">*</span>
-						</label>
+						</Field.FieldLabel>
 						<span
 							class={cn(
 								'text-[11px] tabular-nums',
@@ -211,64 +197,66 @@
 						placeholder="e.g. Upper Back Stretch"
 						bind:value={title}
 						oninput={() => (touchedTitle = true)}
-						onblur={() => (touchedTitle = true)}
 						aria-invalid={showTitleError}
 						aria-describedby={showTitleError ? 'habit-title-error' : undefined}
 					/>
 					{#if showTitleError}
-						<p id="habit-title-error" class="text-xs text-destructive">
+						<Field.FieldDescription id="habit-title-error" class="text-xs text-destructive">
 							{titleError}
-						</p>
+						</Field.FieldDescription>
 					{/if}
-				</div>
+				</Field.Field>
 
 				<!-- Category Field -->
-				<div class="space-y-1.5">
-					<span id="habit-category-label" class="text-xs font-medium text-foreground">
+				<Field.Field class="gap-1.5">
+					<Field.FieldLabel id="habit-category-label" class="text-xs font-medium text-foreground">
 						Category <span class="text-destructive">*</span>
-					</span>
-					<div
-						role="radiogroup"
+					</Field.FieldLabel>
+					<ToggleGroup.Root
+						type="single"
+						value={category}
+						onValueChange={(val) => {
+							if (val === 'physical' || val === 'mindful' || val === 'hydration') {
+								category = val;
+							}
+						}}
 						aria-labelledby="habit-category-label"
-						class="flex flex-wrap gap-2"
+						variant="outline"
+						spacing={2}
+						class="flex flex-wrap"
 					>
-						{#each VALID_BREAK_CATEGORIES as cat (cat)}
-							<button
-								type="button"
-								role="radio"
-								aria-checked={category === cat}
-								onclick={() => (category = cat)}
-								class={cn(
-									'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all select-none',
-									category === cat
-										? cat === 'physical'
-											? 'border-accent-gold/60 bg-accent-gold/20 font-semibold text-accent-gold shadow-xs ring-1 ring-accent-gold/40'
-											: cat === 'mindful'
-												? 'border-accent-iris/60 bg-accent-iris/20 font-semibold text-accent-iris shadow-xs ring-1 ring-accent-iris/40'
-												: 'border-accent-foam/60 bg-accent-foam/20 font-semibold text-accent-foam shadow-xs ring-1 ring-accent-foam/40'
-										: 'border-border/50 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
-								)}
-							>
-								{#if cat === 'physical'}
-									<Activity class="size-3.5 shrink-0" />
-									<span>Physical</span>
-								{:else if cat === 'mindful'}
-									<Sparkles class="size-3.5 shrink-0" />
-									<span>Mindful</span>
-								{:else if cat === 'hydration'}
-									<Droplet class="size-3.5 shrink-0" />
-									<span>Hydration</span>
-								{/if}
-							</button>
-						{/each}
-					</div>
-				</div>
+						<ToggleGroup.Item
+							value="physical"
+							aria-label="Physical"
+							class="data-[state=on]:border-accent-gold/60 data-[state=on]:bg-accent-gold/20 data-[state=on]:text-accent-gold"
+						>
+							<Activity data-icon="inline-start" />
+							<span>Physical</span>
+						</ToggleGroup.Item>
+						<ToggleGroup.Item
+							value="mindful"
+							aria-label="Mindful"
+							class="data-[state=on]:border-accent-iris/60 data-[state=on]:bg-accent-iris/20 data-[state=on]:text-accent-iris"
+						>
+							<Sparkles data-icon="inline-start" />
+							<span>Mindful</span>
+						</ToggleGroup.Item>
+						<ToggleGroup.Item
+							value="hydration"
+							aria-label="Hydration"
+							class="data-[state=on]:border-accent-foam/60 data-[state=on]:bg-accent-foam/20 data-[state=on]:text-accent-foam"
+						>
+							<Droplet data-icon="inline-start" />
+							<span>Hydration</span>
+						</ToggleGroup.Item>
+					</ToggleGroup.Root>
+				</Field.Field>
 
 				<!-- Duration Field -->
-				<div class="space-y-1.5">
-					<label for="habit-duration" class="text-xs font-medium text-foreground">
+				<Field.Field data-invalid={showDurationError || undefined} class="gap-1.5">
+					<Field.FieldLabel for="habit-duration" class="text-xs font-medium text-foreground">
 						Duration (minutes) <span class="text-destructive">*</span>
-					</label>
+					</Field.FieldLabel>
 					<Input
 						id="habit-duration"
 						type="number"
@@ -276,23 +264,22 @@
 						step="1"
 						bind:value={durationMinutes}
 						oninput={() => (touchedDuration = true)}
-						onblur={() => (touchedDuration = true)}
 						aria-invalid={showDurationError}
 						aria-describedby={showDurationError ? 'habit-duration-error' : undefined}
 					/>
 					{#if showDurationError}
-						<p id="habit-duration-error" class="text-xs text-destructive">
+						<Field.FieldDescription id="habit-duration-error" class="text-xs text-destructive">
 							{durationError}
-						</p>
+						</Field.FieldDescription>
 					{/if}
-				</div>
+				</Field.Field>
 
 				<!-- Micro-Guide Field -->
-				<div class="space-y-1.5">
+				<Field.Field data-invalid={showGuideError || undefined} class="gap-1.5">
 					<div class="flex items-center justify-between">
-						<label for="habit-guide" class="text-xs font-medium text-foreground">
+						<Field.FieldLabel for="habit-guide" class="text-xs font-medium text-foreground">
 							Micro-Guide <span class="font-normal text-muted-foreground">(Optional)</span>
-						</label>
+						</Field.FieldLabel>
 						<span
 							class={cn(
 								'text-[11px] tabular-nums',
@@ -304,34 +291,33 @@
 							{guide.length}/{BREAK_ACTIVITY_GUIDE_MAX_LENGTH}
 						</span>
 					</div>
-					<textarea
+					<Textarea
 						id="habit-guide"
-						rows="3"
+						rows={3}
 						placeholder="1. Step one...&#10;2. Step two...&#10;3. Step three..."
 						bind:value={guide}
 						oninput={() => (touchedGuide = true)}
-						onblur={() => (touchedGuide = true)}
 						aria-invalid={showGuideError}
 						aria-describedby={showGuideError ? 'habit-guide-error' : undefined}
-						class="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
-					></textarea>
+						class="min-h-20"
+					/>
 					{#if showGuideError}
-						<p id="habit-guide-error" class="text-xs text-destructive">
+						<Field.FieldDescription id="habit-guide-error" class="text-xs text-destructive">
 							{guideError}
-						</p>
+						</Field.FieldDescription>
 					{/if}
-				</div>
+				</Field.Field>
+			</Field.FieldGroup>
 
-				<!-- Action Buttons -->
-				<div class="flex items-center justify-end gap-2 pt-2">
-					<Button type="button" variant="outline" onclick={handleCancel} disabled={isSubmitting}>
-						Cancel
-					</Button>
-					<Button type="submit" disabled={!isValid || isSubmitting}>
-						{activity ? 'Save Changes' : 'Create Habit'}
-					</Button>
-				</div>
-			</form>
-		</Dialog.Content>
-	</Dialog.Portal>
+			<!-- Action Buttons -->
+			<Dialog.Footer class="flex flex-row justify-end gap-2 pt-2">
+				<Button type="button" variant="outline" onclick={handleCancel} disabled={isSubmitting}>
+					Cancel
+				</Button>
+				<Button type="submit" disabled={!isValid || isSubmitting}>
+					{activity ? 'Save Changes' : 'Create Habit'}
+				</Button>
+			</Dialog.Footer>
+		</form>
+	</Dialog.Content>
 </Dialog.Root>

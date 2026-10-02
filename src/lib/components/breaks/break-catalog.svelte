@@ -7,6 +7,7 @@
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import Coffee from '@lucide/svelte/icons/coffee';
 	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
 	import BreakCard from './break-card.svelte';
 	import BreakFormDialog from './break-form-dialog.svelte';
 	import BreakConfirmDialog from './break-confirm-dialog.svelte';
@@ -138,7 +139,7 @@
 	}
 </script>
 
-<div data-slot="break-catalog" class={cn('space-y-4', className)}>
+<div data-slot="break-catalog" class={cn('flex flex-col gap-4', className)}>
 	<!-- Control Bar: Filter chips and Action triggers -->
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 		<!-- Filter Chips -->
@@ -148,33 +149,35 @@
 			aria-label="Filter activities by category"
 		>
 			{#each filterOptions as filter (filter.id)}
-				<button
+				<Button
 					type="button"
+					variant={activeFilter === filter.id ? 'default' : 'outline'}
+					size="sm"
 					aria-pressed={activeFilter === filter.id}
 					aria-label={`${filter.label} (${filter.count})`}
 					onclick={() => (activeFilter = filter.id)}
 					class={cn(
-						'inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 select-none',
-						activeFilter === filter.id
-							? 'bg-primary text-primary-foreground shadow-xs'
-							: 'border border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
+						'h-7 rounded-full px-2.5 text-xs font-medium select-none',
+						activeFilter !== filter.id &&
+							'border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
 					)}
 				>
 					{#if filter.icon}
-						<filter.icon class="size-3 shrink-0 opacity-80" />
+						<filter.icon data-icon="inline-start" />
 					{/if}
 					<span>{filter.label}</span>
-					<span
+					<Badge
+						variant={activeFilter === filter.id ? 'secondary' : 'outline'}
 						class={cn(
-							'inline-flex min-w-[1.125rem] items-center justify-center rounded-full px-1 text-[10px] font-semibold',
+							'h-4 min-w-4 rounded-full px-1 text-[10px] font-semibold',
 							activeFilter === filter.id
-								? 'bg-primary-foreground/20 text-primary-foreground'
-								: 'bg-muted-foreground/15 text-muted-foreground'
+								? 'border-transparent bg-primary-foreground/20 text-primary-foreground'
+								: 'border-transparent bg-muted-foreground/15 text-muted-foreground'
 						)}
 					>
 						{filter.count}
-					</span>
-				</button>
+					</Badge>
+				</Button>
 			{/each}
 		</div>
 
@@ -187,7 +190,7 @@
 					onclick={handleOpenResetDefaults}
 					class="h-7 cursor-pointer gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
 				>
-					<RotateCcw class="size-3 shrink-0" />
+					<RotateCcw data-icon="inline-start" />
 					<span>Reset defaults</span>
 				</Button>
 
@@ -196,7 +199,7 @@
 					onclick={handleOpenNewHabit}
 					class="h-7 cursor-pointer gap-1 px-2.5 text-xs font-medium"
 				>
-					<Plus class="size-3.5 shrink-0" />
+					<Plus data-icon="inline-start" />
 					<span>New Habit</span>
 				</Button>
 			</div>
