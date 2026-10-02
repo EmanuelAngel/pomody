@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.6.1...pomody-v0.7.0) (2026-10-02)
+
+
+### Features
+
+* **planning:** cadence presets, progressive disclosure, and settings bounds ([#59](https://github.com/EmanuelAngel/pomody/issues/59)) ([#68](https://github.com/EmanuelAngel/pomody/issues/68)) ([168e6fe](https://github.com/EmanuelAngel/pomody/commit/168e6fe75281d8ffb3cc80925bedaffa8306f52d))
+* **planning:** improve semantic markup, accessibility and live block progress ([#76](https://github.com/EmanuelAngel/pomody/issues/76)) ([8342a2e](https://github.com/EmanuelAngel/pomody/commit/8342a2e336560358ee67318a237d0588996ee9f9))
+* **planning:** task assignment quick creation and timeline drag-and-drop ([#63](https://github.com/EmanuelAngel/pomody/issues/63)) ([#77](https://github.com/EmanuelAngel/pomody/issues/77)) ([9458b53](https://github.com/EmanuelAngel/pomody/commit/9458b5385f60a8d3f1fed5d657d0653fadb3eb64))
+
+
+### Bug Fixes
+
+* **planning:** confirmation guard for end session and quick error recovery (UX-01, UX-02) ([#64](https://github.com/EmanuelAngel/pomody/issues/64)) ([4486759](https://github.com/EmanuelAngel/pomody/commit/4486759aa274da8f7e3ed107b82bd1a95bb8a554))
+* **settings:** persist interval values up to the new slider limits ([#71](https://github.com/EmanuelAngel/pomody/issues/71)) ([#72](https://github.com/EmanuelAngel/pomody/issues/72)) ([a027180](https://github.com/EmanuelAngel/pomody/commit/a027180f022dfc67210270d43417cc76b1a37f36))
+
 ## [0.6.1](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.6.0...pomody-v0.6.1) (2026-09-29)
 
 
