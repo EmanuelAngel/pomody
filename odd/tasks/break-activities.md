@@ -54,10 +54,10 @@ During session planning and break transitions, users need ready-to-use, restorat
   - Applicable checks: `pnpm test:browser src/lib/components/breaks/` (13/13 tests passed)
   - Evidence: Commit `612190d` (`feat(ui): implement read-only break card and catalog components (#52)`)
 
-- [ ] **TASK-3**: Custom habits CRUD dialogs and domain validation (Issue #53)
+- [x] **TASK-3**: Custom habits CRUD dialogs and domain validation (Issue #53)
   - Route: delegated direct (writer trigger: `break-form-dialog.svelte`, `break-confirm-dialog.svelte`, contextual actions, browser tests)
-  - Applicable checks: `pnpm test:browser src/lib/components/breaks/`
-  - Evidence: Pending
+  - Applicable checks: `pnpm test:browser src/lib/components/breaks/` (33/33 tests passed)
+  - Evidence: Commit `19cf063` (`feat(ui): add break habit CRUD dialogs and domain validation (#53)`)
 
 - [ ] **TASK-4**: Integrate catalog segment switch in Planning view (Issue #54)
   - Route: delegated direct (writer trigger: `planning-view.svelte`, state wiring, and tests)
