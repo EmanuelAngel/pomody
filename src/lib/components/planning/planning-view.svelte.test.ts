@@ -11,6 +11,50 @@ import { sortFocusTasks } from '$lib/domain/ports/task-repository.port';
 import { createFocusTask, toggleFocusTask, type FocusTask } from '$lib/domain/tasks/task.entity';
 import type { ISessionPlanRepository } from '$lib/domain/ports/session-plan-repository.port';
 import type { SessionPlan } from '$lib/domain/planning/session-plan.entity';
+import { createBreaksState } from '$lib/state/breaks.svelte';
+import type { IBreakActivityRepository } from '$lib/domain/ports/break-activity-repository.port';
+import { sortBreakActivities } from '$lib/domain/ports/break-activity-repository.port';
+import {
+	createBreakActivity,
+	type BreakActivity,
+	type BreakCategory
+} from '$lib/domain/breaks/break-activity.entity';
+
+class MockBreakActivityRepository implements IBreakActivityRepository {
+	private activities = new Map<string, BreakActivity>();
+
+	constructor(initialActivities: readonly BreakActivity[] = []) {
+		for (const act of initialActivities) {
+			this.activities.set(act.id, act);
+		}
+	}
+
+	async getAll(): Promise<readonly BreakActivity[]> {
+		return sortBreakActivities(Array.from(this.activities.values()));
+	}
+
+	async getByCategory(category: BreakCategory): Promise<readonly BreakActivity[]> {
+		return sortBreakActivities(
+			Array.from(this.activities.values()).filter((a) => a.category === category)
+		);
+	}
+
+	async save(activity: BreakActivity): Promise<void> {
+		this.activities.set(activity.id, activity);
+	}
+
+	async delete(activityId: string): Promise<void> {
+		this.activities.delete(activityId);
+	}
+
+	async resetToDefaults(): Promise<void> {
+		this.activities.clear();
+	}
+
+	async clearAll(): Promise<void> {
+		this.activities.clear();
+	}
+}
 
 class MockSessionPlanRepository implements ISessionPlanRepository {
 	private plan: SessionPlan | null = null;
@@ -812,5 +856,119 @@ describe('PlanningView (Client Browser)', () => {
 		// Press 'n' to trigger focus
 		await userEvent.keyboard('n');
 		await expect.element(backlogInput).toHaveFocus();
+	});
+
+	describe('Segment Switching (Tasks vs Break Habits)', () => {
+		it('defaults right column to TaskBacklog and highlights Tasks segment', async () => {
+			const repo = new MockTaskRepository();
+			const tasksState = createTasksState(repo);
+			const breaksRepo = new MockBreakActivityRepository();
+			const breaksState = createBreaksState(breaksRepo);
+			await tasksState.load();
+			await breaksState.load();
+
+			const screen = await render(PlanningView, { tasksState, breaksState });
+
+			const tasksSegment = screen.getByRole('radio', { name: /Tasks/i });
+			const breaksSegment = screen.getByRole('radio', { name: /Break Habits/i });
+
+			await expect.element(tasksSegment).toBeVisible();
+			await expect.element(breaksSegment).toBeVisible();
+			expect(tasksSegment.element().getAttribute('aria-checked')).toBe('true');
+			expect(breaksSegment.element().getAttribute('aria-checked')).toBe('false');
+
+			await expect.element(screen.getByText('Tasks Backlog')).toBeVisible();
+			await expect
+				.element(screen.getByText('No pending tasks. Add one to plan your session.'))
+				.toBeVisible();
+			await expect
+				.element(screen.getByRole('group', { name: 'Filter activities by category' }))
+				.not.toBeInTheDocument();
+		});
+
+		it('switches to BreakCatalog when clicking Break Habits segment and back to TaskBacklog', async () => {
+			const task = createFocusTask({ title: 'Important Feature Task' });
+			const tasksRepo = new MockTaskRepository([task]);
+			const tasksState = createTasksState(tasksRepo);
+
+			const habit = createBreakActivity({
+				id: 'break-habit-1',
+				title: 'Hydration Sip & Stretch',
+				category: 'hydration',
+				durationMinutes: 2,
+				isPreset: true
+			});
+			const breaksRepo = new MockBreakActivityRepository([habit]);
+			const breaksState = createBreaksState(breaksRepo);
+
+			await tasksState.load();
+			await breaksState.load();
+
+			const screen = await render(PlanningView, { tasksState, breaksState });
+
+			// Initial state: Tasks Backlog is visible
+			await expect.element(screen.getByText('Important Feature Task')).toBeVisible();
+			await expect.element(screen.getByText('Hydration Sip & Stretch')).not.toBeInTheDocument();
+
+			// Click 'Break Habits' segment
+			const breaksSegment = screen.getByRole('radio', { name: /Break Habits/i });
+			await breaksSegment.click();
+
+			// Now BreakCatalog is visible
+			expect(breaksSegment.element().getAttribute('aria-checked')).toBe('true');
+			await expect.element(screen.getByText('Hydration Sip & Stretch')).toBeVisible();
+			await expect.element(screen.getByText('Important Feature Task')).not.toBeInTheDocument();
+
+			// Click 'Tasks' segment to switch back
+			const tasksSegment = screen.getByRole('radio', { name: /Tasks/i });
+			await tasksSegment.click();
+
+			// Tasks Backlog is restored
+			expect(tasksSegment.element().getAttribute('aria-checked')).toBe('true');
+			await expect.element(screen.getByText('Important Feature Task')).toBeVisible();
+			await expect.element(screen.getByText('Hydration Sip & Stretch')).not.toBeInTheDocument();
+		});
+
+		it('preserves left column timeline visibility and interaction during segment switching', async () => {
+			const tasksRepo = new MockTaskRepository();
+			const tasksState = createTasksState(tasksRepo);
+			const planRepo = new MockSessionPlanRepository();
+			const timerState = createTimerState();
+			const planningState = createPlanningState(planRepo, timerState, tasksState);
+			const breaksRepo = new MockBreakActivityRepository();
+			const breaksState = createBreaksState(breaksRepo);
+
+			await tasksState.load();
+			await planningState.load();
+			await breaksState.load();
+
+			const screen = await render(PlanningView, {
+				tasksState,
+				planningState,
+				timerState,
+				breaksState
+			});
+
+			// Timeline is rendered in left column
+			const timelineHeading = screen.getByText('Session Timeline');
+			await expect.element(timelineHeading).toBeVisible();
+			await expect.element(screen.getByText('Total Focus')).toBeVisible();
+
+			// Switch to Break Habits
+			const breaksSegment = screen.getByRole('radio', { name: /Break Habits/i });
+			await breaksSegment.click();
+
+			// Timeline in left column remains visible and functional
+			await expect.element(timelineHeading).toBeVisible();
+			await expect.element(screen.getByText('Total Focus')).toBeVisible();
+
+			// Switch back to Tasks
+			const tasksSegment = screen.getByRole('radio', { name: /Tasks/i });
+			await tasksSegment.click();
+
+			// Timeline is still intact
+			await expect.element(timelineHeading).toBeVisible();
+			await expect.element(screen.getByText('Total Focus')).toBeVisible();
+		});
 	});
 });
