@@ -185,16 +185,6 @@
 		{#if showActions}
 			<div class="flex items-center gap-1.5 self-end sm:self-auto">
 				<Button
-					variant="ghost"
-					size="sm"
-					onclick={handleOpenResetDefaults}
-					class="h-7 cursor-pointer gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-				>
-					<RotateCcw data-icon="inline-start" />
-					<span>Reset defaults</span>
-				</Button>
-
-				<Button
 					size="sm"
 					onclick={handleOpenNewHabit}
 					class="h-7 cursor-pointer gap-1 px-2.5 text-xs font-medium"
@@ -247,6 +237,20 @@
 					Try selecting another category or add a new {activeFilter} habit.
 				{/if}
 			</p>
+		</div>
+	{/if}
+
+	<!-- Discreet Footer for Catalog Maintenance -->
+	{#if showActions}
+		<div class="flex items-center justify-center border-t border-border/30 pt-1">
+			<button
+				type="button"
+				onclick={handleOpenResetDefaults}
+				class="inline-flex cursor-pointer items-center gap-1.5 rounded-sm px-2 py-1 text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			>
+				<RotateCcw class="size-3" />
+				<span>Reset defaults</span>
+			</button>
 		</div>
 	{/if}
 
