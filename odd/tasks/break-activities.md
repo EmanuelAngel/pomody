@@ -57,7 +57,7 @@ During session planning and break transitions, users need ready-to-use, restorat
 - [x] **TASK-3**: Custom habits CRUD dialogs and domain validation (Issue #53)
   - Route: delegated direct (writer trigger: `break-form-dialog.svelte`, `break-confirm-dialog.svelte`, contextual actions, browser tests)
   - Applicable checks: `pnpm test:browser src/lib/components/breaks/` (33/33 tests passed)
-  - Evidence: Commit `19cf063` (`feat(ui): add break habit CRUD dialogs and domain validation (#53)`)
+  - Evidence: Commit `19cf063` (`feat(ui): add break habit CRUD dialogs and domain validation (#53)`) and Commit `ef78e60` (`refactor(breaks): compose with shadcn-svelte dialog, badge, and form primitives`)
 
 - [ ] **TASK-4**: Integrate catalog segment switch in Planning view (Issue #54)
   - Route: delegated direct (writer trigger: `planning-view.svelte`, state wiring, and tests)
