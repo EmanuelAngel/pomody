@@ -10,23 +10,32 @@
 		type PlanningState
 	} from '$lib/state/planning.svelte';
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
+	import { breaksState as defaultBreaksState, type BreaksState } from '$lib/state/breaks.svelte';
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
+	import ListTodo from '@lucide/svelte/icons/list-todo';
+	import Sparkles from '@lucide/svelte/icons/sparkles';
+	import * as ToggleGroup from '$lib/components/ui/toggle-group';
 	import PlanningTimeline from './planning-timeline.svelte';
 	import TaskBacklog from './task-backlog.svelte';
+	import BreakCatalog from '$lib/components/breaks/break-catalog.svelte';
 
 	interface Props {
 		planningState?: PlanningState;
 		tasksState?: TasksState;
 		timerState?: TimerState;
 		navigationState?: NavigationState;
+		breaksState?: BreaksState;
 	}
 
 	let {
 		planningState = defaultPlanningState,
 		tasksState = defaultTasksState,
 		timerState = defaultTimerState,
-		navigationState = defaultNavigationState
+		navigationState = defaultNavigationState,
+		breaksState = defaultBreaksState
 	}: Props = $props();
+
+	let activeRightSegment = $state<'tasks' | 'breaks'>('tasks');
 
 	const pendingTasks = $derived(tasksState.pendingTasks);
 	const pendingCount = $derived(pendingTasks.length);
@@ -38,6 +47,9 @@
 		}
 		if (!planningState.isLoaded && !planningState.isLoading) {
 			planningState.load();
+		}
+		if (!breaksState.isLoaded && !breaksState.isLoading) {
+			breaksState.load();
 		}
 	});
 
@@ -52,7 +64,15 @@
 
 		if (e.key === 'c' || e.key === 'n') {
 			e.preventDefault();
-			document.getElementById('new-task-input')?.focus();
+			if (activeRightSegment !== 'tasks') {
+				activeRightSegment = 'tasks';
+			}
+			requestAnimationFrame(() => {
+				document.getElementById('new-task-input')?.focus();
+			});
+		} else if (e.key === 'b') {
+			e.preventDefault();
+			activeRightSegment = 'breaks';
 		} else if (e.key === 'Escape') {
 			if (!document.querySelector('[role="dialog"], [role="alertdialog"], [data-state="open"]')) {
 				navigationState.setTab('timer');
@@ -97,7 +117,56 @@
 			{activeTaskTitle}
 		/>
 
-		<!-- Right Column: Task Backlog (Micro) -->
-		<TaskBacklog {tasksState} {planningState} />
+		<!-- Right Column: Micro Planning (Tasks & Break Habits) -->
+		<div class="space-y-4 lg:col-span-5">
+			<!-- Segment Switcher Bar -->
+			<div class="flex items-center justify-between gap-2 border-b border-border/40 pb-3">
+				<ToggleGroup.Root
+					type="single"
+					bind:value={activeRightSegment}
+					onValueChange={(val) => {
+						if (val === 'tasks' || val === 'breaks') {
+							activeRightSegment = val;
+						}
+					}}
+					variant="outline"
+					size="sm"
+					aria-label="Planning segment switcher"
+					class="grid w-full grid-cols-2 rounded-lg border border-border/50 bg-muted/40 p-0.5"
+				>
+					<ToggleGroup.Item
+						value="tasks"
+						aria-label="Tasks"
+						class="flex items-center justify-center gap-2 rounded-md py-1.5 text-xs font-medium transition-all hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-xs"
+					>
+						<ListTodo class="size-3.5" />
+						<span>Tasks</span>
+						{#if pendingCount > 0}
+							<span
+								class="py-0.2 ml-0.5 rounded-full bg-muted px-1.5 text-[10px] font-semibold text-muted-foreground"
+							>
+								{pendingCount}
+							</span>
+						{/if}
+					</ToggleGroup.Item>
+
+					<ToggleGroup.Item
+						value="breaks"
+						aria-label="Break Habits"
+						class="flex items-center justify-center gap-2 rounded-md py-1.5 text-xs font-medium transition-all hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-xs"
+					>
+						<Sparkles class="size-3.5 text-accent-iris" />
+						<span>Break Habits</span>
+					</ToggleGroup.Item>
+				</ToggleGroup.Root>
+			</div>
+
+			<!-- Active Segment Content -->
+			{#if activeRightSegment === 'tasks'}
+				<TaskBacklog {tasksState} {planningState} />
+			{:else if activeRightSegment === 'breaks'}
+				<BreakCatalog {breaksState} />
+			{/if}
+		</div>
 	</div>
 </div>

@@ -10,8 +10,13 @@ import { sortBreakActivities } from '../domain/ports/break-activity-repository.p
 
 class MockBreakActivityRepository implements IBreakActivityRepository {
 	private activities = new Map<string, BreakActivity>();
+	private defaultActivities: readonly BreakActivity[];
 
-	constructor(initialActivities: readonly BreakActivity[] = []) {
+	constructor(
+		initialActivities: readonly BreakActivity[] = [],
+		defaultActivities?: readonly BreakActivity[]
+	) {
+		this.defaultActivities = defaultActivities ?? initialActivities;
 		for (const act of initialActivities) {
 			this.activities.set(act.id, act);
 		}
@@ -37,6 +42,9 @@ class MockBreakActivityRepository implements IBreakActivityRepository {
 
 	async resetToDefaults(): Promise<void> {
 		this.activities.clear();
+		for (const act of this.defaultActivities) {
+			this.activities.set(act.id, act);
+		}
 	}
 
 	async clearAll(): Promise<void> {
@@ -229,6 +237,308 @@ describe('BreaksState', () => {
 
 		await state.load();
 		expect(state.activeActivity?.title).toBe('Updated Title');
+	});
+
+	describe('saveActivity', () => {
+		it('should persist a new activity via repository and update sorted activities list', async () => {
+			await state.load();
+			expect(state.activities).toHaveLength(3);
+
+			const newActivity = createBreakActivity({
+				id: 'act-new',
+				title: 'Arm Circles',
+				category: 'physical',
+				durationMinutes: 2
+			});
+
+			await state.saveActivity(newActivity);
+
+			// Persisted to repository
+			const repoActivities = await repo.getAll();
+			expect(repoActivities.some((a) => a.id === 'act-new')).toBe(true);
+
+			// Updates reactive activities list in sorted order
+			expect(state.activities).toHaveLength(4);
+			expect(state.activities.some((a) => a.id === 'act-new')).toBe(true);
+			expect(state.activities.map((a) => a.id)).toEqual(
+				sortBreakActivities(repoActivities).map((a) => a.id)
+			);
+		});
+
+		it('should update an existing activity in repository and activities list', async () => {
+			await state.load();
+			const original = state.activities.find((a) => a.id === 'act-1')!;
+
+			const updated = createBreakActivity({
+				id: original.id,
+				title: 'Gentle Neck Stretch',
+				category: original.category,
+				durationMinutes: 4
+			});
+
+			await state.saveActivity(updated);
+
+			const foundInState = state.activities.find((a) => a.id === 'act-1');
+			expect(foundInState?.title).toBe('Gentle Neck Stretch');
+			expect(foundInState?.durationMinutes).toBe(4);
+
+			const foundInRepo = (await repo.getAll()).find((a) => a.id === 'act-1');
+			expect(foundInRepo?.title).toBe('Gentle Neck Stretch');
+		});
+
+		it('should update activeActivity reference when the saved activity was activeActivity', async () => {
+			await state.load();
+			// Ensure act-1 is active
+			state.suggestForBreak('cycle-1');
+			while (state.activeActivity?.id !== 'act-1') {
+				state.shuffle();
+			}
+			expect(state.activeActivity?.id).toBe('act-1');
+
+			const updated = createBreakActivity({
+				id: 'act-1',
+				title: 'Neck Release & Roll',
+				category: 'physical',
+				durationMinutes: 5
+			});
+
+			await state.saveActivity(updated);
+
+			expect(state.activeActivity).toBe(updated);
+			expect(state.activeActivity?.title).toBe('Neck Release & Roll');
+			expect(state.activeActivity?.durationMinutes).toBe(5);
+		});
+
+		it('should not alter activeActivity when saving an unrelated activity', async () => {
+			await state.load();
+			state.suggestForBreak('cycle-1');
+			while (state.activeActivity?.id !== 'act-1') {
+				state.shuffle();
+			}
+			const currentActive = state.activeActivity;
+
+			const updatedOther = createBreakActivity({
+				id: 'act-2',
+				title: 'Updated Breathing',
+				category: 'mindful',
+				durationMinutes: 10
+			});
+
+			await state.saveActivity(updatedOther);
+
+			expect(state.activeActivity).toBe(currentActive);
+		});
+	});
+
+	describe('deleteActivity', () => {
+		it('should throw an error and prevent repository deletion when deleting a system preset', async () => {
+			const preset = createBreakActivity({
+				id: 'preset-system-1',
+				title: 'System Preset Stretch',
+				category: 'physical',
+				durationMinutes: 2,
+				isPreset: true
+			});
+			await repo.save(preset);
+			await state.load();
+
+			expect(state.activities.some((a) => a.id === 'preset-system-1')).toBe(true);
+
+			await expect(state.deleteActivity('preset-system-1')).rejects.toThrow(
+				'Cannot delete system preset break activity'
+			);
+
+			// Repository still has the preset
+			const repoActivities = await repo.getAll();
+			expect(repoActivities.some((a) => a.id === 'preset-system-1')).toBe(true);
+
+			// State activities still has the preset
+			expect(state.activities.some((a) => a.id === 'preset-system-1')).toBe(true);
+		});
+
+		it('should delete a custom activity from repository and activities list', async () => {
+			const custom = createBreakActivity({
+				id: 'custom-act-1',
+				title: 'Custom Habit',
+				category: 'physical',
+				durationMinutes: 3,
+				isPreset: false
+			});
+			await repo.save(custom);
+			await state.load();
+
+			expect(state.activities.some((a) => a.id === 'custom-act-1')).toBe(true);
+
+			await state.deleteActivity('custom-act-1');
+
+			const repoActivities = await repo.getAll();
+			expect(repoActivities.some((a) => a.id === 'custom-act-1')).toBe(false);
+			expect(state.activities.some((a) => a.id === 'custom-act-1')).toBe(false);
+		});
+
+		it('should reset activeActivity to null when the deleted activity matches activeActivity', async () => {
+			const custom = createBreakActivity({
+				id: 'custom-act-active',
+				title: 'Active Custom Habit',
+				category: 'mindful',
+				durationMinutes: 3,
+				isPreset: false
+			});
+			await repo.save(custom);
+			await state.load();
+
+			state.suggestForBreak('cycle-custom');
+			while (state.activeActivity?.id !== 'custom-act-active') {
+				state.shuffle();
+			}
+			expect(state.activeActivity?.id).toBe('custom-act-active');
+
+			await state.deleteActivity('custom-act-active');
+
+			expect(state.activeActivity).toBeNull();
+		});
+
+		it('should keep activeActivity unchanged when deleting a different activity', async () => {
+			const customToDelete = createBreakActivity({
+				id: 'custom-to-delete',
+				title: 'Habit To Delete',
+				category: 'hydration',
+				durationMinutes: 1,
+				isPreset: false
+			});
+			await repo.save(customToDelete);
+			await state.load();
+
+			state.suggestForBreak('cycle-retain');
+			while (state.activeActivity?.id === 'custom-to-delete') {
+				state.shuffle();
+			}
+			const retainedActive = state.activeActivity;
+			expect(retainedActive).not.toBeNull();
+			expect(retainedActive?.id).not.toBe('custom-to-delete');
+
+			await state.deleteActivity('custom-to-delete');
+
+			expect(state.activeActivity).toBe(retainedActive);
+		});
+	});
+
+	describe('resetToDefaults', () => {
+		it('should call repository.resetToDefaults and reload activities from repository', async () => {
+			const defaultPresets = [
+				createBreakActivity({
+					id: 'preset-1',
+					title: 'Preset One',
+					category: 'physical',
+					durationMinutes: 2,
+					isPreset: true
+				}),
+				createBreakActivity({
+					id: 'preset-2',
+					title: 'Preset Two',
+					category: 'mindful',
+					durationMinutes: 5,
+					isPreset: true
+				})
+			];
+			const customActivity = createBreakActivity({
+				id: 'custom-1',
+				title: 'Custom User Activity',
+				category: 'hydration',
+				durationMinutes: 1,
+				isPreset: false
+			});
+
+			const resetRepo = new MockBreakActivityRepository(
+				[...defaultPresets, customActivity],
+				defaultPresets
+			);
+			const testState = createBreaksState(resetRepo);
+			await testState.load();
+
+			expect(testState.activities).toHaveLength(3);
+
+			await testState.resetToDefaults();
+
+			expect(testState.activities).toHaveLength(2);
+			expect(testState.activities.map((a) => a.id)).toEqual(
+				sortBreakActivities(defaultPresets).map((a) => a.id)
+			);
+			expect(testState.isLoaded).toBe(true);
+		});
+
+		it('should reset activeActivity to null if it was not in the reloaded activities', async () => {
+			const defaultPresets = [
+				createBreakActivity({
+					id: 'preset-1',
+					title: 'Preset One',
+					category: 'physical',
+					durationMinutes: 2,
+					isPreset: true
+				})
+			];
+			const customActivity = createBreakActivity({
+				id: 'custom-to-be-removed',
+				title: 'Custom Active',
+				category: 'hydration',
+				durationMinutes: 1,
+				isPreset: false
+			});
+
+			const resetRepo = new MockBreakActivityRepository(
+				[...defaultPresets, customActivity],
+				defaultPresets
+			);
+			const testState = createBreaksState(resetRepo);
+			await testState.load();
+
+			// Make the custom activity active
+			testState.suggestForBreak('cycle-c');
+			while (testState.activeActivity?.id !== 'custom-to-be-removed') {
+				testState.shuffle();
+			}
+			expect(testState.activeActivity?.id).toBe('custom-to-be-removed');
+
+			await testState.resetToDefaults();
+
+			expect(testState.activeActivity).toBeNull();
+		});
+
+		it('should retain activeActivity if it remains in the reloaded activities', async () => {
+			const defaultPresets = [
+				createBreakActivity({
+					id: 'preset-stay',
+					title: 'Preset Stay',
+					category: 'physical',
+					durationMinutes: 2,
+					isPreset: true
+				})
+			];
+			const customActivity = createBreakActivity({
+				id: 'custom-extra',
+				title: 'Custom Extra',
+				category: 'hydration',
+				durationMinutes: 1,
+				isPreset: false
+			});
+
+			const resetRepo = new MockBreakActivityRepository(
+				[...defaultPresets, customActivity],
+				defaultPresets
+			);
+			const testState = createBreaksState(resetRepo);
+			await testState.load();
+
+			testState.suggestForBreak('cycle-stay');
+			while (testState.activeActivity?.id !== 'preset-stay') {
+				testState.shuffle();
+			}
+			expect(testState.activeActivity?.id).toBe('preset-stay');
+
+			await testState.resetToDefaults();
+
+			expect(testState.activeActivity?.id).toBe('preset-stay');
+		});
 	});
 
 	it('should export singleton breaksState instance', () => {
