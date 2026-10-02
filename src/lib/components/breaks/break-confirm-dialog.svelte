@@ -25,26 +25,17 @@
 		portalProps
 	}: Props = $props();
 
-	let isProcessing = $state(false);
 	let isClosedByAction = false;
 
 	async function handleConfirm() {
-		isProcessing = true;
 		isClosedByAction = true;
-		try {
-			await onConfirm();
-			isProcessing = false;
-			open = false;
-		} catch (error) {
-			isProcessing = false;
-			throw error;
-		}
+		await onConfirm();
+		open = false;
 	}
 
 	function handleCancel() {
 		isClosedByAction = true;
 		onCancel?.();
-		open = false;
 	}
 
 	function handleOpenChange(nextOpen: boolean) {
@@ -65,10 +56,10 @@
 			<AlertDialog.Description>{description}</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel onclick={handleCancel} disabled={isProcessing}>
+			<AlertDialog.Cancel onclick={handleCancel}>
 				{cancelLabel}
 			</AlertDialog.Cancel>
-			<AlertDialog.Action {variant} onclick={handleConfirm} disabled={isProcessing}>
+			<AlertDialog.Action {variant} onclick={handleConfirm}>
 				{confirmLabel}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>

@@ -1,8 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import BreakConfirmDialog from './break-confirm-dialog.svelte';
 
 describe('BreakConfirmDialog (Client Browser)', () => {
+	afterEach(async () => {
+		await new Promise((resolve) => setTimeout(resolve, 0));
+	});
+
 	it('renders title and description when open={true}', async () => {
 		const screen = await render(BreakConfirmDialog, {
 			open: true,
