@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { slide } from 'svelte/transition';
 	import Activity from '@lucide/svelte/icons/activity';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import Droplet from '@lucide/svelte/icons/droplet';
@@ -125,7 +126,7 @@
 							? `Hide guide for ${activity.title}`
 							: `Show guide for ${activity.title}`}
 						aria-expanded={isExpanded}
-						aria-controls={`guide-${activity.id}`}
+						aria-controls={isExpanded ? `guide-${activity.id}` : undefined}
 						onclick={() => (isExpanded = !isExpanded)}
 						class="text-muted-foreground/70 hover:text-foreground"
 					>
@@ -144,13 +145,15 @@
 		</h4>
 	</div>
 
-	<!-- Expandable Micro-Guide -->
+	<!-- Expandable Micro-Guide with smooth slide transition -->
 	{#if isExpanded && activity.guide && activity.guide.trim().length > 0}
-		<div
-			id={`guide-${activity.id}`}
-			class="mt-2.5 border-t border-border/40 pt-2 text-xs/relaxed whitespace-pre-line text-muted-foreground"
-		>
-			{activity.guide}
+		<div transition:slide={{ duration: 200 }}>
+			<div
+				id={`guide-${activity.id}`}
+				class="mt-2.5 border-t border-border/40 pt-2 text-xs/relaxed whitespace-pre-line text-muted-foreground"
+			>
+				{activity.guide}
+			</div>
 		</div>
 	{/if}
 </article>
