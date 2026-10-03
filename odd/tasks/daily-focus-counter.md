@@ -1,7 +1,6 @@
 # Feature: Daily Focus Counter (Zen Statusline)
 
 - **Issue**: #29
-- **Design Brief Reference**: `ISSUE_29_SPEC.md`
 - **Branch**: `feat/daily-focus-counter`
 - **Status**: Complete
 - **Delivery Strategy**: `single-pr`
