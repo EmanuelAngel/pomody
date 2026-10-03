@@ -2,6 +2,7 @@
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import Header from '$lib/components/layout/header.svelte';
+	import DailyCounter from '$lib/components/layout/daily-counter.svelte';
 	import SettingsDrawer from '$lib/components/settings/settings-drawer.svelte';
 
 	let { children } = $props();
@@ -16,3 +17,5 @@
 <SettingsDrawer bind:open={settingsOpen} />
 
 {@render children()}
+
+<DailyCounter />
