@@ -80,9 +80,11 @@ src/lib/
 
 1. **Domain Isolation**: Code in `src/lib/domain/` must remain pure TypeScript. Never import `$app/*`, Svelte runes, DOM APIs (`document`, `window`), or Tauri APIs inside `domain/`.
 2. **State Management**: Use Svelte 5 Runes (`$state`, `$derived`, `$props`, `$bindable`) inside `src/lib/state/` and `.svelte` components. Do not use legacy Svelte 4 store patterns (`writable`, `derived`).
-3. **UI Styling**: Tailwind CSS v4 with semantic CSS variables mapped to Rosé Pine tokens (`[data-theme='dark']`, `[data-theme='dawn']`, `[data-theme='oled']`).
-4. **Git Commits**: Use Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`, `docs:`). Never add AI attribution or "Co-Authored-By" trailers.
-5. **Review Findings Buffer**: Non-core, minor UI/cosmetic findings (<1h) are tracked in [`docs/review-findings.md`](docs/review-findings.md) (ephemeral buffer with WIP limit = 20; fix and delete).
+3. **UI Components & shadcn-svelte**: "Bloat-free" refers to low memory footprint (<30 MB RAM), zero runtime bloatware, and pure domain separation. It NEVER means avoiding UI primitives or hand-rolling custom markup. For all UI needs—both interactive (dialogs, toggles, popovers, tooltips) and structural/presentational (badges, cards, separators, skeletons, empty states)—ALWAYS use `shadcn-svelte`. Consult and strictly follow the `.agents/skills/shadcn-svelte/SKILL.md` skill to discover, compose, and install components via `pnpm dlx shadcn-svelte@latest add <component>`. Never reverse-engineer `bits-ui` from `node_modules` or build custom unaccessible controls.
+4. **Strict Ban on Barrel Files (`index.ts`)**: Barrel files are STRICTLY FORBIDDEN everywhere in Pomody (`src/lib/domain/`, `src/lib/state/`, `src/lib/adapters/`, `src/lib/components/` outside `ui/`). The ONLY exception is `src/lib/components/ui/`, where `index.ts` is generated/maintained as vendor code by the `shadcn-svelte` CLI. All imports across the codebase must be direct to the concrete target file (e.g. `import Header from '$lib/components/layout/header.svelte'`, `import { validateSessionPlan } from '$lib/domain/planning/session-plan.entity'`).
+5. **UI Styling**: Tailwind CSS v4 with semantic CSS variables mapped to Rosé Pine tokens (`[data-theme='dark']`, `[data-theme='dawn']`, `[data-theme='oled']`).
+6. **Git Commits**: Use Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`, `docs:`). Never add AI attribution or "Co-Authored-By" trailers.
+7. **Review Findings Buffer**: Non-core, minor UI/cosmetic findings (<1h) are tracked in [`docs/review-findings.md`](docs/review-findings.md) (ephemeral buffer with WIP limit = 20; fix and delete).
 
 ---
 
