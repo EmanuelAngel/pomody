@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.8.0...pomody-v0.9.0) (2026-10-03)
+
+
+### Features
+
+* **analytics:** daily focus counter and completed blocks indicator ([#29](https://github.com/EmanuelAngel/pomody/issues/29)) ([#80](https://github.com/EmanuelAngel/pomody/issues/80)) ([113f225](https://github.com/EmanuelAngel/pomody/commit/113f2255162b2e16cd3f353aa4de8acc59e518c4))
+
 ## [0.8.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.7.0...pomody-v0.8.0) (2026-10-02)
 
 
