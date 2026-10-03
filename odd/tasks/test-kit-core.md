@@ -1,7 +1,7 @@
 # Feature: Test Kit Core & Testing Infrastructure
 
 - **Branch**: `feat/test-kit-core`
-- **Status**: In Progress
+- **Status**: Completed
 - **Delivery Strategy**: `single-pr`
 - **TDD Mode**: Standard Unit & Contract Tests (`pnpm test:unit`)
 - **Forecast Changed Lines**: ~350 LOC
@@ -68,13 +68,15 @@ Create a centralized, robust in-memory Test Kit (`src/testing/`) accessible via 
   - `FakeAudioNotifier` records played tones/alerts without interacting with Web Audio API.
 - **Evidence**: 22/22 unit tests passing in `src/testing/fakes/engine-fakes.test.ts`. Full suite 620 unit tests passing. `pnpm check` and `pnpm lint` green.
 
-### [ ] TASK-4: Create Shared Entity Fixtures & Suite Verification
+### [x] TASK-4: Create Shared Entity Fixtures & Suite Verification
 
 - **Route**: delegated direct
 - **Target Files**:
   - `src/testing/fixtures/task.fixture.ts`
   - `src/testing/fixtures/break-activity.fixture.ts`
   - `src/testing/fixtures/session-plan.fixture.ts`
+  - `src/testing/fixtures/fixtures.test.ts`
 - **Acceptance Criteria**:
   - Factory functions produce valid domain entities with sensible defaults and optional overrides.
   - Full suite check: `pnpm check`, `pnpm lint`, `pnpm test:unit` pass cleanly.
+- **Evidence**: 14/14 tests passing in `src/testing/fixtures/fixtures.test.ts`. Full suite 634 unit tests passing. `pnpm check` (0 errors, 0 warnings) and `pnpm lint` green.
