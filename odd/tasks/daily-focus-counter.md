@@ -3,7 +3,7 @@
 - **Issue**: #29
 - **Design Brief Reference**: `ISSUE_29_SPEC.md`
 - **Branch**: `feat/daily-focus-counter`
-- **Status**: Ready for Implementation
+- **Status**: Complete
 - **Delivery Strategy**: `single-pr`
 - **TDD Mode**: Standard Unit & Web-First Browser Mode (`vitest run --project server`, `vitest run --project client`)
 
@@ -37,7 +37,7 @@ Implement a non-invasive daily focus counter displaying completed focus blocks a
 
 ## Implementation Tasks
 
-### [ ] TASK-1: Domain event enrichment & port definition
+### [x] TASK-1: Domain event enrichment & port definition
 
 - **Route**: direct inline
 - **Target Files**:
@@ -49,9 +49,9 @@ Implement a non-invasive daily focus counter displaying completed focus blocks a
   - `BlockCompletedEvent` carries `readonly durationMs: number;`.
   - `TimerFSM.tick` emits `durationMs`.
   - `IDailyStatsRepository` port defines clean contracts without DOM/Svelte dependencies.
-- **Commit Evidence**: pending
+- **Commit Evidence**: `9881d5e`
 
-### [ ] TASK-2: LocalDailyStatsRepository adapter
+### [x] TASK-2: LocalDailyStatsRepository adapter
 
 - **Route**: direct inline
 - **Target Files**:
@@ -61,11 +61,11 @@ Implement a non-invasive daily focus counter displaying completed focus blocks a
   - Persists and loads daily stats under `'pomody:daily-stats'`.
   - Resets to 0 blocks / 0m if stored date does not match current local date (`YYYY-MM-DD`).
   - SSR and exception-safe (resilient against disabled or throwing localStorage).
-- **Commit Evidence**: pending
+- **Commit Evidence**: `4626ed1`
 
-### [ ] TASK-3: DailyStatsState reactive state & formatting logic
+### [x] TASK-3: DailyStatsState reactive state & formatting logic
 
-- **Route**: direct inline
+- **Route**: subagent delegate
 - **Target Files**:
   - `src/lib/state/daily-stats.svelte.ts`
   - `src/lib/state/daily-stats.test.ts`
@@ -75,11 +75,11 @@ Implement a non-invasive daily focus counter displaying completed focus blocks a
   - Ignores break completions and skipped blocks.
   - Formats duration strictly (`Xm` when <60, `Xh Ym` when >=60).
   - Handles day rollover seamlessly.
-- **Commit Evidence**: pending
+- **Commit Evidence**: `e1ea846`
 
-### [ ] TASK-4: DailyCounter UI component & Layout integration
+### [x] TASK-4: DailyCounter UI component & Layout integration
 
-- **Route**: direct inline
+- **Route**: subagent delegate
 - **Target Files**:
   - `src/lib/components/layout/daily-counter.svelte`
   - `src/lib/components/layout/daily-counter.svelte.test.ts`
@@ -88,10 +88,10 @@ Implement a non-invasive daily focus counter displaying completed focus blocks a
   - Renders at `fixed bottom-5 inset-x-0` with monospace muted typography.
   - Fades to `opacity-0` with `transition-opacity duration-300` when `timerState.isRunning` is true.
   - Displays formatted blocks and accumulated focus time.
-- **Commit Evidence**: pending
+- **Commit Evidence**: `055a306`
 
 ## Verification Gate
 
-- [ ] `pnpm check` (0 type errors)
-- [ ] `pnpm lint` (0 lint/formatting errors)
-- [ ] `pnpm test` (all unit and browser tests passing)
+- [x] `pnpm check` (0 type errors)
+- [x] `pnpm lint` (0 lint/formatting errors)
+- [x] `pnpm test` (all unit and browser tests passing)
