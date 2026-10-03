@@ -56,7 +56,7 @@ Create a centralized, robust in-memory Test Kit (`src/testing/`) accessible via 
   - Contract tests verify expected behavioral parity with production storage adapters.
 - **Evidence**: 29/29 tests passing in `src/testing/fakes/repository-fakes.test.ts`. Full suite 598 unit tests passing. `pnpm check` and `pnpm lint` green.
 
-### [ ] TASK-3: Implement Engine & Device Fakes & Tests
+### [x] TASK-3: Implement Engine & Device Fakes & Tests
 
 - **Route**: delegated direct
 - **Target Files**:
@@ -66,6 +66,7 @@ Create a centralized, robust in-memory Test Kit (`src/testing/`) accessible via 
 - **Acceptance Criteria**:
   - `FakeTicker` allows deterministic manual time advancement (`advanceByMs`, `step`) and tracks tick listeners.
   - `FakeAudioNotifier` records played tones/alerts without interacting with Web Audio API.
+- **Evidence**: 22/22 unit tests passing in `src/testing/fakes/engine-fakes.test.ts`. Full suite 620 unit tests passing. `pnpm check` and `pnpm lint` green.
 
 ### [ ] TASK-4: Create Shared Entity Fixtures & Suite Verification
 
