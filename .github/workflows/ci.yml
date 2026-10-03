@@ -13,6 +13,30 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify PR size & bloat guard
+        if: |
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.user.login != github.repository_owner &&
+          !contains(github.event.pull_request.labels.*.name, 'epic') &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-size-check')
+        run: |
+          DIFF_LINES=$(git diff --numstat origin/${{ github.base_ref }}...HEAD -- ':!src/lib/components/ui' ':!pnpm-lock.yaml' ':!docs' ':!odd' | awk '{added+=$1; deleted+=$2} END {print added+deleted}')
+          DIFF_LINES=${DIFF_LINES:-0}
+
+          echo "Non-vendor diff lines: $DIFF_LINES"
+          if [ "$DIFF_LINES" -gt 400 ]; then
+            echo "::error::PR exceeds the 400 non-vendor lines threshold ($DIFF_LINES lines changed)."
+            echo "Please break this change down into smaller atomic work units or consult Tech Lead (@${{ github.repository_owner }}) for architectural sign-off."
+            exit 1
+          fi
+
+          if git diff origin/${{ github.base_ref }}...HEAD -S "<canvas" --name-only | grep -E '^src/lib/'; then
+            echo "::error::Direct usage of <canvas> is prohibited in UI views (violates Pomody zero-bloat <30MB RAM target)."
+            exit 1
+          fi
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
