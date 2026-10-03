@@ -847,6 +847,7 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 		expect(event.mode).toBe('focus');
 		expect(event.round).toBe(1);
 		expect(event.totalRoundsCompleted).toBe(1);
+		expect(event.durationMs).toBe(1500000);
 		expect(event.completedAt).toBeInstanceOf(Date);
 		expect(event.completedAt.getTime()).toBeGreaterThanOrEqual(startTime.getTime());
 		expect(event.completedAt.getTime()).toBeLessThanOrEqual(Date.now());
@@ -873,7 +874,8 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 			type: 'block-completed',
 			mode: 'focus',
 			round: 1,
-			totalRoundsCompleted: 1
+			totalRoundsCompleted: 1,
+			durationMs: 10000
 		});
 
 		// Round 1 Short Break
@@ -885,7 +887,8 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 			type: 'block-completed',
 			mode: 'shortBreak',
 			round: 1,
-			totalRoundsCompleted: 1
+			totalRoundsCompleted: 1,
+			durationMs: 5000
 		});
 
 		// Round 2 Focus
@@ -898,7 +901,8 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 			type: 'block-completed',
 			mode: 'focus',
 			round: 2,
-			totalRoundsCompleted: 2
+			totalRoundsCompleted: 2,
+			durationMs: 10000
 		});
 
 		// Round 2 Long Break
@@ -910,7 +914,8 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 			type: 'block-completed',
 			mode: 'longBreak',
 			round: 2,
-			totalRoundsCompleted: 2
+			totalRoundsCompleted: 2,
+			durationMs: 15000
 		});
 		expect((events[3] as BlockCompletedEvent).completedAt).toBeInstanceOf(Date);
 	});

@@ -5,6 +5,7 @@ export interface BlockCompletedEvent {
 	readonly mode: TimerMode;
 	readonly round: number;
 	readonly totalRoundsCompleted: number;
+	readonly durationMs: number;
 	readonly completedAt: Date;
 }
 

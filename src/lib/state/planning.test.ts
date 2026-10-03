@@ -556,6 +556,7 @@ describe('PlanningState', () => {
 				mode: 'focus',
 				round: 1,
 				totalRoundsCompleted: 1,
+				durationMs: 1500 * 1000,
 				completedAt: new Date()
 			});
 
@@ -575,6 +576,7 @@ describe('PlanningState', () => {
 				mode: 'focus',
 				round: 1,
 				totalRoundsCompleted: 1,
+				durationMs: 1500 * 1000,
 				completedAt: new Date()
 			});
 
@@ -612,6 +614,7 @@ describe('PlanningState', () => {
 				mode: 'shortBreak',
 				round: 1,
 				totalRoundsCompleted: 0,
+				durationMs: 300 * 1000,
 				completedAt: new Date()
 			});
 			expect(state.isPlanCompleted).toBe(false);
