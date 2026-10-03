@@ -304,6 +304,7 @@ export class TimerFSM {
 				mode: this._mode,
 				round: this._currentRound,
 				totalRoundsCompleted: this._totalRoundsCompleted,
+				durationMs: this._durationMs,
 				completedAt: new Date()
 			});
 			this.notify();
