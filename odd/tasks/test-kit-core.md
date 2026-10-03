@@ -40,7 +40,7 @@ Create a centralized, robust in-memory Test Kit (`src/testing/`) accessible via 
   - Vite and Vitest resolve `$tests/...` correctly in both server and client test environments.
 - **Evidence**: Verified with `pnpm check` (0 errors) and `pnpm vitest run src/testing/smoke.test.ts` (1 passed).
 
-### [ ] TASK-2: Implement In-Memory Repository Fakes & Contract Tests
+### [x] TASK-2: Implement In-Memory Repository Fakes & Contract Tests
 
 - **Route**: delegated direct
 - **Target Files**:
@@ -54,6 +54,7 @@ Create a centralized, robust in-memory Test Kit (`src/testing/`) accessible via 
   - Each fake implements its corresponding domain port interface completely.
   - Stateful operations (CRUD, filtering, sorting, defaults reset) behave deterministically.
   - Contract tests verify expected behavioral parity with production storage adapters.
+- **Evidence**: 29/29 tests passing in `src/testing/fakes/repository-fakes.test.ts`. Full suite 598 unit tests passing. `pnpm check` and `pnpm lint` green.
 
 ### [ ] TASK-3: Implement Engine & Device Fakes & Tests
 
