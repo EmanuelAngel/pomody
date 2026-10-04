@@ -33,6 +33,12 @@
 </script>
 
 <div
+	role="progressbar"
+	aria-valuenow={Math.round(clampedProgress * 100)}
+	aria-valuemin={0}
+	aria-valuemax={100}
+	aria-label="Timer progress"
+	data-mode={mode}
 	class="relative flex aspect-square w-full max-w-[360px] items-center justify-center sm:max-w-[400px]"
 >
 	<svg viewBox="0 0 320 320" class="size-full" aria-hidden="true">

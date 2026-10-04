@@ -6,49 +6,8 @@ import TimerControls from './timer-controls.svelte';
 import Timer from './timer.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
 import { createBreaksState } from '$lib/state/breaks.svelte';
-import type { IBreakActivityRepository } from '$lib/domain/ports/break-activity-repository.port';
-import { sortBreakActivities } from '$lib/domain/ports/break-activity-repository.port';
-import {
-	createBreakActivity,
-	type BreakActivity,
-	type BreakCategory
-} from '$lib/domain/breaks/break-activity.entity';
-
-class MockBreakActivityRepository implements IBreakActivityRepository {
-	private activities = new Map<string, BreakActivity>();
-
-	constructor(initialActivities: readonly BreakActivity[] = []) {
-		for (const act of initialActivities) {
-			this.activities.set(act.id, act);
-		}
-	}
-
-	async getAll(): Promise<readonly BreakActivity[]> {
-		return sortBreakActivities(Array.from(this.activities.values()));
-	}
-
-	async getByCategory(category: BreakCategory): Promise<readonly BreakActivity[]> {
-		return sortBreakActivities(
-			Array.from(this.activities.values()).filter((a) => a.category === category)
-		);
-	}
-
-	async save(activity: BreakActivity): Promise<void> {
-		this.activities.set(activity.id, activity);
-	}
-
-	async delete(activityId: string): Promise<void> {
-		this.activities.delete(activityId);
-	}
-
-	async resetToDefaults(): Promise<void> {
-		this.activities.clear();
-	}
-
-	async clearAll(): Promise<void> {
-		this.activities.clear();
-	}
-}
+import { createBreakActivity } from '$lib/domain/breaks/break-activity.entity';
+import { FakeBreakActivityRepository } from '$tests/fakes/repositories/fake-break-activity-repository';
 
 const mockActivity = createBreakActivity({
 	id: 'act-phys',
@@ -59,29 +18,29 @@ const mockActivity = createBreakActivity({
 });
 
 describe('TimerArc (Client Browser)', () => {
-	it('renders circular progress arc on dimmed track', async () => {
+	it('renders accessible progressbar with semantic attributes', async () => {
 		const screen = await render(TimerArc, { progress: 0.25, mode: 'focus' });
-		const svg = screen.container.querySelector('svg');
-		expect(svg).not.toBeNull();
+		const progressbar = screen.getByRole('progressbar');
 
-		const circles = screen.container.querySelectorAll('circle');
-		expect(circles.length).toBe(2);
-
-		// Track circle has stroke-width 2.5
-		expect(circles[0].getAttribute('stroke-width')).toBe('2.5');
-
-		// Progress circle maps to foam for focus mode
-		expect(circles[1].style.stroke).toBe('var(--accent-foam)');
+		await expect.element(progressbar).toBeVisible();
+		await expect.element(progressbar).toHaveAttribute('aria-valuenow', '25');
+		await expect.element(progressbar).toHaveAttribute('aria-valuemin', '0');
+		await expect.element(progressbar).toHaveAttribute('aria-valuemax', '100');
+		await expect.element(progressbar).toHaveAttribute('aria-label', 'Timer progress');
+		await expect.element(progressbar).toHaveAttribute('data-mode', 'focus');
 	});
 
-	it('updates stroke color per mode (foam/pine/iris)', async () => {
+	it('updates data-mode attribute per mode', async () => {
 		const shortScreen = await render(TimerArc, { progress: 0, mode: 'shortBreak' });
-		const circlesShort = shortScreen.container.querySelectorAll('circle');
-		expect(circlesShort[1].style.stroke).toBe('var(--accent-pine)');
+		await expect
+			.element(shortScreen.getByRole('progressbar'))
+			.toHaveAttribute('data-mode', 'shortBreak');
+		shortScreen.unmount();
 
 		const longScreen = await render(TimerArc, { progress: 0, mode: 'longBreak' });
-		const circlesLong = longScreen.container.querySelectorAll('circle');
-		expect(circlesLong[1].style.stroke).toBe('var(--accent-iris)');
+		await expect
+			.element(longScreen.getByRole('progressbar'))
+			.toHaveAttribute('data-mode', 'longBreak');
 	});
 });
 
@@ -232,7 +191,7 @@ describe('Timer Slot Mode & BreakRevitalization Integration (Client Browser)', (
 			destroy: vi.fn()
 		};
 		const timerState = createTimerState({ focusDurationSeconds: 1500 }, dummyTicker);
-		const breaksRepo = new MockBreakActivityRepository([mockActivity]);
+		const breaksRepo = new FakeBreakActivityRepository([mockActivity]);
 		const breaksState = createBreaksState(breaksRepo);
 		await breaksState.load();
 
@@ -272,7 +231,7 @@ describe('Timer Slot Mode & BreakRevitalization Integration (Client Browser)', (
 		};
 		const timerState = createTimerState({ focusDurationSeconds: 1500 }, dummyTicker);
 		timerState.setRevitalizationEnabled(false);
-		const breaksRepo = new MockBreakActivityRepository([mockActivity]);
+		const breaksRepo = new FakeBreakActivityRepository([mockActivity]);
 		const breaksState = createBreaksState(breaksRepo);
 		await breaksState.load();
 
@@ -297,7 +256,7 @@ describe('Timer Slot Mode & BreakRevitalization Integration (Client Browser)', (
 			destroy: vi.fn()
 		};
 		const timerState = createTimerState({ focusDurationSeconds: 1500 }, dummyTicker);
-		const breaksRepo = new MockBreakActivityRepository([mockActivity]);
+		const breaksRepo = new FakeBreakActivityRepository([mockActivity]);
 		const breaksState = createBreaksState(breaksRepo);
 		await breaksState.load();
 		const resetSpy = vi.spyOn(breaksState, 'resetCycle');
