@@ -55,11 +55,20 @@ Second part of issue #85 (PR 1.3b), closing Epic #82 before starting the i18n Ph
   - Checks: `pnpm vitest run src/testing/cuj/planning-handover-journey.svelte.test.ts --project client` (passed 1/1 in 757ms), `pnpm vitest run src/testing/cuj/ --project client` (2/2 passed), `pnpm test:unit` (636/636 passed), `pnpm check` (0 errors), `pnpm lint` green.
   - Evidence: Commit `9005fd4`.
 
+- [x] `TASK-4`: Sanitize Zen mode assertions in `core-focus-journey.svelte.test.ts` and elevate `DailyCounter` accessibility
+  - Route: Delegated direct (Writer trigger: touches daily-counter.svelte and core-focus-journey.svelte.test.ts).
+  - Scope:
+    - Add `aria-hidden={isRunning ? true : undefined}` to `daily-counter.svelte`.
+    - In `core-focus-journey.svelte.test.ts`, replace `.className.toContain('opacity-0')` and `.toContain('pointer-events-none')` with accessible assertions: `toBeDisabled()`, `toHaveAttribute('aria-hidden', 'true')` on buttons and daily counter.
+    - Updated `daily-counter.svelte.test.ts` to assert `aria-hidden`.
+  - Checks: `pnpm vitest run src/testing/cuj/core-focus-journey.svelte.test.ts --project client` (1/1 passed), `pnpm vitest run src/lib/components/layout/daily-counter.svelte.test.ts --project client` (5/5 passed), `pnpm check` (0 errors), `pnpm lint` green.
+  - Evidence: Commit `7ce644b`.
+
 ## Delivery Strategy
 
 - Strategy: `ask-on-risk` (single PR for PR 1.3b).
 - Forecast: ~280 LOC net delta.
-- Actual: 292 LOC net delta (3 files, 292 insertions, 0 deletions; well within <400 LOC budget).
+- Actual: 364 LOC net delta across 6 files (well within <400 LOC budget).
 - Target PR: resolves second part of #85 under Epic #82.
 
 ## Verification Evidence & Progress
@@ -68,5 +77,6 @@ Second part of issue #85 (PR 1.3b), closing Epic #82 before starting the i18n Ph
 - TASK-1: Completed in commit `2a06982`. Svelte autofixer clean, `pnpm check` 0 errors, `pnpm lint` green.
 - TASK-2: Completed in commit `4021d03`. 1/1 browser test green (524ms), `pnpm check` 0 errors, `pnpm lint` green.
 - TASK-3: Completed in commit `9005fd4`. 1/1 browser test green (757ms), full CUJ suite 2/2 green, `pnpm check` 0 errors, `pnpm lint` green.
-- Current Status: All tasks complete. Total net delta: +292 LOC. All verification checks passing.
+- TASK-4: Completed in commit `7ce644b`. All CSS assertions eliminated; accessibility elevated with `aria-hidden`.
+- Current Status: All tasks complete and sanitized. Zero private DOM/CSS assertions.
 - Next Step: Ready for PR creation and review.
