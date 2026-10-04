@@ -1,109 +1,26 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { FakeSessionPlanRepository } from '$tests/fakes/repositories/fake-session-plan-repository';
+import { FakeTicker } from '$tests/fakes/engine/fake-ticker';
+import { FakeAudioNotifier } from '$tests/fakes/engine/fake-audio-notifier';
+import { FakeTaskRepository } from '$tests/fakes/repositories/fake-task-repository';
 import { PlanningState, createPlanningState, planningState } from './planning.svelte';
-import type { ISessionPlanRepository } from '../domain/ports/session-plan-repository.port';
 import {
-	type SessionPlan,
 	calculateSessionBudgetByBlocks,
 	updateBlockStatus
 } from '../domain/planning/session-plan.entity';
 import { TimerState } from './timer.svelte';
 import { TasksState } from './tasks.svelte';
-import type { ITimerTicker } from '../domain/ports/timer-ticker.port';
-import type { IAudioNotifier } from '../domain/ports/IAudioNotifier';
-import type { ITaskRepository } from '../domain/ports/task-repository.port';
-import type { FocusTask } from '../domain/tasks/task.entity';
-import { sortFocusTasks } from '../domain/ports/task-repository.port';
-
-class MockSessionPlanRepository implements ISessionPlanRepository {
-	private activePlan: SessionPlan | null = null;
-	public getActivePlanCallCount = 0;
-	public saveActivePlanCallCount = 0;
-	public clearActivePlanCallCount = 0;
-
-	constructor(initialPlan: SessionPlan | null = null) {
-		this.activePlan = initialPlan;
-	}
-
-	async getActivePlan(): Promise<SessionPlan | null> {
-		this.getActivePlanCallCount++;
-		return this.activePlan;
-	}
-
-	async saveActivePlan(plan: SessionPlan): Promise<void> {
-		this.saveActivePlanCallCount++;
-		this.activePlan = plan;
-	}
-
-	async clearActivePlan(): Promise<void> {
-		this.clearActivePlanCallCount++;
-		this.activePlan = null;
-	}
-}
-
-class MockTicker implements ITimerTicker {
-	public isRunning = false;
-	start(): void {
-		this.isRunning = true;
-	}
-	stop(): void {
-		this.isRunning = false;
-	}
-	destroy(): void {
-		this.isRunning = false;
-	}
-}
-
-class MockAudioNotifier implements IAudioNotifier {
-	async notifyBlockCompleted(): Promise<void> {}
-	async unlock(): Promise<void> {}
-}
-
-class MockTaskRepository implements ITaskRepository {
-	private tasks = new Map<string, FocusTask>();
-
-	async getAll(): Promise<readonly FocusTask[]> {
-		return sortFocusTasks(Array.from(this.tasks.values()));
-	}
-
-	async getPending(): Promise<readonly FocusTask[]> {
-		return sortFocusTasks(Array.from(this.tasks.values()).filter((t) => !t.completed));
-	}
-
-	async save(task: FocusTask): Promise<void> {
-		this.tasks.set(task.id, task);
-	}
-
-	async saveBatch(tasks: readonly FocusTask[]): Promise<void> {
-		for (const t of tasks) {
-			this.tasks.set(t.id, t);
-		}
-	}
-
-	async delete(taskId: string): Promise<void> {
-		this.tasks.delete(taskId);
-	}
-
-	async clearCompleted(): Promise<void> {
-		for (const [id, t] of this.tasks.entries()) {
-			if (t.completed) this.tasks.delete(id);
-		}
-	}
-
-	async clearAll(): Promise<void> {
-		this.tasks.clear();
-	}
-}
 
 describe('PlanningState', () => {
-	let repo: MockSessionPlanRepository;
+	let repo: FakeSessionPlanRepository;
 	let state: PlanningState;
 	let timer: TimerState;
 	let tasks: TasksState;
 
 	beforeEach(() => {
-		repo = new MockSessionPlanRepository();
-		timer = new TimerState(undefined, new MockTicker(), new MockAudioNotifier());
-		tasks = new TasksState(new MockTaskRepository());
+		repo = new FakeSessionPlanRepository();
+		timer = new TimerState(undefined, new FakeTicker(), new FakeAudioNotifier());
+		tasks = new TasksState(new FakeTaskRepository());
 		state = createPlanningState(repo, timer, tasks);
 	});
 
@@ -309,8 +226,8 @@ describe('PlanningState', () => {
 		});
 
 		it('should accept custom timerState and tasksState overrides', async () => {
-			const customTimer = new TimerState(undefined, new MockTicker(), new MockAudioNotifier());
-			const customTasks = new TasksState(new MockTaskRepository());
+			const customTimer = new TimerState(undefined, new FakeTicker(), new FakeAudioNotifier());
+			const customTasks = new TasksState(new FakeTaskRepository());
 			await customTasks.createTask('Custom Task');
 			const customTaskId = customTasks.pendingTasks[0].id;
 
@@ -763,8 +680,8 @@ describe('PlanningState', () => {
 					longBreakDurationSeconds: 20 * 60,
 					roundsBeforeLongBreak: 3
 				},
-				new MockTicker(),
-				new MockAudioNotifier()
+				new FakeTicker(),
+				new FakeAudioNotifier()
 			);
 
 			const customState = createPlanningState(repo, customTimer, tasks);
@@ -972,11 +889,11 @@ describe('PlanningState', () => {
 					longBreakDurationSeconds: 22 * 60,
 					roundsBeforeLongBreak: 2
 				},
-				new MockTicker(),
-				new MockAudioNotifier()
+				new FakeTicker(),
+				new FakeAudioNotifier()
 			);
 
-			const emptyRepo = new MockSessionPlanRepository(null);
+			const emptyRepo = new FakeSessionPlanRepository(null);
 			const testState = createPlanningState(emptyRepo, customTimer, tasks);
 
 			await testState.load();

@@ -1,53 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { FakeTaskRepository } from '$tests/fakes/repositories/fake-task-repository';
 import { TasksState, createTasksState } from './tasks.svelte';
-import type { ITaskRepository } from '../domain/ports/task-repository.port';
-import { createFocusTask, type FocusTask } from '../domain/tasks/task.entity';
-import { sortFocusTasks } from '../domain/ports/task-repository.port';
-
-class MockTaskRepository implements ITaskRepository {
-	private tasks = new Map<string, FocusTask>();
-
-	async getAll(): Promise<readonly FocusTask[]> {
-		return sortFocusTasks(Array.from(this.tasks.values()));
-	}
-
-	async getPending(): Promise<readonly FocusTask[]> {
-		return sortFocusTasks(Array.from(this.tasks.values()).filter((t) => !t.completed));
-	}
-
-	async save(task: FocusTask): Promise<void> {
-		this.tasks.set(task.id, task);
-	}
-
-	async saveBatch(tasks: readonly FocusTask[]): Promise<void> {
-		for (const task of tasks) {
-			this.tasks.set(task.id, task);
-		}
-	}
-
-	async delete(taskId: string): Promise<void> {
-		this.tasks.delete(taskId);
-	}
-
-	async clearCompleted(): Promise<void> {
-		for (const [id, task] of this.tasks.entries()) {
-			if (task.completed) {
-				this.tasks.delete(id);
-			}
-		}
-	}
-
-	async clearAll(): Promise<void> {
-		this.tasks.clear();
-	}
-}
+import { createFocusTask } from '../domain/tasks/task.entity';
 
 describe('TasksState', () => {
-	let repo: MockTaskRepository;
+	let repo: FakeTaskRepository;
 	let state: TasksState;
 
 	beforeEach(() => {
-		repo = new MockTaskRepository();
+		repo = new FakeTaskRepository();
 		state = createTasksState(repo);
 	});
 

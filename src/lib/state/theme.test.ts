@@ -1,10 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
 import { ThemeState, createThemeState, themeState, THEMES } from './theme.svelte';
-import {
-	DEFAULT_USER_SETTINGS,
-	type ISettingsStorage,
-	type UserSettings
-} from '../domain/ports/settings-storage.port';
 
 describe('ThemeState', () => {
 	describe('Constants & Initial State', () => {
@@ -96,23 +92,19 @@ describe('ThemeState', () => {
 	});
 
 	describe('ISettingsStorage persistence', () => {
-		let mockStorage: ISettingsStorage;
+		let mockStorage: FakeSettingsStorage;
 
 		beforeEach(() => {
-			mockStorage = {
-				loadSettings: vi.fn((): UserSettings => ({
-					...DEFAULT_USER_SETTINGS,
-					theme: 'dawn'
-				})),
-				saveSettings: vi.fn(),
-				resetSettings: vi.fn()
-			};
+			mockStorage = new FakeSettingsStorage({
+				theme: 'dawn'
+			});
 		});
 
 		it('should load saved theme from storage on initialization when initialTheme is omitted', () => {
+			const loadSpy = vi.spyOn(mockStorage, 'loadSettings');
 			const theme = createThemeState(undefined, mockStorage);
 			expect(theme.current).toBe('dawn');
-			expect(mockStorage.loadSettings).toHaveBeenCalledTimes(1);
+			expect(loadSpy).toHaveBeenCalledTimes(1);
 		});
 
 		it('should give explicit initialTheme precedence over storage if both provided', () => {
@@ -126,13 +118,11 @@ describe('ThemeState', () => {
 
 			theme.setTheme('oled');
 			expect(theme.current).toBe('oled');
-			expect(mockStorage.saveSettings).toHaveBeenCalledTimes(1);
-			expect(mockStorage.saveSettings).toHaveBeenCalledWith({ theme: 'oled' });
+			expect(mockStorage.saveSettingsCalls).toEqual([{ theme: 'oled' }]);
 
 			theme.setTheme('dark');
 			expect(theme.current).toBe('dark');
-			expect(mockStorage.saveSettings).toHaveBeenCalledTimes(2);
-			expect(mockStorage.saveSettings).toHaveBeenLastCalledWith({ theme: 'dark' });
+			expect(mockStorage.saveSettingsCalls).toEqual([{ theme: 'oled' }, { theme: 'dark' }]);
 		});
 
 		it('should safely operate without storage when not provided', () => {

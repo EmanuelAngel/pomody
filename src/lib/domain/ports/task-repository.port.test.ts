@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { createFocusTask, toggleFocusTask, type FocusTask } from '../tasks/task.entity';
+import { FakeTaskRepository } from '$tests/fakes/repositories/fake-task-repository';
+import { createFocusTask, toggleFocusTask } from '../tasks/task.entity';
 import { compareFocusTasks, sortFocusTasks, type ITaskRepository } from './task-repository.port';
 
 describe('Task Repository Port & Sorting Utilities', () => {
@@ -105,47 +106,8 @@ describe('Task Repository Port & Sorting Utilities', () => {
 	});
 
 	describe('ITaskRepository contract compilation & in-memory behavior', () => {
-		class InMemoryTaskRepository implements ITaskRepository {
-			private tasks = new Map<string, FocusTask>();
-
-			async getAll(): Promise<readonly FocusTask[]> {
-				return sortFocusTasks(Array.from(this.tasks.values()));
-			}
-
-			async getPending(): Promise<readonly FocusTask[]> {
-				const pending = Array.from(this.tasks.values()).filter((t) => !t.completed);
-				return sortFocusTasks(pending);
-			}
-
-			async save(task: FocusTask): Promise<void> {
-				this.tasks.set(task.id, task);
-			}
-
-			async saveBatch(tasks: readonly FocusTask[]): Promise<void> {
-				for (const task of tasks) {
-					this.tasks.set(task.id, task);
-				}
-			}
-
-			async delete(taskId: string): Promise<void> {
-				this.tasks.delete(taskId);
-			}
-
-			async clearCompleted(): Promise<void> {
-				for (const [id, task] of this.tasks.entries()) {
-					if (task.completed) {
-						this.tasks.delete(id);
-					}
-				}
-			}
-
-			async clearAll(): Promise<void> {
-				this.tasks.clear();
-			}
-		}
-
 		it('should satisfy the ITaskRepository contract across all operations', async () => {
-			const repo: ITaskRepository = new InMemoryTaskRepository();
+			const repo: ITaskRepository = new FakeTaskRepository();
 
 			// Initial state
 			expect(await repo.getAll()).toEqual([]);

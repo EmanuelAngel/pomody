@@ -50,6 +50,13 @@ export class FakeTicker implements ITimerTicker {
 	}
 
 	/**
+	 * Ergonomic alias for tick(deltaMs) to match test simulation ergonomics.
+	 */
+	simulateTick(deltaMs: number = 250): void {
+		this.tick(deltaMs);
+	}
+
+	/**
 	 * Advances time by triggering `tick(deltaMs)` multiple times sequentially.
 	 */
 	step(times: number = 1, deltaMs: number = 250): void {
