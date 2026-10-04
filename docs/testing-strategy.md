@@ -59,13 +59,14 @@ flowchart TD
 - **Alias de compilador**: Configurar el alias `$tests/` mapeado a `src/testing/` en `tsconfig.json` y `vite.config.ts`.
 - **Regla estricta**: Cero barrel files (`index.ts`). Cada fake y fixture se importa desde su ruta concreta.
 - **Entregables**:
-  - `src/testing/fakes/fake-task-repository.ts`: Implementación en memoria respetando el contrato `ITaskRepository`.
-  - `src/testing/fakes/fake-break-activity-repository.ts`: Implementación en memoria respetando el contrato `IBreakActivityRepository`.
-  - `src/testing/fakes/fake-session-plan-repository.ts`: Implementación en memoria respetando el contrato `ISessionPlanRepository`.
-  - `src/testing/fakes/fake-daily-stats-repository.ts`: Implementación en memoria respetando el contrato `IDailyStatsRepository`.
-  - `src/testing/fakes/fake-ticker.ts`: Control manual determinista del tiempo para la FSM.
-  - `src/testing/fakes/fake-audio-notifier.ts`: Espía in-memory para eventos de audio.
-  - `src/testing/fixtures/`: Factorías de entidades (`createTaskFixture`, `createBreakActivityFixture`).
+  - `src/testing/fakes/repositories/fake-task-repository.ts`: Implementación en memoria respetando el contrato `ITaskRepository`.
+  - `src/testing/fakes/repositories/fake-break-activity-repository.ts`: Implementación en memoria respetando el contrato `IBreakActivityRepository`.
+  - `src/testing/fakes/repositories/fake-session-plan-repository.ts`: Implementación en memoria respetando el contrato `ISessionPlanRepository`.
+  - `src/testing/fakes/repositories/fake-daily-stats-repository.ts`: Implementación en memoria respetando el contrato `IDailyStatsRepository`.
+  - `src/testing/fakes/repositories/fake-settings-storage.ts`: Implementación en memoria respetando el contrato `ISettingsStorage`.
+  - `src/testing/fakes/engine/fake-ticker.ts`: Control manual determinista del tiempo para la FSM.
+  - `src/testing/fakes/engine/fake-audio-notifier.ts`: Espía in-memory para eventos de audio.
+  - `src/testing/fixtures/`: Factorías de entidades (`createTaskFixture`, `createBreakActivityFixture`, `createSessionPlanFixture`).
 
 ### PR 1.2: Saneamiento de Tests de Dominio y Estado
 
