@@ -6,119 +6,16 @@ import { createTasksState } from '$lib/state/tasks.svelte';
 import { createNavigationState } from '$lib/state/navigation.svelte';
 import { createPlanningState } from '$lib/state/planning.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
-import type { ITaskRepository } from '$lib/domain/ports/task-repository.port';
-import { sortFocusTasks } from '$lib/domain/ports/task-repository.port';
-import { createFocusTask, toggleFocusTask, type FocusTask } from '$lib/domain/tasks/task.entity';
-import type { ISessionPlanRepository } from '$lib/domain/ports/session-plan-repository.port';
-import type { SessionPlan } from '$lib/domain/planning/session-plan.entity';
+import { createFocusTask, toggleFocusTask } from '$lib/domain/tasks/task.entity';
 import { createBreaksState } from '$lib/state/breaks.svelte';
-import type { IBreakActivityRepository } from '$lib/domain/ports/break-activity-repository.port';
-import { sortBreakActivities } from '$lib/domain/ports/break-activity-repository.port';
-import {
-	createBreakActivity,
-	type BreakActivity,
-	type BreakCategory
-} from '$lib/domain/breaks/break-activity.entity';
-
-class MockBreakActivityRepository implements IBreakActivityRepository {
-	private activities = new Map<string, BreakActivity>();
-
-	constructor(initialActivities: readonly BreakActivity[] = []) {
-		for (const act of initialActivities) {
-			this.activities.set(act.id, act);
-		}
-	}
-
-	async getAll(): Promise<readonly BreakActivity[]> {
-		return sortBreakActivities(Array.from(this.activities.values()));
-	}
-
-	async getByCategory(category: BreakCategory): Promise<readonly BreakActivity[]> {
-		return sortBreakActivities(
-			Array.from(this.activities.values()).filter((a) => a.category === category)
-		);
-	}
-
-	async save(activity: BreakActivity): Promise<void> {
-		this.activities.set(activity.id, activity);
-	}
-
-	async delete(activityId: string): Promise<void> {
-		this.activities.delete(activityId);
-	}
-
-	async resetToDefaults(): Promise<void> {
-		this.activities.clear();
-	}
-
-	async clearAll(): Promise<void> {
-		this.activities.clear();
-	}
-}
-
-class MockSessionPlanRepository implements ISessionPlanRepository {
-	private plan: SessionPlan | null = null;
-
-	async getActivePlan(): Promise<SessionPlan | null> {
-		return this.plan;
-	}
-
-	async saveActivePlan(plan: SessionPlan): Promise<void> {
-		this.plan = plan;
-	}
-
-	async clearActivePlan(): Promise<void> {
-		this.plan = null;
-	}
-}
-
-class MockTaskRepository implements ITaskRepository {
-	private tasks = new Map<string, FocusTask>();
-
-	constructor(initialTasks: FocusTask[] = []) {
-		for (const task of initialTasks) {
-			this.tasks.set(task.id, task);
-		}
-	}
-
-	async getAll(): Promise<readonly FocusTask[]> {
-		return sortFocusTasks(Array.from(this.tasks.values()));
-	}
-
-	async getPending(): Promise<readonly FocusTask[]> {
-		return sortFocusTasks(Array.from(this.tasks.values()).filter((t) => !t.completed));
-	}
-
-	async save(task: FocusTask): Promise<void> {
-		this.tasks.set(task.id, task);
-	}
-
-	async saveBatch(tasks: readonly FocusTask[]): Promise<void> {
-		for (const task of tasks) {
-			this.tasks.set(task.id, task);
-		}
-	}
-
-	async delete(taskId: string): Promise<void> {
-		this.tasks.delete(taskId);
-	}
-
-	async clearCompleted(): Promise<void> {
-		for (const [id, task] of this.tasks.entries()) {
-			if (task.completed) {
-				this.tasks.delete(id);
-			}
-		}
-	}
-
-	async clearAll(): Promise<void> {
-		this.tasks.clear();
-	}
-}
+import { createBreakActivity } from '$lib/domain/breaks/break-activity.entity';
+import { FakeTaskRepository } from '$tests/fakes/repositories/fake-task-repository';
+import { FakeSessionPlanRepository } from '$tests/fakes/repositories/fake-session-plan-repository';
+import { FakeBreakActivityRepository } from '$tests/fakes/repositories/fake-break-activity-repository';
 
 describe('PlanningView (Client Browser)', () => {
 	it('renders header, quick task input and empty state when backlog is empty', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 		const navigationState = createNavigationState('planning');
@@ -141,7 +38,7 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('creates a new task via quick capture input pressing Enter', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 
@@ -158,7 +55,7 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('creates a new task by clicking the plus button', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 
@@ -176,7 +73,7 @@ describe('PlanningView (Client Browser)', () => {
 
 	it('toggles task between pending and completed when clicking checkbox', async () => {
 		const task = createFocusTask({ title: 'Write integration tests' });
-		const repo = new MockTaskRepository([task]);
+		const repo = new FakeTaskRepository([task]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 
@@ -209,7 +106,7 @@ describe('PlanningView (Client Browser)', () => {
 	it('pins and unpins a task as active for the timer', async () => {
 		const taskA = createFocusTask({ title: 'Main Task', order: 0 });
 		const taskB = createFocusTask({ title: 'Secondary Task', order: 1 });
-		const repo = new MockTaskRepository([taskA, taskB]);
+		const repo = new FakeTaskRepository([taskA, taskB]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 
@@ -242,7 +139,7 @@ describe('PlanningView (Client Browser)', () => {
 
 	it('deletes a pending task when clicking delete button', async () => {
 		const task = createFocusTask({ title: 'Task to discard' });
-		const repo = new MockTaskRepository([task]);
+		const repo = new FakeTaskRepository([task]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 		tasksState.setActiveTask(task.id);
@@ -262,7 +159,7 @@ describe('PlanningView (Client Browser)', () => {
 
 	it('allows inline editing of task title', async () => {
 		const task = createFocusTask({ title: 'Initial Title' });
-		const repo = new MockTaskRepository([task]);
+		const repo = new FakeTaskRepository([task]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 
@@ -286,7 +183,7 @@ describe('PlanningView (Client Browser)', () => {
 
 	it('cancels inline editing when pressing Escape', async () => {
 		const task = createFocusTask({ title: 'Keep Title' });
-		const repo = new MockTaskRepository([task]);
+		const repo = new FakeTaskRepository([task]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 
@@ -305,7 +202,7 @@ describe('PlanningView (Client Browser)', () => {
 
 	it('toggles collapse of completed tasks list', async () => {
 		const completedTask = toggleFocusTask(createFocusTask({ title: 'Already Finished Task' }));
-		const repo = new MockTaskRepository([completedTask]);
+		const repo = new FakeTaskRepository([completedTask]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 
@@ -333,7 +230,7 @@ describe('PlanningView (Client Browser)', () => {
 			Date.now() - 1000
 		);
 		const completedTask2 = toggleFocusTask(createFocusTask({ title: 'Completed 2' }), Date.now());
-		const repo = new MockTaskRepository([completedTask1, completedTask2]);
+		const repo = new FakeTaskRepository([completedTask1, completedTask2]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 
@@ -352,7 +249,7 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('navigates back to timer when clicking "Back to timer" button', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 		const navigationState = createNavigationState('planning');
@@ -367,9 +264,9 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('renders timeline with planningState and 3-metric strip summary display', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
-		const planRepo = new MockSessionPlanRepository();
+		const planRepo = new FakeSessionPlanRepository();
 		const timerState = createTimerState();
 		const planningState = createPlanningState(planRepo, timerState, tasksState);
 		await tasksState.load();
@@ -388,9 +285,9 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('toggles mode between By Blocks and By End Time', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
-		const planRepo = new MockSessionPlanRepository();
+		const planRepo = new FakeSessionPlanRepository();
 		const timerState = createTimerState();
 		const planningState = createPlanningState(planRepo, timerState, tasksState);
 		await tasksState.load();
@@ -413,9 +310,9 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('adjusts focus duration and block count via presets and progressive disclosure steppers', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
-		const planRepo = new MockSessionPlanRepository();
+		const planRepo = new FakeSessionPlanRepository();
 		const timerState = createTimerState();
 		const planningState = createPlanningState(planRepo, timerState, tasksState);
 		await tasksState.load();
@@ -452,9 +349,9 @@ describe('PlanningView (Client Browser)', () => {
 
 	it('slots task into block via popover and unassigns it', async () => {
 		const task = createFocusTask({ title: 'Task to Assign' });
-		const repo = new MockTaskRepository([task]);
+		const repo = new FakeTaskRepository([task]);
 		const tasksState = createTasksState(repo);
-		const planRepo = new MockSessionPlanRepository();
+		const planRepo = new FakeSessionPlanRepository();
 		const timerState = createTimerState();
 		const planningState = createPlanningState(planRepo, timerState, tasksState);
 		await tasksState.load();
@@ -487,9 +384,9 @@ describe('PlanningView (Client Browser)', () => {
 
 	it('slots task into next available focus block from backlog', async () => {
 		const task = createFocusTask({ title: 'Backlog Quick Slot Task' });
-		const repo = new MockTaskRepository([task]);
+		const repo = new FakeTaskRepository([task]);
 		const tasksState = createTasksState(repo);
-		const planRepo = new MockSessionPlanRepository();
+		const planRepo = new FakeSessionPlanRepository();
 		const timerState = createTimerState();
 		const planningState = createPlanningState(planRepo, timerState, tasksState);
 		await tasksState.load();
@@ -506,9 +403,9 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('starts session and navigates to timer tab when clicking Start Session', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
-		const planRepo = new MockSessionPlanRepository();
+		const planRepo = new FakeSessionPlanRepository();
 		const timerState = createTimerState();
 		const planningState = createPlanningState(planRepo, timerState, tasksState);
 		const navigationState = createNavigationState('planning');
@@ -531,9 +428,9 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('renders active session controls and confirms ending session via alert dialog (UX-02)', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
-		const planRepo = new MockSessionPlanRepository();
+		const planRepo = new FakeSessionPlanRepository();
 		const timerState = createTimerState();
 		const planningState = createPlanningState(planRepo, timerState, tasksState);
 		const navigationState = createNavigationState('planning');
@@ -583,9 +480,9 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('displays quick recovery button when time window is insufficient and adjusts to minimum viable window (UX-01)', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
-		const planRepo = new MockSessionPlanRepository();
+		const planRepo = new FakeSessionPlanRepository();
 		const timerState = createTimerState();
 		const planningState = createPlanningState(planRepo, timerState, tasksState);
 		const navigationState = createNavigationState('planning');
@@ -626,9 +523,9 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('keeps duration steppers enabled and allows updating durations during an active session', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
-		const planRepo = new MockSessionPlanRepository();
+		const planRepo = new FakeSessionPlanRepository();
 		const timerState = createTimerState();
 		const planningState = createPlanningState(planRepo, timerState, tasksState);
 		const navigationState = createNavigationState('planning');
@@ -693,9 +590,9 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('renders timeline track as semantic ordered list and marks active step with aria-current (UX-08 & UX-10)', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
-		const planRepo = new MockSessionPlanRepository();
+		const planRepo = new FakeSessionPlanRepository();
 		const timerState = createTimerState();
 		const planningState = createPlanningState(planRepo, timerState, tasksState);
 		const navigationState = createNavigationState('planning');
@@ -728,9 +625,9 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('displays +1 day badge when finish time crosses midnight in end-time mode (UX-08)', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
-		const planRepo = new MockSessionPlanRepository();
+		const planRepo = new FakeSessionPlanRepository();
 		const timerState = createTimerState();
 		const planningState = createPlanningState(planRepo, timerState, tasksState);
 		const navigationState = createNavigationState('planning');
@@ -753,9 +650,9 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('allows quick task creation and assignment directly from the popover (UX-03)', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
-		const planRepo = new MockSessionPlanRepository();
+		const planRepo = new FakeSessionPlanRepository();
 		const timerState = createTimerState();
 		const planningState = createPlanningState(planRepo, timerState, tasksState);
 		const navigationState = createNavigationState('planning');
@@ -793,9 +690,9 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('assigns task to timeline focus block via drag and drop (UX-04)', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
-		const planRepo = new MockSessionPlanRepository();
+		const planRepo = new FakeSessionPlanRepository();
 		const timerState = createTimerState();
 		const planningState = createPlanningState(planRepo, timerState, tasksState);
 		const navigationState = createNavigationState('planning');
@@ -833,9 +730,9 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	it('focuses new task backlog input via keyboard shortcut (UX-04)', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
-		const planRepo = new MockSessionPlanRepository();
+		const planRepo = new FakeSessionPlanRepository();
 		const timerState = createTimerState();
 		const planningState = createPlanningState(planRepo, timerState, tasksState);
 		const navigationState = createNavigationState('planning');
@@ -860,9 +757,9 @@ describe('PlanningView (Client Browser)', () => {
 
 	describe('Segment Switching (Tasks vs Break Habits)', () => {
 		it('defaults right column to TaskBacklog and highlights Tasks segment', async () => {
-			const repo = new MockTaskRepository();
+			const repo = new FakeTaskRepository();
 			const tasksState = createTasksState(repo);
-			const breaksRepo = new MockBreakActivityRepository();
+			const breaksRepo = new FakeBreakActivityRepository();
 			const breaksState = createBreaksState(breaksRepo);
 			await tasksState.load();
 			await breaksState.load();
@@ -888,7 +785,7 @@ describe('PlanningView (Client Browser)', () => {
 
 		it('switches to BreakCatalog when clicking Break Habits segment and back to TaskBacklog', async () => {
 			const task = createFocusTask({ title: 'Important Feature Task' });
-			const tasksRepo = new MockTaskRepository([task]);
+			const tasksRepo = new FakeTaskRepository([task]);
 			const tasksState = createTasksState(tasksRepo);
 
 			const habit = createBreakActivity({
@@ -898,7 +795,7 @@ describe('PlanningView (Client Browser)', () => {
 				durationMinutes: 2,
 				isPreset: true
 			});
-			const breaksRepo = new MockBreakActivityRepository([habit]);
+			const breaksRepo = new FakeBreakActivityRepository([habit]);
 			const breaksState = createBreaksState(breaksRepo);
 
 			await tasksState.load();
@@ -930,12 +827,12 @@ describe('PlanningView (Client Browser)', () => {
 		});
 
 		it('preserves left column timeline visibility and interaction during segment switching', async () => {
-			const tasksRepo = new MockTaskRepository();
+			const tasksRepo = new FakeTaskRepository();
 			const tasksState = createTasksState(tasksRepo);
-			const planRepo = new MockSessionPlanRepository();
+			const planRepo = new FakeSessionPlanRepository();
 			const timerState = createTimerState();
 			const planningState = createPlanningState(planRepo, timerState, tasksState);
-			const breaksRepo = new MockBreakActivityRepository();
+			const breaksRepo = new FakeBreakActivityRepository();
 			const breaksState = createBreaksState(breaksRepo);
 
 			await tasksState.load();
@@ -973,7 +870,7 @@ describe('PlanningView (Client Browser)', () => {
 
 		it('switches segment to breaks via "b" keyboard shortcut and returns to tasks via "c" or "n"', async () => {
 			const task = createFocusTask({ title: 'Important Feature Task' });
-			const tasksRepo = new MockTaskRepository([task]);
+			const tasksRepo = new FakeTaskRepository([task]);
 			const tasksState = createTasksState(tasksRepo);
 
 			const habit = createBreakActivity({
@@ -983,7 +880,7 @@ describe('PlanningView (Client Browser)', () => {
 				durationMinutes: 2,
 				isPreset: true
 			});
-			const breaksRepo = new MockBreakActivityRepository([habit]);
+			const breaksRepo = new FakeBreakActivityRepository([habit]);
 			const breaksState = createBreaksState(breaksRepo);
 
 			await tasksState.load();
