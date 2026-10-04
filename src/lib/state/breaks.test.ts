@@ -1,56 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { FakeBreakActivityRepository } from '$tests/fakes/repositories/fake-break-activity-repository';
 import { BreaksState, createBreaksState, breaksState } from './breaks.svelte';
-import type { IBreakActivityRepository } from '../domain/ports/break-activity-repository.port';
-import {
-	createBreakActivity,
-	type BreakActivity,
-	type BreakCategory
-} from '../domain/breaks/break-activity.entity';
+import { createBreakActivity, type BreakActivity } from '../domain/breaks/break-activity.entity';
 import { sortBreakActivities } from '../domain/ports/break-activity-repository.port';
-
-class MockBreakActivityRepository implements IBreakActivityRepository {
-	private activities = new Map<string, BreakActivity>();
-	private defaultActivities: readonly BreakActivity[];
-
-	constructor(
-		initialActivities: readonly BreakActivity[] = [],
-		defaultActivities?: readonly BreakActivity[]
-	) {
-		this.defaultActivities = defaultActivities ?? initialActivities;
-		for (const act of initialActivities) {
-			this.activities.set(act.id, act);
-		}
-	}
-
-	async getAll(): Promise<readonly BreakActivity[]> {
-		return sortBreakActivities(Array.from(this.activities.values()));
-	}
-
-	async getByCategory(category: BreakCategory): Promise<readonly BreakActivity[]> {
-		return sortBreakActivities(
-			Array.from(this.activities.values()).filter((a) => a.category === category)
-		);
-	}
-
-	async save(activity: BreakActivity): Promise<void> {
-		this.activities.set(activity.id, activity);
-	}
-
-	async delete(activityId: string): Promise<void> {
-		this.activities.delete(activityId);
-	}
-
-	async resetToDefaults(): Promise<void> {
-		this.activities.clear();
-		for (const act of this.defaultActivities) {
-			this.activities.set(act.id, act);
-		}
-	}
-
-	async clearAll(): Promise<void> {
-		this.activities.clear();
-	}
-}
 
 describe('BreaksState', () => {
 	const sampleActivities: readonly BreakActivity[] = [
@@ -74,11 +26,11 @@ describe('BreaksState', () => {
 		})
 	];
 
-	let repo: MockBreakActivityRepository;
+	let repo: FakeBreakActivityRepository;
 	let state: BreaksState;
 
 	beforeEach(() => {
-		repo = new MockBreakActivityRepository(sampleActivities);
+		repo = new FakeBreakActivityRepository(sampleActivities);
 		state = createBreaksState(repo);
 	});
 
@@ -177,7 +129,7 @@ describe('BreaksState', () => {
 	});
 
 	it('should return null when activities list is empty', async () => {
-		const emptyRepo = new MockBreakActivityRepository([]);
+		const emptyRepo = new FakeBreakActivityRepository([]);
 		const emptyState = createBreaksState(emptyRepo);
 		await emptyState.load();
 
@@ -209,7 +161,7 @@ describe('BreaksState', () => {
 
 	it('should handle single activity in catalog gracefully during shuffle', async () => {
 		const single = [sampleActivities[0]];
-		const singleRepo = new MockBreakActivityRepository(single);
+		const singleRepo = new FakeBreakActivityRepository(single);
 		const singleState = createBreaksState(singleRepo);
 		await singleState.load();
 
@@ -449,7 +401,7 @@ describe('BreaksState', () => {
 				isPreset: false
 			});
 
-			const resetRepo = new MockBreakActivityRepository(
+			const resetRepo = new FakeBreakActivityRepository(
 				[...defaultPresets, customActivity],
 				defaultPresets
 			);
@@ -485,7 +437,7 @@ describe('BreaksState', () => {
 				isPreset: false
 			});
 
-			const resetRepo = new MockBreakActivityRepository(
+			const resetRepo = new FakeBreakActivityRepository(
 				[...defaultPresets, customActivity],
 				defaultPresets
 			);
@@ -522,7 +474,7 @@ describe('BreaksState', () => {
 				isPreset: false
 			});
 
-			const resetRepo = new MockBreakActivityRepository(
+			const resetRepo = new FakeBreakActivityRepository(
 				[...defaultPresets, customActivity],
 				defaultPresets
 			);

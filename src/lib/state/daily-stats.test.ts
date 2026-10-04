@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { FakeDailyStatsRepository } from '$tests/fakes/repositories/fake-daily-stats-repository';
 import {
 	DailyStatsState,
 	createDailyStatsState,
@@ -7,46 +8,10 @@ import {
 	formatDailyStatsSummary
 } from './daily-stats.svelte';
 import type {
-	DailyStats,
-	IDailyStatsRepository
-} from '../domain/ports/daily-stats-repository.port';
-import type {
 	DomainEvent,
 	BlockCompletedEvent,
 	BlockSkippedEvent
 } from '../domain/events/block-completed.event';
-
-class MockDailyStatsRepository implements IDailyStatsRepository {
-	public stats: DailyStats;
-	public saveStatsCalls: DailyStats[] = [];
-	public resetStatsCalls = 0;
-
-	constructor(initialStats?: Partial<DailyStats>) {
-		this.stats = {
-			date: initialStats?.date ?? '2026-10-03',
-			completedBlocks: initialStats?.completedBlocks ?? 0,
-			accumulatedMinutes: initialStats?.accumulatedMinutes ?? 0
-		};
-	}
-
-	loadStats(): DailyStats {
-		return { ...this.stats };
-	}
-
-	saveStats(stats: DailyStats): void {
-		this.stats = { ...stats };
-		this.saveStatsCalls.push({ ...stats });
-	}
-
-	resetStats(): void {
-		this.resetStatsCalls++;
-		this.stats = {
-			date: this.stats.date,
-			completedBlocks: 0,
-			accumulatedMinutes: 0
-		};
-	}
-}
 
 class MockTimerEmitter {
 	public subscribers = new Set<(event: DomainEvent) => void>();
@@ -109,14 +74,14 @@ describe('formatDailyStatsSummary', () => {
 });
 
 describe('DailyStatsState', () => {
-	let mockRepo: MockDailyStatsRepository;
+	let mockRepo: FakeDailyStatsRepository;
 	let mockTimer: MockTimerEmitter;
 	let currentDate: Date;
 	const nowProvider = () => currentDate;
 
 	beforeEach(() => {
 		currentDate = new Date(2026, 9, 3, 10, 0, 0); // 2026-10-03
-		mockRepo = new MockDailyStatsRepository({
+		mockRepo = new FakeDailyStatsRepository({
 			date: '2026-10-03',
 			completedBlocks: 0,
 			accumulatedMinutes: 0
