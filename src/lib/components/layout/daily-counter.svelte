@@ -24,6 +24,7 @@
 
 <div
 	data-testid="daily-focus-counter"
+	aria-hidden={isRunning ? true : undefined}
 	class={cn(
 		'pointer-events-none fixed inset-x-0 bottom-5 z-20 flex items-center justify-center transition-opacity duration-300 ease-in-out select-none',
 		isRunning ? 'opacity-0' : 'opacity-100',

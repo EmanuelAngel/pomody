@@ -56,7 +56,7 @@ describe('CUJ 1: Core Focus Loop (Browser)', () => {
 		const pauseButton = screen.getByRole('button', { name: 'Pause timer' });
 		await expect.element(pauseButton).toBeVisible();
 
-		// Zen mode: controles secundarios y DailyCounter se ocultan/atenúan (opacity-0)
+		// Zen mode: controles secundarios y DailyCounter se ocultan/atenúan semánticamente
 		const resetButton = screen.getByRole('button', {
 			name: 'Reset timer',
 			includeHidden: true
@@ -67,15 +67,12 @@ describe('CUJ 1: Core Focus Loop (Browser)', () => {
 		});
 		const dailyCounter = screen.getByTestId('daily-focus-counter');
 
-		expect(resetButton.element().className).toContain('opacity-0');
-		expect(resetButton.element().className).toContain('pointer-events-none');
-		expect(resetButton.element().hasAttribute('disabled')).toBe(true);
+		await expect.element(resetButton).toBeDisabled();
+		await expect.element(resetButton).toHaveAttribute('aria-hidden', 'true');
+		await expect.element(skipButton).toBeDisabled();
+		await expect.element(skipButton).toHaveAttribute('aria-hidden', 'true');
 
-		expect(skipButton.element().className).toContain('opacity-0');
-		expect(skipButton.element().className).toContain('pointer-events-none');
-		expect(skipButton.element().hasAttribute('disabled')).toBe(true);
-
-		expect(dailyCounter.element().className).toContain('opacity-0');
+		await expect.element(dailyCounter).toHaveAttribute('aria-hidden', 'true');
 
 		// c) Avance a la mitad (12.5 min = 750,000 ms)
 		fakeTicker.advanceByMs(750000);
@@ -93,7 +90,7 @@ describe('CUJ 1: Core Focus Loop (Browser)', () => {
 		await expect
 			.element(screen.getByTestId('daily-focus-counter'))
 			.toHaveTextContent('1 block · 25m');
-		expect(dailyCounter.element().className).toContain('opacity-100');
+		await expect.element(dailyCounter).not.toHaveAttribute('aria-hidden');
 
 		// Repositorio persistido
 		expect(dailyStatsRepo.stats.completedBlocks).toBe(1);
