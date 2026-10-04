@@ -56,7 +56,7 @@ describe('DailyCounter (Client Browser)', () => {
 		await expect.element(counter).toHaveTextContent('4 blocks · 1h 40m');
 	});
 
-	it('has opacity-100 class when timerState.isRunning is false', async () => {
+	it('has opacity-100 class and no aria-hidden when timerState.isRunning is false', async () => {
 		const ticker = createDummyTicker(false);
 		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
 
@@ -65,9 +65,10 @@ describe('DailyCounter (Client Browser)', () => {
 
 		await expect.element(counter).toHaveClass('opacity-100');
 		await expect.element(counter).not.toHaveClass('opacity-0');
+		await expect.element(counter).not.toHaveAttribute('aria-hidden');
 	});
 
-	it('has opacity-0 class when timerState.isRunning is true', async () => {
+	it('has opacity-0 class and aria-hidden="true" when timerState.isRunning is true', async () => {
 		const ticker = createDummyTicker(true);
 		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
 		timerState.start();
@@ -77,6 +78,7 @@ describe('DailyCounter (Client Browser)', () => {
 
 		await expect.element(counter).toHaveClass('opacity-0');
 		await expect.element(counter).not.toHaveClass('opacity-100');
+		await expect.element(counter).toHaveAttribute('aria-hidden', 'true');
 	});
 
 	it('has pointer-events-none, fixed bottom-5 inset-x-0 positioning and passive classes', async () => {
