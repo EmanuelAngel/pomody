@@ -129,5 +129,6 @@ _Objetivo: Blindaje contra interrupciones externas y sincronización con herrami
 
 - Fundamentos del producto y arquitectura: [`vision.md`](./vision.md) y [`architecture.md`](./architecture.md)
 - Especificación técnica de Tareas, Revitalización y Planning: [`features/tasks-and-planning.md`](./features/tasks-and-planning.md)
+- Especificación técnica de Internacionalización (i18n): [`features/i18n.md`](./features/i18n.md)
 - Análisis y resoluciones de las propuestas de Fede: [`proposals/fede-ideas.md`](./proposals/fede-ideas.md)
 - Análisis y resoluciones de las propuestas de Vortex: [`proposals/vortex-ideas.md`](./proposals/vortex-ideas.md)
