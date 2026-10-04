@@ -1,11 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
 import { DEFAULT_TIMER_CONFIG } from '../timer/timer-fsm';
-import {
-	DEFAULT_USER_SETTINGS,
-	THEMES,
-	type ISettingsStorage,
-	type UserSettings
-} from './settings-storage.port';
+import { DEFAULT_USER_SETTINGS, THEMES, type ISettingsStorage } from './settings-storage.port';
 
 describe('Settings Storage Port & UserSettings Model', () => {
 	describe('THEMES', () => {
@@ -36,31 +32,21 @@ describe('Settings Storage Port & UserSettings Model', () => {
 
 	describe('ISettingsStorage contract compilation', () => {
 		it('should allow valid implementation satisfying the port contract', () => {
-			let stored: UserSettings = { ...DEFAULT_USER_SETTINGS };
+			const storage: ISettingsStorage = new FakeSettingsStorage();
 
-			const mockStorage: ISettingsStorage = {
-				loadSettings: () => stored,
-				saveSettings: (patch: Partial<UserSettings>) => {
-					stored = { ...stored, ...patch };
-				},
-				resetSettings: () => {
-					stored = { ...DEFAULT_USER_SETTINGS };
-				}
-			};
+			expect(storage.loadSettings()).toEqual(DEFAULT_USER_SETTINGS);
 
-			expect(mockStorage.loadSettings()).toEqual(DEFAULT_USER_SETTINGS);
-
-			mockStorage.saveSettings({
+			storage.saveSettings({
 				theme: 'dawn',
 				soundEnabled: false,
 				revitalizationEnabled: false
 			});
-			expect(mockStorage.loadSettings().theme).toBe('dawn');
-			expect(mockStorage.loadSettings().soundEnabled).toBe(false);
-			expect(mockStorage.loadSettings().revitalizationEnabled).toBe(false);
+			expect(storage.loadSettings().theme).toBe('dawn');
+			expect(storage.loadSettings().soundEnabled).toBe(false);
+			expect(storage.loadSettings().revitalizationEnabled).toBe(false);
 
-			mockStorage.resetSettings();
-			expect(mockStorage.loadSettings()).toEqual(DEFAULT_USER_SETTINGS);
+			storage.resetSettings();
+			expect(storage.loadSettings()).toEqual(DEFAULT_USER_SETTINGS);
 		});
 	});
 });

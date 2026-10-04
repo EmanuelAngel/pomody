@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-	createBreakActivity,
-	PRESET_BREAK_ACTIVITIES,
-	type BreakActivity,
-	type BreakCategory
-} from '../breaks/break-activity.entity';
+import { FakeBreakActivityRepository } from '$tests/fakes/repositories/fake-break-activity-repository';
+import { createBreakActivity, PRESET_BREAK_ACTIVITIES } from '../breaks/break-activity.entity';
 import {
 	compareBreakActivities,
 	sortBreakActivities,
@@ -160,48 +156,8 @@ describe('Break Activity Repository Port & Sorting Utilities', () => {
 	});
 
 	describe('IBreakActivityRepository contract compilation & in-memory behavior', () => {
-		class InMemoryBreakActivityRepository implements IBreakActivityRepository {
-			private activities = new Map<string, BreakActivity>();
-
-			constructor(initial: readonly BreakActivity[] = PRESET_BREAK_ACTIVITIES) {
-				for (const act of initial) {
-					this.activities.set(act.id, act);
-				}
-			}
-
-			async getAll(): Promise<readonly BreakActivity[]> {
-				return sortBreakActivities(Array.from(this.activities.values()));
-			}
-
-			async getByCategory(category: BreakCategory): Promise<readonly BreakActivity[]> {
-				const filtered = Array.from(this.activities.values()).filter(
-					(act) => act.category === category
-				);
-				return sortBreakActivities(filtered);
-			}
-
-			async save(activity: BreakActivity): Promise<void> {
-				this.activities.set(activity.id, activity);
-			}
-
-			async delete(activityId: string): Promise<void> {
-				this.activities.delete(activityId);
-			}
-
-			async resetToDefaults(): Promise<void> {
-				this.activities.clear();
-				for (const act of PRESET_BREAK_ACTIVITIES) {
-					this.activities.set(act.id, act);
-				}
-			}
-
-			async clearAll(): Promise<void> {
-				this.activities.clear();
-			}
-		}
-
 		it('should satisfy the IBreakActivityRepository contract across all operations', async () => {
-			const repo: IBreakActivityRepository = new InMemoryBreakActivityRepository();
+			const repo: IBreakActivityRepository = new FakeBreakActivityRepository();
 
 			// Initial state with defaults
 			const initial = await repo.getAll();

@@ -115,4 +115,28 @@ describe('FakeBreakActivityRepository', () => {
 		await repo.clearAll();
 		expect(await repo.getAll()).toEqual([]);
 	});
+
+	it('resets catalog to custom defaultActivities via resetToDefaults() when specified', async () => {
+		const customDefault = createBreakActivity({
+			id: 'default-custom',
+			title: 'Custom Default Activity',
+			category: 'physical'
+		});
+		const repo = new FakeBreakActivityRepository([], [customDefault]);
+		expect(await repo.getAll()).toEqual([]);
+
+		const temp = createBreakActivity({
+			id: 'temp-act',
+			title: 'Temp Walk',
+			category: 'physical'
+		});
+		await repo.save(temp);
+		expect((await repo.getAll()).length).toBe(1);
+
+		await repo.resetToDefaults();
+		const resetAll = await repo.getAll();
+
+		expect(resetAll).toHaveLength(1);
+		expect(resetAll[0].id).toBe('default-custom');
+	});
 });

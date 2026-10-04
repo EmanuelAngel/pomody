@@ -1,27 +1,12 @@
 import { describe, it, expect } from 'vitest';
+import { FakeSessionPlanRepository } from '$tests/fakes/repositories/fake-session-plan-repository';
 import type { ISessionPlanRepository } from './session-plan-repository.port';
-import { calculateSessionBudgetByBlocks, type SessionPlan } from '../planning/session-plan.entity';
+import { calculateSessionBudgetByBlocks } from '../planning/session-plan.entity';
 import { DEFAULT_TIMER_CONFIG } from '../timer/timer-fsm';
 
 describe('ISessionPlanRepository port contract', () => {
-	class InMemorySessionPlanRepository implements ISessionPlanRepository {
-		private plan: SessionPlan | null = null;
-
-		public async getActivePlan(): Promise<SessionPlan | null> {
-			return this.plan;
-		}
-
-		public async saveActivePlan(plan: SessionPlan): Promise<void> {
-			this.plan = plan;
-		}
-
-		public async clearActivePlan(): Promise<void> {
-			this.plan = null;
-		}
-	}
-
 	it('should satisfy the ISessionPlanRepository contract across all operations', async () => {
-		const repo: ISessionPlanRepository = new InMemorySessionPlanRepository();
+		const repo: ISessionPlanRepository = new FakeSessionPlanRepository();
 
 		expect(await repo.getActivePlan()).toBeNull();
 

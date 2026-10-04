@@ -16,8 +16,11 @@ import {
 export class FakeBreakActivityRepository implements IBreakActivityRepository {
 	private readonly activities = new Map<string, BreakActivity>();
 
-	constructor(initialActivities?: readonly BreakActivity[]) {
-		const seed = initialActivities !== undefined ? initialActivities : PRESET_BREAK_ACTIVITIES;
+	constructor(
+		initialActivities?: readonly BreakActivity[],
+		private readonly defaultActivities: readonly BreakActivity[] = PRESET_BREAK_ACTIVITIES
+	) {
+		const seed = initialActivities !== undefined ? initialActivities : defaultActivities;
 		for (const activity of seed) {
 			this.activities.set(activity.id, activity);
 		}
@@ -44,7 +47,7 @@ export class FakeBreakActivityRepository implements IBreakActivityRepository {
 
 	async resetToDefaults(): Promise<void> {
 		this.activities.clear();
-		for (const activity of PRESET_BREAK_ACTIVITIES) {
+		for (const activity of this.defaultActivities) {
 			this.activities.set(activity.id, activity);
 		}
 	}

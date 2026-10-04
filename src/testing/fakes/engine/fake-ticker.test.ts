@@ -97,6 +97,19 @@ describe('FakeTicker', () => {
 		expect(ticker.tickCallback).toBeNull();
 	});
 
+	it('delegates to tick() via simulateTick()', () => {
+		const ticker = new FakeTicker();
+		const onTick = vi.fn();
+
+		ticker.start(onTick);
+		ticker.simulateTick(100);
+		ticker.simulateTick();
+
+		expect(onTick).toHaveBeenCalledTimes(2);
+		expect(onTick).toHaveBeenNthCalledWith(1, 100);
+		expect(onTick).toHaveBeenNthCalledWith(2, 250);
+	});
+
 	it('steps multiple times with step()', () => {
 		const ticker = new FakeTicker();
 		const onTick = vi.fn();
