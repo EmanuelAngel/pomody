@@ -1,5 +1,6 @@
 # Feature: Test Kit Core & Testing Infrastructure
 
+- **Issue**: #83 (Epic #82)
 - **Branch**: `feat/test-kit-core`
 - **Status**: Completed
 - **Delivery Strategy**: `single-pr`
