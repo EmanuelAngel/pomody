@@ -2,49 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import BreakRevitalization from './break-revitalization.svelte';
 import { createBreaksState } from '$lib/state/breaks.svelte';
-import type { IBreakActivityRepository } from '$lib/domain/ports/break-activity-repository.port';
-import { sortBreakActivities } from '$lib/domain/ports/break-activity-repository.port';
-import {
-	createBreakActivity,
-	type BreakActivity,
-	type BreakCategory
-} from '$lib/domain/breaks/break-activity.entity';
-
-class MockBreakActivityRepository implements IBreakActivityRepository {
-	private activities = new Map<string, BreakActivity>();
-
-	constructor(initialActivities: readonly BreakActivity[] = []) {
-		for (const act of initialActivities) {
-			this.activities.set(act.id, act);
-		}
-	}
-
-	async getAll(): Promise<readonly BreakActivity[]> {
-		return sortBreakActivities(Array.from(this.activities.values()));
-	}
-
-	async getByCategory(category: BreakCategory): Promise<readonly BreakActivity[]> {
-		return sortBreakActivities(
-			Array.from(this.activities.values()).filter((a) => a.category === category)
-		);
-	}
-
-	async save(activity: BreakActivity): Promise<void> {
-		this.activities.set(activity.id, activity);
-	}
-
-	async delete(activityId: string): Promise<void> {
-		this.activities.delete(activityId);
-	}
-
-	async resetToDefaults(): Promise<void> {
-		this.activities.clear();
-	}
-
-	async clearAll(): Promise<void> {
-		this.activities.clear();
-	}
-}
+import { createBreakActivity } from '$lib/domain/breaks/break-activity.entity';
+import { FakeBreakActivityRepository } from '$tests/fakes/repositories/fake-break-activity-repository';
 
 const physicalActivity = createBreakActivity({
 	id: 'act-phys',
@@ -72,7 +31,7 @@ const hydrationActivity = createBreakActivity({
 
 describe('BreakRevitalization (Client Browser)', () => {
 	it('renders fallback text when no active activity exists', async () => {
-		const repo = new MockBreakActivityRepository([]);
+		const repo = new FakeBreakActivityRepository([]);
 		const breaksState = createBreaksState(repo);
 		await breaksState.load();
 
@@ -90,7 +49,7 @@ describe('BreakRevitalization (Client Browser)', () => {
 	});
 
 	it('renders physical activity with gold accent badge, icon and title', async () => {
-		const repo = new MockBreakActivityRepository([physicalActivity]);
+		const repo = new FakeBreakActivityRepository([physicalActivity]);
 		const breaksState = createBreaksState(repo);
 		await breaksState.load();
 		breaksState.suggestForBreak('shortBreak-1');
@@ -111,7 +70,7 @@ describe('BreakRevitalization (Client Browser)', () => {
 	});
 
 	it('renders mindful activity with iris accent badge', async () => {
-		const repo = new MockBreakActivityRepository([mindfulActivity]);
+		const repo = new FakeBreakActivityRepository([mindfulActivity]);
 		const breaksState = createBreaksState(repo);
 		await breaksState.load();
 		breaksState.suggestForBreak('shortBreak-1');
@@ -132,7 +91,7 @@ describe('BreakRevitalization (Client Browser)', () => {
 	});
 
 	it('renders hydration activity with foam accent badge', async () => {
-		const repo = new MockBreakActivityRepository([hydrationActivity]);
+		const repo = new FakeBreakActivityRepository([hydrationActivity]);
 		const breaksState = createBreaksState(repo);
 		await breaksState.load();
 		breaksState.suggestForBreak('shortBreak-1');
@@ -153,7 +112,7 @@ describe('BreakRevitalization (Client Browser)', () => {
 	});
 
 	it('opens guide popover on trigger click and shows step-by-step instructions', async () => {
-		const repo = new MockBreakActivityRepository([physicalActivity]);
+		const repo = new FakeBreakActivityRepository([physicalActivity]);
 		const breaksState = createBreaksState(repo);
 		await breaksState.load();
 		breaksState.suggestForBreak('shortBreak-1');
@@ -178,7 +137,7 @@ describe('BreakRevitalization (Client Browser)', () => {
 	});
 
 	it('calls shuffle and updates active activity when shuffle button is clicked', async () => {
-		const repo = new MockBreakActivityRepository([physicalActivity, mindfulActivity]);
+		const repo = new FakeBreakActivityRepository([physicalActivity, mindfulActivity]);
 		const breaksState = createBreaksState(repo);
 		await breaksState.load();
 		breaksState.suggestForBreak('shortBreak-1');
@@ -203,7 +162,7 @@ describe('BreakRevitalization (Client Browser)', () => {
 	});
 
 	it('calls breaksState.load() on mount', async () => {
-		const repo = new MockBreakActivityRepository([physicalActivity]);
+		const repo = new FakeBreakActivityRepository([physicalActivity]);
 		const breaksState = createBreaksState(repo);
 		const loadSpy = vi.spyOn(breaksState, 'load');
 
@@ -218,7 +177,7 @@ describe('BreakRevitalization (Client Browser)', () => {
 	});
 
 	it('suggests an activity in $effect when mode and currentRound are provided', async () => {
-		const repo = new MockBreakActivityRepository([physicalActivity]);
+		const repo = new FakeBreakActivityRepository([physicalActivity]);
 		const breaksState = createBreaksState(repo);
 		await breaksState.load();
 		const suggestSpy = vi.spyOn(breaksState, 'suggestForBreak');

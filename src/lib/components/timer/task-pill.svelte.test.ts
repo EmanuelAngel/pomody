@@ -5,53 +5,8 @@ import TaskPill from './task-pill.svelte';
 import Timer from './timer.svelte';
 import { createTasksState } from '$lib/state/tasks.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
-import type { ITaskRepository } from '$lib/domain/ports/task-repository.port';
-import { sortFocusTasks } from '$lib/domain/ports/task-repository.port';
-import { createFocusTask, type FocusTask } from '$lib/domain/tasks/task.entity';
-
-class MockTaskRepository implements ITaskRepository {
-	private tasks = new Map<string, FocusTask>();
-
-	constructor(initialTasks: FocusTask[] = []) {
-		for (const task of initialTasks) {
-			this.tasks.set(task.id, task);
-		}
-	}
-
-	async getAll(): Promise<readonly FocusTask[]> {
-		return sortFocusTasks(Array.from(this.tasks.values()));
-	}
-
-	async getPending(): Promise<readonly FocusTask[]> {
-		return sortFocusTasks(Array.from(this.tasks.values()).filter((t) => !t.completed));
-	}
-
-	async save(task: FocusTask): Promise<void> {
-		this.tasks.set(task.id, task);
-	}
-
-	async saveBatch(tasks: readonly FocusTask[]): Promise<void> {
-		for (const task of tasks) {
-			this.tasks.set(task.id, task);
-		}
-	}
-
-	async delete(taskId: string): Promise<void> {
-		this.tasks.delete(taskId);
-	}
-
-	async clearCompleted(): Promise<void> {
-		for (const [id, task] of this.tasks.entries()) {
-			if (task.completed) {
-				this.tasks.delete(id);
-			}
-		}
-	}
-
-	async clearAll(): Promise<void> {
-		this.tasks.clear();
-	}
-}
+import { createFocusTask } from '$lib/domain/tasks/task.entity';
+import { FakeTaskRepository } from '$tests/fakes/repositories/fake-task-repository';
 
 function createDummyTicker(isRunning = false) {
 	return {
@@ -64,7 +19,7 @@ function createDummyTicker(isRunning = false) {
 
 describe('TaskPill (Client Browser)', () => {
 	it('renders unassigned state ("Free focus") when no active task exists', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 
@@ -83,7 +38,7 @@ describe('TaskPill (Client Browser)', () => {
 	});
 
 	it('applies Zen Mode opacity reduction when isRunning is true', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 
@@ -100,7 +55,7 @@ describe('TaskPill (Client Browser)', () => {
 
 	it('renders active task title and inline checkbox when active task is present', async () => {
 		const initialTask = createFocusTask({ title: 'Configure Hexagonal' });
-		const repo = new MockTaskRepository([initialTask]);
+		const repo = new FakeTaskRepository([initialTask]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 		tasksState.setActiveTask(initialTask.id);
@@ -125,7 +80,7 @@ describe('TaskPill (Client Browser)', () => {
 
 	it('toggles active task completion in-place without opening popover', async () => {
 		const task = createFocusTask({ title: 'Write unit tests' });
-		const repo = new MockTaskRepository([task]);
+		const repo = new FakeTaskRepository([task]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 		tasksState.setActiveTask(task.id);
@@ -155,7 +110,7 @@ describe('TaskPill (Client Browser)', () => {
 	});
 
 	it('opens quick-select popover when clicking the pill trigger', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 
@@ -178,7 +133,7 @@ describe('TaskPill (Client Browser)', () => {
 	});
 
 	it('creates new task and sets it as active on pressing Enter in input', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 
@@ -210,7 +165,7 @@ describe('TaskPill (Client Browser)', () => {
 	it('switches active task when clicking a pending task in popover list', async () => {
 		const taskA = createFocusTask({ title: 'Task Alpha', order: 0 });
 		const taskB = createFocusTask({ title: 'Task Beta', order: 1 });
-		const repo = new MockTaskRepository([taskA, taskB]);
+		const repo = new FakeTaskRepository([taskA, taskB]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 		tasksState.setActiveTask(taskA.id);
@@ -241,7 +196,7 @@ describe('TaskPill (Client Browser)', () => {
 
 	it('unassigns active task when selecting "Free focus" option', async () => {
 		const task = createFocusTask({ title: 'Active Task' });
-		const repo = new MockTaskRepository([task]);
+		const repo = new FakeTaskRepository([task]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 		tasksState.setActiveTask(task.id);
@@ -271,7 +226,7 @@ describe('TaskPill (Client Browser)', () => {
 
 	it('reopens popover after switching from Free focus to an active task', async () => {
 		const task = createFocusTask({ title: 'Active Task' });
-		const repo = new MockTaskRepository([task]);
+		const repo = new FakeTaskRepository([task]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 
@@ -303,7 +258,7 @@ describe('TaskPill (Client Browser)', () => {
 
 	it('reopens popover after switching from active task back to Free focus', async () => {
 		const task = createFocusTask({ title: 'Active Task' });
-		const repo = new MockTaskRepository([task]);
+		const repo = new FakeTaskRepository([task]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 		tasksState.setActiveTask(task.id);
@@ -337,7 +292,7 @@ describe('TaskPill (Client Browser)', () => {
 	});
 
 	it('closes popover when pressing Escape', async () => {
-		const repo = new MockTaskRepository();
+		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 
@@ -364,7 +319,7 @@ describe('TaskPill (Client Browser)', () => {
 describe('TaskPill in Timer Integration (Client Browser)', () => {
 	it('renders TaskPill beneath TimerControls and reflects active task', async () => {
 		const task = createFocusTask({ title: 'Timer Task' });
-		const repo = new MockTaskRepository([task]);
+		const repo = new FakeTaskRepository([task]);
 		const tasksState = createTasksState(repo);
 		await tasksState.load();
 		tasksState.setActiveTask(task.id);

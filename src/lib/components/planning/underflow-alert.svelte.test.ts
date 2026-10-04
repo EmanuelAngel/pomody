@@ -2,25 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import UnderflowAlert from './underflow-alert.svelte';
 import { createPlanningState } from '$lib/state/planning.svelte';
-import type { ISessionPlanRepository } from '$lib/domain/ports/session-plan-repository.port';
-import type { SessionPlan } from '$lib/domain/planning/session-plan.entity';
-
-class MockSessionPlanRepository implements ISessionPlanRepository {
-	private plan: SessionPlan | null = null;
-	async getActivePlan(): Promise<SessionPlan | null> {
-		return this.plan;
-	}
-	async saveActivePlan(plan: SessionPlan): Promise<void> {
-		this.plan = plan;
-	}
-	async clearActivePlan(): Promise<void> {
-		this.plan = null;
-	}
-}
+import { FakeSessionPlanRepository } from '$tests/fakes/repositories/fake-session-plan-repository';
 
 describe('UnderflowAlert (UX-01)', () => {
 	it('renders alert and quick recovery button when time window is insufficient in end_time mode', async () => {
-		const repo = new MockSessionPlanRepository();
+		const repo = new FakeSessionPlanRepository();
 		const planningState = createPlanningState(repo);
 		await planningState.load();
 
@@ -46,7 +32,7 @@ describe('UnderflowAlert (UX-01)', () => {
 	});
 
 	it('does not render alert when target mode is blocks', async () => {
-		const repo = new MockSessionPlanRepository();
+		const repo = new FakeSessionPlanRepository();
 		const planningState = createPlanningState(repo);
 		await planningState.load();
 
@@ -59,7 +45,7 @@ describe('UnderflowAlert (UX-01)', () => {
 	});
 
 	it('does not render alert when time window accommodates focus blocks in end_time mode', async () => {
-		const repo = new MockSessionPlanRepository();
+		const repo = new FakeSessionPlanRepository();
 		const planningState = createPlanningState(repo);
 		await planningState.load();
 
