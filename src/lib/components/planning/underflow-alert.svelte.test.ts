@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import UnderflowAlert from './underflow-alert.svelte';
 import { createPlanningState } from '$lib/state/planning.svelte';
+import { localeState } from '$lib/state/locale.svelte';
 import { FakeSessionPlanRepository } from '$tests/fakes/repositories/fake-session-plan-repository';
 
 describe('UnderflowAlert (UX-01)', () => {
@@ -58,5 +59,31 @@ describe('UnderflowAlert (UX-01)', () => {
 
 		const alert = screen.getByRole('alert');
 		await expect.element(alert).not.toBeInTheDocument();
+	});
+
+	it('reactively updates translations when switching to Spanish', async () => {
+		localeState.setLocale('es');
+
+		const repo = new FakeSessionPlanRepository();
+		const planningState = createPlanningState(repo);
+		await planningState.load();
+
+		planningState.setTargetMode('end_time');
+		planningState.setScheduledStartTime('12:00');
+		planningState.setFocusMinutes(25);
+		planningState.setTargetEndTime('12:10');
+
+		const screen = await render(UnderflowAlert, { planningState });
+
+		const alert = screen.getByRole('alert');
+		await expect.element(alert).toBeVisible();
+		await expect
+			.element(
+				screen.getByText('La ventana de tiempo es demasiado corta para un bloque de foco completo.')
+			)
+			.toBeVisible();
+
+		const adjustBtn = screen.getByRole('button', { name: /Ajustar al mínimo \(\+(25|30)m\)/ });
+		await expect.element(adjustBtn).toBeVisible();
 	});
 });

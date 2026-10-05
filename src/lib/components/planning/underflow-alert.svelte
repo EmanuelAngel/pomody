@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AlertCircle from '@lucide/svelte/icons/alert-circle';
 	import type { PlanningState } from '$lib/state/planning.svelte';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		planningState: PlanningState;
@@ -18,14 +19,14 @@
 	>
 		<div class="flex items-center gap-2">
 			<AlertCircle class="size-4 shrink-0" />
-			<span>Time window is too short for a full focus block.</span>
+			<span>{t.planning_underflow_message()}</span>
 		</div>
 		<button
 			type="button"
 			onclick={() => planningState.adjustTargetEndTimeToMinimum()}
 			class="inline-flex cursor-pointer items-center justify-center rounded-lg border border-accent-gold/50 bg-accent-gold/20 px-2.5 py-1 text-xs font-semibold text-accent-gold transition-colors hover:bg-accent-gold/30 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		>
-			Adjust to minimum (+{minMinutes}m)
+			{t.planning_underflow_adjust_button({ minutes: minMinutes })}
 		</button>
 	</div>
 {/if}

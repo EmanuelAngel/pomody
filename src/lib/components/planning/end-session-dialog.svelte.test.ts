@@ -4,6 +4,7 @@ import EndSessionDialog from './end-session-dialog.svelte';
 import { createPlanningState } from '$lib/state/planning.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
 import { createTasksState } from '$lib/state/tasks.svelte';
+import { localeState } from '$lib/state/locale.svelte';
 import type { ISessionPlanRepository } from '$lib/domain/ports/session-plan-repository.port';
 import type { SessionPlan } from '$lib/domain/planning/session-plan.entity';
 import type { ITaskRepository } from '$lib/domain/ports/task-repository.port';
@@ -95,5 +96,39 @@ describe('EndSessionDialog (UX-02)', () => {
 
 		// Session should be ended
 		expect(planningState.isSessionActive).toBe(false);
+	});
+
+	it('reactively updates translations when switching to Spanish', async () => {
+		localeState.setLocale('es');
+
+		const planRepo = new MockSessionPlanRepository();
+		const taskRepo = new MockTaskRepository();
+		const timerState = createTimerState();
+		const tasksState = createTasksState(taskRepo);
+		const planningState = createPlanningState(planRepo, timerState, tasksState);
+
+		await planningState.load();
+		await planningState.startSession(timerState, tasksState);
+
+		const screen = await render(EndSessionDialog, { planningState, timerState });
+
+		const triggerBtn = screen.getByRole('button', { name: 'Terminar plan de sesión' });
+		await expect.element(triggerBtn).toBeVisible();
+		await triggerBtn.click();
+
+		await expect.element(screen.getByText('¿Terminar sesión activa?')).toBeVisible();
+		await expect
+			.element(
+				screen.getByText(
+					'Esto cancelará tu plan de sesión en curso, borrará la progresión de bloques y reiniciará el temporizador activo.'
+				)
+			)
+			.toBeVisible();
+
+		const cancelBtn = screen.getByRole('button', { name: 'Cancelar' });
+		await expect.element(cancelBtn).toBeVisible();
+
+		const confirmBtn = screen.getByRole('button', { name: 'Terminar sesión', exact: true });
+		await expect.element(confirmBtn).toBeVisible();
 	});
 });

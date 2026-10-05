@@ -11,6 +11,7 @@
 	} from '$lib/state/planning.svelte';
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
 	import { breaksState as defaultBreaksState, type BreaksState } from '$lib/state/breaks.svelte';
+	import { t } from '$lib/state/locale.svelte';
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import ListTodo from '@lucide/svelte/icons/list-todo';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
@@ -89,20 +90,24 @@
 		class="flex flex-col gap-4 border-b border-border/40 pb-5 sm:flex-row sm:items-center sm:justify-between"
 	>
 		<div>
-			<h2 class="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Planning</h2>
+			<h2 class="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+				{t.planning_title()}
+			</h2>
 			<p class="text-xs text-muted-foreground sm:text-sm">
-				{pendingCount} pending {pendingCount === 1 ? 'task' : 'tasks'}
+				{pendingCount === 1
+					? t.planning_pending_tasks_singular({ count: pendingCount })
+					: t.planning_pending_tasks_plural({ count: pendingCount })}
 			</p>
 		</div>
 
 		<button
 			type="button"
-			aria-label="Back to timer"
+			aria-label={t.planning_back_to_timer()}
 			onclick={() => navigationState.setTab('timer')}
 			class="inline-flex cursor-pointer items-center justify-center gap-1.5 self-start rounded-full border border-border/50 bg-muted/40 px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none sm:self-auto"
 		>
 			<ArrowRight class="size-3.5 rotate-180" />
-			<span>Back to timer</span>
+			<span>{t.planning_back_to_timer()}</span>
 		</button>
 	</header>
 
@@ -131,16 +136,16 @@
 					}}
 					variant="outline"
 					size="sm"
-					aria-label="Planning segment switcher"
+					aria-label={t.planning_segment_switcher_aria()}
 					class="grid w-full grid-cols-2 rounded-lg border border-border/50 bg-muted/40 p-0.5"
 				>
 					<ToggleGroup.Item
 						value="tasks"
-						aria-label="Tasks"
+						aria-label={t.planning_segment_tasks()}
 						class="flex items-center justify-center gap-2 rounded-md py-1.5 text-xs font-medium transition-all hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-xs"
 					>
 						<ListTodo class="size-3.5" />
-						<span>Tasks</span>
+						<span>{t.planning_segment_tasks()}</span>
 						{#if pendingCount > 0}
 							<span
 								class="py-0.2 ml-0.5 rounded-full bg-muted px-1.5 text-[10px] font-semibold text-muted-foreground"
@@ -152,11 +157,11 @@
 
 					<ToggleGroup.Item
 						value="breaks"
-						aria-label="Break Habits"
+						aria-label={t.planning_segment_breaks()}
 						class="flex items-center justify-center gap-2 rounded-md py-1.5 text-xs font-medium transition-all hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-xs"
 					>
 						<Sparkles class="size-3.5 text-accent-iris" />
-						<span>Break Habits</span>
+						<span>{t.planning_segment_breaks()}</span>
 					</ToggleGroup.Item>
 				</ToggleGroup.Root>
 			</div>
