@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import BreakFormDialog from './break-form-dialog.svelte';
+import { localeState } from '$lib/state/locale.svelte';
 import { createBreakActivity, type BreakActivity } from '$lib/domain/breaks/break-activity.entity';
 
 const sampleCustomActivity: BreakActivity = createBreakActivity({
@@ -245,6 +246,30 @@ describe('BreakFormDialog (Client Browser)', () => {
 			await closeBtn.click();
 
 			expect(onCancel).toHaveBeenCalledTimes(1);
+		});
+
+		it('reactively updates dialog title, labels, and buttons when switching locales', async () => {
+			const screen = await render(BreakFormDialog, {
+				open: true,
+				activity: null,
+				onSave: vi.fn(),
+				portalProps: { disabled: true }
+			});
+
+			await expect.element(screen.getByText('New Break Habit')).toBeVisible();
+			await expect.element(screen.getByRole('button', { name: 'Create Habit' })).toBeVisible();
+			await expect.element(screen.getByText('Cancel')).toBeVisible();
+
+			localeState.setLocale('es');
+
+			await expect.element(screen.getByText('Nuevo hábito de descanso')).toBeVisible();
+			await expect.element(screen.getByRole('button', { name: 'Crear hábito' })).toBeVisible();
+			await expect.element(screen.getByText('Cancelar')).toBeVisible();
+
+			localeState.setLocale('en');
+
+			await expect.element(screen.getByText('New Break Habit')).toBeVisible();
+			await expect.element(screen.getByRole('button', { name: 'Create Habit' })).toBeVisible();
 		});
 	});
 });

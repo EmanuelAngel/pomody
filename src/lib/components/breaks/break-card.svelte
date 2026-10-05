@@ -12,6 +12,12 @@
 	import { Button } from '$lib/components/ui/button';
 	import { cn } from '$lib/utils';
 	import type { BreakActivity, BreakCategory } from '$lib/domain/breaks/break-activity.entity';
+	import {
+		getLocalizedPresetTitle,
+		getLocalizedPresetGuide,
+		getLocalizedBreakCategory
+	} from './break-preset-i18n';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		activity: BreakActivity;
@@ -25,16 +31,14 @@
 
 	let isExpanded = $state(false);
 
+	const localizedTitle = $derived(getLocalizedPresetTitle(activity));
+	const localizedGuide = $derived(getLocalizedPresetGuide(activity));
+	const localizedCategory = $derived(getLocalizedBreakCategory(activity.category));
+
 	const categoryBadgeClasses: Record<BreakCategory, string> = {
 		physical: 'border-accent-gold/40 bg-accent-gold/15 text-accent-gold',
 		mindful: 'border-accent-iris/40 bg-accent-iris/15 text-accent-iris',
 		hydration: 'border-accent-foam/40 bg-accent-foam/15 text-accent-foam'
-	};
-
-	const categoryLabels: Record<BreakCategory, string> = {
-		physical: 'Physical',
-		mindful: 'Mindful',
-		hydration: 'Hydration'
 	};
 </script>
 
@@ -62,7 +66,7 @@
 					{:else if activity.category === 'hydration'}
 						<Droplet data-icon="inline-start" />
 					{/if}
-					<span>{categoryLabels[activity.category]}</span>
+					<span>{localizedCategory}</span>
 				</Badge>
 
 				<!-- Duration Pill -->
@@ -82,7 +86,7 @@
 						<Button
 							variant="ghost"
 							size="icon-xs"
-							aria-label={`Edit habit: ${activity.title}`}
+							aria-label={t.break_card_edit_habit_aria({ title: localizedTitle })}
 							onclick={() => onEdit(activity)}
 							class="text-muted-foreground/70 hover:text-foreground"
 						>
@@ -93,7 +97,7 @@
 						<Button
 							variant="ghost"
 							size="icon-xs"
-							aria-label={`Delete habit: ${activity.title}`}
+							aria-label={t.break_card_delete_habit_aria({ title: localizedTitle })}
 							onclick={() => onDelete(activity)}
 							class="text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive"
 						>
@@ -106,13 +110,13 @@
 					{@render actions(activity)}
 				{/if}
 
-				{#if activity.guide && activity.guide.trim().length > 0}
+				{#if localizedGuide && localizedGuide.trim().length > 0}
 					<Button
 						variant="ghost"
 						size="icon-xs"
 						aria-label={isExpanded
-							? `Hide guide for ${activity.title}`
-							: `Show guide for ${activity.title}`}
+							? t.break_card_hide_guide_aria({ title: localizedTitle })
+							: t.break_card_show_guide_aria({ title: localizedTitle })}
 						aria-expanded={isExpanded}
 						aria-controls={isExpanded ? `guide-${activity.id}` : undefined}
 						onclick={() => (isExpanded = !isExpanded)}
@@ -129,18 +133,18 @@
 
 		<!-- Activity Title -->
 		<h4 class="mt-2.5 text-sm font-semibold tracking-tight text-foreground">
-			{activity.title}
+			{localizedTitle}
 		</h4>
 	</div>
 
 	<!-- Expandable Micro-Guide with smooth slide transition -->
-	{#if isExpanded && activity.guide && activity.guide.trim().length > 0}
+	{#if isExpanded && localizedGuide && localizedGuide.trim().length > 0}
 		<div transition:slide={{ duration: 200 }}>
 			<div
 				id={`guide-${activity.id}`}
 				class="mt-2.5 border-t border-border/40 pt-2 text-xs/relaxed whitespace-pre-line text-muted-foreground"
 			>
-				{activity.guide}
+				{localizedGuide}
 			</div>
 		</div>
 	{/if}

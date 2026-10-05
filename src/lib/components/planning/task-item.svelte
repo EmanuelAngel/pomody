@@ -7,6 +7,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { cn } from '$lib/utils';
 	import type { FocusTask } from '$lib/domain/tasks/task.entity';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		task: FocusTask;
@@ -84,7 +85,7 @@
 				type="button"
 				role="checkbox"
 				aria-checked={true}
-				aria-label={`Mark "${task.title}" as pending`}
+				aria-label={t.task_item_mark_as_pending({ title: task.title })}
 				onclick={() => ontoggle?.(task.id)}
 				class="mt-0.5 flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-primary bg-primary text-primary-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
@@ -101,8 +102,8 @@
 			<Button
 				variant="ghost"
 				size="icon-xs"
-				aria-label={`Delete task "${task.title}"`}
-				title="Delete task"
+				aria-label={t.task_item_delete_button_aria({ title: task.title })}
+				title={t.task_item_delete_button_title()}
 				onclick={() => ondelete?.(task.id)}
 				class="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive"
 			>
@@ -129,7 +130,7 @@
 			<div
 				class="mt-1 flex size-3.5 shrink-0 items-center justify-center text-muted-foreground/30 transition-colors select-none group-hover:text-muted-foreground/60"
 				aria-hidden="true"
-				title="Drag task to timeline"
+				title={t.task_item_drag_title()}
 			>
 				<GripVertical class="size-3.5" />
 			</div>
@@ -138,7 +139,7 @@
 				type="button"
 				role="checkbox"
 				aria-checked={false}
-				aria-label={`Mark "${task.title}" as completed`}
+				aria-label={t.task_item_mark_as_completed({ title: task.title })}
 				onclick={() => ontoggle?.(task.id)}
 				class="mt-0.5 flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-muted-foreground/40 transition-colors hover:border-primary focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
@@ -147,7 +148,7 @@
 			{#if isEditing}
 				<input
 					type="text"
-					aria-label="Edit task title"
+					aria-label={t.task_item_edit_input_aria()}
 					bind:value={editingTitle}
 					onkeydown={handleKeyDown}
 					onblur={handleSave}
@@ -156,9 +157,9 @@
 			{:else}
 				<button
 					type="button"
-					aria-label={`Edit task "${task.title}"`}
+					aria-label={t.task_item_edit_button_aria({ title: task.title })}
 					class="min-w-0 flex-1 cursor-text text-left text-sm leading-snug font-medium break-words text-foreground transition-colors hover:text-foreground/80 focus-visible:outline-none"
-					title="Click to edit"
+					title={t.task_item_edit_button_title()}
 					onclick={startEditing}
 				>
 					{task.title}
@@ -172,8 +173,8 @@
 				<Button
 					variant="ghost"
 					size="icon-xs"
-					aria-label={`Slot task "${task.title}" into next focus block`}
-					title="Slot into next focus block"
+					aria-label={t.task_item_slot_button_aria({ title: task.title })}
+					title={t.task_item_slot_button_title()}
 					onclick={() => onslot?.(task.id)}
 					class="text-muted-foreground/50 hover:text-foreground"
 				>
@@ -184,10 +185,10 @@
 				variant="ghost"
 				size="icon-xs"
 				aria-label={isActive
-					? `Unset active task "${task.title}"`
-					: `Set as active in timer "${task.title}"`}
+					? t.task_item_unset_active_aria({ title: task.title })
+					: t.task_item_set_active_aria({ title: task.title })}
 				aria-pressed={isActive}
-				title={isActive ? 'Active in timer' : 'Set as active in timer'}
+				title={isActive ? t.task_item_active_title() : t.task_item_set_active_title()}
 				onclick={() => ontogglepin?.(task.id)}
 				class={cn(
 					'transition-colors',
@@ -202,8 +203,8 @@
 			<Button
 				variant="ghost"
 				size="icon-xs"
-				aria-label={`Delete task "${task.title}"`}
-				title="Delete task"
+				aria-label={t.task_item_delete_button_aria({ title: task.title })}
+				title={t.task_item_delete_button_title()}
 				onclick={() => ondelete?.(task.id)}
 				class="text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive"
 			>

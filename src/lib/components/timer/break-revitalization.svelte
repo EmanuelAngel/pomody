@@ -9,6 +9,10 @@
 	import { cn } from '$lib/utils';
 	import { breaksState as defaultBreaksState, type BreaksState } from '$lib/state/breaks.svelte';
 	import { t } from '$lib/state/locale.svelte';
+	import {
+		getLocalizedPresetTitle,
+		getLocalizedPresetGuide
+	} from '$lib/components/breaks/break-preset-i18n';
 	import type { BreakCategory } from '$lib/domain/breaks/break-activity.entity';
 
 	interface Props {
@@ -24,6 +28,10 @@
 	let isShuffling = $state(false);
 
 	const activeActivity = $derived(breaksState.activeActivity);
+	const activeTitle = $derived(activeActivity ? getLocalizedPresetTitle(activeActivity) : '');
+	const activeGuide = $derived(
+		activeActivity ? getLocalizedPresetGuide(activeActivity) : undefined
+	);
 
 	const categoryBadgeClasses: Record<BreakCategory, string> = {
 		physical: 'border-accent-gold/40 bg-accent-gold/15 text-accent-gold',
@@ -83,16 +91,16 @@
 		<!-- Activity title with truncation if long -->
 		<span
 			class="max-w-[130px] truncate font-medium text-foreground sm:max-w-[200px]"
-			title={activeActivity.title}
+			title={activeTitle}
 		>
-			{activeActivity.title}
+			{activeTitle}
 		</span>
 
 		<!-- Guide Popover Trigger and Content -->
 		<Popover.Root bind:open={guideOpen}>
 			<Popover.Trigger
 				type="button"
-				aria-label={t.break_revitalization_view_instructions({ title: activeActivity.title })}
+				aria-label={t.break_revitalization_view_instructions({ title: activeTitle })}
 				class="inline-flex size-6 cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				<BookOpen class="size-3.5" />
@@ -106,7 +114,7 @@
 			>
 				<div class="mb-2 flex items-center justify-between gap-2 border-b border-border/40 pb-2">
 					<span class="truncate text-xs font-semibold text-foreground">
-						{activeActivity.title}
+						{activeTitle}
 					</span>
 					<span
 						class={cn(
@@ -117,9 +125,9 @@
 						{categoryLabels[activeActivity.category]}
 					</span>
 				</div>
-				{#if activeActivity.guide}
+				{#if activeGuide}
 					<div class="text-xs leading-relaxed whitespace-pre-line text-muted-foreground">
-						{activeActivity.guide}
+						{activeGuide}
 					</div>
 				{:else}
 					<p class="text-xs text-muted-foreground italic">

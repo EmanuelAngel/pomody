@@ -10,6 +10,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { cn } from '$lib/utils';
+	import { t } from '$lib/state/locale.svelte';
 	import {
 		type BreakActivity,
 		type BreakCategory,
@@ -74,10 +75,10 @@
 
 	const titleError = $derived.by(() => {
 		if (titleTrimmed.length === 0) {
-			return 'Title is required.';
+			return t.break_form_error_title_required();
 		}
 		if (titleTrimmed.length > BREAK_ACTIVITY_TITLE_MAX_LENGTH) {
-			return `Title cannot exceed ${BREAK_ACTIVITY_TITLE_MAX_LENGTH} characters.`;
+			return t.break_form_error_title_max({ max: BREAK_ACTIVITY_TITLE_MAX_LENGTH });
 		}
 		return null;
 	});
@@ -96,14 +97,14 @@
 			!Number.isInteger(parsedDuration) ||
 			parsedDuration < 1
 		) {
-			return 'Duration must be at least 1 minute.';
+			return t.break_form_error_duration_min();
 		}
 		return null;
 	});
 
 	const guideError = $derived.by(() => {
 		if (guide.length > BREAK_ACTIVITY_GUIDE_MAX_LENGTH) {
-			return `Guide cannot exceed ${BREAK_ACTIVITY_GUIDE_MAX_LENGTH} characters.`;
+			return t.break_form_error_guide_max({ max: BREAK_ACTIVITY_GUIDE_MAX_LENGTH });
 		}
 		return null;
 	});
@@ -163,12 +164,10 @@
 	<Dialog.Content {portalProps} class="max-w-lg">
 		<Dialog.Header>
 			<Dialog.Title class="text-base font-semibold text-foreground">
-				{activity ? 'Edit Break Habit' : 'New Break Habit'}
+				{activity ? t.break_form_title_edit() : t.break_form_title_new()}
 			</Dialog.Title>
 			<Dialog.Description class="text-xs text-muted-foreground">
-				{activity
-					? 'Modify custom habit details and micro-guide instructions.'
-					: 'Add a custom restorative habit with duration and optional guidance.'}
+				{activity ? t.break_form_description_edit() : t.break_form_description_new()}
 			</Dialog.Description>
 		</Dialog.Header>
 
@@ -178,7 +177,7 @@
 				<Field.Field data-invalid={showTitleError || undefined} class="gap-1.5">
 					<div class="flex items-center justify-between">
 						<Field.FieldLabel for="habit-title" class="text-xs font-medium text-foreground">
-							Title <span class="text-destructive">*</span>
+							{t.break_form_field_title()} <span class="text-destructive">*</span>
 						</Field.FieldLabel>
 						<span
 							class={cn(
@@ -194,7 +193,7 @@
 					<Input
 						id="habit-title"
 						type="text"
-						placeholder="e.g. Upper Back Stretch"
+						placeholder={t.break_form_placeholder_title()}
 						bind:value={title}
 						oninput={() => (touchedTitle = true)}
 						aria-invalid={showTitleError}
@@ -210,7 +209,7 @@
 				<!-- Category Field -->
 				<Field.Field class="gap-1.5">
 					<Field.FieldLabel id="habit-category-label" class="text-xs font-medium text-foreground">
-						Category <span class="text-destructive">*</span>
+						{t.break_form_field_category()} <span class="text-destructive">*</span>
 					</Field.FieldLabel>
 					<ToggleGroup.Root
 						type="single"
@@ -227,27 +226,27 @@
 					>
 						<ToggleGroup.Item
 							value="physical"
-							aria-label="Physical"
+							aria-label={t.break_category_physical()}
 							class="data-[state=on]:border-accent-gold/60 data-[state=on]:bg-accent-gold/20 data-[state=on]:text-accent-gold"
 						>
 							<Activity data-icon="inline-start" />
-							<span>Physical</span>
+							<span>{t.break_category_physical()}</span>
 						</ToggleGroup.Item>
 						<ToggleGroup.Item
 							value="mindful"
-							aria-label="Mindful"
+							aria-label={t.break_category_mindful()}
 							class="data-[state=on]:border-accent-iris/60 data-[state=on]:bg-accent-iris/20 data-[state=on]:text-accent-iris"
 						>
 							<Sparkles data-icon="inline-start" />
-							<span>Mindful</span>
+							<span>{t.break_category_mindful()}</span>
 						</ToggleGroup.Item>
 						<ToggleGroup.Item
 							value="hydration"
-							aria-label="Hydration"
+							aria-label={t.break_category_hydration()}
 							class="data-[state=on]:border-accent-foam/60 data-[state=on]:bg-accent-foam/20 data-[state=on]:text-accent-foam"
 						>
 							<Droplet data-icon="inline-start" />
-							<span>Hydration</span>
+							<span>{t.break_category_hydration()}</span>
 						</ToggleGroup.Item>
 					</ToggleGroup.Root>
 				</Field.Field>
@@ -255,7 +254,7 @@
 				<!-- Duration Field -->
 				<Field.Field data-invalid={showDurationError || undefined} class="gap-1.5">
 					<Field.FieldLabel for="habit-duration" class="text-xs font-medium text-foreground">
-						Duration (minutes) <span class="text-destructive">*</span>
+						{t.break_form_field_duration()} <span class="text-destructive">*</span>
 					</Field.FieldLabel>
 					<Input
 						id="habit-duration"
@@ -278,7 +277,8 @@
 				<Field.Field data-invalid={showGuideError || undefined} class="gap-1.5">
 					<div class="flex items-center justify-between">
 						<Field.FieldLabel for="habit-guide" class="text-xs font-medium text-foreground">
-							Micro-Guide <span class="font-normal text-muted-foreground">(Optional)</span>
+							{t.break_form_field_guide()}
+							<span class="font-normal text-muted-foreground">{t.break_form_optional_badge()}</span>
 						</Field.FieldLabel>
 						<span
 							class={cn(
@@ -294,7 +294,7 @@
 					<Textarea
 						id="habit-guide"
 						rows={3}
-						placeholder="1. Step one...&#10;2. Step two...&#10;3. Step three..."
+						placeholder={t.break_form_placeholder_guide()}
 						bind:value={guide}
 						oninput={() => (touchedGuide = true)}
 						aria-invalid={showGuideError}
@@ -312,10 +312,10 @@
 			<!-- Action Buttons -->
 			<Dialog.Footer class="flex flex-row justify-end gap-2 pt-2">
 				<Button type="button" variant="outline" onclick={handleCancel} disabled={isSubmitting}>
-					Cancel
+					{t.break_form_cancel_button()}
 				</Button>
 				<Button type="submit" disabled={!isValid || isSubmitting}>
-					{activity ? 'Save Changes' : 'Create Habit'}
+					{activity ? t.break_form_submit_save() : t.break_form_submit_create()}
 				</Button>
 			</Dialog.Footer>
 		</form>

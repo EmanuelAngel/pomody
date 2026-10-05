@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import BreakCatalog from './break-catalog.svelte';
+import { localeState } from '$lib/state/locale.svelte';
 import { createBreaksState } from '$lib/state/breaks.svelte';
 import type { IBreakActivityRepository } from '$lib/domain/ports/break-activity-repository.port';
 import { sortBreakActivities } from '$lib/domain/ports/break-activity-repository.port';
@@ -341,5 +342,46 @@ describe('BreakCatalog (Client Browser)', () => {
 		await expect.element(screen.getByRole('button', { name: 'All (2)' })).toBeVisible();
 		await expect.element(screen.getByRole('button', { name: 'Mindful (1)' })).toBeVisible();
 		await expect.element(screen.getByText('Box Breathing Focus')).toBeVisible();
+	});
+
+	it('reactively updates catalog controls, chips, and preset titles when switching locales', async () => {
+		const preset = createBreakActivity({
+			id: 'preset-neck-shoulder-stretch',
+			title: 'Neck & Shoulder Release',
+			category: 'physical',
+			durationMinutes: 2,
+			isPreset: true
+		});
+		const repo = new MockBreakActivityRepository([preset]);
+		const breaksState = createBreaksState(repo);
+		await breaksState.load();
+
+		const screen = await render(BreakCatalog, { breaksState });
+
+		// English defaults
+		await expect.element(screen.getByRole('button', { name: 'All (1)' })).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'Physical (1)' })).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'New Habit' })).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'Reset defaults' })).toBeVisible();
+		await expect.element(screen.getByText('Neck & Shoulder Release')).toBeVisible();
+
+		// Switch to Spanish
+		localeState.setLocale('es');
+
+		await expect.element(screen.getByRole('button', { name: 'Todas (1)' })).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'Físico (1)' })).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'Nuevo hábito' })).toBeVisible();
+		await expect
+			.element(screen.getByRole('button', { name: 'Restablecer valores predeterminados' }))
+			.toBeVisible();
+		await expect.element(screen.getByText('Alivio de cuello y hombros')).toBeVisible();
+
+		// Switch back to English
+		localeState.setLocale('en');
+
+		await expect.element(screen.getByRole('button', { name: 'All (1)' })).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'Physical (1)' })).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'New Habit' })).toBeVisible();
+		await expect.element(screen.getByText('Neck & Shoulder Release')).toBeVisible();
 	});
 });
