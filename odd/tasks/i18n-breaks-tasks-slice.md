@@ -44,7 +44,7 @@ Localize the break activities catalog, preset break micro-guides with semantic r
   - Commit evidence: `8beb30c`
 
 - [x] **TASK-4: Verification Gate & Final Checks**
-  - Action: Execute full test and lint suite (`pnpm check`, `pnpm lint`, `pnpm test:unit`, `pnpm test:browser`).
+  - Action: Execute full test and lint suite (`pnpm check`, `pnpm lint`, `pnpm test:unit`, `pnpm test:browser`). Removed redundant local `beforeEach`/`afterEach` locale teardown in planning test files since `src/testing/setup-locale.ts` is configured globally in `vite.config.ts`.
   - Route: inline
   - Checks: 0 errors in `pnpm check`, 0 issues in `pnpm lint`, 650/650 passed in `pnpm test:unit`, 188/188 passed in `pnpm test:browser`.
-  - Commit evidence: `8405b26`, `a679d15`, `8beb30c`
+  - Commit evidence: `8405b26`, `a679d15`, `8beb30c`, `b9f7864`
