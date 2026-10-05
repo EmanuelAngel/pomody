@@ -250,5 +250,13 @@
 	"task_item_active_title": "Activa en el temporizador",
 	"task_item_set_active_title": "Establecer como activa en el temporizador",
 	"task_item_delete_button_aria": "Eliminar tarea \"{title}\"",
-	"task_item_delete_button_title": "Eliminar tarea"
+	"task_item_delete_button_title": "Eliminar tarea",
+	"header_nav_main_aria": "Navegación principal",
+	"header_nav_views_aria": "Vistas de navegación",
+	"header_nav_timer": "Temporizador",
+	"header_nav_planning": "Planificación",
+	"header_nav_metrics": "Métricas",
+	"daily_counter_summary_zero": "0 bloques · {duration}",
+	"daily_counter_summary_singular": "{count} bloque · {duration}",
+	"daily_counter_summary_plural": "{count} bloques · {duration}"
 }
