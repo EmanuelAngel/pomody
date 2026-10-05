@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.9.0...pomody-v0.10.0) (2026-10-05)
+
+
+### Features
+
+* **i18n:** break activities and task dialogs localization (Slice 2.4) ([#110](https://github.com/EmanuelAngel/pomody/issues/110)) ([981e85a](https://github.com/EmanuelAngel/pomody/commit/981e85ac2c081fbfe77a1ad7a170037df0f97b19))
+* **i18n:** layout shell localization and settings drawer copy cleanup (Slice 2.5) ([#112](https://github.com/EmanuelAngel/pomody/issues/112)) ([bb4c1bb](https://github.com/EmanuelAngel/pomody/commit/bb4c1bb2e5e4b10d8c5ca06506593e02c438fb99))
+* **i18n:** planning view and session budget localization (Slice 2.3) ([#109](https://github.com/EmanuelAngel/pomody/issues/109)) ([35d6471](https://github.com/EmanuelAngel/pomody/commit/35d64718e4815146624f2c63fa09184eafecb41a))
+* **i18n:** runtime setup and test isolation harness (Slice 2.0) ([#105](https://github.com/EmanuelAngel/pomody/issues/105)) ([1d2b304](https://github.com/EmanuelAngel/pomody/commit/1d2b304f70f198b459c618b348bbb5e4e6f07c8d))
+* **i18n:** settings drawer and accessible language selector (Slice 2.2) ([#108](https://github.com/EmanuelAngel/pomody/issues/108)) ([d35102f](https://github.com/EmanuelAngel/pomody/commit/d35102f5cfe5e636e52ae4df9ad89a69849150a3))
+* **i18n:** timer view and controls localization (Slice 2.1) ([#107](https://github.com/EmanuelAngel/pomody/issues/107)) ([882f771](https://github.com/EmanuelAngel/pomody/commit/882f77193c8a5817d69267c94431f4b6cd470107))
+
 ## [0.9.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.8.0...pomody-v0.9.0) (2026-10-03)
 
 
