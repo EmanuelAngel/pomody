@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import PlanningCadenceConfig, { CADENCE_PRESETS } from './planning-cadence-config.svelte';
 import { createPlanningState } from '$lib/state/planning.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
 import { createTasksState } from '$lib/state/tasks.svelte';
+import { localeState } from '$lib/state/locale.svelte';
 import type { ISessionPlanRepository } from '$lib/domain/ports/session-plan-repository.port';
 import type { ITaskRepository } from '$lib/domain/ports/task-repository.port';
 import type { SessionPlan } from '$lib/domain/planning/session-plan.entity';
@@ -171,5 +172,54 @@ describe('PlanningCadenceConfig (Client Browser)', () => {
 		await expect
 			.element(screen.getByRole('button', { name: 'Increase focus duration' }))
 			.not.toBeInTheDocument();
+	});
+
+	afterEach(() => {
+		localeState.setLocale('en');
+	});
+
+	it('renders localized labels and steppers when switching to Spanish', async () => {
+		localeState.setLocale('es');
+
+		const planningState = setupPlanningState();
+		const screen = await render(PlanningCadenceConfig, { planningState });
+
+		// Verify preset heading
+		await expect.element(screen.getByText('Ritmo predefinido')).toBeVisible();
+
+		// Verify localized preset chips
+		const classicBtn = screen.getByRole('button', { name: /25\/5 Clásico/i });
+		const deepFocusBtn = screen.getByRole('button', { name: /50\/10 Foco profundo/i });
+		const ultradianBtn = screen.getByRole('button', { name: /90\/20 Ritmo ultradiano/i });
+		await expect.element(classicBtn).toBeVisible();
+		await expect.element(deepFocusBtn).toBeVisible();
+		await expect.element(ultradianBtn).toBeVisible();
+
+		// Verify Blocks heading and button
+		await expect.element(screen.getByText('Bloques')).toBeVisible();
+		const incBlocksBtn = screen.getByRole('button', { name: 'Aumentar cantidad de bloques' });
+		await expect.element(incBlocksBtn).toBeVisible();
+
+		// Verify customize cadence
+		const toggleBtn = screen.getByRole('button', { name: 'Personalizar ritmo' });
+		await expect.element(toggleBtn).toBeVisible();
+
+		// Expand custom cadence, verify stepper labels
+		await toggleBtn.click();
+		await expect.element(screen.getByText('Foco', { exact: true })).toBeVisible();
+		await expect.element(screen.getByText('Descanso corto')).toBeVisible();
+		await expect.element(screen.getByText('Descanso largo')).toBeVisible();
+		await expect.element(screen.getByText('Intervalo')).toBeVisible();
+
+		// Tweak focus and verify custom badge
+		const incFocusBtn = screen.getByRole('button', { name: 'Aumentar duración de foco' });
+		await incFocusBtn.click();
+		await expect.element(screen.getByText('Personalizado', { exact: true })).toBeVisible();
+
+		// Switch target mode to 'end_time' and verify
+		planningState.setTargetMode('end_time');
+		await expect.element(screen.getByLabelText('Hora de finalización objetivo')).toBeVisible();
+		await expect.element(screen.getByLabelText('Hora de inicio programada')).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'Ahora' })).toBeVisible();
 	});
 });
