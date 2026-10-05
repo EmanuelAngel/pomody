@@ -11,7 +11,9 @@
 	import BreakCard from './break-card.svelte';
 	import BreakFormDialog from './break-form-dialog.svelte';
 	import BreakConfirmDialog from './break-confirm-dialog.svelte';
+	import { getLocalizedBreakCategory } from './break-preset-i18n';
 	import { breaksState as defaultBreaksState, type BreaksState } from '$lib/state/breaks.svelte';
+	import { t } from '$lib/state/locale.svelte';
 	import {
 		createBreakActivity,
 		type BreakActivity,
@@ -48,11 +50,27 @@
 	let formActivity = $state<BreakActivity | null>(null);
 
 	let isConfirmOpen = $state(false);
-	let confirmTitle = $state('');
-	let confirmDescription = $state('');
-	let confirmLabel = $state('Confirm');
+	let confirmType = $state<'reset' | 'delete' | null>(null);
 	let confirmVariant = $state<'destructive' | 'default'>('destructive');
 	let confirmAction = $state<() => Promise<void> | void>(() => {});
+
+	const confirmTitle = $derived.by(() => {
+		if (confirmType === 'reset') return t.break_catalog_confirm_reset_title();
+		if (confirmType === 'delete') return t.break_catalog_confirm_delete_title();
+		return '';
+	});
+
+	const confirmDescription = $derived.by(() => {
+		if (confirmType === 'reset') return t.break_catalog_confirm_reset_description();
+		if (confirmType === 'delete') return t.break_catalog_confirm_delete_description();
+		return '';
+	});
+
+	const confirmLabel = $derived.by(() => {
+		if (confirmType === 'reset') return t.break_catalog_confirm_reset_button();
+		if (confirmType === 'delete') return t.break_catalog_confirm_delete_button();
+		return t.break_confirm_dialog_confirm_default();
+	});
 
 	onMount(() => {
 		void breaksState.load();
@@ -66,11 +84,30 @@
 	});
 
 	const filterOptions = $derived([
-		{ id: 'all' as const, label: 'All', count: counts.all },
-		{ id: 'physical' as const, label: 'Physical', count: counts.physical, icon: Activity },
-		{ id: 'mindful' as const, label: 'Mindful', count: counts.mindful, icon: Sparkles },
-		{ id: 'hydration' as const, label: 'Hydration', count: counts.hydration, icon: Droplet }
+		{ id: 'all' as const, label: t.break_catalog_filter_all(), count: counts.all, icon: undefined },
+		{
+			id: 'physical' as const,
+			label: t.break_category_physical(),
+			count: counts.physical,
+			icon: Activity
+		},
+		{
+			id: 'mindful' as const,
+			label: t.break_category_mindful(),
+			count: counts.mindful,
+			icon: Sparkles
+		},
+		{
+			id: 'hydration' as const,
+			label: t.break_category_hydration(),
+			count: counts.hydration,
+			icon: Droplet
+		}
 	]);
+
+	const activeCategoryLabel = $derived(
+		activeFilter !== 'all' ? getLocalizedBreakCategory(activeFilter).toLowerCase() : ''
+	);
 
 	const filteredActivities = $derived(
 		activeFilter === 'all'
@@ -92,10 +129,7 @@
 			onResetDefaults();
 			return;
 		}
-		confirmTitle = 'Reset catalog to defaults?';
-		confirmDescription =
-			'Reset catalog to defaults? All custom habits will be removed and original 10 presets restored.';
-		confirmLabel = 'Reset';
+		confirmType = 'reset';
 		confirmVariant = 'destructive';
 		confirmAction = async () => {
 			await breaksState.resetToDefaults();
@@ -109,9 +143,7 @@
 	}
 
 	function handleDeleteHabit(activity: BreakActivity) {
-		confirmTitle = 'Delete custom habit?';
-		confirmDescription = 'Delete custom habit? This cannot be undone.';
-		confirmLabel = 'Delete';
+		confirmType = 'delete';
 		confirmVariant = 'destructive';
 		confirmAction = async () => {
 			await breaksState.deleteActivity(activity.id);
@@ -146,7 +178,7 @@
 		<div
 			class="flex flex-wrap items-center gap-1.5"
 			role="group"
-			aria-label="Filter activities by category"
+			aria-label={t.break_catalog_filter_group_aria()}
 		>
 			{#each filterOptions as filter (filter.id)}
 				<Button
@@ -154,7 +186,10 @@
 					variant={activeFilter === filter.id ? 'default' : 'outline'}
 					size="sm"
 					aria-pressed={activeFilter === filter.id}
-					aria-label={`${filter.label} (${filter.count})`}
+					aria-label={t.break_catalog_filter_chip_aria({
+						label: filter.label,
+						count: filter.count
+					})}
 					onclick={() => (activeFilter = filter.id)}
 					class={cn(
 						'h-7 rounded-full px-2.5 text-xs font-medium select-none',
@@ -190,7 +225,7 @@
 					class="h-7 cursor-pointer gap-1 px-2.5 text-xs font-medium"
 				>
 					<Plus data-icon="inline-start" />
-					<span>New Habit</span>
+					<span>{t.break_catalog_new_habit_button()}</span>
 				</Button>
 			</div>
 		{/if}
@@ -203,7 +238,7 @@
 			role="status"
 			aria-live="polite"
 		>
-			<p class="text-xs font-medium text-muted-foreground">Loading break activities...</p>
+			<p class="text-xs font-medium text-muted-foreground">{t.break_catalog_loading()}</p>
 		</div>
 	{:else if filteredActivities.length > 0}
 		<div class="grid grid-cols-1 gap-2.5">
@@ -225,16 +260,16 @@
 			</div>
 			<p class="text-sm font-medium text-foreground">
 				{#if breaksState.activities.length === 0}
-					No break activities available
+					{t.break_catalog_empty_all_title()}
 				{:else}
-					No {activeFilter} activities found
+					{t.break_catalog_empty_category_title({ category: activeCategoryLabel })}
 				{/if}
 			</p>
 			<p class="mt-1 max-w-xs text-xs text-muted-foreground">
 				{#if breaksState.activities.length === 0}
-					Reset catalog to default presets or create a custom habit.
+					{t.break_catalog_empty_all_description()}
 				{:else}
-					Try selecting another category or add a new {activeFilter} habit.
+					{t.break_catalog_empty_category_description({ category: activeCategoryLabel })}
 				{/if}
 			</p>
 		</div>
@@ -249,7 +284,7 @@
 				class="inline-flex cursor-pointer items-center gap-1.5 rounded-sm px-2 py-1 text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				<RotateCcw class="size-3" />
-				<span>Reset defaults</span>
+				<span>{t.break_catalog_reset_defaults_button()}</span>
 			</button>
 		</div>
 	{/if}

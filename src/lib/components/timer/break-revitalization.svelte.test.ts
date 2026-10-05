@@ -332,4 +332,32 @@ describe('BreakRevitalization (Client Browser)', () => {
 		localeState.setLocale('en');
 		await expect.element(screen.getByText('Hydration')).toBeVisible();
 	});
+
+	it('reactively updates preset activity title and guide on locale change', async () => {
+		const preset = createBreakActivity({
+			id: 'preset-neck-shoulder-stretch',
+			title: 'Neck & Shoulder Release',
+			category: 'physical',
+			durationMinutes: 2,
+			isPreset: true,
+			guide: '1. Tilt ear to shoulder.'
+		});
+		const repo = new FakeBreakActivityRepository([preset]);
+		const breaksState = createBreaksState(repo);
+		await breaksState.load();
+		breaksState.suggestForBreak('shortBreak-preset');
+
+		const screen = await render(BreakRevitalization, {
+			breaksState,
+			mode: 'shortBreak',
+			currentRound: 1,
+			portalProps: { disabled: true }
+		});
+
+		await expect.element(screen.getByText('Neck & Shoulder Release')).toBeVisible();
+		localeState.setLocale('es');
+		await expect.element(screen.getByText('Alivio de cuello y hombros')).toBeVisible();
+		localeState.setLocale('en');
+		await expect.element(screen.getByText('Neck & Shoulder Release')).toBeVisible();
+	});
 });

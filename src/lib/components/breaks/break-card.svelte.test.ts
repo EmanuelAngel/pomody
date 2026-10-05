@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import BreakCard from './break-card.svelte';
+import { localeState } from '$lib/state/locale.svelte';
 import { createBreakActivity, type BreakActivity } from '$lib/domain/breaks/break-activity.entity';
 
 const physicalActivity: BreakActivity = createBreakActivity({
@@ -153,5 +154,31 @@ describe('BreakCard (Client Browser)', () => {
 		await deleteBtn.click();
 		expect(onDelete).toHaveBeenCalledTimes(1);
 		expect(onDelete).toHaveBeenCalledWith(mindfulActivity);
+	});
+
+	it('reactively switches title and category when locale changes to es and back to en', async () => {
+		const presetAct = createBreakActivity({
+			id: 'preset-neck-shoulder-stretch',
+			title: 'Neck & Shoulder Release',
+			category: 'physical',
+			durationMinutes: 2,
+			isPreset: true,
+			guide: '1. Tilt ear to shoulder.'
+		});
+
+		const screen = await render(BreakCard, { activity: presetAct });
+
+		await expect.element(screen.getByText('Neck & Shoulder Release')).toBeVisible();
+		await expect.element(screen.getByText('Physical')).toBeVisible();
+
+		localeState.setLocale('es');
+
+		await expect.element(screen.getByText('Alivio de cuello y hombros')).toBeVisible();
+		await expect.element(screen.getByText('Físico')).toBeVisible();
+
+		localeState.setLocale('en');
+
+		await expect.element(screen.getByText('Neck & Shoulder Release')).toBeVisible();
+		await expect.element(screen.getByText('Physical')).toBeVisible();
 	});
 });

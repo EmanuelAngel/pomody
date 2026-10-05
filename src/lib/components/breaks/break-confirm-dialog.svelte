@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		open?: boolean;
@@ -17,13 +18,16 @@
 		open = $bindable(false),
 		title,
 		description,
-		confirmLabel = 'Confirm',
-		cancelLabel = 'Cancel',
+		confirmLabel,
+		cancelLabel,
 		variant = 'destructive',
 		onConfirm,
 		onCancel,
 		portalProps
 	}: Props = $props();
+
+	const resolvedConfirmLabel = $derived(confirmLabel ?? t.break_confirm_dialog_confirm_default());
+	const resolvedCancelLabel = $derived(cancelLabel ?? t.break_confirm_dialog_cancel_default());
 
 	let isClosedByAction = false;
 
@@ -57,10 +61,10 @@
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
 			<AlertDialog.Cancel onclick={handleCancel}>
-				{cancelLabel}
+				{resolvedCancelLabel}
 			</AlertDialog.Cancel>
 			<AlertDialog.Action {variant} onclick={handleConfirm}>
-				{confirmLabel}
+				{resolvedConfirmLabel}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

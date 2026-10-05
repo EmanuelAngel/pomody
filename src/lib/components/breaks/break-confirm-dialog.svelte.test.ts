@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import BreakConfirmDialog from './break-confirm-dialog.svelte';
+import { localeState } from '$lib/state/locale.svelte';
 
 describe('BreakConfirmDialog (Client Browser)', () => {
 	afterEach(async () => {
@@ -73,5 +74,28 @@ describe('BreakConfirmDialog (Client Browser)', () => {
 		await cancelButton.click();
 
 		expect(onCancel).toHaveBeenCalledTimes(1);
+	});
+
+	it('uses localized default confirm and cancel labels and reactively updates on locale change', async () => {
+		const screen = await render(BreakConfirmDialog, {
+			open: true,
+			title: 'Test Title',
+			description: 'Test Description',
+			onConfirm: vi.fn(),
+			portalProps: { disabled: true }
+		});
+
+		await expect.element(screen.getByRole('button', { name: 'Confirm' })).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'Cancel' })).toBeVisible();
+
+		localeState.setLocale('es');
+
+		await expect.element(screen.getByRole('button', { name: 'Confirmar' })).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'Cancelar' })).toBeVisible();
+
+		localeState.setLocale('en');
+
+		await expect.element(screen.getByRole('button', { name: 'Confirm' })).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'Cancel' })).toBeVisible();
 	});
 });
