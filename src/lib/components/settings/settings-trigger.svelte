@@ -3,6 +3,7 @@
 	import Settings from '@lucide/svelte/icons/settings';
 	import { cn } from '$lib/utils.js';
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		open?: boolean;
@@ -23,7 +24,7 @@
 <Button
 	variant="ghost"
 	size="icon"
-	aria-label="Open settings"
+	aria-label={t.settings_trigger_open()}
 	aria-expanded={open}
 	disabled={isRunning}
 	tabindex={isRunning ? -1 : undefined}

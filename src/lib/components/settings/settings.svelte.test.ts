@@ -6,6 +6,7 @@ import SettingsDrawer from './settings-drawer.svelte';
 import SettingsTestHost from './settings-test-host.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
 import { createThemeState } from '$lib/state/theme.svelte';
+import { localeState } from '$lib/state/locale.svelte';
 import { DEFAULT_TIMER_CONFIG } from '$lib/domain/timer/timer-fsm';
 
 function createDummyTicker(isRunning = false) {
@@ -692,5 +693,185 @@ describe('Settings Integration: Trigger & Drawer (Client Browser)', () => {
 
 		// Drawer should display fresh external config (20 min), not stale override (26 min)
 		await expect.element(screen.getByText('20 min', { exact: true })).toBeVisible();
+	});
+});
+
+describe('SettingsDrawer Internationalization (Client Browser)', () => {
+	beforeEach(() => {
+		document.documentElement.removeAttribute('data-theme');
+		localStorage.clear();
+		localeState.setLocale('en');
+	});
+
+	it('renders all sections and labels in English by default', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({}, ticker);
+		const themeState = createThemeState();
+
+		const screen = await render(SettingsDrawer, {
+			open: true,
+			timerState,
+			themeState,
+			portalProps: { disabled: true }
+		});
+
+		// Header
+		await expect.element(screen.getByRole('heading', { level: 2, name: 'Settings' })).toBeVisible();
+		await expect
+			.element(screen.getByText('Customize timer intervals and color theme.'))
+			.toBeVisible();
+
+		// Section headings
+		await expect
+			.element(screen.getByRole('heading', { level: 3, name: 'Intervals' }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByText('Adjust the duration in minutes for each block.'))
+			.toBeVisible();
+		await expect.element(screen.getByRole('heading', { level: 3, name: 'Theme' })).toBeVisible();
+		await expect.element(screen.getByRole('heading', { level: 3, name: 'Language' })).toBeVisible();
+		await expect.element(screen.getByRole('heading', { level: 3, name: 'Sound' })).toBeVisible();
+		await expect
+			.element(screen.getByRole('heading', { level: 3, name: 'Break Revitalization' }))
+			.toBeVisible();
+
+		// Interval labels and reset button
+		await expect.element(screen.getByText('Focus', { exact: true })).toBeVisible();
+		await expect.element(screen.getByText('Short Break', { exact: true })).toBeVisible();
+		await expect.element(screen.getByText('Long Break', { exact: true })).toBeVisible();
+		await expect
+			.element(screen.getByText('Rounds before Long Break', { exact: true }))
+			.toBeVisible();
+		await expect.element(screen.getByText('4 rounds', { exact: true })).toBeVisible();
+		await expect
+			.element(
+				screen.getByRole('button', {
+					name: 'Reset to defaults (25 / 5 / 15 min · 4 rounds)'
+				})
+			)
+			.toBeVisible();
+
+		// Theme options
+		await expect.element(screen.getByRole('radio', { name: 'Dark theme' })).toBeVisible();
+		await expect.element(screen.getByRole('radio', { name: 'Dawn theme' })).toBeVisible();
+		await expect.element(screen.getByRole('radio', { name: 'OLED theme' })).toBeVisible();
+
+		// Language options
+		await expect.element(screen.getByRole('radio', { name: 'English language' })).toBeVisible();
+		await expect.element(screen.getByRole('radio', { name: 'Spanish language' })).toBeVisible();
+
+		// Sound alerts
+		await expect.element(screen.getByText('Sound alerts', { exact: true })).toBeVisible();
+		await expect
+			.element(screen.getByText('Play soothing chimes on block transitions'))
+			.toBeVisible();
+
+		// Break Revitalization
+		await expect.element(screen.getByText('Mindful suggestions', { exact: true })).toBeVisible();
+		await expect
+			.element(screen.getByText('Physical stretches, breathwork, and hydration reminders'))
+			.toBeVisible();
+	});
+
+	it('reactively updates all text and accessibility attributes to Spanish on locale change', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({}, ticker);
+		const themeState = createThemeState();
+
+		const screen = await render(SettingsTestHost, {
+			open: true,
+			timerState,
+			themeState
+		});
+
+		localeState.setLocale('es');
+
+		// Header
+		await expect.element(screen.getByRole('heading', { level: 2, name: 'Ajustes' })).toBeVisible();
+		await expect
+			.element(screen.getByText('Personaliza los intervalos del temporizador y el tema de color.'))
+			.toBeVisible();
+
+		// Section headings
+		await expect
+			.element(screen.getByRole('heading', { level: 3, name: 'Intervalos' }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByText('Ajusta la duración en minutos de cada bloque.'))
+			.toBeVisible();
+		await expect.element(screen.getByRole('heading', { level: 3, name: 'Tema' })).toBeVisible();
+		await expect.element(screen.getByRole('heading', { level: 3, name: 'Idioma' })).toBeVisible();
+		await expect.element(screen.getByRole('heading', { level: 3, name: 'Sonido' })).toBeVisible();
+		await expect
+			.element(screen.getByRole('heading', { level: 3, name: 'Revitalización en descansos' }))
+			.toBeVisible();
+
+		// Interval labels and reset button
+		await expect.element(screen.getByText('Foco', { exact: true })).toBeVisible();
+		await expect.element(screen.getByText('Descanso corto', { exact: true })).toBeVisible();
+		await expect.element(screen.getByText('Descanso largo', { exact: true })).toBeVisible();
+		await expect
+			.element(screen.getByText('Rondas antes del descanso largo', { exact: true }))
+			.toBeVisible();
+		await expect.element(screen.getByText('4 rondas', { exact: true })).toBeVisible();
+		await expect
+			.element(
+				screen.getByRole('button', {
+					name: 'Restablecer (25 / 5 / 15 min · 4 rondas)'
+				})
+			)
+			.toBeVisible();
+
+		// Theme options
+		await expect.element(screen.getByRole('radio', { name: 'Tema oscuro' })).toBeVisible();
+		await expect.element(screen.getByRole('radio', { name: 'Tema claro' })).toBeVisible();
+		await expect.element(screen.getByRole('radio', { name: 'Tema OLED' })).toBeVisible();
+
+		// Sound alerts
+		await expect.element(screen.getByText('Alertas sonoras', { exact: true })).toBeVisible();
+		await expect
+			.element(screen.getByText('Reproduce campanadas suaves en las transiciones de bloque'))
+			.toBeVisible();
+
+		// Break Revitalization
+		await expect
+			.element(screen.getByText('Sugerencias conscientes', { exact: true }))
+			.toBeVisible();
+		await expect
+			.element(
+				screen.getByText('Estiramientos físicos, respiración y recordatorios de hidratación')
+			)
+			.toBeVisible();
+	});
+
+	it('interactively switches locale from English to Spanish and back via embedded LanguageSelector', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({}, ticker);
+		const themeState = createThemeState();
+
+		const screen = await render(SettingsTestHost, {
+			open: true,
+			timerState,
+			themeState
+		});
+
+		// Initially English
+		await expect.element(screen.getByRole('heading', { level: 2, name: 'Settings' })).toBeVisible();
+		const esToggle = screen.getByRole('radio', { name: 'Spanish language' });
+		await esToggle.click();
+
+		// Reactively switched to Spanish
+		await expect.element(screen.getByRole('heading', { level: 2, name: 'Ajustes' })).toBeVisible();
+		await expect.element(screen.getByText('Foco')).toBeVisible();
+		await expect.element(screen.getByText('4 rondas', { exact: true })).toBeVisible();
+
+		// Switch back to English
+		const enToggle = screen.getByRole('radio', { name: 'Idioma inglés' });
+		await enToggle.click();
+
+		// Reactively restored to English
+		await expect.element(screen.getByRole('heading', { level: 2, name: 'Settings' })).toBeVisible();
+		await expect.element(screen.getByText('Focus')).toBeVisible();
+		await expect.element(screen.getByText('4 rounds', { exact: true })).toBeVisible();
 	});
 });
