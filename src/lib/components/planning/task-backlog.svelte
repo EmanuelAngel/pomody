@@ -12,6 +12,7 @@
 		planningState as defaultPlanningState,
 		type PlanningState
 	} from '$lib/state/planning.svelte';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		tasksState?: TasksState;
@@ -77,7 +78,7 @@
 	}
 </script>
 
-<section class={cn('space-y-4 lg:col-span-5', className)} aria-label="Task Backlog">
+<section class={cn('space-y-4 lg:col-span-5', className)} aria-label={t.task_backlog_region_aria()}>
 	<!-- Backlog Header -->
 	<div class="flex items-center justify-between px-1">
 		<div class="flex items-center gap-2">
@@ -87,11 +88,13 @@
 				<Pin class="size-3.5" />
 			</div>
 			<div>
-				<h3 class="text-sm font-semibold tracking-tight text-foreground">Tasks Backlog</h3>
+				<h3 class="text-sm font-semibold tracking-tight text-foreground">
+					{t.task_backlog_heading()}
+				</h3>
 			</div>
 		</div>
 		<span class="text-xs font-medium text-muted-foreground">
-			{pendingCount} remaining
+			{t.task_backlog_remaining_counter({ count: pendingCount })}
 		</span>
 	</div>
 
@@ -99,8 +102,8 @@
 	<div class="relative flex items-center">
 		<Input
 			id="new-task-input"
-			placeholder="Add a new focus task... (Enter to add)"
-			aria-label="Add a new focus task... (Enter to add)"
+			placeholder={t.task_backlog_input_placeholder()}
+			aria-label={t.task_backlog_input_placeholder()}
 			bind:value={newTaskTitle}
 			onkeydown={handleInputKeyDown}
 			class="h-10 pr-10 text-sm"
@@ -109,7 +112,7 @@
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				aria-label="Add task"
+				aria-label={t.task_backlog_add_task_aria()}
 				onclick={handleCreateTask}
 				class="absolute right-1 text-muted-foreground hover:text-foreground"
 			>
@@ -122,7 +125,7 @@
 	<div class="space-y-2">
 		<div class="flex items-center justify-between px-1">
 			<span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-				Pending ({pendingCount})
+				{t.task_backlog_pending_heading({ count: pendingCount })}
 			</span>
 		</div>
 
@@ -131,7 +134,7 @@
 				class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/50 py-10 text-center"
 			>
 				<p class="text-sm font-medium text-muted-foreground">
-					No pending tasks. Add one to plan your session.
+					{t.task_backlog_empty_pending()}
 				</p>
 			</div>
 		{:else}
@@ -166,16 +169,16 @@
 					{:else}
 						<ChevronRight class="size-3.5" />
 					{/if}
-					<span>Completed ({completedCount})</span>
+					<span>{t.task_backlog_completed_heading({ count: completedCount })}</span>
 				</button>
 
 				<button
 					type="button"
-					aria-label="Clear completed"
+					aria-label={t.task_backlog_clear_completed()}
 					onclick={handleClearCompleted}
 					class="cursor-pointer text-xs text-muted-foreground/70 transition-colors hover:text-destructive"
 				>
-					Clear completed
+					{t.task_backlog_clear_completed()}
 				</button>
 			</div>
 
