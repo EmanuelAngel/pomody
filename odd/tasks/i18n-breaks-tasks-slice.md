@@ -22,29 +22,29 @@ Localize the break activities catalog, preset break micro-guides with semantic r
 
 ## Tasks
 
-- [ ] **TASK-1: Define message keys in catalogs**
+- [x] **TASK-1: Define message keys in catalogs**
   - Path: `messages/en.json`, `messages/es.json`
   - Action: Add translation keys for 10 preset break activities (titles + guides), break catalog controls and empty states, break form dialog, break confirm dialog, and task backlog / task items.
   - Route: inline
-  - Checks: `pnpm check`
-  - Commit evidence: pending
+  - Checks: `pnpm check` (passed)
+  - Commit evidence: `8405b26`
 
-- [ ] **TASK-2: Localize preset break activities resolver and break components**
+- [x] **TASK-2: Localize preset break activities resolver and break components**
   - Path: `src/lib/components/breaks/break-preset-i18n.ts`, `src/lib/components/breaks/break-card.svelte`, `src/lib/components/breaks/break-catalog.svelte`, `src/lib/components/breaks/break-form-dialog.svelte`, `src/lib/components/breaks/break-confirm-dialog.svelte`, `src/lib/components/timer/break-revitalization.svelte`
   - Action: Implement semantic preset localization helper with fallback; replace hardcoded strings with `t.*()`; add reactive i18n tests.
   - Route: delegated direct
-  - Checks: `pnpm vitest run src/lib/components/breaks/break-catalog.svelte.test.ts src/lib/components/breaks/break-card.svelte.test.ts src/lib/components/breaks/break-form-dialog.svelte.test.ts src/lib/components/breaks/break-confirm-dialog.svelte.test.ts --project client`, `pnpm check`
-  - Commit evidence: pending
+  - Checks: `pnpm vitest run src/lib/components/breaks/ --project client` (passed - 42/42), `pnpm vitest run src/lib/components/timer/break-revitalization.svelte.test.ts --project client` (passed - 13/13), `pnpm check` (passed)
+  - Commit evidence: `a679d15`
 
-- [ ] **TASK-3: Localize task backlog and task item components**
+- [x] **TASK-3: Localize task backlog and task item components**
   - Path: `src/lib/components/planning/task-backlog.svelte`, `src/lib/components/planning/task-item.svelte`, `src/lib/components/planning/task-backlog.svelte.test.ts`
   - Action: Localize task backlog controls, empty states, and task item actions/tooltips; add dedicated reactive tests.
   - Route: delegated direct
-  - Checks: `pnpm vitest run src/lib/components/planning/task-item.svelte.test.ts src/lib/components/planning/task-backlog.svelte.test.ts --project client`, `pnpm check`
-  - Commit evidence: pending
+  - Checks: `pnpm vitest run src/lib/components/planning/task-item.svelte.test.ts src/lib/components/planning/task-backlog.svelte.test.ts src/lib/components/planning/planning-view.svelte.test.ts --project client` (passed - 48/48), `pnpm check` (passed)
+  - Commit evidence: `8beb30c`
 
-- [ ] **TASK-4: Verification Gate & Final Checks**
+- [x] **TASK-4: Verification Gate & Final Checks**
   - Action: Execute full test and lint suite (`pnpm check`, `pnpm lint`, `pnpm test:unit`, `pnpm test:browser`).
   - Route: inline
-  - Checks: 0 errors in `pnpm check`, 0 issues in `pnpm lint`, full pass in `pnpm test:unit` and `pnpm test:browser`.
-  - Commit evidence: pending
+  - Checks: 0 errors in `pnpm check`, 0 issues in `pnpm lint`, 650/650 passed in `pnpm test:unit`, 188/188 passed in `pnpm test:browser`.
+  - Commit evidence: `8405b26`, `a679d15`, `8beb30c`
