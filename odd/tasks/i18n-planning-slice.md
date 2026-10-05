@@ -22,36 +22,36 @@ Localize the Planning tab components (`planning-view.svelte`, `planning-cadence-
 
 ## Tasks
 
-- [ ] **TASK-1: Define message keys in catalogs**
+- [x] **TASK-1: Define message keys in catalogs**
   - Path: `messages/en.json`, `messages/es.json`
   - Action: Add translation keys for planning view headers, segment switchers, cadence config, dialogs, underflow alert, session timeline budget metrics, and timeline cards.
   - Route: inline
-  - Checks: `pnpm check`
-  - Commit evidence: pending
+  - Checks: `pnpm check` (passed)
+  - Commit evidence: `b3e056c`
 
-- [ ] **TASK-2: Localize planning-view, end-session-dialog, and underflow-alert**
+- [x] **TASK-2: Localize planning-view, end-session-dialog, and underflow-alert**
   - Path: `src/lib/components/planning/planning-view.svelte`, `src/lib/components/planning/end-session-dialog.svelte`, `src/lib/components/planning/underflow-alert.svelte`
   - Action: Replace hardcoded strings with `t.*()` calls. Add reactive i18n tests verifying English and Spanish text in dialog and underflow alert.
   - Route: delegated direct
-  - Checks: `pnpm vitest run src/lib/components/planning/end-session-dialog.svelte.test.ts src/lib/components/planning/underflow-alert.svelte.test.ts --project client`, `pnpm check`
-  - Commit evidence: pending
+  - Checks: `pnpm vitest run src/lib/components/planning/end-session-dialog.svelte.test.ts src/lib/components/planning/underflow-alert.svelte.test.ts src/lib/components/planning/planning-view.svelte.test.ts --project client` (passed), `pnpm check` (passed)
+  - Commit evidence: `4a4fc9f`
 
-- [ ] **TASK-3: Localize planning-cadence-config**
+- [x] **TASK-3: Localize planning-cadence-config**
   - Path: `src/lib/components/planning/planning-cadence-config.svelte`
   - Action: Replace hardcoded labels, steppers aria-labels, presets display, and inputs with `t.*()`. Add reactive i18n tests.
   - Route: delegated direct
-  - Checks: `pnpm vitest run src/lib/components/planning/planning-cadence-config.svelte.test.ts --project client`, `pnpm check`
-  - Commit evidence: pending
+  - Checks: `pnpm vitest run src/lib/components/planning/planning-cadence-config.svelte.test.ts --project client` (passed - 7/7), `pnpm check` (passed)
+  - Commit evidence: `b041d6c`
 
-- [ ] **TASK-4: Localize planning-timeline and timeline cards**
+- [x] **TASK-4: Localize planning-timeline and timeline cards**
   - Path: `src/lib/components/planning/planning-timeline.svelte`, `src/lib/components/planning/timeline-focus-card.svelte`, `src/lib/components/planning/timeline-break-card.svelte`, `src/lib/components/planning/timeline-buffer-card.svelte`
   - Action: Localize budget strip metrics ("Total Focus", "Total Breaks", "Estimated Finish", buffer), timeline mode buttons, task assignment popover, dropzone cue, and cards. Add reactive i18n tests.
   - Route: delegated direct
-  - Checks: `pnpm vitest run src/lib/components/planning/planning-view.svelte.test.ts --project client`, `pnpm check`
-  - Commit evidence: pending
+  - Checks: `pnpm vitest run src/lib/components/planning/planning-view.svelte.test.ts --project client` (passed - 30/30), `pnpm check` (passed)
+  - Commit evidence: `aaf9f76`
 
-- [ ] **TASK-5: Verification Gate & Final Checks**
+- [x] **TASK-5: Verification Gate & Final Checks**
   - Action: Execute full test and lint suite (`pnpm check`, `pnpm lint`, `pnpm test:unit`, `pnpm test:browser`).
   - Route: inline
-  - Checks: 0 errors in `pnpm check`, 0 issues in `pnpm lint`, all tests green.
-  - Commit evidence: pending
+  - Checks: 0 errors in `pnpm check`, 0 issues in `pnpm lint`, 650/650 passed in `pnpm test:unit`, 169/169 passed in `pnpm test:browser`.
+  - Commit evidence: `b3e056c`, `4a4fc9f`, `b041d6c`, `aaf9f76`, `fc673a1`
