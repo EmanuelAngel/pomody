@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import PlanningView from './planning-view.svelte';
@@ -935,10 +935,6 @@ describe('PlanningView (Client Browser)', () => {
 	});
 
 	describe('Localization', () => {
-		afterEach(() => {
-			localeState.setLocale('en');
-		});
-
 		it('localizes planning view and session timeline reactively in Spanish', async () => {
 			localeState.setLocale('es');
 

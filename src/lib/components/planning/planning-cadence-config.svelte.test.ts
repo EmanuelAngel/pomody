@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import PlanningCadenceConfig, { CADENCE_PRESETS } from './planning-cadence-config.svelte';
 import { createPlanningState } from '$lib/state/planning.svelte';
@@ -172,10 +172,6 @@ describe('PlanningCadenceConfig (Client Browser)', () => {
 		await expect
 			.element(screen.getByRole('button', { name: 'Increase focus duration' }))
 			.not.toBeInTheDocument();
-	});
-
-	afterEach(() => {
-		localeState.setLocale('en');
 	});
 
 	it('renders localized labels and steppers when switching to Spanish', async () => {
