@@ -56,6 +56,35 @@ describe('DailyCounter (Client Browser)', () => {
 		await expect.element(counter).toHaveTextContent('4 blocks · 1h 40m');
 	});
 
+	it('switches formatted summary reactively on locale changes', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+		const mockRepo = {
+			loadStats: () => ({ date: '2026-10-03', completedBlocks: 4, accumulatedMinutes: 100 }),
+			saveStats: vi.fn(),
+			resetStats: vi.fn()
+		};
+		const dailyStatsState = createDailyStatsState(
+			mockRepo,
+			null,
+			() => new Date('2026-10-03T12:00:00')
+		);
+
+		const screen = await render(DailyCounter, { timerState, dailyStatsState });
+		const counter = screen.getByTestId('daily-focus-counter');
+
+		await expect.element(counter).toHaveTextContent('4 blocks · 1h 40m');
+
+		const { localeState } = await import('$lib/state/locale.svelte');
+		localeState.setLocale('es');
+
+		await expect.element(counter).toHaveTextContent('4 bloques · 1h 40m');
+
+		localeState.setLocale('en');
+
+		await expect.element(counter).toHaveTextContent('4 blocks · 1h 40m');
+	});
+
 	it('has opacity-100 class and no aria-hidden when timerState.isRunning is false', async () => {
 		const ticker = createDummyTicker(false);
 		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);

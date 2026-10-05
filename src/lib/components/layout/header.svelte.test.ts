@@ -48,9 +48,36 @@ describe('Header (Client Browser)', () => {
 		await expect.element(metricsTab).toBeVisible();
 		await expect.element(metricsTab).toHaveAttribute('aria-disabled', 'true');
 		await expect.element(metricsTab).toBeDisabled();
+	});
 
-		const badges = screen.getByText('(in v0.2)');
-		await expect.element(badges).toBeVisible();
+	it('switches navigation tab and settings button texts reactively on locale changes', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+		const navigationState = createNavigationState('timer');
+
+		const screen = await render(Header, { timerState, navigationState });
+
+		// English default
+		await expect.element(screen.getByRole('tab', { name: 'Timer' })).toBeVisible();
+		await expect.element(screen.getByRole('tab', { name: 'Planning' })).toBeVisible();
+		await expect.element(screen.getByRole('tab', { name: 'Metrics' })).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'Open settings' })).toBeVisible();
+
+		// Switch to Spanish
+		const { localeState } = await import('$lib/state/locale.svelte');
+		localeState.setLocale('es');
+
+		await expect.element(screen.getByRole('tab', { name: 'Temporizador' })).toBeVisible();
+		await expect.element(screen.getByRole('tab', { name: 'Planificación' })).toBeVisible();
+		await expect.element(screen.getByRole('tab', { name: 'Métricas' })).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'Abrir ajustes' })).toBeVisible();
+
+		// Switch back to English
+		localeState.setLocale('en');
+
+		await expect.element(screen.getByRole('tab', { name: 'Timer' })).toBeVisible();
+		await expect.element(screen.getByRole('tab', { name: 'Planning' })).toBeVisible();
+		await expect.element(screen.getByRole('tab', { name: 'Metrics' })).toBeVisible();
 	});
 
 	it('switches active tab between Timer and Planning when tab buttons are clicked', async () => {
