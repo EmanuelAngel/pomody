@@ -21,36 +21,36 @@ Localize the main timer view components (`TimerDisplay`, `TimerControls`, `Timer
 
 ## Tasks
 
-- [ ] **TASK-1: Define message keys in catalogs**
+- [x] **TASK-1: Define message keys in catalogs**
   - Path: `messages/en.json`, `messages/es.json`
   - Action: Add translation keys for timer mode, timer arc progress, timer controls aria labels, task pill copy, and break revitalization labels.
   - Route: inline
-  - Checks: `pnpm check`
-  - Commit evidence: Pending
+  - Checks: `pnpm check` (passed)
+  - Commit evidence: `4767ca7`
 
-- [ ] **TASK-2: Localize TimerArc, TimerDisplay, and TimerControls**
+- [x] **TASK-2: Localize TimerArc, TimerDisplay, and TimerControls**
   - Path: `src/lib/components/timer/timer-arc.svelte`, `src/lib/components/timer/timer-display.svelte`, `src/lib/components/timer/timer-controls.svelte`, `src/lib/components/timer/timer.svelte.test.ts`
   - Action: Replace hardcoded strings with `t.*()` calls. Add test cases verifying English rendering and reactive Spanish updates on `localeState.setLocale('es')`.
   - Route: delegated direct
-  - Checks: `pnpm vitest run src/lib/components/timer/timer.svelte.test.ts --project client`, `pnpm check`
-  - Commit evidence: Pending
+  - Checks: `pnpm vitest run src/lib/components/timer/timer.svelte.test.ts --project client` (passed), `pnpm check` (passed)
+  - Commit evidence: `9837ee0`
 
-- [ ] **TASK-3: Localize TaskPill**
+- [x] **TASK-3: Localize TaskPill**
   - Path: `src/lib/components/timer/task-pill.svelte`, `src/lib/components/timer/task-pill.svelte.test.ts`
   - Action: Replace hardcoded task pill copy with `t.*()` calls. Add reactive i18n tests for pending/completed task actions, new task placeholder, and empty state.
   - Route: delegated direct
-  - Checks: `pnpm vitest run src/lib/components/timer/task-pill.svelte.test.ts --project client`, `pnpm check`
-  - Commit evidence: Pending
+  - Checks: `pnpm vitest run src/lib/components/timer/task-pill.svelte.test.ts --project client` (passed), `pnpm check` (passed)
+  - Commit evidence: `876412b`
 
-- [ ] **TASK-4: Localize BreakRevitalization**
+- [x] **TASK-4: Localize BreakRevitalization**
   - Path: `src/lib/components/timer/break-revitalization.svelte`, `src/lib/components/timer/break-revitalization.svelte.test.ts`
   - Action: Replace category labels (wrapped in `$derived`), empty guide fallback, shuffle button aria, and inactive placeholder. Add reactive i18n tests.
   - Route: delegated direct
-  - Checks: `pnpm vitest run src/lib/components/timer/break-revitalization.svelte.test.ts --project client`, `pnpm check`
-  - Commit evidence: Pending
+  - Checks: `pnpm vitest run src/lib/components/timer/break-revitalization.svelte.test.ts --project client` (passed), `pnpm check` (passed)
+  - Commit evidence: `a3fa43b`
 
-- [ ] **TASK-5: Verification Gate & Final Checks**
-  - Action: Execute full test and lint suite (`pnpm check`, `pnpm lint`, `pnpm test`).
+- [x] **TASK-5: Verification Gate & Final Checks**
+  - Action: Execute full test and lint suite (`pnpm check`, `pnpm lint`, `pnpm test:unit`, `pnpm test:browser`).
   - Route: inline
-  - Checks: Zero errors, zero warnings.
-  - Commit evidence: Pending
+  - Checks: 0 errors in `pnpm check`, 0 issues in `pnpm lint`, 650/650 passed in `pnpm test:unit`, 156/156 passed in `pnpm test:browser`.
+  - Commit evidence: `a3fa43b` (verified HEAD)
