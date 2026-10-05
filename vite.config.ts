@@ -2,6 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { paraglideVitePlugin } from '@inlang/paraglide-js';
 
 import { fileURLToPath } from 'node:url';
 
@@ -11,9 +12,17 @@ export default defineConfig({
 			$tests: fileURLToPath(new URL('./src/testing', import.meta.url))
 		}
 	},
-	plugins: [tailwindcss(), sveltekit()],
+	plugins: [
+		paraglideVitePlugin({
+			project: './project.inlang',
+			outdir: './src/lib/paraglide'
+		}),
+		tailwindcss(),
+		sveltekit()
+	],
 	test: {
 		expect: { requireAssertions: true },
+		setupFiles: ['./src/testing/setup-locale.ts'],
 		projects: [
 			{
 				extends: './vite.config.ts',
