@@ -8,6 +8,7 @@
 		type NavigationState,
 		type NavigationTab
 	} from '$lib/state/navigation.svelte';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		timerState?: TimerState;
@@ -50,10 +51,10 @@
 	</div>
 
 	<!-- Center Slot: Navigation Tabs -->
-	<nav aria-label="Main Navigation" class="absolute left-1/2 -translate-x-1/2">
+	<nav aria-label={t.header_nav_main_aria()} class="absolute left-1/2 -translate-x-1/2">
 		<div
 			role="tablist"
-			aria-label="Navigation views"
+			aria-label={t.header_nav_views_aria()}
 			class="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/60 p-1 backdrop-blur-xs"
 		>
 			<button
@@ -70,7 +71,7 @@
 						: 'text-muted-foreground/80 hover:text-foreground'
 				)}
 			>
-				<span>Timer</span>
+				<span>{t.header_nav_timer()}</span>
 			</button>
 
 			<button
@@ -87,7 +88,7 @@
 						: 'text-muted-foreground/80 hover:text-foreground'
 				)}
 			>
-				<span>Planning</span>
+				<span>{t.header_nav_planning()}</span>
 			</button>
 
 			<button
@@ -98,10 +99,7 @@
 				disabled
 				class="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground/60 transition-colors focus-visible:outline-none sm:text-sm"
 			>
-				<span>Metrics</span>
-				<span class="hidden font-mono text-[10px] text-muted-foreground/40 sm:inline">
-					(in v0.2)
-				</span>
+				<span>{t.header_nav_metrics()}</span>
 			</button>
 		</div>
 	</nav>
@@ -111,7 +109,7 @@
 		<Button
 			variant="ghost"
 			size="icon"
-			aria-label="Open settings"
+			aria-label={t.settings_trigger_open()}
 			aria-expanded={settingsOpen}
 			disabled={isRunning}
 			tabindex={isRunning ? -1 : undefined}

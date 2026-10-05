@@ -3,8 +3,10 @@
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
 	import {
 		dailyStatsState as defaultDailyStatsState,
-		type DailyStatsState
+		type DailyStatsState,
+		formatDailyDuration
 	} from '$lib/state/daily-stats.svelte';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		timerState?: TimerState;
@@ -19,7 +21,17 @@
 	}: Props = $props();
 
 	const isRunning = $derived(timerState.isRunning);
-	const summary = $derived(dailyStatsState.formattedSummary);
+	const summary = $derived.by(() => {
+		const blocks = dailyStatsState.completedBlocks;
+		const duration = formatDailyDuration(dailyStatsState.accumulatedMinutes);
+		if (blocks === 0) {
+			return t.daily_counter_summary_zero({ duration });
+		}
+		if (blocks === 1) {
+			return t.daily_counter_summary_singular({ count: blocks, duration });
+		}
+		return t.daily_counter_summary_plural({ count: blocks, duration });
+	});
 </script>
 
 <div

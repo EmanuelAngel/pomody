@@ -250,5 +250,13 @@
 	"task_item_active_title": "Active in timer",
 	"task_item_set_active_title": "Set as active in timer",
 	"task_item_delete_button_aria": "Delete task \"{title}\"",
-	"task_item_delete_button_title": "Delete task"
+	"task_item_delete_button_title": "Delete task",
+	"header_nav_main_aria": "Main Navigation",
+	"header_nav_views_aria": "Navigation views",
+	"header_nav_timer": "Timer",
+	"header_nav_planning": "Planning",
+	"header_nav_metrics": "Metrics",
+	"daily_counter_summary_zero": "0 blocks · {duration}",
+	"daily_counter_summary_singular": "{count} block · {duration}",
+	"daily_counter_summary_plural": "{count} blocks · {duration}"
 }
