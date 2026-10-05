@@ -51,7 +51,7 @@ Localize the Planning tab components (`planning-view.svelte`, `planning-cadence-
   - Commit evidence: `aaf9f76`
 
 - [x] **TASK-5: Verification Gate & Final Checks**
-  - Action: Execute full test and lint suite (`pnpm check`, `pnpm lint`, `pnpm test:unit`, `pnpm test:browser`).
+  - Action: Execute full test and lint suite (`pnpm check`, `pnpm lint`, `pnpm test:unit`, `pnpm test:browser`). Removed redundant local `afterEach` locale teardown in test files since `src/testing/setup-locale.ts` is configured globally in `vite.config.ts`.
   - Route: inline
   - Checks: 0 errors in `pnpm check`, 0 issues in `pnpm lint`, 650/650 passed in `pnpm test:unit`, 169/169 passed in `pnpm test:browser`.
-  - Commit evidence: `b3e056c`, `4a4fc9f`, `b041d6c`, `aaf9f76`, `fc673a1`
+  - Commit evidence: `b3e056c`, `4a4fc9f`, `b041d6c`, `aaf9f76`, `f792c30`, `29335e5`
