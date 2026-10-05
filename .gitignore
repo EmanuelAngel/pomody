@@ -8,6 +8,10 @@ node_modules
 /.svelte-kit
 /build
 
+# i18n generated output
+src/lib/paraglide/
+
+
 # Tauri
 src-tauri/target/
 

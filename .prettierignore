@@ -14,3 +14,9 @@ CHANGELOG.md
 .claude/
 .opencode/
 .agents/
+
+# Generated i18n
+src/lib/paraglide/
+project.inlang/
+!project.inlang/settings.json
+
