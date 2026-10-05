@@ -9,6 +9,7 @@ import { createTimerState } from '$lib/state/timer.svelte';
 import { createFocusTask, toggleFocusTask } from '$lib/domain/tasks/task.entity';
 import { createBreaksState } from '$lib/state/breaks.svelte';
 import { createBreakActivity } from '$lib/domain/breaks/break-activity.entity';
+import { localeState } from '$lib/state/locale.svelte';
 import { FakeTaskRepository } from '$tests/fakes/repositories/fake-task-repository';
 import { FakeSessionPlanRepository } from '$tests/fakes/repositories/fake-session-plan-repository';
 import { FakeBreakActivityRepository } from '$tests/fakes/repositories/fake-break-activity-repository';
@@ -930,6 +931,74 @@ describe('PlanningView (Client Browser)', () => {
 			await userEvent.keyboard('n');
 			expect(tasksSegment.element().getAttribute('aria-checked')).toBe('true');
 			await expect.element(screen.getByText('Important Feature Task')).toBeVisible();
+		});
+	});
+
+	describe('Localization', () => {
+		it('localizes planning view and session timeline reactively in Spanish', async () => {
+			localeState.setLocale('es');
+
+			const tasksRepo = new FakeTaskRepository();
+			const tasksState = createTasksState(tasksRepo);
+			const planRepo = new FakeSessionPlanRepository();
+			const timerState = createTimerState();
+			const planningState = createPlanningState(planRepo, timerState, tasksState);
+			const breaksRepo = new FakeBreakActivityRepository();
+			const breaksState = createBreaksState(breaksRepo);
+			const navigationState = createNavigationState('planning');
+
+			await tasksState.load();
+			await planningState.load();
+			await breaksState.load();
+
+			const screen = await render(PlanningView, {
+				tasksState,
+				planningState,
+				timerState,
+				breaksState,
+				navigationState
+			});
+
+			// Heading and subtitle
+			await expect.element(screen.getByRole('heading', { name: 'Planificación' })).toBeVisible();
+			await expect.element(screen.getByText('0 tareas pendientes')).toBeVisible();
+
+			// Back to timer
+			await expect
+				.element(screen.getByRole('button', { name: 'Volver al temporizador' }))
+				.toBeVisible();
+
+			// Segment tabs: "Tareas", "Hábitos de descanso"
+			await expect.element(screen.getByRole('radio', { name: /Tareas/i })).toBeVisible();
+			await expect
+				.element(screen.getByRole('radio', { name: /Hábitos de descanso/i }))
+				.toBeVisible();
+
+			// Timeline heading
+			await expect.element(screen.getByText('Cronograma de sesión')).toBeVisible();
+
+			// Timeline mode buttons
+			await expect.element(screen.getByRole('button', { name: 'Por bloques' })).toBeVisible();
+			await expect.element(screen.getByRole('button', { name: 'Por hora final' })).toBeVisible();
+
+			// Summary metrics
+			await expect.element(screen.getByText('Foco total')).toBeVisible();
+			await expect.element(screen.getByText('Descanso total')).toBeVisible();
+			await expect.element(screen.getByText('Final estimado')).toBeVisible();
+
+			// Focus card title
+			await expect.element(screen.getByText('Bloque de foco').first()).toBeVisible();
+
+			// Empty focus slot
+			await expect.element(screen.getByText('Sin asignar · Foco libre').first()).toBeVisible();
+
+			// Assign task button
+			await expect
+				.element(screen.getByRole('button', { name: 'Asignar tarea' }).first())
+				.toBeVisible();
+
+			// Start session CTA
+			await expect.element(screen.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible();
 		});
 	});
 });

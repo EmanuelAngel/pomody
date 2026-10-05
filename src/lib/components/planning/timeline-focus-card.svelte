@@ -10,6 +10,7 @@
 	import type { PlanBlock } from '$lib/domain/planning/session-plan.entity';
 	import type { FocusTask } from '$lib/domain/tasks/task.entity';
 	import type { TimerState } from '$lib/state/timer.svelte';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		block: PlanBlock;
@@ -155,7 +156,7 @@
 		<!-- Header & Status Badge -->
 		<div class="flex items-center justify-between gap-2">
 			<div class="flex items-center gap-2">
-				<span class="text-xs font-semibold text-foreground">Focus Block</span>
+				<span class="text-xs font-semibold text-foreground">{t.planning_focus_card_title()}</span>
 				<span
 					class="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
 				>
@@ -168,13 +169,13 @@
 					{#if timerState}
 						<span
 							class="font-mono text-xs font-semibold text-primary tabular-nums"
-							aria-label="Remaining block time"
+							aria-label={t.planning_card_remaining_time_aria()}
 						>
 							{timerState.formattedRemainingTime}
 						</span>
 					{/if}
 					<span class="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">
-						Active block
+						{t.planning_card_status_active()}
 					</span>
 				</div>
 			{:else if block.status === 'completed'}
@@ -182,16 +183,17 @@
 					class="inline-flex items-center gap-1 rounded-full bg-accent-pine/10 px-2 py-0.5 text-[10px] font-medium text-accent-pine"
 				>
 					<Check class="size-2.5 stroke-[2.5]" />
-					<span>Completed</span>
+					<span>{t.planning_card_status_completed()}</span>
 				</span>
 			{:else if block.status === 'skipped'}
 				<span
 					class="rounded-full bg-muted/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground line-through"
 				>
-					Skipped
+					{t.planning_card_status_skipped()}
 				</span>
 			{:else}
-				<span class="text-[11px] text-muted-foreground/60">Upcoming</span>
+				<span class="text-[11px] text-muted-foreground/60">{t.planning_card_status_upcoming()}</span
+				>
 			{/if}
 		</div>
 
@@ -199,7 +201,7 @@
 			<div
 				class="mt-2.5 flex animate-pulse items-center justify-center rounded-lg border border-dashed border-primary/50 bg-primary/10 py-1.5 text-xs font-medium text-primary"
 			>
-				<span>Drop task to assign to Focus Block {focusIndex}</span>
+				<span>{t.planning_focus_card_drop_task({ index: focusIndex })}</span>
 			</div>
 		{/if}
 
@@ -212,7 +214,9 @@
 							<span class="truncate text-muted-foreground/60 line-through">
 								{assignedTask.title}
 							</span>
-							<span class="shrink-0 text-[10px] text-muted-foreground">(Completed)</span>
+							<span class="shrink-0 text-[10px] text-muted-foreground"
+								>{t.planning_focus_card_task_completed_tag()}</span
+							>
 						{:else}
 							<span class="truncate font-medium text-foreground">
 								{assignedTask.title}
@@ -220,22 +224,22 @@
 						{/if}
 					{:else}
 						<span class="truncate font-medium text-foreground">
-							{activeTaskTitle ?? 'Assigned Task'}
+							{activeTaskTitle ?? t.planning_focus_card_assigned_task_fallback()}
 						</span>
 					{/if}
 
 					<Button
 						variant="ghost"
 						size="icon-xs"
-						aria-label={`Unassign task from focus block ${focusIndex}`}
-						title="Unassign task"
+						aria-label={t.planning_focus_card_unassign_task_aria({ index: focusIndex })}
+						title={t.planning_focus_card_unassign_task_title()}
 						onclick={onUnassignTask}
 						class="size-5 shrink-0 text-muted-foreground/60 hover:text-foreground"
 					>
 						<X class="size-3" />
 					</Button>
 				{:else}
-					<span class="text-muted-foreground/70">Unassigned · Free Focus</span>
+					<span class="text-muted-foreground/70">{t.planning_focus_card_unassigned()}</span>
 				{/if}
 			</div>
 
@@ -253,10 +257,10 @@
 							buttonVariants({ variant: 'outline', size: 'sm' }),
 							'h-7 gap-1 px-2 text-xs font-medium text-muted-foreground hover:text-foreground'
 						)}
-						aria-label={`Assign task to focus block ${focusIndex}`}
+						aria-label={t.planning_focus_card_assign_task_aria({ index: focusIndex })}
 					>
 						<Plus class="size-3" />
-						<span>Assign task</span>
+						<span>{t.planning_focus_card_assign_task_button()}</span>
 					</Popover.Trigger>
 					<Popover.Content
 						side="bottom"
@@ -265,23 +269,23 @@
 						class="z-50 w-72 rounded-xl border border-border/60 bg-popover/95 p-3 text-popover-foreground shadow-lg backdrop-blur-md fade-in-0 outline-none zoom-in-95 data-[side=bottom]:slide-in-from-top-2 sm:w-80"
 					>
 						<div class="mb-2 text-xs font-semibold text-foreground">
-							Select task for Focus Block {focusIndex}
+							{t.planning_focus_card_select_task_heading({ index: focusIndex })}
 						</div>
 
 						<!-- Quick Task Search / Add Input (UX-03) -->
 						<div class="relative mb-2.5 flex items-center">
 							<Input
-								placeholder="Search or create task... (Enter)"
+								placeholder={t.planning_focus_card_search_placeholder()}
 								bind:value={quickSearchQuery}
 								onkeydown={handleQuickInputKeyDown}
 								class="h-8 pr-8 text-xs"
-								aria-label={`Search or create task for Focus Block ${focusIndex}`}
+								aria-label={t.planning_focus_card_search_aria({ index: focusIndex })}
 							/>
 							{#if quickSearchQuery.trim().length > 0}
 								<Button
 									variant="ghost"
 									size="icon-xs"
-									aria-label="Create and assign task"
+									aria-label={t.planning_focus_card_create_and_assign_aria()}
 									onclick={handleCreateAndAssign}
 									class="absolute right-1 text-muted-foreground hover:text-foreground"
 								>
@@ -296,19 +300,23 @@
 									<Button
 										variant="outline"
 										size="sm"
-										aria-label={`Create and assign task "${quickSearchQuery.trim()}"`}
+										aria-label={t.planning_focus_card_create_and_assign_named_aria({
+											title: quickSearchQuery.trim()
+										})}
 										onclick={handleCreateAndAssign}
 										class="w-full justify-start gap-2 border-dashed border-primary/40 bg-primary/5 text-xs text-primary hover:bg-primary/10 hover:text-primary"
 									>
 										<Plus class="size-3.5 shrink-0" />
 										<span class="truncate font-medium"
-											>Create & assign "{quickSearchQuery.trim()}"</span
+											>{t.planning_focus_card_create_and_assign_text({
+												title: quickSearchQuery.trim()
+											})}</span
 										>
 									</Button>
 								</div>
 							{:else}
 								<p class="py-3 text-center text-xs text-muted-foreground">
-									No pending tasks in backlog. Type above to create one.
+									{t.planning_focus_card_no_pending_tasks()}
 								</p>
 							{/if}
 						{:else}
@@ -316,7 +324,9 @@
 								{#each filteredTasks as task (task.id)}
 									<button
 										type="button"
-										aria-label={`Assign task: ${task.title}`}
+										aria-label={t.planning_focus_card_assign_specific_task_aria({
+											title: task.title
+										})}
 										class="flex w-full cursor-pointer items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted focus-visible:outline-none"
 										onclick={() => {
 											onAssignTask(task.id);
@@ -335,12 +345,18 @@
 									<Button
 										variant="ghost"
 										size="sm"
-										aria-label={`Create and assign task "${quickSearchQuery.trim()}"`}
+										aria-label={t.planning_focus_card_create_and_assign_named_aria({
+											title: quickSearchQuery.trim()
+										})}
 										onclick={handleCreateAndAssign}
 										class="mt-1.5 w-full justify-start gap-1.5 border border-dashed border-primary/30 bg-primary/5 text-xs text-primary hover:bg-primary/10 hover:text-primary"
 									>
 										<Plus class="size-3" />
-										<span class="truncate">New: "{quickSearchQuery.trim()}"</span>
+										<span class="truncate"
+											>{t.planning_focus_card_new_task_text({
+												title: quickSearchQuery.trim()
+											})}</span
+										>
 									</Button>
 								{/if}
 							</div>
@@ -358,7 +374,7 @@
 				aria-valuenow={Math.round(timerState.progress * 100)}
 				aria-valuemin={0}
 				aria-valuemax={100}
-				aria-label="Focus block progress"
+				aria-label={t.planning_focus_card_progress_aria()}
 			>
 				<div
 					class="h-full rounded-full bg-primary transition-all duration-300 ease-out"

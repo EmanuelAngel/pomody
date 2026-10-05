@@ -50,6 +50,7 @@
 		planningState as defaultPlanningState,
 		type PlanningState
 	} from '$lib/state/planning.svelte';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		planningState?: PlanningState;
@@ -59,6 +60,13 @@
 	let { planningState = defaultPlanningState, class: className = '' }: Props = $props();
 
 	let isCustomOpen = $state(false);
+
+	function getLocalizedPresetLabel(id: string, fallback: string) {
+		if (id === 'classic') return t.planning_cadence_preset_classic();
+		if (id === 'deep-focus') return t.planning_cadence_preset_deep_focus();
+		if (id === 'ultradian') return t.planning_cadence_preset_ultradian();
+		return fallback;
+	}
 
 	const activePresetId = $derived.by<string | null>(() => {
 		const match = CADENCE_PRESETS.find(
@@ -80,7 +88,7 @@
 <div class={cn('mt-4 space-y-3.5 rounded-xl border border-border/40 bg-muted/20 p-3', className)}>
 	{#if planningState.isSessionActive}
 		<div class="text-[11px] font-medium text-muted-foreground/80 italic">
-			Session active: duration edits apply forward-only.
+			{t.planning_cadence_session_active_notice()}
 		</div>
 	{/if}
 
@@ -88,14 +96,23 @@
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 		<!-- Preset Chips -->
 		<div class="space-y-1.5">
-			<span class="text-[11px] font-medium text-muted-foreground">Cadence Preset</span>
-			<div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Cadence Presets">
+			<span class="text-[11px] font-medium text-muted-foreground"
+				>{t.planning_cadence_preset_heading()}</span
+			>
+			<div
+				class="flex flex-wrap items-center gap-1.5"
+				role="group"
+				aria-label={t.planning_cadence_presets_aria()}
+			>
 				{#each CADENCE_PRESETS as preset (preset.id)}
 					{@const isSelected = activePresetId === preset.id}
 					<button
 						type="button"
 						aria-pressed={isSelected}
-						aria-label={`Select ${preset.name} ${preset.label} cadence preset`}
+						aria-label={t.planning_cadence_select_preset_aria({
+							name: preset.name,
+							label: getLocalizedPresetLabel(preset.id, preset.label)
+						})}
 						onclick={() => applyPreset(preset)}
 						class={cn(
 							'flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors',
@@ -105,7 +122,9 @@
 						)}
 					>
 						<span class="font-semibold">{preset.name}</span>
-						<span class="text-[10px] opacity-80">{preset.label}</span>
+						<span class="text-[10px] opacity-80"
+							>{getLocalizedPresetLabel(preset.id, preset.label)}</span
+						>
 					</button>
 				{/each}
 			</div>
@@ -114,11 +133,13 @@
 		<!-- Primary Variable in Blocks mode: Block Count -->
 		{#if planningState.targetMode === 'blocks'}
 			<div class="flex flex-col gap-1 sm:items-end">
-				<span class="text-[11px] font-medium text-muted-foreground">Blocks</span>
+				<span class="text-[11px] font-medium text-muted-foreground"
+					>{t.planning_cadence_blocks_heading()}</span
+				>
 				<div class="flex items-center gap-1">
 					<button
 						type="button"
-						aria-label="Decrease block count"
+						aria-label={t.planning_cadence_decrease_blocks_aria()}
 						disabled={planningState.isSessionActive || planningState.blockCount <= 1}
 						onclick={() => planningState.setBlockCount(planningState.blockCount - 1)}
 						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -130,7 +151,7 @@
 					</span>
 					<button
 						type="button"
-						aria-label="Increase block count"
+						aria-label={t.planning_cadence_increase_blocks_aria()}
 						disabled={planningState.isSessionActive || planningState.blockCount >= 24}
 						onclick={() => planningState.setBlockCount(planningState.blockCount + 1)}
 						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -149,21 +170,21 @@
 			<div class="flex flex-col gap-1">
 				<div class="flex items-center justify-between">
 					<label for="target-end-time" class="text-[11px] font-medium text-muted-foreground">
-						Target Finish Time
+						{t.planning_cadence_target_finish_time()}
 					</label>
 					{#if planningState.isCrossesMidnight}
 						<span
 							class="rounded bg-accent-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent-gold"
-							title="Finishes next day (past midnight)"
+							title={t.planning_cadence_next_day_title()}
 						>
-							+1 day
+							{t.planning_cadence_next_day_badge()}
 						</span>
 					{/if}
 				</div>
 				<input
 					id="target-end-time"
 					type="time"
-					aria-label="Target finish time"
+					aria-label={t.planning_cadence_target_finish_time_aria()}
 					disabled={planningState.isSessionActive}
 					value={planningState.targetEndTime}
 					oninput={(e) => planningState.setTargetEndTime(e.currentTarget.value)}
@@ -174,7 +195,7 @@
 			<!-- Scheduled Start Time Input / Toggle -->
 			<div class="flex flex-col gap-1">
 				<label for="scheduled-start-time" class="text-[11px] font-medium text-muted-foreground">
-					Scheduled Start
+					{t.planning_cadence_scheduled_start()}
 				</label>
 				<div class="flex items-center gap-1.5">
 					<button
@@ -188,12 +209,12 @@
 								: 'border-border/60 bg-background text-muted-foreground hover:text-foreground'
 						)}
 					>
-						Now
+						{t.planning_cadence_scheduled_start_now()}
 					</button>
 					<input
 						id="scheduled-start-time"
 						type="time"
-						aria-label="Scheduled start time"
+						aria-label={t.planning_cadence_scheduled_start_aria()}
 						disabled={planningState.isSessionActive}
 						value={planningState.scheduledStartTime === 'now'
 							? ''
@@ -216,13 +237,13 @@
 			class="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
 		>
 			<SlidersHorizontal class="size-3 text-muted-foreground/70" />
-			<span>Customize cadence</span>
+			<span>{t.planning_cadence_customize_toggle()}</span>
 			<ChevronDown
 				class={cn('size-3.5 transition-transform duration-200', isCustomOpen && 'rotate-180')}
 			/>
 			{#if activePresetId === null}
 				<span class="ml-1 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-					Custom
+					{t.planning_cadence_custom_badge()}
 				</span>
 			{/if}
 		</button>
@@ -233,11 +254,13 @@
 		<div id="custom-cadence-panel" class="grid grid-cols-2 gap-3 pt-1 sm:grid-cols-4">
 			<!-- Focus Stepper -->
 			<div class="flex flex-col gap-1">
-				<span class="text-[11px] font-medium text-muted-foreground">Focus</span>
+				<span class="text-[11px] font-medium text-muted-foreground"
+					>{t.planning_cadence_stepper_focus()}</span
+				>
 				<div class="flex items-center gap-1">
 					<button
 						type="button"
-						aria-label="Decrease focus duration"
+						aria-label={t.planning_cadence_decrease_focus_aria()}
 						disabled={planningState.focusMinutes <= 5}
 						onclick={() => planningState.setFocusMinutes(planningState.focusMinutes - 5)}
 						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -249,7 +272,7 @@
 					</span>
 					<button
 						type="button"
-						aria-label="Increase focus duration"
+						aria-label={t.planning_cadence_increase_focus_aria()}
 						disabled={planningState.focusMinutes >= 120}
 						onclick={() => planningState.setFocusMinutes(planningState.focusMinutes + 5)}
 						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -261,11 +284,13 @@
 
 			<!-- Short Break Stepper -->
 			<div class="flex flex-col gap-1">
-				<span class="text-[11px] font-medium text-muted-foreground">Short Break</span>
+				<span class="text-[11px] font-medium text-muted-foreground"
+					>{t.planning_cadence_stepper_short_break()}</span
+				>
 				<div class="flex items-center gap-1">
 					<button
 						type="button"
-						aria-label="Decrease short break duration"
+						aria-label={t.planning_cadence_decrease_short_break_aria()}
 						disabled={planningState.shortBreakMinutes <= 1}
 						onclick={() => planningState.setShortBreakMinutes(planningState.shortBreakMinutes - 1)}
 						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -277,7 +302,7 @@
 					</span>
 					<button
 						type="button"
-						aria-label="Increase short break duration"
+						aria-label={t.planning_cadence_increase_short_break_aria()}
 						disabled={planningState.shortBreakMinutes >= 60}
 						onclick={() => planningState.setShortBreakMinutes(planningState.shortBreakMinutes + 1)}
 						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -289,11 +314,13 @@
 
 			<!-- Long Break Stepper -->
 			<div class="flex flex-col gap-1">
-				<span class="text-[11px] font-medium text-muted-foreground">Long Break</span>
+				<span class="text-[11px] font-medium text-muted-foreground"
+					>{t.planning_cadence_stepper_long_break()}</span
+				>
 				<div class="flex items-center gap-1">
 					<button
 						type="button"
-						aria-label="Decrease long break duration"
+						aria-label={t.planning_cadence_decrease_long_break_aria()}
 						disabled={planningState.longBreakMinutes <= 5}
 						onclick={() => planningState.setLongBreakMinutes(planningState.longBreakMinutes - 5)}
 						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -305,7 +332,7 @@
 					</span>
 					<button
 						type="button"
-						aria-label="Increase long break duration"
+						aria-label={t.planning_cadence_increase_long_break_aria()}
 						disabled={planningState.longBreakMinutes >= 90}
 						onclick={() => planningState.setLongBreakMinutes(planningState.longBreakMinutes + 5)}
 						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -317,11 +344,13 @@
 
 			<!-- Long Break Interval Stepper -->
 			<div class="flex flex-col gap-1">
-				<span class="text-[11px] font-medium text-muted-foreground">Interval</span>
+				<span class="text-[11px] font-medium text-muted-foreground"
+					>{t.planning_cadence_stepper_interval()}</span
+				>
 				<div class="flex items-center gap-1">
 					<button
 						type="button"
-						aria-label="Decrease long break interval"
+						aria-label={t.planning_cadence_decrease_interval_aria()}
 						disabled={planningState.longBreakInterval <= 1}
 						onclick={() => planningState.setLongBreakInterval(planningState.longBreakInterval - 1)}
 						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
@@ -333,7 +362,7 @@
 					</span>
 					<button
 						type="button"
-						aria-label="Increase long break interval"
+						aria-label={t.planning_cadence_increase_interval_aria()}
 						disabled={planningState.longBreakInterval >= 12}
 						onclick={() => planningState.setLongBreakInterval(planningState.longBreakInterval + 1)}
 						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
