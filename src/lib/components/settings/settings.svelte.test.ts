@@ -104,9 +104,6 @@ describe('SettingsDrawer (Client Browser)', () => {
 		});
 
 		await expect.element(screen.getByText('Settings')).toBeVisible();
-		await expect
-			.element(screen.getByText('Customize timer intervals and color theme.'))
-			.toBeVisible();
 		await expect.element(screen.getByText('30 min', { exact: true })).toBeVisible();
 		await expect.element(screen.getByText('5 min', { exact: true })).toBeVisible();
 		await expect.element(screen.getByText('20 min', { exact: true })).toBeVisible();
@@ -717,9 +714,6 @@ describe('SettingsDrawer Internationalization (Client Browser)', () => {
 
 		// Header
 		await expect.element(screen.getByRole('heading', { level: 2, name: 'Settings' })).toBeVisible();
-		await expect
-			.element(screen.getByText('Customize timer intervals and color theme.'))
-			.toBeVisible();
 
 		// Section headings
 		await expect
@@ -788,9 +782,6 @@ describe('SettingsDrawer Internationalization (Client Browser)', () => {
 
 		// Header
 		await expect.element(screen.getByRole('heading', { level: 2, name: 'Ajustes' })).toBeVisible();
-		await expect
-			.element(screen.getByText('Personaliza los intervalos del temporizador y el tema de color.'))
-			.toBeVisible();
 
 		// Section headings
 		await expect

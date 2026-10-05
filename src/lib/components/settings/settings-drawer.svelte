@@ -150,9 +150,6 @@
 			<Sheet.Title class="text-lg font-semibold tracking-tight text-foreground"
 				>{t.settings_title()}</Sheet.Title
 			>
-			<Sheet.Description class="text-sm text-muted-foreground">
-				{t.settings_description()}
-			</Sheet.Description>
 		</Sheet.Header>
 
 		<div class="flex flex-col gap-6 px-4 py-6">
