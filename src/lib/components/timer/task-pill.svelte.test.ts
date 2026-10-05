@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import TaskPill from './task-pill.svelte';
@@ -19,14 +19,6 @@ function createDummyTicker(isRunning = false) {
 }
 
 describe('TaskPill (Client Browser)', () => {
-	beforeEach(() => {
-		localeState.setLocale('en');
-	});
-
-	afterEach(() => {
-		localeState.setLocale('en');
-	});
-
 	it('renders unassigned state ("Free focus") when no active task exists', async () => {
 		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
@@ -358,14 +350,6 @@ describe('TaskPill in Timer Integration (Client Browser)', () => {
 });
 
 describe('TaskPill Reactive Localization (Client Browser)', () => {
-	beforeEach(() => {
-		localeState.setLocale('en');
-	});
-
-	afterEach(() => {
-		localeState.setLocale('en');
-	});
-
 	it('reactively updates unassigned pill copy, popover inputs, and headings on locale change', async () => {
 		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
@@ -406,9 +390,9 @@ describe('TaskPill Reactive Localization (Client Browser)', () => {
 
 		// Assert reactive DOM updates in Spanish
 		await expect
-			.element(screen.getByRole('button', { name: 'Seleccionar tarea de enfoque' }))
+			.element(screen.getByRole('button', { name: 'Seleccionar tarea de concentración' }))
 			.toBeVisible();
-		await expect.element(screen.getByRole('option', { name: /Enfoque libre/i })).toBeVisible();
+		await expect(screen.getByRole('option', { name: /Concentración libre/i })).toBeVisible();
 		await expect.element(input).toHaveAttribute('aria-label', 'Crear y fijar nueva tarea');
 		await expect.element(input).toHaveAttribute('placeholder', 'Nueva tarea... (Enter para fijar)');
 		await expect.element(screen.getByText('Tareas pendientes', { exact: true })).toBeVisible();

@@ -52,5 +52,5 @@ Localize the main timer view components (`TimerDisplay`, `TimerControls`, `Timer
 - [x] **TASK-5: Verification Gate & Final Checks**
   - Action: Execute full test and lint suite (`pnpm check`, `pnpm lint`, `pnpm test:unit`, `pnpm test:browser`).
   - Route: inline
-  - Checks: 0 errors in `pnpm check`, 0 issues in `pnpm lint`, 650/650 passed in `pnpm test:unit`, 156/156 passed in `pnpm test:browser`.
-  - Commit evidence: `a3fa43b` (verified HEAD)
+  - Checks: 0 errors in `pnpm check`, 0 issues in `pnpm lint`, 650/650 passed in `pnpm test:unit`, 157/157 passed in `pnpm test:browser`.
+  - Commit evidence: `a3fa43b`, `fbeba46` (refined copy & purged test hooks)

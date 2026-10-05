@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import BreakRevitalization from './break-revitalization.svelte';
 import { createBreaksState } from '$lib/state/breaks.svelte';
@@ -38,13 +38,6 @@ const activityWithoutGuide = createBreakActivity({
 });
 
 describe('BreakRevitalization (Client Browser)', () => {
-	beforeEach(() => {
-		localeState.setLocale('en');
-	});
-
-	afterEach(() => {
-		localeState.setLocale('en');
-	});
 	it('renders fallback text when no active activity exists', async () => {
 		const repo = new FakeBreakActivityRepository([]);
 		const breaksState = createBreaksState(repo);
@@ -300,13 +293,12 @@ describe('BreakRevitalization (Client Browser)', () => {
 			.toBeVisible();
 	});
 
-	it('reactively updates mindful and hydration category labels on locale change', async () => {
-		const repo = new FakeBreakActivityRepository([mindfulActivity, hydrationActivity]);
+	it('reactively updates mindful category label on locale change', async () => {
+		const repo = new FakeBreakActivityRepository([mindfulActivity]);
 		const breaksState = createBreaksState(repo);
 		await breaksState.load();
-
-		// Mindful
 		breaksState.suggestForBreak('shortBreak-mindful');
+
 		const screen = await render(BreakRevitalization, {
 			breaksState,
 			mode: 'shortBreak',
@@ -314,29 +306,30 @@ describe('BreakRevitalization (Client Browser)', () => {
 			portalProps: { disabled: true }
 		});
 
-		// Check mindful label in English and Spanish
-		if (breaksState.activeActivity?.category === 'mindful') {
-			await expect.element(screen.getByText('Mindful')).toBeVisible();
-			localeState.setLocale('es');
-			await expect.element(screen.getByText('Mindful')).toBeVisible();
-		}
+		await expect.element(screen.getByText('Mindful')).toBeVisible();
+		localeState.setLocale('es');
+		await expect.element(screen.getByText('Mental')).toBeVisible();
+		localeState.setLocale('en');
+		await expect.element(screen.getByText('Mindful')).toBeVisible();
+	});
 
-		// Ensure we test hydration label
-		const repoHydration = new FakeBreakActivityRepository([hydrationActivity]);
-		const hydrationBreaksState = createBreaksState(repoHydration);
-		await hydrationBreaksState.load();
-		hydrationBreaksState.suggestForBreak('shortBreak-hydration');
+	it('reactively updates hydration category label on locale change', async () => {
+		const repo = new FakeBreakActivityRepository([hydrationActivity]);
+		const breaksState = createBreaksState(repo);
+		await breaksState.load();
+		breaksState.suggestForBreak('shortBreak-hydration');
 
-		const hydrationScreen = await render(BreakRevitalization, {
-			breaksState: hydrationBreaksState,
+		const screen = await render(BreakRevitalization, {
+			breaksState,
 			mode: 'shortBreak',
 			currentRound: 1,
 			portalProps: { disabled: true }
 		});
 
+		await expect.element(screen.getByText('Hydration')).toBeVisible();
 		localeState.setLocale('es');
-		await expect.element(hydrationScreen.getByText('Hidratación')).toBeVisible();
+		await expect.element(screen.getByText('Hidratación')).toBeVisible();
 		localeState.setLocale('en');
-		await expect.element(hydrationScreen.getByText('Hydration')).toBeVisible();
+		await expect.element(screen.getByText('Hydration')).toBeVisible();
 	});
 });
