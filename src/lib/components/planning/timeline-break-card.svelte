@@ -5,6 +5,7 @@
 	import { cn } from '$lib/utils';
 	import type { PlanBlock } from '$lib/domain/planning/session-plan.entity';
 	import type { TimerState } from '$lib/state/timer.svelte';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		block: PlanBlock;
@@ -55,7 +56,9 @@
 		<div class="flex items-center justify-between gap-2">
 			<div class="flex items-center gap-2">
 				<span class="text-xs font-medium text-foreground">
-					{block.mode === 'shortBreak' ? 'Short Break' : 'Long Break'}
+					{block.mode === 'shortBreak'
+						? t.planning_break_card_short_break()
+						: t.planning_break_card_long_break()}
 				</span>
 				<span
 					class="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
@@ -68,13 +71,13 @@
 					{#if timerState}
 						<span
 							class="font-mono text-xs font-semibold text-primary tabular-nums"
-							aria-label="Remaining break time"
+							aria-label={t.planning_break_card_remaining_time_aria()}
 						>
 							{timerState.formattedRemainingTime}
 						</span>
 					{/if}
 					<span class="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">
-						Active break
+						{t.planning_break_card_status_active()}
 					</span>
 				</div>
 			{:else if block.status === 'completed'}
@@ -82,16 +85,17 @@
 					class="inline-flex items-center gap-1 rounded-full bg-accent-pine/10 px-2 py-0.5 text-[10px] font-medium text-accent-pine"
 				>
 					<Check class="size-2.5 stroke-[2.5]" />
-					<span>Completed</span>
+					<span>{t.planning_card_status_completed()}</span>
 				</span>
 			{:else if block.status === 'skipped'}
 				<span
 					class="rounded-full bg-muted/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground line-through"
 				>
-					Skipped
+					{t.planning_card_status_skipped()}
 				</span>
 			{:else}
-				<span class="text-[11px] text-muted-foreground/60">Upcoming</span>
+				<span class="text-[11px] text-muted-foreground/60">{t.planning_card_status_upcoming()}</span
+				>
 			{/if}
 		</div>
 
@@ -103,7 +107,7 @@
 				aria-valuenow={Math.round(timerState.progress * 100)}
 				aria-valuemin={0}
 				aria-valuemax={100}
-				aria-label="Break progress"
+				aria-label={t.planning_break_card_progress_aria()}
 			>
 				<div
 					class="h-full rounded-full bg-primary transition-all duration-300 ease-out"

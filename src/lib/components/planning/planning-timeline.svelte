@@ -20,6 +20,7 @@
 		navigationState as defaultNavigationState,
 		type NavigationState
 	} from '$lib/state/navigation.svelte';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		planningState?: PlanningState;
@@ -65,7 +66,10 @@
 	}
 </script>
 
-<section class={cn('space-y-6 lg:col-span-7', className)} aria-label="Session Planning">
+<section
+	class={cn('space-y-6 lg:col-span-7', className)}
+	aria-label={t.planning_timeline_region_aria()}
+>
 	<div class="rounded-2xl border border-border/50 bg-card/40 p-5 shadow-xs transition-all">
 		<!-- Section Title & Mode Switcher -->
 		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -75,9 +79,9 @@
 				</div>
 				<div>
 					<h3 class="text-sm font-semibold tracking-tight text-foreground sm:text-base">
-						Session Timeline
+						{t.planning_timeline_title()}
 					</h3>
-					<p class="text-xs text-muted-foreground">Project focus cycles and scheduled breaks</p>
+					<p class="text-xs text-muted-foreground">{t.planning_timeline_subtitle()}</p>
 				</div>
 			</div>
 
@@ -85,7 +89,7 @@
 			<div
 				class="flex items-center rounded-lg border border-border/50 bg-muted/30 p-0.5 text-xs"
 				role="group"
-				aria-label="Target Planning Mode"
+				aria-label={t.planning_timeline_mode_aria()}
 			>
 				<button
 					type="button"
@@ -98,7 +102,7 @@
 					)}
 					onclick={() => planningState.setTargetMode('blocks')}
 				>
-					By Blocks
+					{t.planning_timeline_mode_blocks()}
 				</button>
 				<button
 					type="button"
@@ -111,7 +115,7 @@
 					)}
 					onclick={() => planningState.setTargetMode('end_time')}
 				>
-					By End Time
+					{t.planning_timeline_mode_end_time()}
 				</button>
 			</div>
 		</div>
@@ -124,19 +128,25 @@
 			class="mt-4 grid grid-cols-3 gap-2.5 rounded-xl border border-border/40 bg-muted/20 p-3 text-center sm:gap-4"
 		>
 			<div>
-				<span class="block text-[11px] font-medium text-muted-foreground">Total Focus</span>
+				<span class="block text-[11px] font-medium text-muted-foreground"
+					>{t.planning_timeline_metric_focus()}</span
+				>
 				<span class="text-sm font-semibold tracking-tight text-primary sm:text-base">
 					{formatDuration(planningState.totalFocusMinutes)}
 				</span>
 			</div>
 			<div>
-				<span class="block text-[11px] font-medium text-muted-foreground">Total Breaks</span>
+				<span class="block text-[11px] font-medium text-muted-foreground"
+					>{t.planning_timeline_metric_breaks()}</span
+				>
 				<span class="text-sm font-semibold tracking-tight text-foreground sm:text-base">
 					{formatDuration(planningState.totalBreakMinutes)}
 				</span>
 			</div>
 			<div>
-				<span class="block text-[11px] font-medium text-muted-foreground">Estimated Finish</span>
+				<span class="block text-[11px] font-medium text-muted-foreground"
+					>{t.planning_timeline_metric_finish()}</span
+				>
 				<div class="flex flex-col items-center">
 					<div class="flex items-center gap-1.5">
 						<span class="text-sm font-semibold tracking-tight text-foreground sm:text-base">
@@ -145,9 +155,9 @@
 						{#if planningState.isCrossesMidnight}
 							<span
 								class="rounded bg-accent-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent-gold"
-								title="Finishes next day (past midnight)"
+								title={t.planning_cadence_next_day_title()}
 							>
-								+1 day
+								{t.planning_cadence_next_day_badge()}
 							</span>
 						{/if}
 					</div>
@@ -155,7 +165,7 @@
 						<span
 							class="mt-0.5 inline-block rounded bg-accent-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent-gold"
 						>
-							+{planningState.freeMarginMinutes}m Buffer
+							{t.planning_timeline_buffer_badge({ minutes: planningState.freeMarginMinutes })}
 						</span>
 					{/if}
 				</div>
@@ -168,7 +178,7 @@
 		<!-- Chronological Timeline Track (Semantic Ordered List UX-08) -->
 		<ol
 			class="relative mt-6 list-none space-y-3.5 pl-6 before:absolute before:top-2 before:bottom-2 before:left-2.5 before:w-0.5 before:bg-border/60"
-			aria-label="Planned session sequence"
+			aria-label={t.planning_timeline_sequence_aria()}
 		>
 			{#each planningState.projectedPlan.blocks as block (block.index)}
 				{#if block.mode === 'focus'}
@@ -215,14 +225,14 @@
 						class="flex items-center justify-center gap-2 text-sm font-semibold text-accent-pine"
 					>
 						<Check class="size-4 stroke-[2.5]" />
-						<span>Session Completed! All planned focus blocks finished.</span>
+						<span>{t.planning_timeline_completed_heading()}</span>
 					</div>
 					<button
 						type="button"
 						class="w-full cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 						onclick={() => planningState.endSession(timerState)}
 					>
-						Start New Session
+						{t.planning_timeline_start_new_session()}
 					</button>
 				</div>
 			{:else if planningState.isSessionActive}
@@ -233,7 +243,7 @@
 							class="flex-1 cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 							onclick={() => navigationState.setTab('timer')}
 						>
-							Back to timer
+							{t.planning_back_to_timer()}
 						</button>
 						<EndSessionDialog {planningState} {timerState} />
 					</div>
@@ -244,20 +254,21 @@
 					>
 						<Info class="size-3.5 shrink-0 text-muted-foreground/60" />
 						<span>
-							<strong class="font-medium text-foreground">Forward-only sync:</strong> Changes apply to
-							upcoming cycles.
+							<strong class="font-medium text-foreground"
+								>{t.planning_timeline_forward_sync_label()}</strong
+							>
+							{t.planning_timeline_forward_sync_text()}
 						</span>
 						<Tooltip.Provider>
 							<Tooltip.Root>
 								<Tooltip.Trigger
 									class="cursor-pointer font-medium text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-									aria-label="More details about forward-only sync"
+									aria-label={t.planning_timeline_forward_sync_more_aria()}
 								>
-									Learn more
+									{t.planning_timeline_learn_more()}
 								</Tooltip.Trigger>
 								<Tooltip.Content side="top" class="max-w-xs text-xs">
-									Editing durations or adding blocks applies starting from your next cycle. Active
-									blocks preserve uninterrupted focus.
+									{t.planning_timeline_forward_sync_tooltip()}
 								</Tooltip.Content>
 							</Tooltip.Root>
 						</Tooltip.Provider>
@@ -274,7 +285,7 @@
 						}}
 						class="w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					>
-						Start Session
+						{t.planning_timeline_start_session()}
 					</button>
 				</div>
 			{/if}
