@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import TaskPill from './task-pill.svelte';
@@ -7,6 +7,7 @@ import { createTasksState } from '$lib/state/tasks.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
 import { createFocusTask } from '$lib/domain/tasks/task.entity';
 import { FakeTaskRepository } from '$tests/fakes/repositories/fake-task-repository';
+import { localeState } from '$lib/state/locale.svelte';
 
 function createDummyTicker(isRunning = false) {
 	return {
@@ -18,6 +19,14 @@ function createDummyTicker(isRunning = false) {
 }
 
 describe('TaskPill (Client Browser)', () => {
+	beforeEach(() => {
+		localeState.setLocale('en');
+	});
+
+	afterEach(() => {
+		localeState.setLocale('en');
+	});
+
 	it('renders unassigned state ("Free focus") when no active task exists', async () => {
 		const repo = new FakeTaskRepository();
 		const tasksState = createTasksState(repo);
@@ -345,5 +354,123 @@ describe('TaskPill in Timer Integration (Client Browser)', () => {
 			name: 'Change active task: Timer Task'
 		});
 		await expect.element(pill).toBeVisible();
+	});
+});
+
+describe('TaskPill Reactive Localization (Client Browser)', () => {
+	beforeEach(() => {
+		localeState.setLocale('en');
+	});
+
+	afterEach(() => {
+		localeState.setLocale('en');
+	});
+
+	it('reactively updates unassigned pill copy, popover inputs, and headings on locale change', async () => {
+		const repo = new FakeTaskRepository();
+		const tasksState = createTasksState(repo);
+		await tasksState.load();
+
+		const screen = await render(TaskPill, {
+			isRunning: false,
+			tasksState,
+			portalProps: { disabled: true }
+		});
+
+		// 1. Initial English copy
+		const pill = screen.getByRole('button', { name: 'Select focus task' });
+		await expect.element(pill).toBeVisible();
+		await expect.element(screen.getByText('Free focus')).toBeVisible();
+
+		// Open popover
+		await pill.click();
+
+		const input = screen.getByRole('textbox');
+		await expect.element(input).toBeVisible();
+		await expect.element(input).toHaveAttribute('aria-label', 'Create and pin new task');
+		await expect.element(input).toHaveAttribute('placeholder', 'New task... (Enter to pin)');
+
+		const freeFocusOption = screen.getByRole('option', { name: /Free focus/i });
+		await expect.element(freeFocusOption).toBeVisible();
+
+		await expect.element(screen.getByText('Pending tasks', { exact: true })).toBeVisible();
+		await expect.element(screen.getByText('No pending tasks')).toBeVisible();
+
+		// Type text to reveal quick add button
+		await input.fill('Write documentation');
+		const addBtnEn = screen.getByRole('button', { name: 'Add task' });
+		await expect.element(addBtnEn).toBeVisible();
+
+		// 2. Switch to Spanish
+		localeState.setLocale('es');
+
+		// Assert reactive DOM updates in Spanish
+		await expect
+			.element(screen.getByRole('button', { name: 'Seleccionar tarea de enfoque' }))
+			.toBeVisible();
+		await expect.element(screen.getByRole('option', { name: /Enfoque libre/i })).toBeVisible();
+		await expect.element(input).toHaveAttribute('aria-label', 'Crear y fijar nueva tarea');
+		await expect.element(input).toHaveAttribute('placeholder', 'Nueva tarea... (Enter para fijar)');
+		await expect.element(screen.getByText('Tareas pendientes', { exact: true })).toBeVisible();
+		await expect.element(screen.getByText('Sin tareas pendientes')).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'Agregar tarea' })).toBeVisible();
+
+		// 3. Switch back to English
+		localeState.setLocale('en');
+
+		await expect.element(screen.getByRole('button', { name: 'Select focus task' })).toBeVisible();
+		await expect.element(screen.getByRole('option', { name: /Free focus/i })).toBeVisible();
+		await expect.element(input).toHaveAttribute('aria-label', 'Create and pin new task');
+		await expect.element(input).toHaveAttribute('placeholder', 'New task... (Enter to pin)');
+		await expect.element(screen.getByText('Pending tasks', { exact: true })).toBeVisible();
+		await expect.element(screen.getByText('No pending tasks')).toBeVisible();
+		await expect.element(screen.getByRole('button', { name: 'Add task' })).toBeVisible();
+	});
+
+	it('reactively updates active task trigger and inline checkbox aria-labels on locale change', async () => {
+		const task = createFocusTask({ title: 'Plan Sprint' });
+		const repo = new FakeTaskRepository([task]);
+		const tasksState = createTasksState(repo);
+		await tasksState.load();
+		tasksState.setActiveTask(task.id);
+
+		const screen = await render(TaskPill, {
+			isRunning: false,
+			tasksState,
+			portalProps: { disabled: true }
+		});
+
+		// 1. Initial English labels
+		const trigger = screen.getByRole('button', { name: 'Change active task: Plan Sprint' });
+		await expect.element(trigger).toBeVisible();
+
+		const checkboxEn = screen.getByRole('checkbox', { name: 'Mark "Plan Sprint" as completed' });
+		await expect.element(checkboxEn).toBeVisible();
+
+		// 2. Switch to Spanish
+		localeState.setLocale('es');
+
+		await expect
+			.element(screen.getByRole('button', { name: 'Cambiar tarea activa: Plan Sprint' }))
+			.toBeVisible();
+		const checkboxEs = screen.getByRole('checkbox', {
+			name: 'Marcar "Plan Sprint" como completada'
+		});
+		await expect.element(checkboxEs).toBeVisible();
+
+		// Complete task in Spanish using the Spanish locator
+		await checkboxEs.click();
+		await expect
+			.element(screen.getByRole('checkbox', { name: 'Marcar "Plan Sprint" como pendiente' }))
+			.toBeVisible();
+
+		// 3. Switch back to English
+		localeState.setLocale('en');
+		await expect
+			.element(screen.getByRole('button', { name: 'Change active task: Plan Sprint' }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByRole('checkbox', { name: 'Mark "Plan Sprint" as pending' }))
+			.toBeVisible();
 	});
 });
