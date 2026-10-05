@@ -44,7 +44,7 @@
 	"settings_interval_rounds_aria": "Rondas antes del descanso largo",
 	"settings_round_singular": "{count} ronda",
 	"settings_round_plural": "{count} rondas",
-	"settings_reset_defaults": "Restablecer valores iniciales ({focus} / {shortBreak} / {longBreak} min · {rounds} rondas)",
+	"settings_reset_defaults": "Restablecer ({focus} / {shortBreak} / {longBreak} min · {rounds} rondas)",
 	"settings_section_theme": "Tema",
 	"settings_section_theme_description": "Selecciona el esquema de color Rosé Pine activo.",
 	"settings_theme_aria": "Tema",

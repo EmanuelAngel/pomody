@@ -817,7 +817,7 @@ describe('SettingsDrawer Internationalization (Client Browser)', () => {
 		await expect
 			.element(
 				screen.getByRole('button', {
-					name: 'Restablecer valores iniciales (25 / 5 / 15 min · 4 rondas)'
+					name: 'Restablecer (25 / 5 / 15 min · 4 rondas)'
 				})
 			)
 			.toBeVisible();
