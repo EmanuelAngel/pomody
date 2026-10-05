@@ -14,12 +14,15 @@
 		type ThemeState,
 		type Theme
 	} from '$lib/state/theme.svelte';
+	import { localeState as defaultLocaleState, type LocaleState, t } from '$lib/state/locale.svelte';
+	import LanguageSelector from './language-selector.svelte';
 	import { DEFAULT_TIMER_CONFIG } from '$lib/domain/timer/timer-fsm';
 
 	interface Props {
 		open?: boolean;
 		timerState?: TimerState;
 		themeState?: ThemeState;
+		localeState?: LocaleState;
 		portalProps?: { disabled?: boolean };
 	}
 
@@ -27,6 +30,7 @@
 		open = $bindable(false),
 		timerState = defaultTimerState,
 		themeState = defaultThemeState,
+		localeState = defaultLocaleState,
 		portalProps
 	}: Props = $props();
 
@@ -58,7 +62,14 @@
 	const defaultShort = Math.round(DEFAULT_TIMER_CONFIG.shortBreakDurationSeconds / 60);
 	const defaultLong = Math.round(DEFAULT_TIMER_CONFIG.longBreakDurationSeconds / 60);
 	const defaultRounds = DEFAULT_TIMER_CONFIG.roundsBeforeLongBreak;
-	const resetLabel = `Reset to defaults (${defaultFocus} / ${defaultShort} / ${defaultLong} min · ${defaultRounds} rounds)`;
+	const resetLabel = $derived(
+		t.settings_reset_defaults({
+			focus: defaultFocus,
+			shortBreak: defaultShort,
+			longBreak: defaultLong,
+			rounds: defaultRounds
+		})
+	);
 
 	// Clear temporary slider overrides whenever drawer opens
 	$effect(() => {
@@ -137,10 +148,10 @@
 	<Sheet.Content side="right" {portalProps} class="w-full overflow-y-auto sm:max-w-md">
 		<Sheet.Header class="border-b border-border pb-4">
 			<Sheet.Title class="text-lg font-semibold tracking-tight text-foreground"
-				>Settings</Sheet.Title
+				>{t.settings_title()}</Sheet.Title
 			>
 			<Sheet.Description class="text-sm text-muted-foreground">
-				Customize timer intervals and color theme.
+				{t.settings_description()}
 			</Sheet.Description>
 		</Sheet.Header>
 
@@ -148,9 +159,11 @@
 			<!-- Section 1: Intervals -->
 			<div class="flex flex-col gap-4">
 				<div>
-					<h3 class="text-sm font-semibold tracking-wide text-foreground">Intervals</h3>
+					<h3 class="text-sm font-semibold tracking-wide text-foreground">
+						{t.settings_section_intervals()}
+					</h3>
 					<p class="mt-0.5 text-xs text-muted-foreground">
-						Adjust the duration in minutes for each block.
+						{t.settings_section_intervals_description()}
 					</p>
 				</div>
 
@@ -160,7 +173,7 @@
 						<div class="flex items-center justify-between">
 							<Field.Label class="flex items-center gap-2 text-xs font-medium text-foreground">
 								<span class="size-2 rounded-full bg-accent-foam"></span>
-								Focus
+								{t.settings_interval_focus()}
 							</Field.Label>
 							<span class="font-mono text-xs font-semibold text-accent-foam">
 								{focusMinutes} min
@@ -172,7 +185,7 @@
 							min={1}
 							max={120}
 							step={1}
-							aria-label="Focus duration"
+							aria-label={t.settings_interval_focus_aria()}
 							onValueChange={handleFocusChange}
 							class="py-1 [&_[data-slot=slider-range]]:bg-accent-foam [&_[data-slot=slider-thumb]]:border-accent-foam [&_[data-slot=slider-thumb]]:bg-background"
 						/>
@@ -183,7 +196,7 @@
 						<div class="flex items-center justify-between">
 							<Field.Label class="flex items-center gap-2 text-xs font-medium text-foreground">
 								<span class="size-2 rounded-full bg-accent-pine"></span>
-								Short Break
+								{t.settings_interval_short_break()}
 							</Field.Label>
 							<span class="font-mono text-xs font-semibold text-accent-pine">
 								{shortBreakMinutes} min
@@ -195,7 +208,7 @@
 							min={1}
 							max={60}
 							step={1}
-							aria-label="Short break duration"
+							aria-label={t.settings_interval_short_break_aria()}
 							onValueChange={handleShortBreakChange}
 							class="py-1 [&_[data-slot=slider-range]]:bg-accent-pine [&_[data-slot=slider-thumb]]:border-accent-pine [&_[data-slot=slider-thumb]]:bg-background"
 						/>
@@ -206,7 +219,7 @@
 						<div class="flex items-center justify-between">
 							<Field.Label class="flex items-center gap-2 text-xs font-medium text-foreground">
 								<span class="size-2 rounded-full bg-accent-iris"></span>
-								Long Break
+								{t.settings_interval_long_break()}
 							</Field.Label>
 							<span class="font-mono text-xs font-semibold text-accent-iris">
 								{longBreakMinutes} min
@@ -218,7 +231,7 @@
 							min={1}
 							max={90}
 							step={1}
-							aria-label="Long break duration"
+							aria-label={t.settings_interval_long_break_aria()}
 							onValueChange={handleLongBreakChange}
 							class="py-1 [&_[data-slot=slider-range]]:bg-accent-iris [&_[data-slot=slider-thumb]]:border-accent-iris [&_[data-slot=slider-thumb]]:bg-background"
 						/>
@@ -229,11 +242,12 @@
 						<div class="flex items-center justify-between">
 							<Field.Label class="flex items-center gap-2 text-xs font-medium text-foreground">
 								<span class="size-2 rounded-full bg-accent-rose"></span>
-								Rounds before Long Break
+								{t.settings_interval_rounds()}
 							</Field.Label>
 							<span class="font-mono text-xs font-semibold text-accent-rose">
-								{roundsBeforeLongBreak}
-								{roundsBeforeLongBreak === 1 ? 'round' : 'rounds'}
+								{roundsBeforeLongBreak === 1
+									? t.settings_round_singular({ count: roundsBeforeLongBreak })
+									: t.settings_round_plural({ count: roundsBeforeLongBreak })}
 							</span>
 						</div>
 						<Slider
@@ -242,7 +256,7 @@
 							min={1}
 							max={12}
 							step={1}
-							aria-label="Rounds before long break"
+							aria-label={t.settings_interval_rounds_aria()}
 							onValueChange={handleRoundsChange}
 							class="py-1 [&_[data-slot=slider-range]]:bg-accent-rose [&_[data-slot=slider-thumb]]:border-accent-rose [&_[data-slot=slider-thumb]]:bg-background"
 						/>
@@ -260,8 +274,12 @@
 			<!-- Section 2: Theme Selector -->
 			<div class="flex flex-col gap-3">
 				<div>
-					<h3 class="text-sm font-semibold tracking-wide text-foreground">Theme</h3>
-					<p class="mt-0.5 text-xs text-muted-foreground">Select active Rosé Pine color scheme.</p>
+					<h3 class="text-sm font-semibold tracking-wide text-foreground">
+						{t.settings_section_theme()}
+					</h3>
+					<p class="mt-0.5 text-xs text-muted-foreground">
+						{t.settings_section_theme_description()}
+					</p>
 				</div>
 
 				<ToggleGroup.Root
@@ -270,12 +288,12 @@
 					onValueChange={handleThemeChange}
 					variant="outline"
 					spacing={2}
-					aria-label="Theme"
+					aria-label={t.settings_theme_aria()}
 					class="grid grid-cols-3 gap-2"
 				>
 					<ToggleGroup.Item
 						value="dark"
-						aria-label="Dark theme"
+						aria-label={t.settings_theme_dark_aria()}
 						class="flex h-auto flex-col items-center justify-center gap-1.5 py-3 data-[state=on]:border-primary data-[state=on]:bg-muted/60"
 					>
 						<span
@@ -283,12 +301,12 @@
 						>
 							<span class="size-2 rounded-full bg-[#ebbcba]"></span>
 						</span>
-						<span class="text-xs font-medium">Dark</span>
+						<span class="text-xs font-medium">{t.settings_theme_dark()}</span>
 					</ToggleGroup.Item>
 
 					<ToggleGroup.Item
 						value="dawn"
-						aria-label="Dawn theme"
+						aria-label={t.settings_theme_dawn_aria()}
 						class="flex h-auto flex-col items-center justify-center gap-1.5 py-3 data-[state=on]:border-primary data-[state=on]:bg-muted/60"
 					>
 						<span
@@ -296,12 +314,12 @@
 						>
 							<span class="size-2 rounded-full bg-[#d7827e]"></span>
 						</span>
-						<span class="text-xs font-medium">Dawn</span>
+						<span class="text-xs font-medium">{t.settings_theme_dawn()}</span>
 					</ToggleGroup.Item>
 
 					<ToggleGroup.Item
 						value="oled"
-						aria-label="OLED theme"
+						aria-label={t.settings_theme_oled_aria()}
 						class="flex h-auto flex-col items-center justify-center gap-1.5 py-3 data-[state=on]:border-primary data-[state=on]:bg-muted/60"
 					>
 						<span
@@ -309,19 +327,26 @@
 						>
 							<span class="size-2 rounded-full bg-[#ffb4b4]"></span>
 						</span>
-						<span class="text-xs font-medium">OLED</span>
+						<span class="text-xs font-medium">{t.settings_theme_oled()}</span>
 					</ToggleGroup.Item>
 				</ToggleGroup.Root>
 			</div>
 
 			<Separator />
 
-			<!-- Section: Sound Alerts -->
+			<!-- Section 3: Language Selector -->
+			<LanguageSelector {localeState} />
+
+			<Separator />
+
+			<!-- Section 4: Sound Alerts -->
 			<div class="flex flex-col gap-3">
 				<div>
-					<h3 class="text-sm font-semibold tracking-wide text-foreground">Sound</h3>
+					<h3 class="text-sm font-semibold tracking-wide text-foreground">
+						{t.settings_section_sound()}
+					</h3>
 					<p class="mt-0.5 text-xs text-muted-foreground">
-						Enable or mute audio transition alerts.
+						{t.settings_section_sound_description()}
 					</p>
 				</div>
 
@@ -329,27 +354,29 @@
 					class="flex items-center justify-between rounded-lg border border-border p-3.5 shadow-xs"
 				>
 					<div class="flex flex-col gap-0.5">
-						<span class="text-xs font-medium text-foreground">Sound alerts</span>
+						<span class="text-xs font-medium text-foreground">{t.settings_sound_alerts()}</span>
 						<span class="text-xs text-muted-foreground"
-							>Play soothing chimes on block transitions</span
+							>{t.settings_sound_alerts_description()}</span
 						>
 					</div>
 					<Switch
 						checked={timerState.soundEnabled}
 						onCheckedChange={(checked) => timerState.setSoundEnabled(checked)}
-						aria-label="Sound alerts"
+						aria-label={t.settings_sound_alerts_aria()}
 					/>
 				</div>
 			</div>
 
 			<Separator />
 
-			<!-- Section: Break Revitalization -->
+			<!-- Section 5: Break Revitalization -->
 			<div class="flex flex-col gap-3">
 				<div>
-					<h3 class="text-sm font-semibold tracking-wide text-foreground">Break Revitalization</h3>
+					<h3 class="text-sm font-semibold tracking-wide text-foreground">
+						{t.settings_section_revitalization()}
+					</h3>
 					<p class="mt-0.5 text-xs text-muted-foreground">
-						Show restorative micro-habits and guides during breaks.
+						{t.settings_section_revitalization_description()}
 					</p>
 				</div>
 
@@ -357,15 +384,17 @@
 					class="flex items-center justify-between rounded-lg border border-border p-3.5 shadow-xs"
 				>
 					<div class="flex flex-col gap-0.5">
-						<span class="text-xs font-medium text-foreground">Mindful suggestions</span>
+						<span class="text-xs font-medium text-foreground"
+							>{t.settings_revitalization_suggestions()}</span
+						>
 						<span class="text-xs text-muted-foreground"
-							>Physical stretches, breathwork, and hydration reminders</span
+							>{t.settings_revitalization_suggestions_description()}</span
 						>
 					</div>
 					<Switch
 						checked={timerState.revitalizationEnabled}
 						onCheckedChange={(checked) => timerState.setRevitalizationEnabled(checked)}
-						aria-label="Mindful break suggestions"
+						aria-label={t.settings_revitalization_suggestions_aria()}
 					/>
 				</div>
 			</div>
