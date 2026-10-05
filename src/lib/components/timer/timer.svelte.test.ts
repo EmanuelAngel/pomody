@@ -8,6 +8,7 @@ import { createTimerState } from '$lib/state/timer.svelte';
 import { createBreaksState } from '$lib/state/breaks.svelte';
 import { createBreakActivity } from '$lib/domain/breaks/break-activity.entity';
 import { FakeBreakActivityRepository } from '$tests/fakes/repositories/fake-break-activity-repository';
+import { localeState } from '$lib/state/locale.svelte';
 
 const mockActivity = createBreakActivity({
 	id: 'act-phys',
@@ -264,5 +265,119 @@ describe('Timer Slot Mode & BreakRevitalization Integration (Client Browser)', (
 		await render(Timer, { state: timerState, breaksState });
 
 		expect(resetSpy).toHaveBeenCalled();
+	});
+});
+
+describe('Timer Reactive Localization (Client Browser)', () => {
+	it('reactively updates TimerArc aria-label on locale change', async () => {
+		const screen = await render(TimerArc, { progress: 0.5, mode: 'focus' });
+		const progressbar = screen.getByRole('progressbar');
+
+		await expect.element(progressbar).toHaveAttribute('aria-label', 'Timer progress');
+
+		localeState.setLocale('es');
+		await expect.element(progressbar).toHaveAttribute('aria-label', 'Progreso del temporizador');
+	});
+
+	it('reactively updates TimerDisplay mode label and aria-labels on locale change', async () => {
+		const screen = await render(TimerDisplay, {
+			formattedTime: '25:00',
+			mode: 'focus',
+			currentRound: 2,
+			roundsBeforeLongBreak: 4
+		});
+
+		await expect.element(screen.getByText('FOCUS')).toBeVisible();
+		await expect
+			.element(screen.getByRole('timer'))
+			.toHaveAttribute('aria-label', 'Time remaining: 25:00');
+		const status = screen.container.querySelector('[role="status"]');
+		expect(status?.getAttribute('aria-label')).toBe('Pomodoro cycle: 1 of 4 rounds completed');
+
+		localeState.setLocale('es');
+
+		await expect.element(screen.getByText('FOCO')).toBeVisible();
+		await expect
+			.element(screen.getByRole('timer'))
+			.toHaveAttribute('aria-label', 'Tiempo restante: 25:00');
+		await vi.waitFor(() => {
+			expect(status?.getAttribute('aria-label')).toBe('Ciclo pomodoro: 1 de 4 rondas completadas');
+		});
+	});
+
+	it('reactively updates TimerControls button aria-labels on locale change', async () => {
+		const screen = await render(TimerControls, {
+			isRunning: false,
+			isPaused: false,
+			onPlayPause: vi.fn(),
+			onReset: vi.fn(),
+			onSkip: vi.fn()
+		});
+
+		await expect
+			.element(screen.getByRole('button', { name: 'Reset timer', exact: true }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByRole('button', { name: 'Start timer', exact: true }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByRole('button', { name: 'Skip to next session', exact: true }))
+			.toBeVisible();
+
+		localeState.setLocale('es');
+
+		await expect
+			.element(screen.getByRole('button', { name: 'Reiniciar temporizador', exact: true }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByRole('button', { name: 'Iniciar temporizador', exact: true }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByRole('button', { name: 'Saltar al siguiente bloque', exact: true }))
+			.toBeVisible();
+	});
+
+	it('reactively updates full Timer orchestrator labels on locale change', async () => {
+		const dummyTicker = {
+			isRunning: false,
+			start: vi.fn(),
+			stop: vi.fn(),
+			destroy: vi.fn()
+		};
+		const state = createTimerState({ focusDurationSeconds: 1500 }, dummyTicker);
+		const screen = await render(Timer, { state });
+
+		// Default English
+		await expect.element(screen.getByText('FOCUS', { exact: true })).toBeVisible();
+		await expect
+			.element(screen.getByRole('button', { name: 'Start timer', exact: true }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByRole('button', { name: 'Reset timer', exact: true }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByRole('progressbar'))
+			.toHaveAttribute('aria-label', 'Timer progress');
+
+		// Switch to Spanish
+		localeState.setLocale('es');
+
+		await expect.element(screen.getByText('FOCO', { exact: true })).toBeVisible();
+		await expect
+			.element(screen.getByRole('button', { name: 'Iniciar temporizador', exact: true }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByRole('button', { name: 'Reiniciar temporizador', exact: true }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByRole('progressbar'))
+			.toHaveAttribute('aria-label', 'Progreso del temporizador');
+
+		// Interactivity in Spanish: Start -> Pause
+		const startBtn = screen.getByRole('button', { name: 'Iniciar temporizador', exact: true });
+		await startBtn.click();
+		await expect
+			.element(screen.getByRole('button', { name: 'Pausar temporizador', exact: true }))
+			.toBeVisible();
 	});
 });

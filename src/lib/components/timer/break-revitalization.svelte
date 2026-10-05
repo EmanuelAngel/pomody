@@ -8,6 +8,7 @@
 	import Shuffle from '@lucide/svelte/icons/shuffle';
 	import { cn } from '$lib/utils';
 	import { breaksState as defaultBreaksState, type BreaksState } from '$lib/state/breaks.svelte';
+	import { t } from '$lib/state/locale.svelte';
 	import type { BreakCategory } from '$lib/domain/breaks/break-activity.entity';
 
 	interface Props {
@@ -30,11 +31,11 @@
 		hydration: 'border-accent-foam/40 bg-accent-foam/15 text-accent-foam'
 	};
 
-	const categoryLabels: Record<BreakCategory, string> = {
-		physical: 'Physical',
-		mindful: 'Mindful',
-		hydration: 'Hydration'
-	};
+	const categoryLabels = $derived<Record<BreakCategory, string>>({
+		physical: t.break_category_physical(),
+		mindful: t.break_category_mindful(),
+		hydration: t.break_category_hydration()
+	});
 
 	onMount(() => {
 		void breaksState.load();
@@ -91,7 +92,7 @@
 		<Popover.Root bind:open={guideOpen}>
 			<Popover.Trigger
 				type="button"
-				aria-label={`View instructions for ${activeActivity.title}`}
+				aria-label={t.break_revitalization_view_instructions({ title: activeActivity.title })}
 				class="inline-flex size-6 cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				<BookOpen class="size-3.5" />
@@ -122,7 +123,7 @@
 					</div>
 				{:else}
 					<p class="text-xs text-muted-foreground italic">
-						No instructions available for this activity.
+						{t.break_revitalization_no_guide()}
 					</p>
 				{/if}
 			</Popover.Content>
@@ -131,7 +132,7 @@
 		<!-- Shuffle button with tactile animation -->
 		<button
 			type="button"
-			aria-label="Shuffle break activity"
+			aria-label={t.break_revitalization_shuffle_aria()}
 			onclick={handleShuffle}
 			class={cn(
 				'inline-flex size-6 cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 transition-all duration-200 hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none active:scale-90',
@@ -141,6 +142,8 @@
 			<Shuffle class="size-3.5" />
 		</button>
 	{:else}
-		<span class="text-xs text-muted-foreground/80">Rest and revitalize</span>
+		<span class="text-xs text-muted-foreground/80"
+			>{t.break_revitalization_rest_and_revitalize()}</span
+		>
 	{/if}
 </div>

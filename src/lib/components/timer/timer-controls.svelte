@@ -5,6 +5,7 @@
 	import Pause from '@lucide/svelte/icons/pause';
 	import SkipForward from '@lucide/svelte/icons/skip-forward';
 	import { cn } from '$lib/utils';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		isRunning: boolean;
@@ -21,7 +22,7 @@
 	<!-- Reset button (Ghost, secondary — fades in Zen mode) -->
 	<Button
 		variant="ghost"
-		aria-label="Reset timer"
+		aria-label={t.timer_controls_reset()}
 		disabled={isRunning}
 		tabindex={isRunning ? -1 : undefined}
 		aria-hidden={isRunning ? true : undefined}
@@ -37,7 +38,11 @@
 	<!-- Play / Pause button (Primary, always visible) -->
 	<Button
 		variant="default"
-		aria-label={isRunning ? 'Pause timer' : isPaused ? 'Resume timer' : 'Start timer'}
+		aria-label={isRunning
+			? t.timer_controls_pause()
+			: isPaused
+				? t.timer_controls_resume()
+				: t.timer_controls_start()}
 		onclick={onPlayPause}
 		class="size-16 cursor-pointer rounded-full shadow-md transition-transform duration-200 hover:scale-105 active:scale-95"
 	>
@@ -51,7 +56,7 @@
 	<!-- Skip button (Ghost, secondary — fades in Zen mode) -->
 	<Button
 		variant="ghost"
-		aria-label="Skip to next session"
+		aria-label={t.timer_controls_skip()}
 		disabled={isRunning}
 		tabindex={isRunning ? -1 : undefined}
 		aria-hidden={isRunning ? true : undefined}

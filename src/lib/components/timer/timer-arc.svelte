@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { TimerMode } from '$lib/domain/timer/timer-fsm';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		progress: number;
@@ -37,7 +38,7 @@
 	aria-valuenow={Math.round(clampedProgress * 100)}
 	aria-valuemin={0}
 	aria-valuemax={100}
-	aria-label="Timer progress"
+	aria-label={t.timer_arc_progress()}
 	data-mode={mode}
 	class="relative flex aspect-square w-full max-w-[360px] items-center justify-center sm:max-w-[400px]"
 >
