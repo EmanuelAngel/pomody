@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import TaskItem from './task-item.svelte';
@@ -6,14 +6,6 @@ import { createFocusTask, toggleFocusTask } from '$lib/domain/tasks/task.entity'
 import { localeState } from '$lib/state/locale.svelte';
 
 describe('TaskItem (Client Browser)', () => {
-	beforeEach(() => {
-		localeState.setLocale('en');
-	});
-
-	afterEach(() => {
-		localeState.setLocale('en');
-	});
-
 	it('renders pending task with title, unchecked checkbox, pin, and delete buttons', async () => {
 		const task = createFocusTask({ title: 'Plan architectural boundary' });
 		const screen = await render(TaskItem, { task });

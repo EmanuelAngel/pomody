@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import TaskBacklog from './task-backlog.svelte';
@@ -10,14 +10,6 @@ import { FakeSessionPlanRepository } from '$tests/fakes/repositories/fake-sessio
 import { localeState } from '$lib/state/locale.svelte';
 
 describe('TaskBacklog (Client Browser)', () => {
-	beforeEach(() => {
-		localeState.setLocale('en');
-	});
-
-	afterEach(() => {
-		localeState.setLocale('en');
-	});
-
 	it('renders header, remaining counter, and empty pending message when empty', async () => {
 		const taskRepo = new FakeTaskRepository();
 		const planRepo = new FakeSessionPlanRepository();
