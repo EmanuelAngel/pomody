@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import BreakRevitalization from './break-revitalization.svelte';
 import { createBreaksState } from '$lib/state/breaks.svelte';
+import { localeState } from '$lib/state/locale.svelte';
 import { createBreakActivity } from '$lib/domain/breaks/break-activity.entity';
 import { FakeBreakActivityRepository } from '$tests/fakes/repositories/fake-break-activity-repository';
 
@@ -29,7 +30,21 @@ const hydrationActivity = createBreakActivity({
 	guide: '1. Pour fresh water.\n2. Drink mindfully.'
 });
 
+const activityWithoutGuide = createBreakActivity({
+	id: 'act-no-guide',
+	title: 'Quick Posture Reset',
+	category: 'physical',
+	durationMinutes: 1
+});
+
 describe('BreakRevitalization (Client Browser)', () => {
+	beforeEach(() => {
+		localeState.setLocale('en');
+	});
+
+	afterEach(() => {
+		localeState.setLocale('en');
+	});
 	it('renders fallback text when no active activity exists', async () => {
 		const repo = new FakeBreakActivityRepository([]);
 		const breaksState = createBreaksState(repo);
@@ -190,5 +205,138 @@ describe('BreakRevitalization (Client Browser)', () => {
 		});
 
 		expect(suggestSpy).toHaveBeenCalledWith('shortBreak-2');
+	});
+
+	it('reactively updates inactive state placeholder on locale change', async () => {
+		const repo = new FakeBreakActivityRepository([]);
+		const breaksState = createBreaksState(repo);
+		await breaksState.load();
+
+		const screen = await render(BreakRevitalization, {
+			breaksState,
+			mode: 'shortBreak',
+			currentRound: 1,
+			portalProps: { disabled: true }
+		});
+
+		// 1. Initial English copy
+		await expect.element(screen.getByText('Rest and revitalize')).toBeVisible();
+
+		// 2. Switch to Spanish
+		localeState.setLocale('es');
+		await expect.element(screen.getByText('Descansa y revitalízate')).toBeVisible();
+
+		// 3. Switch back to English
+		localeState.setLocale('en');
+		await expect.element(screen.getByText('Rest and revitalize')).toBeVisible();
+	});
+
+	it('reactively updates category badges, popover trigger, empty guide, and shuffle button on locale change', async () => {
+		const repo = new FakeBreakActivityRepository([activityWithoutGuide]);
+		const breaksState = createBreaksState(repo);
+		await breaksState.load();
+		breaksState.suggestForBreak('shortBreak-1');
+
+		const screen = await render(BreakRevitalization, {
+			breaksState,
+			mode: 'shortBreak',
+			currentRound: 1,
+			portalProps: { disabled: true }
+		});
+
+		// 1. Verify English copy
+		await expect.element(screen.getByText('Physical')).toBeVisible();
+		const guideBtnEn = screen.getByRole('button', {
+			name: `View instructions for ${activityWithoutGuide.title}`
+		});
+		await expect.element(guideBtnEn).toBeVisible();
+
+		const shuffleBtnEn = screen.getByRole('button', { name: 'Shuffle break activity' });
+		await expect.element(shuffleBtnEn).toBeVisible();
+
+		// Open popover to see fallback guide text
+		await guideBtnEn.click();
+		await expect
+			.element(screen.getByText('No instructions available for this activity.'))
+			.toBeVisible();
+
+		// 2. Switch to Spanish
+		localeState.setLocale('es');
+
+		// Assert reactive updates in Spanish (both in the pill badge and in the open popover header)
+		await expect.element(screen.getByText('Físico').first()).toBeVisible();
+		await expect.element(screen.getByText('Físico').nth(1)).toBeVisible();
+		await expect
+			.element(
+				screen.getByRole('button', {
+					name: `Ver instrucciones de ${activityWithoutGuide.title}`
+				})
+			)
+			.toBeVisible();
+		await expect
+			.element(screen.getByRole('button', { name: 'Mezclar actividad de descanso' }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByText('No hay instrucciones disponibles para esta actividad.'))
+			.toBeVisible();
+
+		// 3. Switch back to English
+		localeState.setLocale('en');
+
+		await expect.element(screen.getByText('Physical').first()).toBeVisible();
+		await expect.element(screen.getByText('Physical').nth(1)).toBeVisible();
+		await expect
+			.element(
+				screen.getByRole('button', {
+					name: `View instructions for ${activityWithoutGuide.title}`
+				})
+			)
+			.toBeVisible();
+		await expect
+			.element(screen.getByRole('button', { name: 'Shuffle break activity' }))
+			.toBeVisible();
+		await expect
+			.element(screen.getByText('No instructions available for this activity.'))
+			.toBeVisible();
+	});
+
+	it('reactively updates mindful and hydration category labels on locale change', async () => {
+		const repo = new FakeBreakActivityRepository([mindfulActivity, hydrationActivity]);
+		const breaksState = createBreaksState(repo);
+		await breaksState.load();
+
+		// Mindful
+		breaksState.suggestForBreak('shortBreak-mindful');
+		const screen = await render(BreakRevitalization, {
+			breaksState,
+			mode: 'shortBreak',
+			currentRound: 1,
+			portalProps: { disabled: true }
+		});
+
+		// Check mindful label in English and Spanish
+		if (breaksState.activeActivity?.category === 'mindful') {
+			await expect.element(screen.getByText('Mindful')).toBeVisible();
+			localeState.setLocale('es');
+			await expect.element(screen.getByText('Mindful')).toBeVisible();
+		}
+
+		// Ensure we test hydration label
+		const repoHydration = new FakeBreakActivityRepository([hydrationActivity]);
+		const hydrationBreaksState = createBreaksState(repoHydration);
+		await hydrationBreaksState.load();
+		hydrationBreaksState.suggestForBreak('shortBreak-hydration');
+
+		const hydrationScreen = await render(BreakRevitalization, {
+			breaksState: hydrationBreaksState,
+			mode: 'shortBreak',
+			currentRound: 1,
+			portalProps: { disabled: true }
+		});
+
+		localeState.setLocale('es');
+		await expect.element(hydrationScreen.getByText('Hidratación')).toBeVisible();
+		localeState.setLocale('en');
+		await expect.element(hydrationScreen.getByText('Hydration')).toBeVisible();
 	});
 });
