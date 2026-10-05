@@ -390,9 +390,9 @@ describe('TaskPill Reactive Localization (Client Browser)', () => {
 
 		// Assert reactive DOM updates in Spanish
 		await expect
-			.element(screen.getByRole('button', { name: 'Seleccionar tarea de concentración' }))
+			.element(screen.getByRole('button', { name: 'Seleccionar tarea de foco' }))
 			.toBeVisible();
-		await expect(screen.getByRole('option', { name: /Concentración libre/i })).toBeVisible();
+		await expect(screen.getByRole('option', { name: /Foco libre/i })).toBeVisible();
 		await expect.element(input).toHaveAttribute('aria-label', 'Crear y fijar nueva tarea');
 		await expect.element(input).toHaveAttribute('placeholder', 'Nueva tarea... (Enter para fijar)');
 		await expect.element(screen.getByText('Tareas pendientes', { exact: true })).toBeVisible();

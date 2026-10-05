@@ -296,7 +296,7 @@ describe('Timer Reactive Localization (Client Browser)', () => {
 
 		localeState.setLocale('es');
 
-		await expect.element(screen.getByText('CONCENTRACIÓN')).toBeVisible();
+		await expect.element(screen.getByText('FOCO')).toBeVisible();
 		await expect
 			.element(screen.getByRole('timer'))
 			.toHaveAttribute('aria-label', 'Tiempo restante: 25:00');
@@ -362,7 +362,7 @@ describe('Timer Reactive Localization (Client Browser)', () => {
 		// Switch to Spanish
 		localeState.setLocale('es');
 
-		await expect.element(screen.getByText('CONCENTRACIÓN', { exact: true })).toBeVisible();
+		await expect.element(screen.getByText('FOCO', { exact: true })).toBeVisible();
 		await expect
 			.element(screen.getByRole('button', { name: 'Iniciar temporizador', exact: true }))
 			.toBeVisible();
