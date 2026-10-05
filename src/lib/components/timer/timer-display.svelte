@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { TimerMode } from '$lib/domain/timer/timer-fsm';
+	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		formattedTime: string;
@@ -18,13 +19,13 @@
 	const modeLabel = $derived.by(() => {
 		switch (mode) {
 			case 'focus':
-				return 'FOCUS';
+				return t.timer_mode_focus();
 			case 'shortBreak':
-				return 'SHORT BREAK';
+				return t.timer_mode_short_break();
 			case 'longBreak':
-				return 'LONG BREAK';
+				return t.timer_mode_long_break();
 			default:
-				return 'FOCUS';
+				return t.timer_mode_focus();
 		}
 	});
 
@@ -77,7 +78,7 @@
 	<!-- Large monospace time display (JetBrains Mono Variable) -->
 	<div
 		role="timer"
-		aria-label={`Time remaining: ${formattedTime}`}
+		aria-label={t.timer_time_remaining({ time: formattedTime })}
 		class="font-mono text-[clamp(4.25rem,14vw,6.5rem)] leading-none font-light tracking-tight text-foreground tabular-nums select-none sm:text-[clamp(5.5rem,15vw,7.5rem)]"
 	>
 		{formattedTime}
@@ -86,7 +87,10 @@
 	<!-- Round dots (●●○○) below time -->
 	<div
 		role="status"
-		aria-label={`Pomodoro cycle: ${completedInCycle} of ${safeRoundsBeforeLongBreak} rounds completed`}
+		aria-label={t.timer_cycle_status({
+			completed: completedInCycle,
+			total: safeRoundsBeforeLongBreak
+		})}
 		class="mt-3 flex items-center justify-center gap-2 sm:mt-4 sm:gap-2.5"
 	>
 		{#each Array.from({ length: safeRoundsBeforeLongBreak }, (_, i) => i) as index (index)}
