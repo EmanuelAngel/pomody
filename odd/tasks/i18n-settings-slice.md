@@ -54,4 +54,4 @@ Implement an accessible `LanguageSelector` component in the settings drawer and 
   - Action: Execute full test and lint suite (`pnpm check`, `pnpm lint`, `pnpm test:unit`, `pnpm test:browser`).
   - Route: inline
   - Checks: 0 errors in `pnpm check`, 0 issues in `pnpm lint`, 650/650 passed in `pnpm test:unit`, 165/165 passed in `pnpm test:browser`.
-  - Commit evidence: `1804390`, `946a14a`, `4e6da50`, `1d9068a`
+  - Commit evidence: `1804390`, `946a14a`, `4e6da50`, `1d9068a`, `fc208a3`
