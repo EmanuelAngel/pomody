@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.10.0...pomody-v0.11.0) (2026-10-06)
+
+
+### Features
+
+* **ui:** adopt architectural minimalist navigation bar ([dd47766](https://github.com/EmanuelAngel/pomody/commit/dd47766e35b7ae1fc91f38a8e0a28104a5f80c95))
+
+
+### Bug Fixes
+
+* **ui:** eliminate font blur and improve timer clarity on desktop ([7a4c4b5](https://github.com/EmanuelAngel/pomody/commit/7a4c4b539ab61fc5e7303032bd91a4c4e468aa84))
+
 ## [0.10.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.9.0...pomody-v0.10.0) (2026-10-05)
 
 
