@@ -79,7 +79,7 @@
 	<div
 		role="timer"
 		aria-label={t.timer_time_remaining({ time: formattedTime })}
-		class="font-mono text-[clamp(4.25rem,14vw,6.5rem)] leading-none font-light tracking-tight text-foreground tabular-nums select-none sm:text-[clamp(5.5rem,15vw,7.5rem)]"
+		class="font-mono text-[clamp(4.25rem,14vw,6.5rem)] leading-none font-normal tracking-tight text-foreground tabular-nums select-none sm:text-[clamp(5.5rem,15vw,7.5rem)]"
 	>
 		{formattedTime}
 	</div>

@@ -203,11 +203,14 @@
 		background: transparent;
 	}
 	body {
-		@apply bg-background text-foreground;
+		@apply bg-background text-foreground antialiased;
 		margin: 0;
 		user-select: none;
 	}
 	html {
-		@apply font-sans;
+		@apply font-sans antialiased;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		text-rendering: optimizeLegibility;
 	}
 }
