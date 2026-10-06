@@ -1,0 +1,250 @@
+{
+	"schemaVersion": 2,
+	"generatedAt": "2026-10-05T23:03:00Z",
+	"title": "Design System: Pomody",
+	"extensions": {
+		"colorMeta": {
+			"accent-rose": {
+				"role": "primary",
+				"displayName": "Rosé Quartz Accent",
+				"canonical": "#ebbcba",
+				"tonalRamp": [
+					"#3c2427",
+					"#5e373c",
+					"#844c53",
+					"#ab646d",
+					"#d17f8a",
+					"#ebbcba",
+					"#f3d5d4",
+					"#faebeb"
+				]
+			},
+			"accent-foam": {
+				"role": "secondary",
+				"displayName": "Foam Focus Aquamarine",
+				"canonical": "#9ccfd8",
+				"tonalRamp": [
+					"#1c3439",
+					"#2b4e56",
+					"#3c6c76",
+					"#528c98",
+					"#72adba",
+					"#9ccfd8",
+					"#c2e2e8",
+					"#e4f3f5"
+				]
+			},
+			"accent-pine": {
+				"role": "secondary",
+				"displayName": "Pine Short Break Teal",
+				"canonical": "#31748f",
+				"tonalRamp": [
+					"#0e232c",
+					"#163644",
+					"#214d60",
+					"#2d647c",
+					"#31748f",
+					"#4c8da9",
+					"#75abc1",
+					"#a8ccda"
+				]
+			},
+			"accent-iris": {
+				"role": "secondary",
+				"displayName": "Iris Long Break Lavender",
+				"canonical": "#c4a7e7",
+				"tonalRamp": [
+					"#2b2238",
+					"#433457",
+					"#604a7c",
+					"#8163a6",
+					"#a383d0",
+					"#c4a7e7",
+					"#dbc7f1",
+					"#efe5f9"
+				]
+			},
+			"bg-base": {
+				"role": "neutral",
+				"displayName": "Base Canvas",
+				"canonical": "#191724",
+				"tonalRamp": [
+					"#0c0b12",
+					"#13111b",
+					"#191724",
+					"#232033",
+					"#302c45",
+					"#423d5d",
+					"#5c557e",
+					"#7d75a4"
+				]
+			},
+			"bg-surface": {
+				"role": "neutral",
+				"displayName": "Surface Layer",
+				"canonical": "#1f1d2e",
+				"tonalRamp": [
+					"#0f0e17",
+					"#171523",
+					"#1f1d2e",
+					"#2a283e",
+					"#383552",
+					"#4b476d",
+					"#656090",
+					"#8580b4"
+				]
+			},
+			"bg-overlay": {
+				"role": "neutral",
+				"displayName": "Overlay Layer",
+				"canonical": "#26233a",
+				"tonalRamp": [
+					"#13111d",
+					"#1c1a2c",
+					"#26233a",
+					"#34304e",
+					"#454067",
+					"#5b5585",
+					"#7871aa",
+					"#9b95cb"
+				]
+			}
+		},
+		"typographyMeta": {
+			"display": {
+				"displayName": "Display Monospace",
+				"purpose": "Countdown clock figures inside timer arc"
+			},
+			"headline": {
+				"displayName": "Headline",
+				"purpose": "Dialog, sheet drawer, and planning section headers"
+			},
+			"title": {
+				"displayName": "Title",
+				"purpose": "Break card titles, task items, settings group titles"
+			},
+			"body": {
+				"displayName": "Body",
+				"purpose": "Descriptions, inputs, micro-guides, and general content"
+			},
+			"label": {
+				"displayName": "Label Monospace / Tracked",
+				"purpose": "Uppercase mode indicators (FOCUS, SHORT BREAK, LONG BREAK)"
+			}
+		},
+		"shadows": [
+			{
+				"name": "action-prominent",
+				"value": "0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2)",
+				"purpose": "Play/pause button primary tactile elevation."
+			},
+			{
+				"name": "surface-subtle",
+				"value": "0 1px 2px 0 rgba(0, 0, 0, 0.1)",
+				"purpose": "Subtle card and active tab separation."
+			}
+		],
+		"motion": [
+			{
+				"name": "ease-zen-fade",
+				"value": "cubic-bezier(0.4, 0, 0.2, 1)",
+				"purpose": "Smooth 300ms transition for navigation and controls receding in Zen Mode."
+			},
+			{
+				"name": "timer-arc-sweep",
+				"value": "linear",
+				"purpose": "Continuous uninterrupted stroke-dashoffset progression across ticks."
+			}
+		],
+		"breakpoints": [
+			{
+				"name": "sm",
+				"value": "640px"
+			},
+			{
+				"name": "md",
+				"value": "768px"
+			}
+		]
+	},
+	"components": [
+		{
+			"name": "Primary Play/Pause Button",
+			"kind": "button",
+			"refersTo": "button-primary",
+			"description": "Focal interactive element initiating and pausing focus and break cycles.",
+			"html": "<button class=\"ds-btn-play\"><svg viewBox=\"0 0 24 24\" width=\"28\" height=\"28\" fill=\"currentColor\"><polygon points=\"5 3 19 12 5 21 5 3\"/></svg></button>",
+			"css": ".ds-btn-play { background: #ebbcba; color: #191724; width: 64px; height: 64px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; border: none; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-play:hover { transform: scale(1.05); } .ds-btn-play:active { transform: scale(0.95); }"
+		},
+		{
+			"name": "Ghost Secondary Button",
+			"kind": "button",
+			"refersTo": "button-ghost",
+			"description": "Peripheral action for skipping or resetting intervals.",
+			"html": "<button class=\"ds-btn-ghost\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"/><path d=\"M3 3v5h5\"/></svg></button>",
+			"css": ".ds-btn-ghost { background: transparent; color: #6e6a86; width: 48px; height: 48px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: color 0.2s, background-color 0.2s; } .ds-btn-ghost:hover { color: #e0def4; background: #26233a; }"
+		},
+		{
+			"name": "Navigation Tab Bar",
+			"kind": "nav",
+			"refersTo": "nav-pills",
+			"description": "Segmented capsule navigation bar switching between Timer, Planning, and Metrics.",
+			"html": "<div class=\"ds-nav-pill\"><button class=\"ds-tab ds-tab-active\">Timer</button><button class=\"ds-tab\">Planning</button></div>",
+			"css": ".ds-nav-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px; border-radius: 9999px; background: rgba(38, 35, 58, 0.6); border: 1px solid rgba(38, 35, 58, 0.4); backdrop-filter: blur(4px); } .ds-tab { padding: 4px 12px; font-size: 13px; font-weight: 500; border-radius: 9999px; border: none; background: transparent; color: #908caa; cursor: pointer; transition: all 0.2s; } .ds-tab-active { background: #191724; color: #e0def4; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }"
+		},
+		{
+			"name": "Break Habit Card",
+			"kind": "card",
+			"refersTo": "card-break",
+			"description": "Restorative break suggestion card with category tags and expandable micro-guide.",
+			"html": "<article class=\"ds-break-card\"><div class=\"ds-card-header\"><span class=\"ds-badge-mindful\">MINDFUL</span><span class=\"ds-badge-time\">5m</span></div><h4 class=\"ds-card-title\">Box Breathing</h4></article>",
+			"css": ".ds-break-card { background: #1f1d2e; border: 1px solid rgba(38, 35, 58, 0.6); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; width: 280px; } .ds-card-header { display: flex; align-items: center; gap: 6px; } .ds-badge-mindful { font-size: 10px; font-weight: 600; text-transform: uppercase; color: #c4a7e7; background: rgba(196, 167, 231, 0.15); border: 1px solid rgba(196, 167, 231, 0.4); padding: 2px 8px; border-radius: 9999px; } .ds-badge-time { font-size: 10px; font-weight: 500; color: #908caa; border: 1px solid rgba(38, 35, 58, 0.4); background: rgba(38, 35, 58, 0.4); padding: 2px 8px; border-radius: 9999px; } .ds-card-title { font-size: 14px; font-weight: 600; color: #e0def4; margin: 0; }"
+		}
+	],
+	"narrative": {
+		"northStar": "The Focused Atelier",
+		"overview": "Pomody is structured around the disciplined, tactile feel of a high-craft artisan workshop. Every element is deliberate, quiet, and grounded. During active focus intervals, secondary controls and navigation quietly recede into the canvas ('Zen Mode').",
+		"keyCharacteristics": [
+			"Receding Surface Architecture: Zen Mode eliminates secondary navigation and controls during focus.",
+			"Organic Tonal Layering: Flat surface hierarchy relying on Base, Surface, and Overlay luminescence.",
+			"Sub-Second Monospace Typography: Tabular numerals with JetBrains Mono Variable preventing clock jitter.",
+			"Intentional Restorative Accents: Dedicated Rosé Pine tones strictly tied to cognitive states."
+		],
+		"rules": [
+			{
+				"name": "The Chromatic State Rule",
+				"body": "Accent colors are never decorative flourishes. Foam, Pine, and Iris are strictly reserved for state signification (Focus, Short Break, Long Break respectively).",
+				"section": "colors"
+			},
+			{
+				"name": "The WCAG AA Contrast Rule",
+				"body": "Text colors displayed over Base or Surface canvases must maintain at least 4.5:1 contrast ratio across Dark, Dawn, and OLED modes.",
+				"section": "colors"
+			},
+			{
+				"name": "The Tabular Clock Rule",
+				"body": "Timer numbers must always render with tabular numerals (tabular-nums) and JetBrains Mono Variable to prevent jitter and layout shifts as seconds elapse.",
+				"section": "typography"
+			},
+			{
+				"name": "The Tonal-Not-Shadow Rule",
+				"body": "Never introduce elevation using dark, diffuse drop shadows on cards or containers. Surfaces distinguish themselves through explicit surface token hierarchy and subtle hairline borders.",
+				"section": "elevation"
+			}
+		],
+		"dos": [
+			"Do preserve Zen Mode discipline: all peripheral controls must fade out when a focus session is active.",
+			"Do format timer digits with JetBrains Mono Variable and tabular-nums to eliminate jitter.",
+			"Do use Rosé Pine semantic mode tokens (--accent-foam for focus, --accent-pine for short break, --accent-iris for long break).",
+			"Do maintain clear tonal hierarchy (bg-base -> bg-surface -> bg-overlay).",
+			"Do keep cards and dialogs flat with subtle hairline borders."
+		],
+		"donts": [
+			"Don't add loud skeuomorphic gradients, heavy box-shadows, or artificial neon glows.",
+			"Don't use standard sans-serif variable figures for the timer digits.",
+			"Don't display persistent clutter or distracting metric charts on the main timer screen during focus.",
+			"Don't use arbitrary hex codes inline; always consume semantic tokens or Rosé Pine palette variables.",
+			"Don't introduce barrel files (index.ts) outside vendor shadcn-svelte directories."
+		]
+	}
+}
