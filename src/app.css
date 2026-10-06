@@ -95,44 +95,44 @@
 
 [data-theme='oled'] {
 	color-scheme: dark;
-	/* Rosé Pine OLED (Pure Black) */
+	/* Rosé Pine OLED (Pure Black Canvas + Rosé Pine Botanical Tones) */
 	--bg-base: #000000;
-	--bg-surface: #0a0a0a;
-	--bg-overlay: #141414;
-	--text-muted: #737373;
-	--text-subtle: #a3a3a3;
-	--text-primary: #ffffff;
-	--accent-love: #ff6b8b;
-	--accent-rose: #ffb4b4;
-	--accent-pine: #38bdf8;
-	--accent-foam: #67e8f9;
-	--accent-iris: #c084fc;
-	--accent-gold: #facc15;
+	--bg-surface: #0e0d15;
+	--bg-overlay: #171523;
+	--text-muted: #7d789c;
+	--text-subtle: #a39ec4;
+	--text-primary: #eceaf6;
+	--accent-love: #eb6f92;
+	--accent-rose: #ebbcba;
+	--accent-pine: #3e8fb0;
+	--accent-foam: #9ccfd8;
+	--accent-iris: #c4a7e7;
+	--accent-gold: #f6c177;
 
 	/* Mode label text (WCAG AA >= 4.5:1 on --bg-base) */
-	--mode-focus-text: #67e8f9;
-	--mode-short-break-text: #38bdf8;
-	--mode-long-break-text: #c084fc;
+	--mode-focus-text: #9ccfd8;
+	--mode-short-break-text: #56a8c7;
+	--mode-long-break-text: #c4a7e7;
 
 	/* shadcn-svelte UI mappings */
 	--background: #000000;
-	--foreground: #ffffff;
-	--card: #0a0a0a;
-	--card-foreground: #ffffff;
-	--popover: #0a0a0a;
-	--popover-foreground: #ffffff;
-	--primary: #ffb4b4;
+	--foreground: #eceaf6;
+	--card: #0e0d15;
+	--card-foreground: #eceaf6;
+	--popover: #0e0d15;
+	--popover-foreground: #eceaf6;
+	--primary: #ebbcba;
 	--primary-foreground: #000000;
-	--secondary: #141414;
-	--secondary-foreground: #ffffff;
-	--muted: #141414;
-	--muted-foreground: #a3a3a3;
-	--accent: #141414;
-	--accent-foreground: #ffb4b4;
-	--destructive: #ff6b8b;
-	--border: #262626;
-	--input: #262626;
-	--ring: #ffb4b4;
+	--secondary: #171523;
+	--secondary-foreground: #eceaf6;
+	--muted: #171523;
+	--muted-foreground: #a39ec4;
+	--accent: #171523;
+	--accent-foreground: #ebbcba;
+	--destructive: #eb6f92;
+	--border: #232038;
+	--input: #232038;
+	--ring: #ebbcba;
 	--radius: 0.625rem;
 }
 

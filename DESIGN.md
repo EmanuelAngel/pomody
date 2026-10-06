@@ -98,27 +98,27 @@ The color palette is built upon Rosé Pine's natural botanical and mineral pigme
 
 ### Primary
 
-- **Rosé Quartz Accent** (`#ebbcba` in Dark, `#d7827e` in Dawn, `#ffb4b4` in OLED): The signature energetic accent and default primary button tint. Represents deliberate initiation and primary action without evoking alarming urgency.
+- **Rosé Quartz Accent** (`#ebbcba` in Dark, `#d7827e` in Dawn, `#ebbcba` in OLED): The signature energetic accent and default primary button tint. Represents deliberate initiation and primary action without evoking alarming urgency.
 
 ### Secondary
 
-- **Foam Aquamarine** (`#9ccfd8` in Dark, `#56949f` in Dawn, `#67e8f9` in OLED): Dedicated focus-state color. Applied to the circular progress ring, active timer headers, and task pill tags.
-- **Pine Sea-Teal** (`#31748f` in Dark, `#286983` in Dawn, `#38bdf8` in OLED): Dedicated short break color. Eases eye fatigue and invites cognitive decompression.
-- **Iris Lavender** (`#c4a7e7` in Dark, `#907aa9` in Dawn, `#c084fc` in OLED): Dedicated long break and restorative mindfulness color.
+- **Foam Aquamarine** (`#9ccfd8` in Dark, `#56949f` in Dawn, `#9ccfd8` in OLED): Dedicated focus-state color. Applied to the circular progress ring, active timer headers, and task pill tags.
+- **Pine Sea-Teal** (`#31748f` in Dark, `#286983` in Dawn, `#3e8fb0` in OLED, with `#56a8c7` for OLED mode text): Dedicated short break color. Eases eye fatigue and invites cognitive decompression.
+- **Iris Lavender** (`#c4a7e7` in Dark, `#907aa9` in Dawn, `#c4a7e7` in OLED): Dedicated long break and restorative mindfulness color.
 
 ### Tertiary
 
-- **Warm Gold** (`#f6c177` in Dark, `#ea9d34` in Dawn, `#facc15` in OLED): Physical break indicators, daily progress highlights, and warm encouragement indicators.
-- **Love Crimson** (`#eb6f92` in Dark, `#b4637a` in Dawn, `#ff6b8b` in OLED): Destructive actions and reset/discard confirmation states.
+- **Warm Gold** (`#f6c177` in Dark, `#ea9d34` in Dawn, `#f6c177` in OLED): Physical break indicators, daily progress highlights, and warm encouragement indicators.
+- **Love Crimson** (`#eb6f92` in Dark, `#b4637a` in Dawn, `#eb6f92` in OLED): Destructive actions and reset/discard confirmation states.
 
 ### Neutral
 
 - **Base Canvas** (`#191724` Dark / `#faf4ed` Dawn / `#000000` OLED): The foundational application viewport canvas.
-- **Surface Layer** (`#1f1d2e` Dark / `#fffaf3` Dawn / `#0a0a0a` OLED): Elevated cards, drawers, and modal backdrops.
-- **Overlay Layer** (`#26233a` Dark / `#f2e9e1` Dawn / `#141414` OLED): Interactive pills, secondary buttons, borders, and input fields.
-- **Primary Text** (`#e0def4` Dark / `#575279` Dawn / `#ffffff` OLED): High-contrast text content and timer figures.
-- **Subtle Text** (`#908caa` Dark / `#797593` Dawn / `#a3a3a3` OLED): Secondary descriptions, active metadata, and input labels.
-- **Muted Text** (`#6e6a86` Dark / `#9893a5` Dawn / `#737373` OLED): Inactive tabs, placeholder copy, and disabled actions.
+- **Surface Layer** (`#1f1d2e` Dark / `#fffaf3` Dawn / `#0e0d15` OLED): Elevated cards, drawers, and modal backdrops.
+- **Overlay Layer** (`#26233a` Dark / `#f2e9e1` Dawn / `#171523` OLED): Interactive pills, secondary buttons, borders, and input fields.
+- **Primary Text** (`#e0def4` Dark / `#575279` Dawn / `#eceaf6` OLED): High-contrast text content and timer figures.
+- **Subtle Text** (`#908caa` Dark / `#797593` Dawn / `#a39ec4` OLED): Secondary descriptions, active metadata, and input labels.
+- **Muted Text** (`#6e6a86` Dark / `#9893a5` Dawn / `#7d789c` OLED): Inactive tabs, placeholder copy, and disabled actions.
 
 ### Named Rules
 

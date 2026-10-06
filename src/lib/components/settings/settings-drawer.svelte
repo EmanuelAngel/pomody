@@ -322,7 +322,7 @@
 						<span
 							class="flex size-4 items-center justify-center rounded-full border border-border bg-[#000000] shadow-xs"
 						>
-							<span class="size-2 rounded-full bg-[#ffb4b4]"></span>
+							<span class="size-2 rounded-full bg-[#ebbcba]"></span>
 						</span>
 						<span class="text-xs font-medium">{t.settings_theme_oled()}</span>
 					</ToggleGroup.Item>
