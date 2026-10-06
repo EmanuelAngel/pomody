@@ -43,19 +43,21 @@
 		isRunning ? 'pointer-events-none opacity-0' : 'pointer-events-auto opacity-100'
 	)}
 >
-	<!-- Left Slot: Brand -->
+	<!-- Left Slot: Brand Identity -->
 	<div class="flex items-center gap-2">
-		<span class="text-sm font-semibold tracking-tight text-foreground/90 select-none">
+		<span
+			class="text-xs font-semibold tracking-wider text-muted-foreground/70 uppercase transition-colors select-none hover:text-foreground"
+		>
 			Pomody
 		</span>
 	</div>
 
-	<!-- Center Slot: Navigation Tabs -->
+	<!-- Center Slot: Architectural Navigation Tabs -->
 	<nav aria-label={t.header_nav_main_aria()} class="absolute left-1/2 -translate-x-1/2">
 		<div
 			role="tablist"
 			aria-label={t.header_nav_views_aria()}
-			class="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/60 p-1 backdrop-blur-xs"
+			class="flex items-center gap-6 sm:gap-8"
 		>
 			<button
 				type="button"
@@ -65,13 +67,18 @@
 				aria-selected={activeTab === 'timer'}
 				onclick={() => handleTabClick('timer')}
 				class={cn(
-					'inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-sm',
+					'group relative flex cursor-pointer flex-col items-center py-2 text-xs font-medium tracking-tight transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-xs',
 					activeTab === 'timer'
-						? 'bg-background text-foreground shadow-xs'
-						: 'text-muted-foreground/80 hover:text-foreground'
+						? 'font-semibold text-foreground'
+						: 'text-muted-foreground/70 hover:text-foreground'
 				)}
 			>
 				<span>{t.header_nav_timer()}</span>
+				{#if activeTab === 'timer'}
+					<span
+						class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
+					></span>
+				{/if}
 			</button>
 
 			<button
@@ -82,13 +89,18 @@
 				aria-selected={activeTab === 'planning'}
 				onclick={() => handleTabClick('planning')}
 				class={cn(
-					'inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-sm',
+					'group relative flex cursor-pointer flex-col items-center py-2 text-xs font-medium tracking-tight transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-xs',
 					activeTab === 'planning'
-						? 'bg-background text-foreground shadow-xs'
-						: 'text-muted-foreground/80 hover:text-foreground'
+						? 'font-semibold text-foreground'
+						: 'text-muted-foreground/70 hover:text-foreground'
 				)}
 			>
 				<span>{t.header_nav_planning()}</span>
+				{#if activeTab === 'planning'}
+					<span
+						class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
+					></span>
+				{/if}
 			</button>
 
 			<button
@@ -97,7 +109,7 @@
 				aria-selected="false"
 				aria-disabled="true"
 				disabled
-				class="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground/60 transition-colors focus-visible:outline-none sm:text-sm"
+				class="relative flex cursor-not-allowed flex-col items-center py-2 text-xs font-medium tracking-tight text-muted-foreground/35 transition-colors focus-visible:outline-none sm:text-xs"
 			>
 				<span>{t.header_nav_metrics()}</span>
 			</button>
