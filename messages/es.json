@@ -12,6 +12,8 @@
 	"timer_controls_pause": "Pausar temporizador",
 	"timer_controls_resume": "Reanudar temporizador",
 	"timer_controls_skip": "Saltar al siguiente bloque",
+	"mini_player_restore": "Restaurar ventana",
+	"mini_player_compact_aria": "Temporizador compacto",
 	"task_pill_mark_as_pending": "Marcar \"{title}\" como pendiente",
 	"task_pill_mark_as_completed": "Marcar \"{title}\" como completada",
 	"task_pill_change_active_task": "Cambiar tarea activa: {title}",
