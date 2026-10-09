@@ -60,12 +60,18 @@ The Mini-Player (Milestone 3, P1) keeps peripheral visibility of the running tim
   The component **reuses** `timer_controls_reset`, `timer_controls_skip`, `timer_controls_start`, `timer_controls_pause`, `timer_controls_resume`, `task_pill_free_focus` and `timer_mode_*`. The `timer_controls_*` prefix names a domain area, not a rendering component, so a mini-player-specific copy would create two sources of truth for one string and drift silently across locales.
   Kept `mini_player_compact_aria` because the widget root is a landmark that needs an accessible name, matching the existing `timer_arc_progress` / `timer_cycle_status` convention.
 
-### [ ] TASK-3: `mini-player.svelte` component + browser tests
+### [x] TASK-3: `mini-player.svelte` component + browser tests
 
-- **Route**: Delegated direct (`svelte-file-editor`)
-- **Files**: `src/lib/components/timer/mini-player.svelte`, `mini-player.svelte.test.ts`
-- **Acceptance**: see the component contract below
-- **TDD**: RED first — `--project client`
+- **Route**: Delegated direct (`svelte-file-editor`), parent spot-checked
+- **Files**: `src/lib/components/timer/mini-player.svelte` (276), `mini-player.svelte.test.ts` (319)
+- **Commit**: `pending`
+- **Evidence**: RED `3 failed | 13 passed (16)` with the component present → GREEN `16 passed (16)`. Parent re-ran `--project client` independently: 16/16. `pnpm check` 0 errors; `pnpm lint` clean.
+- **Parent verification**: accent tokens only (`bg/text-accent-foam|pine|iris`, no unprefixed `bg-foam`); all 8 expected icons imported; i18n reuses `timer_controls_*` + `task_pill_free_focus` with only `mini_player_restore` and `mini_player_compact_aria` as new keys; `data-tauri-drag-region` present on 6 elements (left column + icon + title + title track, center column + time) and absent from the button row.
+
+**Two findings from the writer worth keeping**
+
+1. **The test must import `app.css`.** `app.css` is imported only by `+layout.svelte`, so an isolated browser test had no Tailwind at all — `invisible` computed to `visible` and a visibility assertion passed against correct markup. A visibility test that passes without CSS is a lie. The test now imports the stylesheet, and the writer confirmed it is falsifiable by mutating the classes.
+2. **`toBeVisible()` ignores `opacity`.** The matcher reads computed `visibility`/`display` but not `opacity`, which makes an opacity-only reveal untestable by design. This is why the secondary buttons use `invisible`/`visible` rather than `opacity-0` alone — and `visibility` also keeps them in the flex flow, which is precisely what stops Play/Pause from shifting 1px. `display: none` would reflow the row.
 
 **Component contract**
 
@@ -90,7 +96,16 @@ The Mini-Player (Milestone 3, P1) keeps peripheral visibility of the running tim
 
 ## Forecast
 
-~340 authored lines across 5 files (10 domain, 12 i18n, ~130 component, ~190 tests). Under the 400-line budget; `single-pr`.
+**Actual: ~608 authored lines**, against a ~340 forecast. Breakdown: 9 domain, 4 i18n, 276 component, 319 tests.
+
+Over the 400-line delivery budget by ~50%. See `Deviations` below.
+
+## Deviations
+
+1. **Delivery budget blown — decision pending.** Forecast was ~340 and the declared strategy was `single-pr` on that basis. The actual is ~608. Two PR-unit candidates exist, but splitting a component from its test suite would violate "tests travel with the behaviour they cover", so the only honest split is `TASK-1 + TASK-2` (13 lines, pointless on its own) versus `TASK-3`. Roughly 45 of the 276 component lines are explanatory comments encoding the 19 decisions; cutting them would recover the budget at the cost of the institutional memory that the next agent needs.
+2. **`visibility` instead of `opacity` for the hover reveal.** Forced by Vitest: `toBeVisible()` ignores `opacity`, so an opacity-only reveal is untestable. The chosen mechanism is also the correct layout behaviour (no reflow of the button row).
+3. **The test imports `app.css` explicitly.** Required because `app.css` is only imported by `+layout.svelte`; without it the browser test runs with no Tailwind and visibility assertions are vacuous.
+4. **`{@attach}` for the marquee measurement** instead of `bind:this`; the autofixer flags `bind:this`.
 
 ## Constraints
 
