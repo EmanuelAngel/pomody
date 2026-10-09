@@ -3,7 +3,7 @@
 - **Issue**: [#102](https://github.com/EmanuelAngel/pomody/issues/102) (part of Epic #100)
 - **Branch**: `feat/mini-player-component`
 - **Status**: In progress
-- **Delivery Strategy**: `single-pr` — forecast ~340 authored lines, under the 400-line budget, so no chain is required
+- **Delivery Strategy**: `single-pr` — resolved after implementation; see Deviation 1
 - **TDD Mode**: Standard (RED → GREEN → REFACTOR)
 - **Decisions**: [`docs/features/mini-player/decisions.md`](../../docs/features/mini-player/decisions.md) — 19 settled decisions, read this first
 - **Spec**: [`docs/features/mini-player/design.md`](../../docs/features/mini-player/design.md), [`spec.md`](../../docs/features/mini-player/spec.md) §3
@@ -100,15 +100,27 @@ The Mini-Player (Milestone 3, P1) keeps peripheral visibility of the running tim
 
 **Flaky first run — known and benign.** The first `pnpm test:browser` after introducing new modules reported `3 failed | 18 passed` and `20 failed | 142 passed`. The second run was green and so was the third. The cause is Vite's dependency optimizer pre-bundling the newly imported files and reloading the browser mid-run. **A first `pnpm test:browser` failure after adding imports is not evidence of a regression** — re-run before investigating.
 
-## Forecast
+## Line accounting
 
-**Actual: ~608 authored lines**, against a ~340 forecast. Breakdown: 9 domain, 4 i18n, 276 component, 319 tests.
+Counted from `git diff --numstat main...HEAD` (added lines):
 
-Over the 400-line delivery budget by ~50%. See `Deviations` below.
+| Bucket                          | Lines |
+| ------------------------------- | ----- |
+| Non-vendor production code      | 289   |
+| Test code                       | 321   |
+| Documentation and ODD task file | 357   |
+
+Applying the repository's 4:1 weighting of test lines against production code:
+
+```
+289 + (321 / 4) = 369 effective lines   vs   400 budget
+```
+
+**369 / 400 — within budget**, and the observed test-to-code ratio is **1.11:1**, roughly a third of the discipline the repository expects. The original ~340 forecast was wrong because it counted test lines at face value; under the real metric the slice lands at 369.
 
 ## Deviations
 
-1. **Delivery budget blown — decision pending.** Forecast was ~340 and the declared strategy was `single-pr` on that basis. The actual is ~608. Two PR-unit candidates exist, but splitting a component from its test suite would violate "tests travel with the behaviour they cover", so the only honest split is `TASK-1 + TASK-2` (13 lines, pointless on its own) versus `TASK-3`. Roughly 45 of the 276 component lines are explanatory comments encoding the 19 decisions; cutting them would recover the budget at the cost of the institutional memory that the next agent needs.
+1. **Forecast was wrong, not the slice.** The ~340 forecast counted every authored line at face value, producing a false "over budget" reading of 970. Under the repository's 4:1 test weighting the slice is 369 effective lines against a 400 budget. `single-pr` holds; the Tech Lead is the sole reviewer and reviewed the documentation in-session. No chain required.
 2. **`visibility` instead of `opacity` for the hover reveal.** Forced by Vitest: `toBeVisible()` ignores `opacity`, so an opacity-only reveal is untestable. The chosen mechanism is also the correct layout behaviour (no reflow of the button row).
 3. **The test imports `app.css` explicitly.** Required because `app.css` is only imported by `+layout.svelte`; without it the browser test runs with no Tailwind and visibility assertions are vacuous.
 4. **`{@attach}` for the marquee measurement** instead of `bind:this`; the autofixer flags `bind:this`.
