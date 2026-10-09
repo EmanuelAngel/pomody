@@ -17,6 +17,8 @@ interface CallLog {
 	readonly order: string[];
 	readonly sizes: { width: number; height: number }[];
 	readonly alwaysOnTop: boolean[];
+	readonly decorations: boolean[];
+	readonly resizable: boolean[];
 }
 
 function createSpyClient(supported = true): {
@@ -26,6 +28,8 @@ function createSpyClient(supported = true): {
 	const order: string[] = [];
 	const sizes: { width: number; height: number }[] = [];
 	const alwaysOnTop: boolean[] = [];
+	const decorations: boolean[] = [];
+	const resizable: boolean[] = [];
 	let currentAlwaysOnTop = false;
 
 	const client: TauriWindowClientLike = {
@@ -42,6 +46,14 @@ function createSpyClient(supported = true): {
 			alwaysOnTop.push(value);
 			currentAlwaysOnTop = value;
 		},
+		async setDecorations(value) {
+			order.push('setDecorations');
+			decorations.push(value);
+		},
+		async setResizable(value) {
+			order.push('setResizable');
+			resizable.push(value);
+		},
 		async isAlwaysOnTop() {
 			order.push('isAlwaysOnTop');
 			return currentAlwaysOnTop;
@@ -50,7 +62,7 @@ function createSpyClient(supported = true): {
 
 	return {
 		client: supported ? client : client,
-		log: { order, sizes, alwaysOnTop }
+		log: { order, sizes, alwaysOnTop, decorations, resizable }
 	};
 }
 
@@ -72,15 +84,31 @@ describe('TauriWindowShell', () => {
 	});
 
 	describe('enterMiniPlayer', () => {
-		it('should lower minSize before setSize and enable always-on-top last', async () => {
+		it('should remove decorations before resizing, and lock resizable last-but-one', async () => {
 			const { client, log } = createSpyClient();
 			const shell = new TauriWindowShell(client);
 
 			await shell.enterMiniPlayer();
 
-			expect(log.order).toEqual(['setMinSize', 'setSize', 'setAlwaysOnTop']);
+			expect(log.order).toEqual([
+				'setDecorations',
+				'setMinSize',
+				'setSize',
+				'setResizable',
+				'setAlwaysOnTop'
+			]);
 			expect(log.sizes).toEqual([MINI_WINDOW_MIN_DIMENSIONS, MINI_WINDOW_DIMENSIONS]);
 			expect(log.alwaysOnTop).toEqual([true]);
+		});
+
+		it('should make the window frameless and non-resizable', async () => {
+			const { client, log } = createSpyClient();
+			const shell = new TauriWindowShell(client);
+
+			await shell.enterMiniPlayer();
+
+			expect(log.decorations).toEqual([false]);
+			expect(log.resizable).toEqual([false]);
 		});
 
 		it('should honour explicitly requested dimensions', async () => {
@@ -104,15 +132,40 @@ describe('TauriWindowShell', () => {
 	});
 
 	describe('restoreMainWindow', () => {
-		it('should disable always-on-top, then raise minSize, then setSize', async () => {
+		it('should restore decorations before resizing back to the main window', async () => {
 			const { client, log } = createSpyClient();
 			const shell = new TauriWindowShell(client);
 
 			await shell.restoreMainWindow();
 
-			expect(log.order).toEqual(['setAlwaysOnTop', 'setMinSize', 'setSize']);
+			expect(log.order).toEqual([
+				'setAlwaysOnTop',
+				'setResizable',
+				'setMinSize',
+				'setDecorations',
+				'setSize'
+			]);
 			expect(log.alwaysOnTop).toEqual([false]);
 			expect(log.sizes).toEqual([MAIN_WINDOW_MIN_DIMENSIONS, MAIN_WINDOW_DIMENSIONS]);
+		});
+
+		it('should restore the frame and re-enable resizing', async () => {
+			const { client, log } = createSpyClient();
+			const shell = new TauriWindowShell(client);
+
+			await shell.restoreMainWindow();
+
+			expect(log.decorations).toEqual([true]);
+			expect(log.resizable).toEqual([true]);
+		});
+
+		it('should re-enable the frame even when entering from a mini window that was never entered', async () => {
+			const { client, log } = createSpyClient();
+			const shell = new TauriWindowShell(client);
+
+			await shell.restoreMainWindow();
+
+			expect(log.order.indexOf('setDecorations')).toBeLessThan(log.order.indexOf('setSize'));
 		});
 
 		it('should degrade without calling the client when unsupported', async () => {
