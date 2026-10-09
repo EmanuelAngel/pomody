@@ -84,6 +84,20 @@ The Mini-Player (Milestone 3, P1) needs to resize and pin the native OS window. 
 4. **`void dimensions;` instead of an underscore-prefixed unused param.** `eslint.config.js` sets no `argsIgnorePattern`, so `_dimensions` still trips `no-unused-vars`.
 5. **`MAIN_WINDOW_MIN_DIMENSIONS` mirrors `tauri.conf.json`.** The port constant and the Tauri native config duplicate the same 480x500 constraint; a shared source of truth is impossible while both files sit outside one slice. Candidate follow-up.
 
+## Desktop CI investigation (pre-existing, unrelated to the slice)
+
+`desktop-ci.yml` had not been verified green on `main` since commit `3432951` (2026-09-27) — every later run was `skipped`, `action_required`, or `failure`. Three distinct failures surfaced while validating this slice:
+
+1. **npm/crate version mismatch** — `@tauri-apps/api` had been added as `^2` and resolved to `2.12.2` while the Rust crate was `2.11.6`. Tauri aborts before compiling. Fixed by pinning npm to `~2.11.0` (npm's 2.11 line only reaches `2.11.1`, while Rust's reaches `2.11.6` — the two ecosystems version on different cadences, so the tauri check compares major/minor only).
+2. **Type errors inside `tauri/src`** — no `Cargo.lock` was committed, so Cargo re-resolved all 434 packages per run and paired `tauri 2.11.6` with `tauri-runtime`/`tauri-runtime-wry` `2.12.1`, whose `Monitor` type no longer matches.
+3. **`Error::UnexpectedMenuKind` missing** — `tauri-macros 2.7.1` generated a match arm for a variant that only exists in newer Tauri, because every sub-crate declares its siblings with caret ranges.
+
+All three share one root cause: the Tauri crate family resolves each member independently to the newest in-range release, and upstream never sees it because Tauri ships its own lockfile.
+
+**Fix**: commit `src-tauri/Cargo.lock` and align the whole family with the versions declared in `tauri 2.11.6`'s own `Cargo.toml`. Made `tauri-build = "~2.6.3"` in `Cargo.toml`, since the bare `"2.6.3"` read as a pin but was a caret range.
+
+The lesson is now codified in `AGENTS.md` rules 8 and 9: never re-resolve the Rust tree, and verify desktop builds only on CI.
+
 ## Constraints
 
 - No UI work in this slice — no `MiniPlayer.svelte`, no `Header` button, no `data-tauri-drag-region` (issue #102).
