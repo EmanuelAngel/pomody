@@ -21,6 +21,9 @@
 		"tauri:dev": "tauri dev",
 		"tauri:build": "tauri build"
 	},
+	"dependencies": {
+		"@tauri-apps/api": "~2.11.0"
+	},
 	"devDependencies": {
 		"@commitlint/cli": "^21.2.3",
 		"@commitlint/config-conventional": "^21.2.3",
