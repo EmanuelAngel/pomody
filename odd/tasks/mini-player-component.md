@@ -88,11 +88,17 @@ The Mini-Player (Milestone 3, P1) keeps peripheral visibility of the running tim
 | Drag region | attribute per element, never on the button row                                              |
 | Marquee     | measure overflow; animate only when the title does not fit                                  |
 
-### [ ] TASK-4: Quality harness
+### [x] TASK-4: Quality harness
 
-- **Route**: Delegated direct (parent spot-checked)
-- **Verification**: `pnpm check`, `pnpm lint`, `pnpm test:unit`, `pnpm test:browser`
-- **Not run locally**: `pnpm tauri:build` — CI only per AGENTS.md rule 9
+- **Route**: Direct inline (parent spot-checked)
+- **Verification** (observed, final committed state):
+  - `pnpm test:unit` → 39 files passed, 693 tests passed, 9.53s
+  - `pnpm test:browser` → 21 files passed, 206 tests passed, 22.92s
+  - `pnpm check` → 0 errors, 0 warnings
+  - `pnpm lint` → prettier clean, eslint clean
+- **Not run locally**: `pnpm tauri:build`, `cargo` — CI only per AGENTS.md rule 9. This slice changes no Rust and no `tauri.conf.json`.
+
+**Flaky first run — known and benign.** The first `pnpm test:browser` after introducing new modules reported `3 failed | 18 passed` and `20 failed | 142 passed`. The second run was green and so was the third. The cause is Vite's dependency optimizer pre-bundling the newly imported files and reloading the browser mid-run. **A first `pnpm test:browser` failure after adding imports is not evidence of a regression** — re-run before investigating.
 
 ## Forecast
 
@@ -116,4 +122,15 @@ Over the 400-line delivery budget by ~50%. See `Deviations` below.
 
 ## Progress & Next Step
 
-Task file created. TASK-1 is next.
+All four tasks are complete on `feat/mini-player-component` across 4 work-unit commits:
+
+| Commit    | Task                                     |
+| --------- | ---------------------------------------- |
+| `4653a48` | decisions + design/spec corrections      |
+| `7fd0acb` | TASK-1 — `MINI_WINDOW_DIMENSIONS` 280x64 |
+| `972316b` | TASK-2 — i18n keys + this task file      |
+| `d5ff58d` | TASK-3 — component + browser tests       |
+
+Verification is green across `pnpm test:unit` (693), `pnpm test:browser` (206), `pnpm check` and `pnpm lint`.
+
+**Open — the Tech Lead's call:** the delivery budget. Actual is ~608 authored lines against a 400-line budget and a ~340 forecast. See Deviation 1. Push and PR creation remain unstarted.
