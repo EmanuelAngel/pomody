@@ -12,6 +12,8 @@
 	"timer_controls_pause": "Pause timer",
 	"timer_controls_resume": "Resume timer",
 	"timer_controls_skip": "Skip to next session",
+	"mini_player_restore": "Restore window",
+	"mini_player_compact_aria": "Mini timer",
 	"task_pill_mark_as_pending": "Mark \"{title}\" as pending",
 	"task_pill_mark_as_completed": "Mark \"{title}\" as completed",
 	"task_pill_change_active_task": "Change active task: {title}",

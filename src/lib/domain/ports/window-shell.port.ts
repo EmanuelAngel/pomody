@@ -19,10 +19,16 @@ export const MAIN_WINDOW_MIN_DIMENSIONS: WindowDimensions = Object.freeze({
 	height: 500
 });
 
-/** Default size requested when entering the compact Mini-Player mode. */
+/**
+ * Default size requested when entering the compact Mini-Player mode.
+ *
+ * Sized for the 3-column topology (status icon + active task, centred timer, anchored
+ * button row) with all four controls revealed at once. See
+ * `docs/features/mini-player/decisions.md`.
+ */
 export const MINI_WINDOW_DIMENSIONS: WindowDimensions = Object.freeze({
-	width: 260,
-	height: 60
+	width: 280,
+	height: 64
 });
 
 /**
