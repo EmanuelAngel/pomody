@@ -1,9 +1,9 @@
 # Feature: Mini-Player Window Shell Foundations (PR 3.1)
 
 - **Issue**: #101 (part of Epic #100)
-- **PR**: [#115](https://github.com/EmanuelAngel/pomody/pull/115) — OPEN, `Resolves #101`
-- **Branch**: `feat/101-mini-player-window-shell`
-- **Status**: Implementation Complete — PR open, awaiting CI
+- **PR**: [#115](https://github.com/EmanuelAngel/pomody/pull/115) — MERGED 2026-10-09 as `bbb9a28`, `Resolves #101`
+- **Branch**: `feat/101-mini-player-window-shell` (deleted after merge)
+- **Status**: Shipped
 - **Delivery Strategy**: `ask-on-risk` (NOT met — see Deviation 1)
 - **TDD Mode**: Standard (RED → GREEN → REFACTOR), runner `pnpm exec vitest run <file> --project server`
 - **Spec**: [`docs/features/mini-player/spec.md`](../../docs/features/mini-player/spec.md) §2.1, §2.2, §4.1, §4.2, §5.1
