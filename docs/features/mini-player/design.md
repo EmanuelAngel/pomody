@@ -1,6 +1,8 @@
 # Especificación de Diseño: Mini-Player Compacto (Desktop Windows)
 
 > Documento de diseño técnico y decisiones de UI/UX para el modo compacto / mini-player de Pomody en Windows Desktop (Tauri v2).
+>
+> El **por qué** de cada decisión está en [`decisions.md`](./decisions.md). Este documento define **qué** se construye.
 
 ---
 
@@ -39,10 +41,10 @@ El mini-player adopta una estructura simétrica de tres columnas con barra de pr
 ### 2.1. Columna Izquierda: Identificador de Estado y Tarea Activa
 
 - **Ícono de estado semántico**:
-  - `focus`: `Target`
-  - `shortBreak`: `Leaf` / `Sparkle`
-  - `longBreak`: `Sprout` / `Sparkles`
-  - **Tratamiento visual**: Contenedor cuadrado redondeado (`rounded-md p-1`) con fondo sutil tintado y texto a tono del estado (`bg-foam/10 text-foam`, `bg-pine/10 text-pine`, `bg-iris/10 text-iris`).
+  - `focus`: `CircleDot`
+  - `shortBreak`: `Leaf`
+  - `longBreak`: `Sprout`
+  - **Tratamiento visual**: Contenedor cuadrado redondeado (`rounded-md p-1`) con fondo sutil tintado y texto a tono del estado (`bg-accent-foam/10 text-accent-foam`, `bg-accent-pine/10 text-accent-pine`, `bg-accent-iris/10 text-accent-iris`). Los acentos llevan prefijo `accent-` según `app.css`.
 - **Título de la tarea y estados vacíos**:
   - Si hay tarea activa: texto atenuado (`text-muted-foreground`), truncado con elipsis en reposo.
   - **Marquee en hover**: Al posar el cursor sobre el texto o la región izquierda, se inicia un desplazamiento suave horizontal para permitir leer el título completo sin agrandar la ventana.
@@ -66,13 +68,16 @@ El mini-player adopta una estructura simétrica de tres columnas con barra de pr
   - Los controles secundarios se revelan suavemente hacia la izquierda del botón de Play mediante transición de opacidad (`transition-opacity duration-200`):
     1. `[Reset]` (Rotar / Reiniciar intervalo).
     2. `[Skip]` (Avanzar al siguiente bloque).
-    3. `[Restaurar]` (Volver a la ventana principal de 800x650px).
+    3. `[Restaurar]` (Volver a la ventana principal de 800x650px). Ícono `Maximize2`.
     4. `[Play/Pause]` (Fijo e inamovible al extremo derecho).
+
+- **No hay botón de cerrar.** El mini-player es un modo de la misma aplicación, no una aplicación: cerrarlo debe devolver a la ventana principal, no terminar el timer. `[Restaurar]` es la salida.
+- **Un único estado de hover** gobierna la revelación de la botónera y el arranque del marquee del título (§2.1). En 64px de alto dos zonas separadas se pisan y el usuario no las distingue.
 
 ### 2.4. Barra de Progreso Flotante
 
 - Línea de 2px de grosor ubicada al pie, con márgenes en todas las direcciones (`mx-3 mb-1.5 rounded-full`).
-- Color semántico del bloque activo (`bg-foam`, `bg-pine`, `bg-iris`).
+- Color semántico del bloque activo (`bg-accent-foam`, `bg-accent-pine`, `bg-accent-iris`).
 - **Cero números de porcentaje**: Sin etiquetas numéricas que saturen la estética minimalista.
 
 ---
@@ -80,6 +85,7 @@ El mini-player adopta una estructura simétrica de tres columnas con barra de pr
 ## 3. Estética y Sistema de Diseño
 
 - **Geometría**: Bordes contenidos y sobrios con `rounded-md` o `rounded-lg` (6–8px). Se evita el aspecto de píldora móvil para respetar el lenguaje de herramientas de ingeniería de escritorio.
+- **Radio de la ventana**: con `decorations: false` la ventana es **rectangular y sin sombra en todas las plataformas, Windows 11 incluida** — el redondeo de esquinas es parte de las decorations nativas y desaparece con ellas. El `rounded-*` de arriba aplica **solo al contenido interno**, no a la ventana. Recuperar esquinas redondeadas en Win11 requiere la crate Rust `window-shadows` y queda fuera de alcance.
 - **Temas Rosé Pine**:
   - Soporte nativo para `Dark`, `Dawn` y `OLED`.
   - En `OLED`: Fondo negro puro (`#000000`), superficie widget `#050508`, bordes sutiles `#26233a`, texto `#e0def4` e íconos en `#908caa`.
@@ -90,12 +96,12 @@ El mini-player adopta una estructura simétrica de tres columnas con barra de pr
 
 ### 4.1. Región de Arrastre (`data-tauri-drag-region`)
 
-- El contenedor general y el área central del widget cuentan con `data-tauri-drag-region`, permitiendo mover la ventana libremente por cualquier parte del monitor.
-- **Aislamiento de la botonera**: El contenedor de botones interactivos a la derecha queda explícitamente excluido de la región de arrastre para evitar que WebView2 capture el mousedown como inicio de drag y cancele los eventos de click.
+- El área de arrastre se marca **elemento por elemento**: el contenedor de la columna izquierda, su ícono, su título, el contenedor de la columna central y el texto del timer. **El atributo no se hereda a los hijos** en Tauri v2, y como las columnas cubren la totalidad del root, ponerlo solo en el raíz deja una ventana completamente inmovible. Ver [`003-tauri-frameless-window-quirks.md`](../../learnings/003-tauri-frameless-window-quirks.md).
+- **Aislamiento de la botonera**: la fila de botones **nunca** lleva el atributo. No se desactiva con `data-tauri-drag-region="false"`; directamente no se le pone. Este diseño es _opt-in_: cualquier elemento nuevo nace sin drag, que es el default seguro.
 
 ### 4.2. Dimensiones y Transiciones
 
-- **Tamaño modo compacto**: ~260x60px o ~280x64px (a calibrar con el marco nativo de Windows).
+- **Tamaño modo compacto**: **280x64px**. La ventana en modo compacto **no es redimensionable**: el centrado absoluto del timer y el ancla del botón Play están calibrados para un ancho fijo.
 - **Manejo de restricciones**: Ajuste en caliente de `minWidth` y `minHeight` antes de solicitar el redimensionamiento, ya que la ventana normal restringe a 480x500px en `tauri.conf.json`.
-- **Bandera _Always on Top_**: Activación automática o manual de `setAlwaysOnTop(true)` al ingresar a modo compacto para que el widget flote sobre cualquier IDE o navegador.
+- **Bandera _Always on Top_**: Activación automática al ingresar a modo compacto para que el widget flote sobre cualquier IDE o navegador. No hay control para desactivarla desde el widget.
 - **Preservación de coordenadas**: Al restaurar a modo normal, la ventana vuelve a las dimensiones originales (800x650px) y posición centrada previa.

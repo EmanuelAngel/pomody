@@ -18,7 +18,8 @@ Cada entrada se numera de forma secuencial (`001-nombre-del-tema.md`) y responde
 
 ## Índice de Aprendizajes
 
-| #                                                     | Título                                                                                | Fecha      | Categoría              |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------- | ---------- | ---------------------- |
-| [001](001-vitest-ssr-node-vs-browser-mode.md)         | Cuellos de botella al testear componentes interactivos en Node (SSR) vs Browser Mode  | 2026-09-25 | Testing / Arquitectura |
-| [002](002-floating-ui-stable-triggers-in-svelte-5.md) | Identidad de triggers en primitivas flotantes (bits-ui) y efectos inertes en Svelte 5 | 2026-09-27 | UI / Svelte 5          |
+| #                                                     | Título                                                                                           | Fecha      | Categoría              |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------- | ---------------------- |
+| [001](001-vitest-ssr-node-vs-browser-mode.md)         | Cuellos de botella al testear componentes interactivos en Node (SSR) vs Browser Mode             | 2026-09-25 | Testing / Arquitectura |
+| [002](002-floating-ui-stable-triggers-in-svelte-5.md) | Identidad de triggers en primitivas flotantes (bits-ui) y efectos inertes en Svelte 5            | 2026-09-27 | UI / Svelte 5          |
+| [003](003-tauri-frameless-window-quirks.md)           | Ventanas frameless en Tauri v2: el drag region no se hereda y `decorations: false` mata el radio | 2026-10-09 | Desktop / Tauri        |

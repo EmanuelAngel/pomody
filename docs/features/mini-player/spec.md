@@ -1,6 +1,8 @@
 # Especificación Técnica: Modo Compacto / Mini-Player (v0.3 / Milestone 3)
 
 > Documento de diseño técnico, contratos de arquitectura hexagonal y especificación de interfaz para el Mini-Player de Pomody en Windows Desktop (Tauri v2).
+>
+> El **por qué** de cada decisión está en [`decisions.md`](./decisions.md). Este documento define **qué** se construye y **cómo** se integra.
 
 ---
 
@@ -20,7 +22,7 @@ El **Mini-Player** da respuesta al requerimiento **P1 del Milestone 3** ([`docs/
 flowchart TD
     subgraph UI ["Capa de Presentación (Svelte 5)"]
         Header["Header (Botón Mini)"] --> WindowState["windowState.svelte.ts"]
-        MiniPlayer["MiniPlayer.svelte"] --> WindowState
+        MiniPlayer["mini-player.svelte"] --> WindowState
         WindowState --> TimerState["timerState.svelte.ts"]
     end
 
@@ -80,7 +82,7 @@ class WindowState {
 			this.isMiniPlayer = false;
 			this.isAlwaysOnTop = false;
 		} else {
-			await this.shell.enterMiniPlayer({ width: 260, height: 60 });
+			await this.shell.enterMiniPlayer(MINI_WINDOW_DIMENSIONS);
 			this.isMiniPlayer = true;
 			this.isAlwaysOnTop = true;
 		}
@@ -118,7 +120,7 @@ Estado en Hover (Hover State - Revelación Progresiva):
 ```
 
 1. **Columna Izquierda (Estado y Tarea)**:
-   - **Ícono semántico**: `Target` para `focus` (`bg-foam/10 text-foam`), `Leaf` para `shortBreak` (`bg-pine/10 text-pine`) y `Sprout` para `longBreak` (`bg-iris/10 text-iris`).
+   - **Ícono semántico**: `CircleDot` para `focus` (`bg-accent-foam/10 text-accent-foam`), `Leaf` para `shortBreak` (`bg-accent-pine/10 text-accent-pine`) y `Sprout` para `longBreak` (`bg-accent-iris/10 text-accent-iris`).
    - **Título de la tarea**: Texto truncado con elipsis en reposo. En hover sobre la región, se activa animación marquee suave si el texto excede el espacio.
    - **Fallback sin tarea (`Free focus`)**: Muestra `Free focus` (o `Foco libre` según idioma) en cursiva atenuada.
 2. **Columna Central (Temporizador)**:
@@ -132,8 +134,8 @@ Estado en Hover (Hover State - Revelación Progresiva):
 
 ### 3.2. Región de Arrastre e Interacción en WebView2
 
-- La ventana completa posee el atributo nativo `data-tauri-drag-region`, permitiendo arrastrar el widget desde cualquier punto libre.
-- **Aislamiento de la botonera**: El contenedor de botones interactivos (`[Play]`, `[Reset]`, `[Skip]`, `[Restaurar]`) excluye explícitamente el drag region (`data-tauri-drag-region="false"`) para que WebView2 procese los eventos de clic con inmediatez sin confundirlos con arrastres.
+- **Atribución elemento por elemento**: el atributo nativo `data-tauri-drag-region` se aplica a cada elemento que debe arrastrar —el contenedor de la columna izquierda, su ícono, su título, el contenedor de la columna central y el texto del timer—. **No se hereda a los hijos** en Tauri v2 y, como las columnas cubren la totalidad del raíz, aplicarlo solo al contenedor general deja la ventana inmovible.
+- **Aislamiento de la botonera**: el contenedor de botones interactivos (`[Play/Pause]`, `[Reset]`, `[Skip]`, `[Restaurar]`) **no lleva el atributo**, en ningún caso. No se desactiva con `data-tauri-drag-region="false"` sino por omisión: el diseño es _opt-in_, de modo que cualquier elemento nuevo nace sin drag y WebView2 procesa los clics sin confundirlos con arrastres. Ver [`003-tauri-frameless-window-quirks.md`](../../learnings/003-tauri-frameless-window-quirks.md).
 - **Atajos de teclado**: La tecla `Escape` o el atajo global de alternancia devuelven la ventana a su tamaño completo.
 
 ---
@@ -208,10 +210,11 @@ export class FakeWindowShell implements IWindowShell {
 
 Para preservar la regla estricta de **menos de 400 LOC por Pull Request**:
 
-| PR / Slice                                 | Alcance Técnico                    | Entregables Principales                                                                                                               |
-| :----------------------------------------- | :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
-| **PR 3.1: Cimientos de Ventana Nativa**    | Infraestructura y puerto hexagonal | `IWindowShell`, adaptadores `TauriWindowShell` y `WebWindowShell`, `windowState.svelte.ts`, permisos en Tauri v2 y `FakeWindowShell`. |
-| **PR 3.2: Componente Mini-Player & Shell** | UI compacta, atajos y transiciones | Componente `MiniPlayer.svelte`, disparador en `Header`, soporte `data-tauri-drag-region` y suite de tests en Chromium.                |
+| PR / Slice                                    | Alcance Técnico                            | Entregables Principales                                                                                                                                                         |
+| :-------------------------------------------- | :----------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **PR 3.1: Cimientos de Ventana Nativa**       | Infraestructura y puerto hexagonal         | `IWindowShell`, adaptadores `TauriWindowShell` y `WebWindowShell`, `windowState.svelte.ts`, permisos en Tauri v2 y `FakeWindowShell`.                                           |
+| **PR 3.2: Componente Mini-Player (#102)**     | UI compacta del widget                     | Componente `mini-player.svelte` (kebab-case), soporte `data-tauri-drag-region` elemento por elemento, claves i18n `mini_player_*` y suite de tests en Chromium.                 |
+| **PR 3.3: Integración con la ventana (#103)** | Conmutación de ventana, disparador y atajo | `setDecorations(false)` / `setResizable(false)` en el puerto y el adaptador, permisos correspondientes en `capabilities/default.json`, disparador en `Header` y atajo `Escape`. |
 
 ---
 
@@ -219,7 +222,7 @@ Para preservar la regla estricta de **menos de 400 LOC por Pull Request**:
 
 - [ ] Cero importaciones de `@tauri-apps/api` dentro de la capa `src/lib/domain/`.
 - [ ] La aplicación web en producción compila y opera normalmente (`WebWindowShell` no-op seguro).
-- [ ] El redimensionamiento nativo en Windows conmuta limpiamente entre 800x650px y ~260x60px sin trabas de `minSize`.
+- [ ] El redimensionamiento nativo en Windows conmuta limpiamente entre 800x650px y 280x64px sin trabas de `minSize`.
 - [ ] La bandera _Always on Top_ se activa automáticamente en modo mini y se desactiva al restaurar.
 - [ ] Los botones interactivos responden al clic instantáneamente sin ser interceptados por el arrastre nativo.
 - [ ] `pnpm check`, `pnpm lint`, `pnpm test:unit` y `pnpm test:browser` pasan al 100% con cero advertencias.
