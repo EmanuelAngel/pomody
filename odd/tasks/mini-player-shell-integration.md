@@ -118,8 +118,8 @@ restoreMainWindow setAlwaysOnTop(false) → setResizable(true) → setMinSize(MA
 
 ## Progress & Next Step
 
-All five tasks are complete on `feat/mini-player-shell-integration` across 3 work-unit commits. Verification is green across `pnpm test:unit` (698), `pnpm test:browser` (209), `pnpm check` and `pnpm lint`.
+All five tasks are complete on `feat/mini-player-shell-integration` across 3 work-unit commits. Verification is green across `pnpm test:unit` (698), `pnpm test:browser` (209), `pnpm check` and `pnpm lint`. Documentation corrections from TASK-5 are applied.
 
-**Not yet done:** the documentation corrections listed in TASK-5 (`decisions.md` §4 item 1 and the `spec.md` §6/§7 updates). Push and PR creation remain the Tech Lead's decision.
+**Requires a real Windows run before merge:** the chrome-before-size ordering. It is unit-tested against a spy client, but no test in this repo can prove Windows restores an 800x650 client area after the frame comes back. `desktop-ci.yml` proves it compiles and that the permission names are valid; it does not prove the behaviour.
 
-**Requires a real Windows run before merge:** the chrome-before-size ordering. It is unit-tested against a spy client, but no test in this repo can prove Windows restores an 800x650 client area after the frame comes back.
+Push and PR creation remain the Tech Lead's decision.
