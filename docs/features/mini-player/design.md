@@ -54,8 +54,8 @@ El mini-player adopta una estructura simétrica de tres columnas con barra de pr
 ### 2.2. Columna Central: Temporizador Matemáticamente Centrado
 
 - **Dígitos tabulares (`mm:ss`)**:
-  - Centrados de forma absoluta (`absolute left-1/2 -translate-x-1/2`).
-  - Escala contenida (`text-sm font-medium tabular-nums`) con altura equivalente a los íconos para evitar dominancia visual en la visión periférica.
+  - Ubicados en una **rejilla real de tres columnas** (`grid-cols-[1fr_auto_1fr]`), no con posicionamiento absoluto. Con `absolute left-1/2` y una columna izquierda `flex-1`, la caja del texto de la tarea pasaba **por debajo** de los dígitos y ambos se solapaban. Dos pistas `1fr` simétricas hacen el solapamiento imposible por construcción: la caja del texto termina donde empiezan los dígitos.
+  - `font-mono text-sm font-medium tabular-nums`. La tipografía monoespaciada es lo que realmente evita la oscilación; `tabular-nums` por sí solo iguala el ancho de los dígitos pero no cambia la familia.
   - Color de primer plano de alto contraste (`text-foreground`).
 
 ### 2.3. Columna Derecha: Botonera con Anclaje al Extremo Derecho (_No Layout Shift_)
@@ -101,7 +101,10 @@ El mini-player adopta una estructura simétrica de tres columnas con barra de pr
 
 ### 4.2. Dimensiones y Transiciones
 
-- **Tamaño modo compacto**: **280x64px**. La ventana en modo compacto **no es redimensionable**: el centrado absoluto del timer y el ancla del botón Play están calibrados para un ancho fijo.
+- **Tamaño modo compacto**: **320x48px**. La ventana en modo compacto **no es redimensionable**: el centrado del timer y el ancla del botón Play están calibrados para un ancho fijo.
+- **Altura sin espacio muerto**: el contenido mide 24px (botones `icon-xs`) y la barra de progreso ocupa una franja de 8px al pie. Con 48px quedan 8px de aire arriba y abajo. A 64px la fila contenía 24px dentro de 56px: 16px de vacío a cada lado, que hacían que el widget se leyera cabezón. La fila es `h-10` dentro de un root `h-12` porque la barra es dueña de la franja inferior.
+- **`MINI_WINDOW_MIN_DIMENSIONS` debe quedar por debajo de `MINI_WINDOW_DIMENSIONS`**: Windows clampea el tamaño pedido al mínimo sin reportar error, así que un mínimo más alto que el objetivo dejaría el widget 2px más alto en silencio.
+- **Aislamiento de la región de arrastre**: `data-tauri-drag-region` no funciona sin el permiso `core:window:allow-start-dragging`. Tauri lo implementa invocando ese comando, y el permiso **no viene incluido en `core:window:default`**. Sin él, todas las regiones de arrastre de la app quedan inertes sin ningún error visible.
 - **Manejo de restricciones**: Ajuste en caliente de `minWidth` y `minHeight` antes de solicitar el redimensionamiento, ya que la ventana normal restringe a 480x500px en `tauri.conf.json`.
 - **Bandera _Always on Top_**: Activación automática al ingresar a modo compacto para que el widget flote sobre cualquier IDE o navegador. No hay control para desactivarla desde el widget.
-- **Preservación de coordenadas**: Al restaurar a modo normal, la ventana vuelve a las dimensiones originales (800x650px) y posición centrada previa.
+- **Preservación de coordenadas**: al restaurar, la ventana vuelve a 800x650px **y se recentra en la pantalla principal** (`center()`, último paso del método). Sin eso conservaba la posición donde se hubiera arrastrado el widget compacto, que puede quedar parcialmente fuera de lo visible. `center` centra el tamaño **actual**, así que tiene que ejecutarse **después** del resize final: centrar primero centraría la caja de 320x48 y luego crecería desde ese origen, dejando la ventana descentrada. Requiere el permiso `core:window:allow-center`, que es un comando distinto de `setPosition`.

@@ -51,6 +51,16 @@ Es decir: `decorations: false` no oculta "la barra de título". Oculta **el paqu
 
 ## 3. ¿Cómo se resuelve y qué aprendí? (La lección)
 
+### El permiso que hace falta y nadie te dice
+
+Hay un tercer requisito, y es el que muerde: **`data-tauri-drag-region` no funciona sin `core:window:allow-start-dragging`**.
+
+Tauri lo implementa inyectando el comando `start_dragging`, y ese comando necesita su propio permiso. `core:window:default` **no lo incluye** — solo trae `allow-internal-toggle-maximize`. El ejemplo de titlebar custom de la documentación oficial lo lista aparte, entre otras cuatro líneas de capability.
+
+Sin el permiso, el atributo está perfectamente puesto, el HTML es correcto, los tests de DOM pasan, y la ventana simplemente **no se arrastra de ningún lado**. No hay error, no hay warning, no hay nada en la consola. Es el peor modo de falla que existe.
+
+**Regla**: cada vez que agregues un `data-tauri-drag-region` a la app, verificá que `core:window:allow-start-dragging` esté en `src-tauri/capabilities/default.json`. Y agregá un test que lo afirme — un test que lea el JSON de capabilities y falle si el permiso desaparece. Cuesta cinco líneas y es la única red contra esta clase de bug invisible.
+
 ### Para el drag region: opt-out no, opt-in
 
 El patrón correcto es **agregar explícitamente** el atributo a cada elemento que debe arrastrar, y nunca ponerlo en un contenedor queTMS sus hijos interactivos.
@@ -82,6 +92,7 @@ Si un diseño exige esquinas redondeadas en una ventana frameless, hay exactamen
 
 ## 4. Checklist para la próxima ventana frameless
 
+- [ ] ¿`core:window:allow-start-dragging` está en `capabilities/default.json`? Sin él el drag no funciona y no hay error
 - [ ] ¿Qué elemento exacto tiene el atributo de drag? ¿Hay hijos que lo cubren?
 - [ ] ¿El layout nuevo.elements nacen con drag o sin drag? (tiene que ser **sin**)
 - [ ] ¿La botonera tiene alguna chance de heredar el drag? (no puede)

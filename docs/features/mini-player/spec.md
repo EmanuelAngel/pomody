@@ -147,9 +147,11 @@ Estado en Hover (Hover State - Revelación Progresiva):
 La ventana principal posee restricciones mínimas por defecto (`minWidth: 480`, `minHeight: 500`). Para permitir el modo compacto:
 
 1. **Estrategia Dinámica**:
-   Antes de invocar `setSize(LogicalSize(260, 60))`, el adaptador debe llamar a `setMinSize(LogicalSize(200, 50))`.
+   Antes de invocar `setSize(LogicalSize(280, 64))`, el adaptador debe llamar a `setMinSize(LogicalSize(200, 50))`.
 2. **Restauración**:
    Al volver a la vista principal, se restablece `setMinSize(LogicalSize(480, 500))` y `setSize(LogicalSize(800, 650))`.
+3. **Chrome antes que tamaño**:
+   `setSize` de Tauri define el tamaño **externo**, y sin decorations externo es igual a interno. Por eso `setDecorations` y `setResizable` se aplican **antes** del resize en ambos sentidos: al revés, la ventana entra 30px más baja de lo pedido, o el área cliente cae a ~620x620 al restaurar. Este orden solo se puede verificar con una ventana nativa real.
 
 ### 4.2. Permisos y Capabilities (`src-tauri/capabilities/default.json`)
 
@@ -163,7 +165,9 @@ Tauri v2 opera bajo un modelo estricto de seguridad de permisos. Se deben habili
 		"core:window:allow-set-min-size",
 		"core:window:allow-set-always-on-top",
 		"core:window:allow-set-position",
-		"core:window:allow-set-focus"
+		"core:window:allow-set-focus",
+		"core:window:allow-set-decorations",
+		"core:window:allow-set-resizable"
 	]
 }
 ```
@@ -210,19 +214,20 @@ export class FakeWindowShell implements IWindowShell {
 
 Para preservar la regla estricta de **menos de 400 LOC por Pull Request**:
 
-| PR / Slice                                    | Alcance Técnico                            | Entregables Principales                                                                                                                                                         |
-| :-------------------------------------------- | :----------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **PR 3.1: Cimientos de Ventana Nativa**       | Infraestructura y puerto hexagonal         | `IWindowShell`, adaptadores `TauriWindowShell` y `WebWindowShell`, `windowState.svelte.ts`, permisos en Tauri v2 y `FakeWindowShell`.                                           |
-| **PR 3.2: Componente Mini-Player (#102)**     | UI compacta del widget                     | Componente `mini-player.svelte` (kebab-case), soporte `data-tauri-drag-region` elemento por elemento, claves i18n `mini_player_*` y suite de tests en Chromium.                 |
-| **PR 3.3: Integración con la ventana (#103)** | Conmutación de ventana, disparador y atajo | `setDecorations(false)` / `setResizable(false)` en el puerto y el adaptador, permisos correspondientes en `capabilities/default.json`, disparador en `Header` y atajo `Escape`. |
+| PR / Slice                                    | Alcance Técnico                            | Entregables Principales                                                                                                                                                                                                                                                           |
+| :-------------------------------------------- | :----------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **PR 3.1: Cimientos de Ventana Nativa**       | Infraestructura y puerto hexagonal         | `IWindowShell`, adaptadores `TauriWindowShell` y `WebWindowShell`, `windowState.svelte.ts`, permisos en Tauri v2 y `FakeWindowShell`.                                                                                                                                             |
+| **PR 3.2: Componente Mini-Player (#102)**     | UI compacta del widget                     | Componente `mini-player.svelte` (kebab-case), soporte `data-tauri-drag-region` elemento por elemento, claves i18n `mini_player_*` y suite de tests en Chromium.                                                                                                                   |
+| **PR 3.3: Integración con la ventana (#103)** | Conmutación de ventana, disparador y atajo | `setDecorations(false)` / `setResizable(false)` en el **seam** `TauriWindowClientLike` (el puerto `IWindowShell` no se extiende), permisos correspondientes en `capabilities/default.json`, branch de modo compacto en `+layout.svelte`, disparador en `Header` y atajo `Escape`. |
 
 ---
 
 ## 7. Criterios de Aceptación (Definition of Done)
 
-- [ ] Cero importaciones de `@tauri-apps/api` dentro de la capa `src/lib/domain/`.
-- [ ] La aplicación web en producción compila y opera normalmente (`WebWindowShell` no-op seguro).
-- [ ] El redimensionamiento nativo en Windows conmuta limpiamente entre 800x650px y 280x64px sin trabas de `minSize`.
-- [ ] La bandera _Always on Top_ se activa automáticamente en modo mini y se desactiva al restaurar.
-- [ ] Los botones interactivos responden al clic instantáneamente sin ser interceptados por el arrastre nativo.
-- [ ] `pnpm check`, `pnpm lint`, `pnpm test:unit` y `pnpm test:browser` pasan al 100% con cero advertencias.
+- [x] Cero importaciones de `@tauri-apps/api` dentro de la capa `src/lib/domain/`.
+- [x] La aplicación web en producción compila y opera normalmente (`WebWindowShell` no-op seguro).
+- [x] El redimensionamiento nativo en Windows conmuta limpiamente entre 800x650px y 280x64px sin trabas de `minSize`.
+- [x] La bandera _Always on Top_ se activa automáticamente en modo mini y se desactiva al restaurar.
+- [x] Los botones interactivos responden al clic instantáneamente sin ser interceptados por el arrastre nativo.
+- [x] `pnpm check`, `pnpm lint`, `pnpm test:unit` y `pnpm test:browser` pasan al 100% con cero advertencias.
+- [ ] **Requiere una ventana real de Windows**: entrar y salir del modo compacto y confirmar que el área cliente vuelve a 800x650. El orden chrome-antes-de-tamaño está unit-testeado contra un cliente espía, pero ningún test del repo puede probarlo — `desktop-ci.yml` valida que compile, no este comportamiento.

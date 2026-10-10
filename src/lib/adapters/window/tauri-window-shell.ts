@@ -16,6 +16,9 @@ export interface TauriWindowClientLike {
 	setMinSize(dimensions: WindowDimensions): Promise<void>;
 	setSize(dimensions: WindowDimensions): Promise<void>;
 	setAlwaysOnTop(alwaysOnTop: boolean): Promise<void>;
+	setDecorations(decorations: boolean): Promise<void>;
+	setResizable(resizable: boolean): Promise<void>;
+	center(): Promise<void>;
 	isAlwaysOnTop(): Promise<boolean>;
 }
 
@@ -52,6 +55,15 @@ async function resolveTauriWindowClient(): Promise<TauriWindowClientLike | null>
 		},
 		setAlwaysOnTop: async (alwaysOnTop) => {
 			await current.setAlwaysOnTop(alwaysOnTop);
+		},
+		setDecorations: async (decorations) => {
+			await current.setDecorations(decorations);
+		},
+		setResizable: async (resizable) => {
+			await current.setResizable(resizable);
+		},
+		center: async () => {
+			await current.center();
 		},
 		isAlwaysOnTop: async () => current.isAlwaysOnTop()
 	};
@@ -95,8 +107,12 @@ export class TauriWindowShell implements IWindowShell {
 	}
 
 	/**
-	 * Lowers the native minimum size, resizes to the requested dimensions,
-	 * and only then pins the window on top.
+	 * Makes the window frameless, non-resizable and 280x64, then pins it on top.
+	 *
+	 * Order matters: Tauri `setSize` sets the OUTER size. While decorations are
+	 * off, outer equals inner, so the chrome must be configured BEFORE the resize —
+	 * resizing first and stripping decorations afterwards would leave the window
+	 * short by the height of a title bar it no longer has.
 	 */
 	public async enterMiniPlayer(
 		dimensions: WindowDimensions = MINI_WINDOW_DIMENSIONS
@@ -104,21 +120,40 @@ export class TauriWindowShell implements IWindowShell {
 		const client = await this.getClient();
 		if (!client) return;
 
+		await client.setDecorations(false);
 		await client.setMinSize(MINI_WINDOW_MIN_DIMENSIONS);
 		await client.setSize(dimensions);
+		await client.setResizable(false);
 		await client.setAlwaysOnTop(true);
 	}
 
 	/**
-	 * Unpins the window, restores the main minimum size, and resizes back to the main dimensions.
+	 * Reverses {@link enterMiniPlayer}: unpins, re-enables resizing, restores the
+	 * frame, resizes to the main dimensions, and finally re-centres the window.
+	 *
+	 * Decorations are restored BEFORE the resize for the same reason they are
+	 * removed before it — resizing while frameless would make the requested outer
+	 * size absorb the title bar that Windows adds back moments later.
+	 *
+	 * The re-centre is what `design.md` §4.2 specified all along ("vuelve a las
+	 * dimensiones originales y posición centrada") and what the first
+	 * implementation left out: the window used to keep whatever position the
+	 * compact widget had been dragged to, which could sit partly off-screen.
+	 *
+	 * `center` runs LAST because it centres the CURRENT size. Centring before the
+	 * final resize would centre the 320x48 compact box and then grow it from that
+	 * origin, leaving the restored window off-centre.
 	 */
 	public async restoreMainWindow(): Promise<void> {
 		const client = await this.getClient();
 		if (!client) return;
 
 		await client.setAlwaysOnTop(false);
+		await client.setResizable(true);
 		await client.setMinSize(MAIN_WINDOW_MIN_DIMENSIONS);
+		await client.setDecorations(true);
 		await client.setSize(MAIN_WINDOW_DIMENSIONS);
+		await client.center();
 	}
 
 	public async isAlwaysOnTop(): Promise<boolean> {

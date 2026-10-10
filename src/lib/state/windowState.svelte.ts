@@ -14,6 +14,16 @@ export class WindowState {
 	constructor(public readonly shell: IWindowShell) {}
 
 	/**
+	 * Whether the current platform can manipulate the native window at all.
+	 * `false` on the web build, where the shell is a safe no-op. UI that offers a
+	 * window control must gate on this, otherwise it renders a control that
+	 * visibly does nothing.
+	 */
+	public get isSupported(): boolean {
+		return this.shell.isSupported;
+	}
+
+	/**
 	 * Enters mini mode when in main window mode, and restores the main window otherwise.
 	 * No-ops when the platform does not support native window manipulation.
 	 */

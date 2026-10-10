@@ -18,12 +18,12 @@ describe('Window Shell Port', () => {
 			expect(MAIN_WINDOW_MIN_DIMENSIONS).toEqual({ width: 480, height: 500 });
 		});
 
-		it('should define the mini window dimensions as 280x64', () => {
-			expect(MINI_WINDOW_DIMENSIONS).toEqual({ width: 280, height: 64 });
+		it('should define the mini window dimensions as 320x48', () => {
+			expect(MINI_WINDOW_DIMENSIONS).toEqual({ width: 320, height: 48 });
 		});
 
-		it('should define the mini window minimum dimensions as 200x50', () => {
-			expect(MINI_WINDOW_MIN_DIMENSIONS).toEqual({ width: 200, height: 50 });
+		it('should define the mini window minimum dimensions as 200x40', () => {
+			expect(MINI_WINDOW_MIN_DIMENSIONS).toEqual({ width: 200, height: 40 });
 		});
 
 		it('should keep mini dimensions strictly smaller than main dimensions', () => {

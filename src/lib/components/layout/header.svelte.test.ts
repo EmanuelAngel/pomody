@@ -3,6 +3,9 @@ import { render } from 'vitest-browser-svelte';
 import Header from './header.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
 import { createNavigationState } from '$lib/state/navigation.svelte';
+import { createWindowState } from '$lib/state/windowState.svelte';
+import { FakeWindowShell } from '$tests/fakes/platform/fake-window-shell';
+import { WebWindowShell } from '$lib/adapters/window/web-window-shell';
 
 function createDummyTicker(isRunning = false) {
 	return {
@@ -128,11 +131,16 @@ describe('Header (Client Browser)', () => {
 		timerState.start();
 
 		const screen = await render(Header, { timerState });
-		const header = screen.getByRole('banner');
+		const nav = screen.getByRole('navigation');
 
-		await expect.element(header).toBeVisible();
-		await expect.element(header).toHaveClass('opacity-0');
-		await expect.element(header).toHaveClass('pointer-events-none');
+		await expect.element(nav).toHaveClass('opacity-0');
+		await expect.element(nav).toHaveClass('pointer-events-none');
+		await expect
+			.element(screen.getByRole('button', { name: /Open settings/i }))
+			.toHaveClass('opacity-0');
+		await expect
+			.element(screen.getByRole('button', { name: /Open settings/i }))
+			.toHaveClass('pointer-events-none');
 	});
 
 	it('is fully visible and interactive in idle/stopped state', async () => {
@@ -140,9 +148,61 @@ describe('Header (Client Browser)', () => {
 		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
 
 		const screen = await render(Header, { timerState });
-		const header = screen.getByRole('banner');
+		const nav = screen.getByRole('navigation');
 
-		await expect.element(header).toHaveClass('opacity-100');
-		await expect.element(header).toHaveClass('pointer-events-auto');
+		await expect.element(nav).toHaveClass('opacity-100');
+		await expect.element(nav).toHaveClass('pointer-events-auto');
+	});
+
+	describe('compact mode trigger', () => {
+		it('renders when the platform supports native window manipulation', async () => {
+			const ticker = createDummyTicker(false);
+			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+
+			const screen = await render(Header, {
+				timerState,
+				windowState: createWindowState(new FakeWindowShell())
+			});
+
+			await expect
+				.element(screen.getByRole('button', { name: 'Open compact timer' }))
+				.toBeVisible();
+		});
+
+		it('does not render on platforms without native window manipulation', async () => {
+			const ticker = createDummyTicker(false);
+			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+
+			const screen = await render(Header, {
+				timerState,
+				windowState: createWindowState(new WebWindowShell())
+			});
+
+			expect(screen.getByRole('button', { name: 'Open compact timer' }).query()).toBeNull();
+		});
+
+		it('stays reachable while the timer is running, unlike every other header control', async () => {
+			const ticker = createDummyTicker(true);
+			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+			timerState.start();
+
+			const windowState = createWindowState(new FakeWindowShell());
+
+			const screen = await render(Header, {
+				timerState,
+				windowState
+			});
+
+			// Everything else in the header has receded...
+			await expect.element(screen.getByRole('navigation')).toHaveClass('opacity-0');
+			await expect.element(screen.getByRole('button', { name: /Open settings/i })).toBeDisabled();
+
+			// ...but the compact trigger is still visible and actually works.
+			const trigger = screen.getByRole('button', { name: 'Open compact timer' });
+			await expect.element(trigger).toBeVisible();
+			await trigger.click();
+
+			expect(windowState.isMiniPlayer).toBe(true);
+		});
 	});
 });

@@ -30,6 +30,16 @@ describe('WindowState', () => {
 		});
 	});
 
+	describe('isSupported', () => {
+		it('should report support when the injected shell supports the platform', () => {
+			expect(state.isSupported).toBe(true);
+		});
+
+		it('should report no support when the shell cannot manipulate the window', () => {
+			expect(new WindowState(new WebWindowShell()).isSupported).toBe(false);
+		});
+	});
+
 	describe('toggleMiniPlayer', () => {
 		it('should enter mini mode and pin the window on top', async () => {
 			await state.toggleMiniPlayer();

@@ -23,22 +23,28 @@ export const MAIN_WINDOW_MIN_DIMENSIONS: WindowDimensions = Object.freeze({
  * Default size requested when entering the compact Mini-Player mode.
  *
  * Sized for the 3-column topology (status icon + active task, centred timer, anchored
- * button row) with all four controls revealed at once. See
- * `docs/features/mini-player/decisions.md`.
+ * button row) with all four controls revealed at once, and with the content filling
+ * the height instead of floating in dead space. The window is deliberately short:
+ * the content is 24px and the progress-bar strip takes 8px, so 48px leaves 8px of
+ * breathing room above and below. See `docs/features/mini-player/decisions.md`.
  */
 export const MINI_WINDOW_DIMENSIONS: WindowDimensions = Object.freeze({
-	width: 280,
-	height: 64
+	width: 320,
+	height: 48
 });
 
 /**
  * Minimum size allowed while the compact Mini-Player mode is active.
  * Must be applied BEFORE any `setSize` call below {@link MINI_WINDOW_DIMENSIONS},
  * otherwise the native `minWidth`/`minHeight` constraints clamp the resize.
+ *
+ * The height MUST stay below {@link MINI_WINDOW_DIMENSIONS}. Windows silently clamps
+ * the requested size to the minimum, so a minimum taller than the target would leave
+ * the widget a couple of pixels too tall with no error reported anywhere.
  */
 export const MINI_WINDOW_MIN_DIMENSIONS: WindowDimensions = Object.freeze({
 	width: 200,
-	height: 50
+	height: 40
 });
 
 /**
