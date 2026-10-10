@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.11.0...pomody-v0.12.0) (2026-10-10)
+
+
+### Features
+
+* **desktop:** mini-player compact view component with 3-column topology ([#102](https://github.com/EmanuelAngel/pomody/issues/102)) ([#117](https://github.com/EmanuelAngel/pomody/issues/117)) ([f85fb51](https://github.com/EmanuelAngel/pomody/commit/f85fb51ab8552b6bef5f29e4931f4296057c2bd4))
+* **desktop:** mini-player shell integration, header trigger and shortcut ([#103](https://github.com/EmanuelAngel/pomody/issues/103)) ([#118](https://github.com/EmanuelAngel/pomody/issues/118)) ([de01d87](https://github.com/EmanuelAngel/pomody/commit/de01d8764da14cf02b64152a2129776928345035))
+* **desktop:** native window shell port, adapters, and tauri capabilities ([#101](https://github.com/EmanuelAngel/pomody/issues/101)) ([#115](https://github.com/EmanuelAngel/pomody/issues/115)) ([bbb9a28](https://github.com/EmanuelAngel/pomody/commit/bbb9a28b2138d8c5be83506a6aa2de43462ce40c))
+
 ## [0.11.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.10.0...pomody-v0.11.0) (2026-10-06)
 
 
