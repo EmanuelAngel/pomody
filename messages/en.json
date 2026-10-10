@@ -258,6 +258,7 @@
 	"header_nav_timer": "Timer",
 	"header_nav_planning": "Planning",
 	"header_nav_metrics": "Metrics",
+	"header_mini_player_open": "Open compact timer",
 	"daily_counter_summary_zero": "0 blocks · {duration}",
 	"daily_counter_summary_singular": "{count} block · {duration}",
 	"daily_counter_summary_plural": "{count} blocks · {duration}"

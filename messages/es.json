@@ -258,6 +258,7 @@
 	"header_nav_timer": "Temporizador",
 	"header_nav_planning": "Planificación",
 	"header_nav_metrics": "Métricas",
+	"header_mini_player_open": "Abrir temporizador compacto",
 	"daily_counter_summary_zero": "0 bloques · {duration}",
 	"daily_counter_summary_singular": "{count} bloque · {duration}",
 	"daily_counter_summary_plural": "{count} bloques · {duration}"
