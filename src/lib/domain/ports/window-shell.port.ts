@@ -27,7 +27,7 @@ export const MAIN_WINDOW_MIN_DIMENSIONS: WindowDimensions = Object.freeze({
  * `docs/features/mini-player/decisions.md`.
  */
 export const MINI_WINDOW_DIMENSIONS: WindowDimensions = Object.freeze({
-	width: 280,
+	width: 320,
 	height: 64
 });
 

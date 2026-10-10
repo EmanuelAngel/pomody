@@ -207,6 +207,33 @@ describe('TauriWindowShell', () => {
 		});
 	});
 
+	describe('Tauri capability permissions', () => {
+		function readCapabilities(): { permissions: string[] } {
+			return JSON.parse(
+				readFileSync(
+					fileURLToPath(
+						new URL('../../../../src-tauri/capabilities/default.json', import.meta.url)
+					),
+					'utf8'
+				)
+			);
+		}
+
+		it('should grant every native command the adapter calls', () => {
+			// `data-tauri-drag-region` is implemented by invoking the `start_dragging`
+			// command. It is NOT part of `core:window:default`, so without this
+			// permission every drag region in the app is silently inert.
+			expect(readCapabilities().permissions).toContain('core:window:allow-start-dragging');
+		});
+
+		it('should grant the compact-mode chrome permissions', () => {
+			const { permissions } = readCapabilities();
+
+			expect(permissions).toContain('core:window:allow-set-decorations');
+			expect(permissions).toContain('core:window:allow-set-resizable');
+		});
+	});
+
 	describe('Lazy module boundary', () => {
 		it('should never statically import @tauri-apps/api', () => {
 			const source = readFileSync(

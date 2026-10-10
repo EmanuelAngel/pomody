@@ -54,8 +54,8 @@ El mini-player adopta una estructura simétrica de tres columnas con barra de pr
 ### 2.2. Columna Central: Temporizador Matemáticamente Centrado
 
 - **Dígitos tabulares (`mm:ss`)**:
-  - Centrados de forma absoluta (`absolute left-1/2 -translate-x-1/2`).
-  - Escala contenida (`text-sm font-medium tabular-nums`) con altura equivalente a los íconos para evitar dominancia visual en la visión periférica.
+  - Ubicados en una **rejilla real de tres columnas** (`grid-cols-[1fr_auto_1fr]`), no con posicionamiento absoluto. Con `absolute left-1/2` y una columna izquierda `flex-1`, la caja del texto de la tarea pasaba **por debajo** de los dígitos y ambos se solapaban. Dos pistas `1fr` simétricas hacen el solapamiento imposible por construcción: la caja del texto termina donde empiezan los dígitos.
+  - `font-mono text-sm font-medium tabular-nums`. La tipografía monoespaciada es lo que realmente evita la oscilación; `tabular-nums` por sí solo iguala el ancho de los dígitos pero no cambia la familia.
   - Color de primer plano de alto contraste (`text-foreground`).
 
 ### 2.3. Columna Derecha: Botonera con Anclaje al Extremo Derecho (_No Layout Shift_)
@@ -101,7 +101,8 @@ El mini-player adopta una estructura simétrica de tres columnas con barra de pr
 
 ### 4.2. Dimensiones y Transiciones
 
-- **Tamaño modo compacto**: **280x64px**. La ventana en modo compacto **no es redimensionable**: el centrado absoluto del timer y el ancla del botón Play están calibrados para un ancho fijo.
+- **Tamaño modo compacto**: **320x64px**. La ventana en modo compacto **no es redimensionable**: el centrado del timer y el ancla del botón Play están calibrados para un ancho fijo.
+- **Aislamiento de la región de arrastre**: `data-tauri-drag-region` no funciona sin el permiso `core:window:allow-start-dragging`. Tauri lo implementa invocando ese comando, y el permiso **no viene incluido en `core:window:default`**. Sin él, todas las regiones de arrastre de la app quedan inertes sin ningún error visible.
 - **Manejo de restricciones**: Ajuste en caliente de `minWidth` y `minHeight` antes de solicitar el redimensionamiento, ya que la ventana normal restringe a 480x500px en `tauri.conf.json`.
 - **Bandera _Always on Top_**: Activación automática al ingresar a modo compacto para que el widget flote sobre cualquier IDE o navegador. No hay control para desactivarla desde el widget.
 - **Preservación de coordenadas**: Al restaurar a modo normal, la ventana vuelve a las dimensiones originales (800x650px) y posición centrada previa.

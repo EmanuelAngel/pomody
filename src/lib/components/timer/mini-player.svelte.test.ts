@@ -317,3 +317,60 @@ describe('MiniPlayer progress bar', () => {
 		expect(screen.container.textContent).not.toMatch(/25%/);
 	});
 });
+
+describe('MiniPlayer layout geometry', () => {
+	it('lays the columns out as a real grid so the task label cannot slide under the timer', async () => {
+		const { timerState } = createTestTimer();
+		const tasksState = await createEmptyTasksState();
+		const { windowState } = createMiniWindowState();
+
+		const screen = await render(MiniPlayer, { timerState, tasksState, windowState });
+		const row = screen
+			.getByRole('region', { name: REGION_NAME })
+			.element()
+			.querySelector('[data-slot="mini-player-row"]');
+
+		// Symmetric 1fr tracks on both sides of the timer mean the label's box
+		// ends where the timer begins — overlap is impossible by construction,
+		// unlike `absolute left-1/2` where the label simply ran underneath.
+		expect(row?.getAttribute('class')).toContain('grid');
+		expect(row?.getAttribute('class')).toContain('1fr');
+	});
+
+	it('renders the timer in a monospace face so the digits do not shift width', async () => {
+		const { timerState } = createTestTimer();
+		const tasksState = await createEmptyTasksState();
+		const { windowState } = createMiniWindowState();
+
+		const screen = await render(MiniPlayer, { timerState, tasksState, windowState });
+		const time = screen
+			.getByRole('region', { name: REGION_NAME })
+			.element()
+			.querySelector('[data-slot="mini-player-time"]');
+
+		expect(time?.getAttribute('class')).toContain('font-mono');
+		expect(time?.getAttribute('class')).toContain('tabular-nums');
+	});
+});
+
+describe('MiniPlayer marquee', () => {
+	it('separates the duplicated label so the loop does not butt two titles together', async () => {
+		const task = createFocusTask({ title: 'A task title long enough to overflow the column' });
+		const repo = new FakeTaskRepository([task]);
+		const tasksState = createTasksState(repo);
+		await tasksState.load();
+		tasksState.setActiveTask(task.id);
+
+		const { timerState } = createTestTimer();
+		const { windowState } = createMiniWindowState();
+
+		const screen = await render(MiniPlayer, { timerState, tasksState, windowState });
+		const root = screen.getByRole('region', { name: REGION_NAME });
+
+		await userEvent.hover(root);
+
+		const track = root.element().querySelector('[data-slot="mini-player-marquee-track"]');
+		expect(track).not.toBeNull();
+		expect(track?.getAttribute('class')).toContain('gap-');
+	});
+});

@@ -147,108 +147,126 @@
 	data-mode={mode}
 	onmouseenter={handlePointerEnter}
 	onmouseleave={handlePointerLeave}
-	class="relative flex h-16 w-full items-center overflow-hidden bg-background"
+	class="relative h-16 w-full overflow-hidden bg-background"
 >
-	<!-- Left column: mode identity + active task / free focus label -->
-	<div data-tauri-drag-region class="flex min-w-0 flex-1 items-center gap-2 pl-3">
-		<span
-			data-tauri-drag-region
-			data-slot="mini-player-mode-icon"
-			class={cn('flex size-5 shrink-0 items-center justify-center rounded-md', modeAccent)}
-		>
-			<ModeIcon class="size-3" />
-		</span>
+	<!--
+		Grid, not `absolute left-1/2`. With an absolutely centred timer and a
+		`flex-1` label column, the label box ran underneath the digits and the two
+		visually collided. Symmetric `1fr` tracks on both sides make the overlap
+		impossible by construction: the label's box ends where the timer begins.
 
-		<span
-			{@attach titleViewport(label)}
-			data-tauri-drag-region
-			class="block min-w-0 flex-1 overflow-hidden"
-		>
+		The row is `h-14` inside an `h-16` root because the progress bar owns the
+		bottom strip. Centring the content in the full 64px left more dead space
+		above it than below, which read as top-heavy.
+	-->
+	<div
+		data-slot="mini-player-row"
+		class="grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-2 px-2"
+	>
+		<!-- Left column: mode identity + active task / free focus label -->
+		<div data-tauri-drag-region class="flex min-w-0 items-center gap-2">
 			<span
 				data-tauri-drag-region
+				data-slot="mini-player-mode-icon"
+				class={cn('flex size-5 shrink-0 items-center justify-center rounded-md', modeAccent)}
+			>
+				<ModeIcon class="size-3" />
+			</span>
+
+			<span
+				{@attach titleViewport(label)}
+				data-tauri-drag-region
+				class="block min-w-0 flex-1 overflow-hidden"
+			>
+				<span
+					data-tauri-drag-region
+					data-slot="mini-player-marquee-track"
+					class={cn(
+						'flex w-max text-xs whitespace-nowrap',
+						marqueeActive && 'animate-mini-player-marquee gap-8',
+						isLabelMuted && 'text-muted-foreground'
+					)}
+				>
+					<span class="truncate">{label}</span>
+					{#if marqueeActive}
+						<span aria-hidden="true" class="truncate">{label}</span>
+					{/if}
+				</span>
+			</span>
+		</div>
+
+		<!-- Centre column: grid-placed, so it stays mathematically centred -->
+		<div data-tauri-drag-region class="flex justify-center">
+			<span
+				data-tauri-drag-region
+				data-slot="mini-player-time"
+				class="block font-mono text-sm font-medium text-foreground tabular-nums"
+			>
+				{timerState.formattedTime}
+			</span>
+		</div>
+
+		<!-- Right column: Play/Pause is the last child and stays anchored to the
+		     right edge; the secondary actions only fade in, they never reflow it. -->
+		<div data-slot="mini-player-controls" class="flex shrink-0 items-center justify-end gap-1">
+			<Button
+				variant="ghost"
+				size="icon-xs"
+				aria-label={t.timer_controls_reset()}
+				onclick={handleReset}
 				class={cn(
-					'flex w-max text-xs whitespace-nowrap',
-					isLabelMuted && 'text-muted-foreground',
-					marqueeActive && 'animate-mini-player-marquee'
+					'rounded-full text-muted-foreground hover:text-foreground',
+					hovered ? 'visible opacity-100' : 'invisible opacity-0'
 				)}
 			>
-				<span class="truncate">{label}</span>
-				{#if marqueeActive}
-					<span aria-hidden="true" class="truncate">{label}</span>
+				<RotateCcw />
+			</Button>
+
+			<Button
+				variant="ghost"
+				size="icon-xs"
+				aria-label={t.timer_controls_skip()}
+				onclick={handleSkip}
+				class={cn(
+					'rounded-full text-muted-foreground hover:text-foreground',
+					hovered ? 'visible opacity-100' : 'invisible opacity-0'
+				)}
+			>
+				<SkipForward />
+			</Button>
+
+			<Button
+				variant="ghost"
+				size="icon-xs"
+				aria-label={t.mini_player_restore()}
+				onclick={handleRestore}
+				class={cn(
+					'rounded-full text-muted-foreground hover:text-foreground',
+					hovered ? 'visible opacity-100' : 'invisible opacity-0'
+				)}
+			>
+				<Maximize2 />
+			</Button>
+
+			<Button
+				variant="default"
+				size="icon-xs"
+				aria-label={playPauseLabel}
+				onclick={handlePlayPause}
+				class="rounded-full"
+			>
+				{#if timerState.isRunning}
+					<Pause />
+				{:else}
+					<Play class="translate-x-px" />
 				{/if}
-			</span>
-		</span>
-	</div>
-
-	<!-- Center column: absolute centering keeps the digits fixed while the row resizes -->
-	<div data-tauri-drag-region class="absolute left-1/2 -translate-x-1/2 select-none">
-		<span data-tauri-drag-region class="block text-sm font-medium text-foreground tabular-nums">
-			{timerState.formattedTime}
-		</span>
-	</div>
-
-	<!--
-		Right column: the button row. Play/Pause is the last child and stays anchored to
-		the right edge; the secondary actions only fade in, they never reflow it.
-	-->
-	<div data-slot="mini-player-controls" class="flex shrink-0 items-center gap-1 pr-3">
-		<Button
-			variant="ghost"
-			size="icon-xs"
-			aria-label={t.timer_controls_reset()}
-			onclick={handleReset}
-			class={cn(
-				'rounded-full text-muted-foreground hover:text-foreground',
-				hovered ? 'visible opacity-100' : 'invisible opacity-0'
-			)}
-		>
-			<RotateCcw />
-		</Button>
-
-		<Button
-			variant="ghost"
-			size="icon-xs"
-			aria-label={t.timer_controls_skip()}
-			onclick={handleSkip}
-			class={cn(
-				'rounded-full text-muted-foreground hover:text-foreground',
-				hovered ? 'visible opacity-100' : 'invisible opacity-0'
-			)}
-		>
-			<SkipForward />
-		</Button>
-
-		<Button
-			variant="ghost"
-			size="icon-xs"
-			aria-label={t.mini_player_restore()}
-			onclick={handleRestore}
-			class={cn(
-				'rounded-full text-muted-foreground hover:text-foreground',
-				hovered ? 'visible opacity-100' : 'invisible opacity-0'
-			)}
-		>
-			<Maximize2 />
-		</Button>
-
-		<Button
-			variant="default"
-			size="icon-xs"
-			aria-label={playPauseLabel}
-			onclick={handlePlayPause}
-			class="rounded-full"
-		>
-			{#if timerState.isRunning}
-				<Pause />
-			{:else}
-				<Play class="translate-x-px" />
-			{/if}
-		</Button>
+			</Button>
+		</div>
 	</div>
 
 	<!-- Bottom progress bar: no numeric label by design -->
 	<div class="absolute inset-x-0 bottom-0">
-		<div class="mx-3 mb-1.5 h-0.5 overflow-hidden rounded-full bg-border/40">
+		<div class="mx-2 mb-1.5 h-0.5 overflow-hidden rounded-full bg-border/40">
 			<div
 				data-slot="mini-player-progress"
 				style:width={`${progress * 100}%`}
@@ -259,18 +277,25 @@
 </div>
 
 <style>
+	/*
+		The track holds two copies of the label separated by `gap-8`. Travelling
+		`-50% - 1rem` lands the second copy exactly where the first began while
+		leaving the 2rem gap visible on the right, so the loop restarts against
+		blank space instead of butting the tail of one title against the head of
+		the next. The 5% hold keeps a beat before the text starts moving.
+	*/
 	@keyframes mini-player-marquee {
 		0%,
-		12% {
+		5% {
 			transform: translateX(0);
 		}
-		88%,
+		95%,
 		100% {
-			transform: translateX(-50%);
+			transform: translateX(calc(-50% - 1rem));
 		}
 	}
 
 	:global(.animate-mini-player-marquee) {
-		animation: mini-player-marquee 14s linear infinite;
+		animation: mini-player-marquee 10s linear infinite;
 	}
 </style>
