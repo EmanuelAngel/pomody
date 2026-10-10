@@ -54,6 +54,9 @@ function createSpyClient(supported = true): {
 			order.push('setResizable');
 			resizable.push(value);
 		},
+		async center() {
+			order.push('center');
+		},
 		async isAlwaysOnTop() {
 			order.push('isAlwaysOnTop');
 			return currentAlwaysOnTop;
@@ -143,10 +146,24 @@ describe('TauriWindowShell', () => {
 				'setResizable',
 				'setMinSize',
 				'setDecorations',
-				'setSize'
+				'setSize',
+				'center'
 			]);
 			expect(log.alwaysOnTop).toEqual([false]);
 			expect(log.sizes).toEqual([MAIN_WINDOW_MIN_DIMENSIONS, MAIN_WINDOW_DIMENSIONS]);
+		});
+
+		it('should centre the restored window on the primary display', async () => {
+			const { client, log } = createSpyClient();
+			const shell = new TauriWindowShell(client);
+
+			await shell.restoreMainWindow();
+
+			// `center` centres the CURRENT size, so it must run after the final
+			// resize. Centring first would centre the 320x48 compact box and then
+			// grow it to 800x650 from that origin, leaving it off-centre.
+			expect(log.order.indexOf('center')).toBe(log.order.length - 1);
+			expect(log.order.indexOf('center')).toBeGreaterThan(log.order.indexOf('setSize'));
 		});
 
 		it('should restore the frame and re-enable resizing', async () => {
@@ -231,6 +248,13 @@ describe('TauriWindowShell', () => {
 
 			expect(permissions).toContain('core:window:allow-set-decorations');
 			expect(permissions).toContain('core:window:allow-set-resizable');
+		});
+
+		it('should grant the permission to recentre the restored window', () => {
+			// Restoring leaves the window wherever the compact widget was dragged,
+			// which can be partly off-screen. `center` is a separate command from
+			// `setPosition`, so it needs its own permission.
+			expect(readCapabilities().permissions).toContain('core:window:allow-center');
 		});
 	});
 

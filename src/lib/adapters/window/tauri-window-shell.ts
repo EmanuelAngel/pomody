@@ -18,6 +18,7 @@ export interface TauriWindowClientLike {
 	setAlwaysOnTop(alwaysOnTop: boolean): Promise<void>;
 	setDecorations(decorations: boolean): Promise<void>;
 	setResizable(resizable: boolean): Promise<void>;
+	center(): Promise<void>;
 	isAlwaysOnTop(): Promise<boolean>;
 }
 
@@ -60,6 +61,9 @@ async function resolveTauriWindowClient(): Promise<TauriWindowClientLike | null>
 		},
 		setResizable: async (resizable) => {
 			await current.setResizable(resizable);
+		},
+		center: async () => {
+			await current.center();
 		},
 		isAlwaysOnTop: async () => current.isAlwaysOnTop()
 	};
@@ -125,11 +129,20 @@ export class TauriWindowShell implements IWindowShell {
 
 	/**
 	 * Reverses {@link enterMiniPlayer}: unpins, re-enables resizing, restores the
-	 * frame, then resizes to the main dimensions.
+	 * frame, resizes to the main dimensions, and finally re-centres the window.
 	 *
 	 * Decorations are restored BEFORE the resize for the same reason they are
 	 * removed before it — resizing while frameless would make the requested outer
 	 * size absorb the title bar that Windows adds back moments later.
+	 *
+	 * The re-centre is what `design.md` §4.2 specified all along ("vuelve a las
+	 * dimensiones originales y posición centrada") and what the first
+	 * implementation left out: the window used to keep whatever position the
+	 * compact widget had been dragged to, which could sit partly off-screen.
+	 *
+	 * `center` runs LAST because it centres the CURRENT size. Centring before the
+	 * final resize would centre the 320x48 compact box and then grow it from that
+	 * origin, leaving the restored window off-centre.
 	 */
 	public async restoreMainWindow(): Promise<void> {
 		const client = await this.getClient();
@@ -140,6 +153,7 @@ export class TauriWindowShell implements IWindowShell {
 		await client.setMinSize(MAIN_WINDOW_MIN_DIMENSIONS);
 		await client.setDecorations(true);
 		await client.setSize(MAIN_WINDOW_DIMENSIONS);
+		await client.center();
 	}
 
 	public async isAlwaysOnTop(): Promise<boolean> {
