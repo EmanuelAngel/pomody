@@ -101,7 +101,9 @@ El mini-player adopta una estructura simétrica de tres columnas con barra de pr
 
 ### 4.2. Dimensiones y Transiciones
 
-- **Tamaño modo compacto**: **320x64px**. La ventana en modo compacto **no es redimensionable**: el centrado del timer y el ancla del botón Play están calibrados para un ancho fijo.
+- **Tamaño modo compacto**: **320x48px**. La ventana en modo compacto **no es redimensionable**: el centrado del timer y el ancla del botón Play están calibrados para un ancho fijo.
+- **Altura sin espacio muerto**: el contenido mide 24px (botones `icon-xs`) y la barra de progreso ocupa una franja de 8px al pie. Con 48px quedan 8px de aire arriba y abajo. A 64px la fila contenía 24px dentro de 56px: 16px de vacío a cada lado, que hacían que el widget se leyera cabezón. La fila es `h-10` dentro de un root `h-12` porque la barra es dueña de la franja inferior.
+- **`MINI_WINDOW_MIN_DIMENSIONS` debe quedar por debajo de `MINI_WINDOW_DIMENSIONS`**: Windows clampea el tamaño pedido al mínimo sin reportar error, así que un mínimo más alto que el objetivo dejaría el widget 2px más alto en silencio.
 - **Aislamiento de la región de arrastre**: `data-tauri-drag-region` no funciona sin el permiso `core:window:allow-start-dragging`. Tauri lo implementa invocando ese comando, y el permiso **no viene incluido en `core:window:default`**. Sin él, todas las regiones de arrastre de la app quedan inertes sin ningún error visible.
 - **Manejo de restricciones**: Ajuste en caliente de `minWidth` y `minHeight` antes de solicitar el redimensionamiento, ya que la ventana normal restringe a 480x500px en `tauri.conf.json`.
 - **Bandera _Always on Top_**: Activación automática al ingresar a modo compacto para que el widget flote sobre cualquier IDE o navegador. No hay control para desactivarla desde el widget.

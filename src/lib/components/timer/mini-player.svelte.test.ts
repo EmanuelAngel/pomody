@@ -319,6 +319,22 @@ describe('MiniPlayer progress bar', () => {
 });
 
 describe('MiniPlayer layout geometry', () => {
+	it('spends the window height on content instead of dead space', async () => {
+		const { timerState } = createTestTimer();
+		const tasksState = await createEmptyTasksState();
+		const { windowState } = createMiniWindowState();
+
+		const screen = await render(MiniPlayer, { timerState, tasksState, windowState });
+		const root = screen.getByRole('region', { name: REGION_NAME }).element();
+		const row = root.querySelector('[data-slot="mini-player-row"]');
+
+		// 48px window - 8px progress-bar strip = a 40px content row. The row used
+		// to be 56px tall holding 24px of content, which left 16px of dead air
+		// above and below and read as top-heavy.
+		expect(root.getAttribute('class')).toContain('h-12');
+		expect(row?.getAttribute('class')).toContain('h-10');
+	});
+
 	it('lays the columns out as a real grid so the task label cannot slide under the timer', async () => {
 		const { timerState } = createTestTimer();
 		const tasksState = await createEmptyTasksState();

@@ -147,7 +147,7 @@
 	data-mode={mode}
 	onmouseenter={handlePointerEnter}
 	onmouseleave={handlePointerLeave}
-	class="relative h-16 w-full overflow-hidden bg-background"
+	class="relative h-12 w-full overflow-hidden bg-background"
 >
 	<!--
 		Grid, not `absolute left-1/2`. With an absolutely centred timer and a
@@ -155,13 +155,15 @@
 		visually collided. Symmetric `1fr` tracks on both sides make the overlap
 		impossible by construction: the label's box ends where the timer begins.
 
-		The row is `h-14` inside an `h-16` root because the progress bar owns the
-		bottom strip. Centring the content in the full 64px left more dead space
-		above it than below, which read as top-heavy.
+		The row is `h-10` inside an `h-12` root because the progress bar owns the
+		bottom 8px strip. The window is short on purpose: the content is 24px and
+		48px leaves 8px of air above and below. At the previous 64px the row held
+		24px of content inside 56px, which left 16px of dead space on each side
+		and made the widget read as top-heavy.
 	-->
 	<div
 		data-slot="mini-player-row"
-		class="grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-2 px-2"
+		class="grid h-10 grid-cols-[1fr_auto_1fr] items-center gap-2 px-2"
 	>
 		<!-- Left column: mode identity + active task / free focus label -->
 		<div data-tauri-drag-region class="flex min-w-0 items-center gap-2">
