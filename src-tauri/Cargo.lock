@@ -2313,7 +2313,7 @@ dependencies = [
 
 [[package]]
 name = "pomody-desktop"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "log",
  "serde",
