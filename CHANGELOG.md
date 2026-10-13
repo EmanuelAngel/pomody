@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.12.0...pomody-v0.13.0) (2026-10-13)
+
+
+### Features
+
+* **desktop:** system tray integration with Open/Exit menu ([#120](https://github.com/EmanuelAngel/pomody/issues/120)) ([62674a7](https://github.com/EmanuelAngel/pomody/commit/62674a7918eb591ed5ed34d3a982a9f5cd873420))
+
 ## [0.12.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.11.0...pomody-v0.12.0) (2026-10-10)
 
 
