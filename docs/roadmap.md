@@ -12,8 +12,8 @@ El proyecto organiza sus objetivos en **Milestones temáticos** orientados a val
 | :-------------- | :----------------------------------------------------------------------------- | :-------- | :--------------- |
 | **Milestone 1** | Cimientos del sistema, FSM pura, UI minimalista, temas Rosé Pine y Tauri v2    | Base      | **Completado**   |
 | **Milestone 2** | Planificación (Mini To-Do), descansos guiados, persistencia y contador diario  | Base      | **Completado**   |
-| **Milestone 3** | Internacionalización (i18n ES/EN) y Desktop Shell (Mini-Player & Tray)         | P0 / P1   | **Próximo foco** |
-| **Milestone 4** | Fluidez de foco (Auto-avance) y Recompensa visual (Ilustración SVG por fases)  | P2        | Planificado      |
+| **Milestone 3** | Internacionalización (i18n ES/EN) y Desktop Shell (Mini-Player & Tray)         | P0 / P1   | **Completado**   |
+| **Milestone 4** | Fluidez de foco (Auto-avance) y Recompensa visual (Ilustración SVG por fases)  | P2        | **Próximo foco** |
 | **Milestone 5** | Hábitos avanzados en timeline y Detector de dispersión ligero                  | P3        | Roadmap futuro   |
 | **Milestone 6** | Analítica avanzada, métricas visuales nativas y calidad de sesión              | P4        | Roadmap futuro   |
 | **Milestone 7** | Blindaje de foco (No Molestar del SO) e Integración de presencia (Discord RPC) | P5        | Roadmap futuro   |
@@ -56,21 +56,23 @@ _Objetivo: Integrar el flujo ágil de tareas, dinámicas de pausa saludable y pe
 
 ---
 
-### Milestone 3 — i18n & Desktop Shell (Próximo foco)
+### Milestone 3 — i18n & Desktop Shell (Completado)
 
 _Objetivo: Eliminar barreras de idioma en el equipo/usuarios y potenciar la experiencia nativa de escritorio en Windows._
 
-- [ ] **P0 — Internacionalización (i18n)**:
+- [x] **P0 — Internacionalización (i18n)**:
   - Arquitectura de internacionalización desacoplada: el dominio puro emite códigos semánticos mientras la capa de presentación resuelve las traducciones.
   - Soporte bilingüe completo: Español y base existente en Inglés para toda la interfaz (Timer, Planning, Settings, Statusline, diálogos).
   - Selector reactivo de idioma en el panel de Settings con persistencia local en `localStorage`.
-- [ ] **P1 — Modo Compacto / Mini-Player (Desktop Windows)**:
-  - Redimensionamiento instantáneo de la ventana principal a formato reducido (~220x80px).
-  - Bandera nativa _Always on Top_ fijable al frente para monitorear el foco mientras se trabaja en otras ventanas.
+- [x] **P1 — Modo Compacto / Mini-Player (Desktop Windows)**:
+  - Redimensionamiento instantáneo de la ventana principal a formato reducido de **320x48px** (el valor original estimado de ~220x80px no entró: los 4 controles revelados más el ícono y el timer no entran cómodo en 260. Ver [`features/mini-player/decisions.md`](./features/mini-player/decisions.md)).
+  - Bandera nativa _Always on Top_ activada automáticamente al entrar al modo compacto.
   - Controles compactos esenciales sin perder la estética Rosé Pine.
-- [ ] **P1 — Integración con System Tray (Bandeja del sistema)**:
-  - Intercepción de minimización o cierre de ventana en Windows para ocultar la app a la bandeja del sistema (Tauri v2 tray icon).
-  - Menú contextual rápido en el icono de bandeja para restaurar la ventana principal, pausar/reanudar o finalizar la aplicación.
+- [x] **P1 — Integración con System Tray (Bandeja del sistema)**:
+  - Intercepción del **cierre** de ventana en Windows para ocultar la app a la bandeja del sistema (`prevent_close()` + `hide()`, Tauri v2 `tray-icon`). El botón minimizar sigue yendo al taskbar por convención de Windows.
+  - Menú contextual con `Open` y `Exit`, más restauración con click simple izquierdo sobre el ícono.
+  - Instancia única: reabrir Pomody con la app en la bandeja sube la ventana existente en vez de lanzar un segundo proceso.
+  - _Sin pausa/reanudar en el menú_, deliberadamente: el estado del timer vive en un Web Worker y el menú en Rust, así que un menú con estado real exige sincronización bidireccional para controlar un botón que el Mini-Player ya resuelve. Ver [`features/tray/decisions.md`](./features/tray/decisions.md) §4.
 
 ---
 
