@@ -21,5 +21,9 @@ tauri-build = { version = "~2.6.3" }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
-tauri = { version = "~2.11.6" }
+tauri = { version = "~2.11.6", features = ["tray-icon"] }
 tauri-plugin-log = "2"
+# Pinned exactly (`=2.4.1`) on purpose, and diverging from the `~` convention used by
+# the Tauri family: this plugin writes to Cargo.lock, so its version is chosen here
+# and not delegated to Cargo. See docs/features/tray/decisions.md.
+tauri-plugin-single-instance = { version = "=2.4.1", default-features = false }
