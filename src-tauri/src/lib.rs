@@ -96,6 +96,20 @@ fn build_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
 	tauri::Builder::default()
+		// MUST stay the first plugin registered. The plugin works by binding a named
+		// OS mutex during `setup`, and any plugin registered before it that touches
+		// the app would run before that mutex exists.
+		//
+		// Without this, opening Pomody again while it sits in the tray starts a SECOND
+		// process with its own window, its own tray icon and its own running timer.
+		// Instead, the new process forwards here and exits, and the first one raises
+		// the window it already owns.
+		//
+		// Reuses `restore_main_window`, so this is the exact same behaviour as the
+		// tray's "Open" item and its left click. No frontend involvement.
+		.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+			restore_main_window(app);
+		}))
 		.setup(|app| {
 			if cfg!(debug_assertions) {
 				app.handle().plugin(

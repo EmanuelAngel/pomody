@@ -111,19 +111,51 @@ Registrada a propósito, no olvidada.
 
 ---
 
-## 7. Verificación
+## 8. Instancia única
+
+Descubierta en dogfooding: con la app oculta en la bandeja, abrir Pomody desde el Menú Inicio **iniciaba un segundo proceso**, con su propia ventana, su propio ícono de bandeja y su propio temporizador corriendo.
+
+Para una herramienta de foco eso no es un feature faltante: es un estado del que el usuario no sabe recuperarse. Dos contadores, dos sonidos y dos íconos idénticos en la bandeja.
+
+**Tauri no fuerza instancia única por defecto.** La corrección es `tauri-plugin-single-instance`, plugin oficial, registrado como el **primer** plugin del builder (bindea un mutex del sistema durante `setup`, así que cualquier plugin anterior correría antes de que ese mutex exista).
+
+Su callback corre en Rust y recibe `&AppHandle`, así que reutiliza `restore_main_window` directamente. **Cero frontend, cero event plumbing**, y el comportamiento es idéntico al de `Open` y al click izquierdo.
+
+### El tema del `Cargo.lock`
+
+Agregar el plugin **escribe en `Cargo.lock`**, que es zona protegida por la regla 8 de [`AGENTS.md`](../../../AGENTS.md). Se midió antes de decidir, sobre una copia desechable:
+
+| Medición                                                  | Resultado                                                                                                                                                     |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cargo generate-lockfile` (re-resolución — **prohibida**) | Mueve `tauri-runtime` 2.11.3→2.12.1, `tauri-runtime-wry` 2.11.4→2.12.1, `tauri-codegen`/`tauri-macros` 2.6.3→2.7.2, `tauri-utils` 2.9.3→2.10.1. +63 paquetes. |
+| `cargo add` (actualización mínima — **la elegida**)       | Familia Tauri **intacta**. 0 paquetes eliminados, 48 agregados.                                                                                               |
+
+La diferencia es que `cargo add` no re-resuelve: solo agrega lo nuevo y respeta todo lo que ya está fijado. El plugin declara `tauri = "^2.10"`; nuestro `tauri 2.11.6` fijado ya satisface ese rango, así que no se mueve. Verificado después del comando, no asumido.
+
+Tres detalles deliberados:
+
+- **Versión fijada con `=2.4.1`**, no `^2.4.1` como deja `cargo add`. Divergimos de la convención `~` de la familia Tauri a propósito: este paquete escribe en el lock, y la elección de versión le corresponde a una persona, no a Cargo.
+- **`default-features = false`.** Los defaults del plugin arrastran `tauri-plugin-deep-link`, que no se usa y suma otro árbol al lock.
+- **Se acepta el ruido**: entran `zbus` y su árbol (Linux, se resuelve pero no se compila en Windows) y una cuarta versión de `windows-sys` (el plugin pide `^0.60`, y el lock tiene 0.45 / 0.59 / 0.61). Ruido en el lock, no riesgo para la familia Tauri.
+
+La alternativa sin costo de lock —un named mutex de Win32 con `windows-sys 0.61.2`, que ya está en el lock— se descartó: ~25 líneas de Win32 a mano que nadie del equipo puede leer ni revisar. No es ahorrar riesgo, es moverlo a donde no se ve.
+
+---
+
+## 9. Verificación
 
 `desktop-ci.yml` valida que el código **compile** y que los permisos sean válidos. **No valida comportamiento de bandeja.** Vitest tampoco: no hay forma de abrir un ícono de bandeja desde Node, y por eso esta feature **no tiene tests unitarios**.
 
 La verificación es manual, sobre el `.exe` en Windows:
 
-| #   | Paso                                                                         | Resultado esperado                                                                   |
-| --- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| 1   | Click simple izquierdo sobre el ícono de bandeja                             | La ventana aparece al frente                                                         |
-| 2   | Click derecho sobre el ícono                                                 | Abre el menú con `Open` y `Exit`                                                     |
-| 3   | `Open` del menú                                                              | Restaura la ventana                                                                  |
-| 4   | Doble click sobre el ícono                                                   | Restaura (inocuo: se dispara dos veces)                                              |
-| 5   | Botón cerrar (X)                                                             | La ventana desaparece de la pantalla **y del taskbar**; el ícono sigue en la bandeja |
-| 6   | Con un bloque de foco corriendo: cerrar (X), esperar a que termine el bloque | Suena la alerta de transición y el contador avanza. **El timer no se pausa.**        |
-| 7   | Cerrar (X) y después minimizar el reloj del sistema                          | El proceso sigue vivo                                                                |
-| 8   | `Exit` del menú                                                              | El proceso termina y el ícono desaparece de la bandeja                               |
+| #   | Paso                                                                         | Resultado esperado                                                                                   |
+| --- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| 1   | Click simple izquierdo sobre el ícono de bandeja                             | La ventana aparece al frente                                                                         |
+| 2   | Click derecho sobre el ícono                                                 | Abre el menú con `Open` y `Exit`                                                                     |
+| 3   | `Open` del menú                                                              | Restaura la ventana                                                                                  |
+| 4   | Doble click sobre el ícono                                                   | Restaura (inocuo: se dispara dos veces)                                                              |
+| 5   | Botón cerrar (X)                                                             | La ventana desaparece de la pantalla **y del taskbar**; el ícono sigue en la bandeja                 |
+| 6   | Con un bloque de foco corriendo: cerrar (X), esperar a que termine el bloque | Suena la alerta de transición y el contador avanza. **El timer no se pausa.**                        |
+| 7   | Cerrar (X) y después minimizar el reloj del sistema                          | El proceso sigue vivo                                                                                |
+| 8   | `Exit` del menú                                                              | El proceso termina y el ícono desaparece de la bandeja                                               |
+| 9   | Con la app oculta en la bandeja, abrir Pomody otra vez desde el Menú Inicio  | **No** aparece una segunda ventana. La primera instancia sube la suya y la nueva termina al instante |
