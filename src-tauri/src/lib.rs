@@ -1,6 +1,5 @@
 use tauri::{
-	image::Image,
-	menu::MenuBuilder,
+	menu::{MenuBuilder, MenuItem},
 	tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
 	AppHandle, Manager, Runtime, WindowEvent,
 };
@@ -36,14 +35,26 @@ fn restore_main_window<R: Runtime>(app: &AppHandle<R>) {
 /// - `show_menu_on_left_click(false)` is required. It defaults to `true`, which on
 ///   Windows makes the LEFT button open the context menu and would silently break
 ///   the left-click-to-restore behaviour.
-/// - The icon bytes are embedded with `include_bytes!` rather than read through
-///   `default_window_icon()`, so the tray icon is explicitly the same asset that
-///   `tauri.conf.json` bundles.
+/// - The icon comes from `default_window_icon()` rather than being decoded here.
+///   `tauri-codegen` already embeds `icons/icon.ico` as raw RGBA at build time, so
+///   reusing it needs no extra cargo feature. Decoding it in Rust instead would
+///   require tauri's `image-ico`/`image-png` feature, which pulls the `image`
+///   crate into `Cargo.lock` for no benefit (see rule 8 of AGENTS.md).
 fn build_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
-	let icon = Image::from_bytes(include_bytes!("../icons/32x32.png"))?;
+	let icon = app
+		.default_window_icon()
+		.cloned()
+		.ok_or_else(|| {
+			tauri::Error::AssetNotFound(
+				"no default window icon; expected src-tauri/icons/icon.ico".into(),
+			)
+		})?;
 
-	let open_item = MenuBuilder::new(app).text(MENU_OPEN, "Open").build()?;
-	let exit_item = MenuBuilder::new(app).text(MENU_EXIT, "Exit").build()?;
+	// `MenuItem::with_id`, not `MenuBuilder::text`: the latter is the shared menu
+	// builder macro and returns a whole `Menu`, which does not implement
+	// `IsMenuItem` and therefore cannot be collected by `items()`.
+	let open_item = MenuItem::with_id(app, MENU_OPEN, "Open", true, None::<&str>)?;
+	let exit_item = MenuItem::with_id(app, MENU_EXIT, "Exit", true, None::<&str>)?;
 	let menu = MenuBuilder::new(app).items(&[&open_item, &exit_item]).build()?;
 
 	let tray = TrayIconBuilder::with_id("main-tray")
@@ -54,7 +65,9 @@ fn build_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 		// Fires for every item of every menu in the app. Only our two ids are handled.
 		.on_menu_event(|app, event| match event.id().as_ref() {
 			MENU_OPEN => restore_main_window(app),
-			MENU_EXIT => app.exit(0),
+			MENU_EXIT => {
+				let _ = app.exit(0);
+			}
 			_ => {}
 		})
 		// On Windows a double click arrives as Click{Up} -> Click{Up} -> DoubleClick,
