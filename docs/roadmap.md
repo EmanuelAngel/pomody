@@ -92,10 +92,12 @@ _Objetivo: Ofrecer feedback visual liviano sobre el progreso del ciclo sin gener
 
 _Objetivo: Vincular la planificación con los descansos y ofrecer contención activa ante distracciones en Windows._
 
-- [ ] **P3 — Detector de dispersión ligero**:
-  - Sondeo no invasivo de metadatos de ventana activa en Windows (`IDistractionMonitor` vía Rust/Win32).
-  - Diálogo interactivo amable: _"Gracias por recordarme"_ o _"Esto no es una distracción"_ (lista blanca temporal por sesión o día).
-  - Fallback inocuo (`NoopDistractionMonitor`) en Web para garantizar 100% paridad.
+- [ ] **P3 — Detector de dispersión ligero** ([spec](./features/distraction-detector/spec.md) · [decisiones](./features/distraction-detector/decisions.md)):
+  - Sondeo no invasivo de metadatos de la ventana activa en Windows (`IDistractionMonitor` vía Rust/Win32), armado **sólo mientras corre un bloque de foco**.
+  - Detección **por declaración, sin inferencia**: la app no juzga sola. El usuario marca qué le distrae (ejecutable + patrón de título opcional) desde la vista _Distracciones_, con un picker de ventanas abiertas y campos manuales como escape. **Sin semilla pre-cargada.**
+  - Aviso: notificación del SO con tres acciones — _"Gracias por recordarme"_ (no cambia nada), _"Esto no es una distracción por hoy"_ y _"Esto nunca es una distracción"_ — con guarda de inactividad y re-disparo parametrizable.
+  - Lista blanca **permanente** + **diaria** (se purga sola al cambiar el día). Se guardan reglas, nunca observaciones.
+  - Fallback inocuo (`NoopDistractionMonitor`) en Web, con la UI del detector oculta por completo.
 - [ ] **P3 — Integración de actividades de descanso en timeline**:
   - Selección o sugerencia de actividades saludables enlazadas directamente a las pausas proyectadas de la sesión de Planning.
 
@@ -153,5 +155,6 @@ _Ítems retirados del roadmap activo, con la precondición explícita para reabr
 - Especificación técnica de Tareas, Revitalización y Planning: [`features/tasks-and-planning.md`](./features/tasks-and-planning.md)
 - Especificación técnica de Internacionalización (i18n): [`features/i18n.md`](./features/i18n.md)
 - Especificación técnica de Modo Compacto / Mini-Player: [`features/mini-player/spec.md`](./features/mini-player/spec.md)
+- Especificación técnica del Detector de Dispersión: [`features/distraction-detector/spec.md`](./features/distraction-detector/spec.md) y sus [decisiones de diseño](./features/distraction-detector/decisions.md)
 - Análisis y resoluciones de las propuestas de Fede: [`proposals/fede-ideas.md`](./proposals/fede-ideas.md)
 - Análisis y resoluciones de las propuestas de Vortex: [`proposals/vortex-ideas.md`](./proposals/vortex-ideas.md)
