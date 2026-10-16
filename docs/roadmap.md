@@ -13,7 +13,7 @@ El proyecto organiza sus objetivos en **Milestones temáticos** orientados a val
 | **Milestone 1** | Cimientos del sistema, FSM pura, UI minimalista, temas Rosé Pine y Tauri v2    | Base      | **Completado**   |
 | **Milestone 2** | Planificación (Mini To-Do), descansos guiados, persistencia y contador diario  | Base      | **Completado**   |
 | **Milestone 3** | Internacionalización (i18n ES/EN) y Desktop Shell (Mini-Player & Tray)         | P0 / P1   | **Completado**   |
-| **Milestone 4** | Fluidez de foco (Auto-avance) y Recompensa visual (Ilustración SVG por fases)  | P2        | **Próximo foco** |
+| **Milestone 4** | Recompensa visual (Ilustración SVG por fases)                                  | P2        | **Próximo foco** |
 | **Milestone 5** | Hábitos avanzados en timeline y Detector de dispersión ligero                  | P3        | Roadmap futuro   |
 | **Milestone 6** | Analítica avanzada, métricas visuales nativas y calidad de sesión              | P4        | Roadmap futuro   |
 | **Milestone 7** | Blindaje de foco (No Molestar del SO) e Integración de presencia (Discord RPC) | P5        | Roadmap futuro   |
@@ -76,13 +76,10 @@ _Objetivo: Eliminar barreras de idioma en el equipo/usuarios y potenciar la expe
 
 ---
 
-### Milestone 4 — Fluidez de Foco & Recompensa Visual (Planificado)
+### Milestone 4 — Recompensa Visual por Fases (Planificado)
 
-_Objetivo: Pulir la experiencia de uso continuo y ofrecer feedback visual liviano sin generar distracciones periféricas ni consumo excesivo de recursos._
+_Objetivo: Ofrecer feedback visual liviano sobre el progreso del ciclo sin generar distracciones periféricas ni consumo excesivo de recursos._
 
-- [ ] **P2 — Flujo continuo y auto-avance de ciclos**:
-  - Switch configurable en Settings Drawer para transicionar e iniciar automáticamente el siguiente bloque (foco o descanso) al finalizar el intervalo actual sin requerir interacción manual.
-  - Señal sonora diferenciada al encadenar bloques de forma autónoma.
 - [ ] **P2 — Ilustración progresiva por fases (SVG)**:
   - Revisión y alineación técnica con Fede.
   - Componente vectorial minimalista en SVG que progresa en 4 o 5 fases discretas por bloque completado (ej. semilla -> brote -> planta -> flor -> árbol).
@@ -124,6 +121,29 @@ _Objetivo: Blindaje contra interrupciones externas y sincronización con herrami
   - Activación automática del modo concentración del sistema operativo durante bloques de trabajo en Windows.
 - [ ] **P5 — Integración de presencia (Discord RPC)**:
   - Notificación pasiva del estado de concentración en el perfil de Discord con opción de privacidad (mostrar solo "En Foco").
+
+---
+
+## Propuestas Reubicadas
+
+_Ítems retirados del roadmap activo, con la precondición explícita para reabrirlos. No son promesas: son hipótesis pendientes de validación._
+
+### P2 — Flujo continuo y auto-avance de ciclos (Reubicado)
+
+> [!NOTE]
+> **Precondición para reabrir:** un canal real y verificable de feedback de usuarios (o un piloto acotado con 2-3 testers que efectivamente respondan). Sin esa vía, el feature no es evaluable: Pomody es offline-first, sin telemetría y con persistencia puramente local, así que su fracaso sería invisible.
+
+- ~~Switch configurable en Settings Drawer para transicionar e iniciar automáticamente el siguiente bloque al finalizar el intervalo actual sin requerir interacción manual.~~
+- ~~Señal sonora diferenciada al encadenar bloques de forma autónoma.~~
+
+**Por qué se reubica:**
+
+- **Contradice el objetivo de M4.** El clic manual de transición no es fricción, sino el ritual que actualiza el modelo mental del ciclo ("ahora toca el descanso", "ahora a ponerse las pilas"). El auto-avance lo elimina para agregar _unattended-ness_, que es exactamente el modo de fallo de las apps que inspiraron Pomody: avanzar solo sin que el usuario se entere.
+- **Degrada el ítem activo del milestone.** La ilustración progresiva progresa por bloque completado; con avance instantáneo, la recompensa (el árbol creciendo) ocurre en un frame no percibido.
+- **Contamina las métricas.** `planning.svelte.ts` y `daily-stats.svelte.ts` reaccionan al evento `block-completed`. Con la app en la bandeja, los bloques encadenados se contabilizan como completados sin que nadie haya trabajado: el contador diario y el timeline pasarían a medir "el timer estuvo prendido" en vez de trabajo real.
+- **El comportamiento actual ya es el diseño validado**: presencia del usuario en los límites de bloque + awareness pasivo vía Mini-Player.
+
+**Nota de diseño para una eventual reapertura:** la variante defendible es auto-avance **con gracia visible y cancelable** (cuenta regresiva de ~5s con escape), que resuelve el problema de awareness sin generar bloques desatendidos. No viene al caso actual porque igual elimina el ritual del clic.
 
 ---
 
