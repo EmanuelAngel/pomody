@@ -228,10 +228,10 @@ Decisiones de borde, explícitas:
 
 Contenido:
 
-1. **Alta de regla por picker**: desplegable de ventanas abiertas (`listOpenWindows()`), mostrando `título — exe`. Al elegir, se prellenan `exe` y `titlePattern` (con el título vivo) y ambos quedan editables.
-2. **Escape manual**: campos de texto para `exe` y `titlePattern`, obligatorios para lo que el picker no puede enumerar (ventanas sin título, procesos elevados).
-3. **Lista de reglas**: alta, edición y baja, con el patrón visible.
-4. **Lista de silencios de hoy**: las reglas silenciadas por día, con la opción de levantar el silencio.
+1. **Alta de regla por picker**: desplegable de ventanas abiertas (`listOpenWindows()`), mostrando `título — exe`. Al elegir, se prellenan `exe` y `titlePattern` (con el título vivo) y ambos quedan editables. El desplegable es el `Select` de shadcn-svelte.
+2. **Escape manual**: campos de texto para `exe` y `titlePattern`, obligatorios para lo que el picker no puede enumerar (ventanas sin título, procesos elevados). Si el picker no enumeró nada, el desplegable no se renderiza y queda el texto que manda a los campos manuales.
+3. **Lista de reglas**: alta, edición y baja, con el patrón visible. La baja se confirma reusando `break-confirm-dialog.svelte` (`decisions.md` §3.1).
+4. **Lista de silencios de hoy**: las reglas silenciadas por día, con la opción de levantar el silencio. La sección no se renderiza cuando no hay ninguna.
 5. **Estado vacío**: explicación corta de para qué sirve, con el switch apagado por defecto.
 
 ---
@@ -276,14 +276,14 @@ Notas de implementación, todas verificables en revisión:
 
 ## 9. Internacionalización
 
-Claves nuevas, en `messages/es.json` y `messages/en.json` (dominio emite códigos, presentación resuelve):
+Claves nuevas, en `messages/es.json` y `messages/en.json` (dominio emite códigos, presentación resuelve). La lista es la que quedó implementada en el slice 5.4: las cinco primeras familias son las del diseño y las dos últimas son las que el markup del §6 necesita y el diseño no había enumerado (nombres accesibles, marcadores y el escape manual).
 
-- `header_nav_distractions`
-- `settings_section_distraction`, `settings_section_distraction_description`
-- `distraction_view_empty_title`, `distraction_view_empty_description`
-- `distraction_rule_add`, `distraction_rule_picker_label`, `distraction_rule_exe_label`, `distraction_rule_title_pattern_label`, `distraction_rule_title_pattern_hint`, `distraction_rule_delete_confirm`
-- `distraction_silenced_heading`, `distraction_silenced_release`
-- `distraction_notice_title`, `distraction_notice_body`
+- **Navegación**: `header_nav_distractions`.
+- **Settings**: `settings_section_distraction`, `settings_section_distraction_description`, `settings_distraction_detector`, `settings_distraction_detector_aria`.
+- **Estado vacío y listas**: `distraction_view_empty_title`, `distraction_view_empty_description`, `distraction_rules_heading`, `distraction_silenced_heading`, `distraction_silenced_release`, `distraction_silenced_release_aria` (`{exe}`).
+- **Alta, edición y baja**: `distraction_rule_add`, `distraction_rule_save`, `distraction_rule_cancel`, `distraction_rule_edit_aria` (`{exe}`), `distraction_rule_delete_aria` (`{exe}`), `distraction_rule_delete_confirm`.
+- **Picker y campos manuales**: `distraction_rule_picker_label`, `distraction_rule_picker_placeholder`, `distraction_rule_picker_empty`, `distraction_rule_exe_label`, `distraction_rule_exe_placeholder`, `distraction_rule_title_pattern_label`, `distraction_rule_title_pattern_hint`.
+- **Aviso** (las consume el slice 5.5; su copy queda a cargo de ese slice): `distraction_notice_title`, `distraction_notice_body` (`{window}`).
 
 ---
 
