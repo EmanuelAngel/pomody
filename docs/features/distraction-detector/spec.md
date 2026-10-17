@@ -103,6 +103,8 @@ export interface IDistractionWhitelistRepository {
 	/** Reglas silenciadas para la fecha local indicada (`YYYY-MM-DD`). */
 	getSilenced(dateKey: string): Promise<readonly string[]>;
 	silence(ruleId: string, dateKey: string): Promise<void>;
+	/** Levanta el silencio de una sola regla para esa fecha (§6.4). */
+	unsilence(ruleId: string, dateKey: string): Promise<void>;
 	clearAll(): Promise<void>;
 }
 ```
@@ -210,6 +212,7 @@ Decisiones de borde, explícitas:
 | `silence_permanent` | _"Nunca"_   | Silencia **esa regla** de forma permanente.          |
 
 - **El diálogo es el toast.** No existe diálogo in-app, ni banderín, ni estado "pendiente de clasificar". Si el toast se desvanece sin respuesta, se interpreta como `ack`.
+- **"Nunca" da de baja la regla** del catálogo (`IDistractionRuleRepository.delete`): dejar de existir es lo que la vuelve permanentemente silenciada, sin una cuarta clave de storage ni un flag nuevo en la entidad. La lista de reglas es la única fuente de verdad de lo que puede disparar, así que tras "Nunca" la regla deja de aparecer en la vista del §6. "Hoy no", en cambio, silencia sin borrar y se puede levantar con `unsilence` mientras dure el día.
 - **Título y cuerpo** se construyen desde el frontend (por lo tanto pasan por Paraglide/i18n) y nombran la ventana observada de forma efímera.
 - **Capacidad requerida**: `notification:default` en `src-tauri/capabilities/default.json`. Los comandos propios de la app **no** requieren entrada de capability (verificado en la doc de Tauri v2).
 - **Registro del tipo de acción**: `register_action_types` + `action_type_id` + `on_action`. Sin un handler registrado o un listener `onAction` en JS, **los botones no se muestran**.

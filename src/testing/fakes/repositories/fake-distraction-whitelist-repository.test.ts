@@ -44,6 +44,24 @@ describe('FakeDistractionWhitelistRepository', () => {
 		await expect(repository.getSilenced(TODAY)).resolves.toEqual([]);
 	});
 
+	it('lifts the silence of a single rule and keeps the rest', async () => {
+		await repository.silence('rule-1', TODAY);
+		await repository.silence('rule-2', TODAY);
+
+		await repository.unsilence('rule-1', TODAY);
+
+		await expect(repository.getSilenced(TODAY)).resolves.toEqual(['rule-2']);
+		expect(repository.unsilenceCalls).toEqual([{ ruleId: 'rule-1', dateKey: TODAY }]);
+	});
+
+	it('is a no-op when lifting a silence for another day', async () => {
+		await repository.silence('rule-1', TODAY);
+
+		await repository.unsilence('rule-1', TOMORROW);
+
+		await expect(repository.getSilenced(TODAY)).resolves.toEqual(['rule-1']);
+	});
+
 	it('clears all silences and records the calls it received', async () => {
 		await repository.silence('rule-1', TODAY);
 		await repository.clearAll();

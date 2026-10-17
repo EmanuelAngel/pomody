@@ -188,6 +188,62 @@ describe('LocalStorageDistractionWhitelistRepository', () => {
 		});
 	});
 
+	describe('unsilence', () => {
+		it('lifts the silence of a single rule and keeps the rest', async () => {
+			await repository.silence('rule-1', TODAY);
+			await repository.silence('rule-2', TODAY);
+
+			await repository.unsilence('rule-1', TODAY);
+
+			await expect(repository.getSilenced(TODAY)).resolves.toEqual(['rule-2']);
+		});
+
+		it('removes the key once the last silence is lifted', async () => {
+			await repository.silence('rule-1', TODAY);
+
+			await repository.unsilence('rule-1', TODAY);
+
+			expect(mockStorage.getItem(DISTRACTION_WHITELIST_STORAGE_KEY)).toBeNull();
+			await expect(repository.getSilenced(TODAY)).resolves.toEqual([]);
+		});
+
+		it('is a no-op for a rule that was not silenced', async () => {
+			await repository.silence('rule-1', TODAY);
+
+			await repository.unsilence('rule-2', TODAY);
+
+			await expect(repository.getSilenced(TODAY)).resolves.toEqual(['rule-1']);
+		});
+
+		it('is a no-op when the requested day is not the silenced day', async () => {
+			await repository.silence('rule-1', TODAY);
+
+			await repository.unsilence('rule-1', TOMORROW);
+
+			await expect(repository.getSilenced(TODAY)).resolves.toEqual(['rule-1']);
+		});
+
+		it('does not purge a stale day while lifting a silence', async () => {
+			storeEnvelope(mockStorage, {
+				version: DISTRACTION_WHITELIST_STORAGE_VERSION,
+				silencedUntil: YESTERDAY,
+				ruleIds: ['rule-1']
+			});
+
+			await repository.unsilence('rule-1', TODAY);
+
+			expect(mockStorage.getItem(DISTRACTION_WHITELIST_STORAGE_KEY)).not.toBeNull();
+		});
+
+		it('ignores empty input and a day with nothing silenced', async () => {
+			await repository.unsilence('rule-1', TODAY);
+			await repository.unsilence('   ', TODAY);
+			await repository.unsilence('rule-1', '');
+
+			expect(mockStorage.getItem(DISTRACTION_WHITELIST_STORAGE_KEY)).toBeNull();
+		});
+	});
+
 	describe('clearAll', () => {
 		it('removes the whitelist key without touching other storage keys', async () => {
 			mockStorage.setItem('pomody:settings', '{"version":1}');

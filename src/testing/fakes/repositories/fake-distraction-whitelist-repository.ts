@@ -9,6 +9,7 @@ export class FakeDistractionWhitelistRepository implements IDistractionWhitelist
 	private silencedUntil: string | null;
 	private ruleIds: string[];
 	public silenceCalls: { ruleId: string; dateKey: string }[] = [];
+	public unsilenceCalls: { ruleId: string; dateKey: string }[] = [];
 	public clearAllCalls = 0;
 
 	constructor(initial?: { silencedUntil: string; ruleIds: readonly string[] }) {
@@ -43,5 +44,15 @@ export class FakeDistractionWhitelistRepository implements IDistractionWhitelist
 		this.clearAllCalls++;
 		this.silencedUntil = null;
 		this.ruleIds = [];
+	}
+
+	async unsilence(ruleId: string, dateKey: string): Promise<void> {
+		this.unsilenceCalls.push({ ruleId, dateKey });
+
+		if (this.silencedUntil === null || this.silencedUntil !== dateKey) {
+			return;
+		}
+
+		this.ruleIds = this.ruleIds.filter((id) => id !== ruleId);
 	}
 }

@@ -125,6 +125,45 @@ export class LocalStorageDistractionWhitelistRepository implements IDistractionW
 	}
 
 	/**
+	 * Lifts the silence of a single rule for the given local date.
+	 * A no-op when the rule is not silenced, when the stored day is not `dateKey`, or on
+	 * invalid input. The key is removed once the last silence of the day is lifted.
+	 * Unlike a read, this never purges a stale day: the read path owns that.
+	 */
+	public async unsilence(ruleId: string, dateKey: string): Promise<void> {
+		if (typeof ruleId !== 'string' || typeof dateKey !== 'string') {
+			return;
+		}
+
+		const trimmedId = ruleId.trim();
+		const trimmedDate = dateKey.trim();
+		if (trimmedId.length === 0 || trimmedDate.length === 0) {
+			return;
+		}
+
+		const envelope = this.readEnvelope();
+		if (envelope === null || envelope.silencedUntil !== trimmedDate) {
+			return;
+		}
+
+		const remaining = envelope.ruleIds.filter((id) => id !== trimmedId);
+		if (remaining.length === envelope.ruleIds.length) {
+			return;
+		}
+
+		if (remaining.length === 0) {
+			this.removeEnvelope();
+			return;
+		}
+
+		this.writeEnvelope({
+			version: DISTRACTION_WHITELIST_STORAGE_VERSION,
+			silencedUntil: trimmedDate,
+			ruleIds: remaining
+		});
+	}
+
+	/**
 	 * Calls storage.removeItem(DISTRACTION_WHITELIST_STORAGE_KEY) safely.
 	 * Must NOT touch any other key (such as pomody:settings).
 	 */

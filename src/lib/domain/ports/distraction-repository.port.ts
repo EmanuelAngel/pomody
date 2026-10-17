@@ -13,11 +13,14 @@ export interface IDistractionRuleRepository {
 
 /**
  * Tracks rules silenced for a given local day. Entries are lazy-purged when the stored
- * date is no longer today (spec §7).
+ * date is no longer today (spec §7). A single rule can also be released before the day
+ * changes (spec §6.4), which is why `unsilence` exists and `clearAll` is not enough.
  */
 export interface IDistractionWhitelistRepository {
 	/** Rules silenced for the given local date (`YYYY-MM-DD`). */
 	getSilenced(dateKey: string): Promise<readonly string[]>;
 	silence(ruleId: string, dateKey: string): Promise<void>;
+	/** Lifts the silence of a single rule for the given local date. */
+	unsilence(ruleId: string, dateKey: string): Promise<void>;
 	clearAll(): Promise<void>;
 }
