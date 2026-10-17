@@ -5,40 +5,16 @@ import {
 	SETTINGS_STORAGE_VERSION,
 	type StoredSettingsEnvelope
 } from './local-settings-storage';
+import { InMemoryStorage } from './in-memory-storage';
 import { DEFAULT_USER_SETTINGS, type UserSettings } from '../../domain/ports/settings-storage.port';
 import { DEFAULT_TIMER_CONFIG } from '../../domain/timer/timer-fsm';
-
-function createMockStorage(initialData: Record<string, string> = {}): Storage {
-	const map = new Map<string, string>(Object.entries(initialData));
-
-	return {
-		get length(): number {
-			return map.size;
-		},
-		clear(): void {
-			map.clear();
-		},
-		getItem(key: string): string | null {
-			return map.get(key) ?? null;
-		},
-		key(index: number): string | null {
-			return Array.from(map.keys())[index] ?? null;
-		},
-		removeItem(key: string): void {
-			map.delete(key);
-		},
-		setItem(key: string, value: string): void {
-			map.set(key, String(value));
-		}
-	};
-}
 
 describe('LocalSettingsStorage', () => {
 	let mockStorage: Storage;
 	let storageAdapter: LocalSettingsStorage;
 
 	beforeEach(() => {
-		mockStorage = createMockStorage();
+		mockStorage = new InMemoryStorage();
 		storageAdapter = new LocalSettingsStorage(mockStorage);
 	});
 
@@ -472,12 +448,10 @@ describe('LocalSettingsStorage', () => {
 
 	describe('Resilience and Exception Handling', () => {
 		it('handles SecurityError on getItem gracefully without throwing', () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				getItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The operation is insecure.', 'SecurityError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'getItem').mockImplementation(() => {
+				throw new DOMException('The operation is insecure.', 'SecurityError');
+			});
 
 			const adapter = new LocalSettingsStorage(throwingStorage);
 			expect(() => adapter.loadSettings()).not.toThrow();
@@ -485,24 +459,20 @@ describe('LocalSettingsStorage', () => {
 		});
 
 		it('handles QuotaExceededError or DOMException on setItem gracefully without throwing', () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				setItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'setItem').mockImplementation(() => {
+				throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+			});
 
 			const adapter = new LocalSettingsStorage(throwingStorage);
 			expect(() => adapter.saveSettings({ theme: 'dawn' })).not.toThrow();
 		});
 
 		it('handles SecurityError on removeItem gracefully without throwing', () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				removeItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The operation is insecure.', 'SecurityError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'removeItem').mockImplementation(() => {
+				throw new DOMException('The operation is insecure.', 'SecurityError');
+			});
 
 			const adapter = new LocalSettingsStorage(throwingStorage);
 			expect(() => adapter.resetSettings()).not.toThrow();

@@ -5,37 +5,13 @@ import {
 	DISTRACTION_RULES_STORAGE_VERSION,
 	type StoredDistractionRulesEnvelope
 } from './local-distraction-rule-repository';
+import { InMemoryStorage } from './in-memory-storage';
 import {
 	type DistractionRule,
 	sanitizeDistractionRule
 } from '../../domain/distraction/distraction-rule.entity';
 
 const UNRELATED_STORAGE_KEY = 'pomody:settings';
-
-function createMockStorage(initialData: Record<string, string> = {}): Storage {
-	const map = new Map<string, string>(Object.entries(initialData));
-
-	return {
-		get length(): number {
-			return map.size;
-		},
-		clear(): void {
-			map.clear();
-		},
-		getItem(key: string): string | null {
-			return map.get(key) ?? null;
-		},
-		key(index: number): string | null {
-			return Array.from(map.keys())[index] ?? null;
-		},
-		removeItem(key: string): void {
-			map.delete(key);
-		},
-		setItem(key: string, value: string): void {
-			map.set(key, String(value));
-		}
-	};
-}
 
 function createRule(overrides: Partial<DistractionRule> = {}): DistractionRule {
 	return {
@@ -55,7 +31,7 @@ describe('LocalStorageDistractionRuleRepository', () => {
 	let repository: LocalStorageDistractionRuleRepository;
 
 	beforeEach(() => {
-		mockStorage = createMockStorage();
+		mockStorage = new InMemoryStorage();
 		repository = new LocalStorageDistractionRuleRepository(mockStorage);
 	});
 
@@ -316,12 +292,10 @@ describe('LocalStorageDistractionRuleRepository', () => {
 		});
 
 		it('handles a SecurityError on getItem gracefully', async () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				getItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The operation is insecure.', 'SecurityError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'getItem').mockImplementation(() => {
+				throw new DOMException('The operation is insecure.', 'SecurityError');
+			});
 
 			await expect(
 				new LocalStorageDistractionRuleRepository(throwingStorage).getAll()
@@ -329,12 +303,10 @@ describe('LocalStorageDistractionRuleRepository', () => {
 		});
 
 		it('handles a QuotaExceededError on setItem gracefully', async () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				setItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'setItem').mockImplementation(() => {
+				throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+			});
 
 			await expect(
 				new LocalStorageDistractionRuleRepository(throwingStorage).save(createRule())
@@ -342,12 +314,10 @@ describe('LocalStorageDistractionRuleRepository', () => {
 		});
 
 		it('handles a SecurityError on removeItem gracefully', async () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				removeItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The operation is insecure.', 'SecurityError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'removeItem').mockImplementation(() => {
+				throw new DOMException('The operation is insecure.', 'SecurityError');
+			});
 
 			await expect(
 				new LocalStorageDistractionRuleRepository(throwingStorage).clearAll()

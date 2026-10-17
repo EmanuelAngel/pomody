@@ -6,39 +6,15 @@ import {
 	TASKS_STORAGE_VERSION,
 	type StoredTasksEnvelope
 } from './local-task-repository';
+import { InMemoryStorage } from './in-memory-storage';
 import { createFocusTask, toggleFocusTask, type FocusTask } from '../../domain/tasks/task.entity';
-
-function createMockStorage(initialData: Record<string, string> = {}): Storage {
-	const map = new Map<string, string>(Object.entries(initialData));
-
-	return {
-		get length(): number {
-			return map.size;
-		},
-		clear(): void {
-			map.clear();
-		},
-		getItem(key: string): string | null {
-			return map.get(key) ?? null;
-		},
-		key(index: number): string | null {
-			return Array.from(map.keys())[index] ?? null;
-		},
-		removeItem(key: string): void {
-			map.delete(key);
-		},
-		setItem(key: string, value: string): void {
-			map.set(key, String(value));
-		}
-	};
-}
 
 describe('LocalStorageTaskRepository', () => {
 	let mockStorage: Storage;
 	let repository: LocalStorageTaskRepository;
 
 	beforeEach(() => {
-		mockStorage = createMockStorage();
+		mockStorage = new InMemoryStorage();
 		repository = new LocalStorageTaskRepository(mockStorage);
 	});
 
@@ -556,12 +532,10 @@ describe('LocalStorageTaskRepository', () => {
 		});
 
 		it('handles SecurityError on getItem gracefully without throwing', async () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				getItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The operation is insecure.', 'SecurityError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'getItem').mockImplementation(() => {
+				throw new DOMException('The operation is insecure.', 'SecurityError');
+			});
 
 			const repo = new LocalStorageTaskRepository(throwingStorage);
 			expect(await repo.getAll()).toEqual([]);
@@ -570,12 +544,10 @@ describe('LocalStorageTaskRepository', () => {
 
 		it('handles QuotaExceededError or DOMException on setItem gracefully without throwing', async () => {
 			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-			const throwingStorage: Storage = {
-				...mockStorage,
-				setItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'setItem').mockImplementation(() => {
+				throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+			});
 
 			const repo = new LocalStorageTaskRepository(throwingStorage);
 			const task = createFocusTask({ id: 't1', title: 'Task' });
@@ -591,12 +563,10 @@ describe('LocalStorageTaskRepository', () => {
 		it('logs console.error when storage.setItem throws QuotaExceededError or SecurityError', async () => {
 			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 			const quotaError = new DOMException('The quota has been exceeded.', 'QuotaExceededError');
-			const throwingStorage: Storage = {
-				...mockStorage,
-				setItem: vi.fn().mockImplementation(() => {
-					throw quotaError;
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'setItem').mockImplementation(() => {
+				throw quotaError;
+			});
 
 			const repo = new LocalStorageTaskRepository(throwingStorage);
 			const task = createFocusTask({ id: 't1', title: 'Task' });
@@ -684,12 +654,10 @@ describe('LocalStorageTaskRepository', () => {
 		});
 
 		it('handles SecurityError on removeItem gracefully without throwing', async () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				removeItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The operation is insecure.', 'SecurityError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'removeItem').mockImplementation(() => {
+				throw new DOMException('The operation is insecure.', 'SecurityError');
+			});
 
 			const repo = new LocalStorageTaskRepository(throwingStorage);
 			await expect(repo.clearAll()).resolves.not.toThrow();

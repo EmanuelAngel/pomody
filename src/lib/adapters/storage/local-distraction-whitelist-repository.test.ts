@@ -5,35 +5,11 @@ import {
 	DISTRACTION_WHITELIST_STORAGE_KEY,
 	DISTRACTION_WHITELIST_STORAGE_VERSION
 } from './local-distraction-whitelist-repository';
+import { InMemoryStorage } from './in-memory-storage';
 
 const TODAY = '2026-10-16';
 const TOMORROW = '2026-10-17';
 const YESTERDAY = '2026-10-15';
-
-function createMockStorage(initialData: Record<string, string> = {}): Storage {
-	const map = new Map<string, string>(Object.entries(initialData));
-
-	return {
-		get length(): number {
-			return map.size;
-		},
-		clear(): void {
-			map.clear();
-		},
-		getItem(key: string): string | null {
-			return map.get(key) ?? null;
-		},
-		key(index: number): string | null {
-			return Array.from(map.keys())[index] ?? null;
-		},
-		removeItem(key: string): void {
-			map.delete(key);
-		},
-		setItem(key: string, value: string): void {
-			map.set(key, String(value));
-		}
-	};
-}
 
 function storeEnvelope(storage: Storage, envelope: unknown): void {
 	storage.setItem(DISTRACTION_WHITELIST_STORAGE_KEY, JSON.stringify(envelope));
@@ -44,7 +20,7 @@ describe('LocalStorageDistractionWhitelistRepository', () => {
 	let repository: LocalStorageDistractionWhitelistRepository;
 
 	beforeEach(() => {
-		mockStorage = createMockStorage();
+		mockStorage = new InMemoryStorage();
 		repository = new LocalStorageDistractionWhitelistRepository(mockStorage);
 	});
 
@@ -298,12 +274,10 @@ describe('LocalStorageDistractionWhitelistRepository', () => {
 		});
 
 		it('handles a SecurityError on getItem gracefully', async () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				getItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The operation is insecure.', 'SecurityError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'getItem').mockImplementation(() => {
+				throw new DOMException('The operation is insecure.', 'SecurityError');
+			});
 
 			await expect(
 				new LocalStorageDistractionWhitelistRepository(throwingStorage).getSilenced(TODAY)
@@ -311,12 +285,10 @@ describe('LocalStorageDistractionWhitelistRepository', () => {
 		});
 
 		it('handles a QuotaExceededError on setItem gracefully', async () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				setItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'setItem').mockImplementation(() => {
+				throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+			});
 
 			await expect(
 				new LocalStorageDistractionWhitelistRepository(throwingStorage).silence('rule-1', TODAY)
@@ -324,12 +296,10 @@ describe('LocalStorageDistractionWhitelistRepository', () => {
 		});
 
 		it('handles a SecurityError on removeItem gracefully', async () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				removeItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The operation is insecure.', 'SecurityError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'removeItem').mockImplementation(() => {
+				throw new DOMException('The operation is insecure.', 'SecurityError');
+			});
 
 			await expect(
 				new LocalStorageDistractionWhitelistRepository(throwingStorage).clearAll()
