@@ -13,12 +13,17 @@
 		windowState as defaultWindowState,
 		type WindowState
 	} from '$lib/state/windowState.svelte';
+	import {
+		distractionState as defaultDistractionState,
+		type DistractionState
+	} from '$lib/state/distractionState.svelte';
 	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		timerState?: TimerState;
 		navigationState?: NavigationState;
 		windowState?: WindowState;
+		distractionState?: DistractionState;
 		onSettingsClick?: () => void;
 		settingsOpen?: boolean;
 	}
@@ -27,12 +32,18 @@
 		timerState = defaultTimerState,
 		navigationState = defaultNavigationState,
 		windowState = defaultWindowState,
+		distractionState = defaultDistractionState,
 		onSettingsClick,
 		settingsOpen = $bindable(false)
 	}: Props = $props();
 
 	const isRunning = $derived(timerState.isRunning);
 	const activeTab = $derived(navigationState.activeTab);
+	/**
+	 * The detector has no surface at all on a platform that cannot read other windows
+	 * (spec §1): a tab that opens an empty declaration picker would be a dead control.
+	 */
+	const distractionDetectorSupported = $derived(distractionState.isSupported);
 
 	function handleSettingsClick() {
 		settingsOpen = true;
@@ -125,6 +136,30 @@
 					></span>
 				{/if}
 			</button>
+
+			{#if distractionDetectorSupported}
+				<button
+					type="button"
+					role="tab"
+					id="tab-distractions"
+					aria-controls="tabpanel-distractions"
+					aria-selected={activeTab === 'distractions'}
+					onclick={() => handleTabClick('distractions')}
+					class={cn(
+						'group relative flex cursor-pointer flex-col items-center py-2 text-xs font-medium tracking-tight transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-xs',
+						activeTab === 'distractions'
+							? 'font-semibold text-foreground'
+							: 'text-muted-foreground/70 hover:text-foreground'
+					)}
+				>
+					<span>{t.header_nav_distractions()}</span>
+					{#if activeTab === 'distractions'}
+						<span
+							class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
+						></span>
+					{/if}
+				</button>
+			{/if}
 
 			<button
 				type="button"

@@ -8,6 +8,11 @@ import { createTimerState } from '$lib/state/timer.svelte';
 import { createThemeState } from '$lib/state/theme.svelte';
 import { localeState } from '$lib/state/locale.svelte';
 import { DEFAULT_TIMER_CONFIG } from '$lib/domain/timer/timer-fsm';
+import { createDistractionState } from '$lib/state/distractionState.svelte';
+import { FakeDistractionMonitor } from '$tests/fakes/platform/fake-distraction-monitor';
+import { FakeDistractionRuleRepository } from '$tests/fakes/repositories/fake-distraction-rule-repository';
+import { FakeDistractionWhitelistRepository } from '$tests/fakes/repositories/fake-distraction-whitelist-repository';
+import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
 
 function createDummyTicker(isRunning = false) {
 	return {
@@ -600,6 +605,102 @@ describe('SettingsDrawer (Client Browser)', () => {
 		// Verify revitalization switch resets to checked and timerState.revitalizationEnabled is true
 		expect(timerState.revitalizationEnabled).toBe(true);
 		await expect.element(switchEl).toBeChecked();
+	});
+
+	describe('distraction detector switch', () => {
+		function createDetectorState(isSupported = true, detectorEnabled = false) {
+			const settingsStorage = new FakeSettingsStorage({
+				distractionDetectorEnabled: detectorEnabled
+			});
+			const distractionState = createDistractionState({
+				monitor: new FakeDistractionMonitor({ isSupported }),
+				ruleRepository: new FakeDistractionRuleRepository(),
+				whitelistRepository: new FakeDistractionWhitelistRepository(),
+				settingsStorage
+			});
+			return { distractionState, settingsStorage };
+		}
+
+		it('renders the section with the switch off by default when the platform supports it', async () => {
+			const ticker = createDummyTicker(false);
+			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+			const { distractionState } = createDetectorState();
+
+			const screen = await render(SettingsDrawer, {
+				open: true,
+				timerState,
+				themeState: createThemeState(),
+				distractionState,
+				portalProps: { disabled: true }
+			});
+
+			await expect.element(screen.getByRole('heading', { name: 'Distractions' })).toBeVisible();
+			await expect
+				.element(
+					screen.getByText(
+						'Warn when you switch to a window you declared as distracting, only while a focus block is running.'
+					)
+				)
+				.toBeVisible();
+
+			const switchEl = screen.getByRole('switch', {
+				name: 'Enable the distraction detector'
+			});
+			await expect.element(switchEl).toBeVisible();
+			await expect.element(switchEl).not.toBeChecked();
+			expect(distractionState.enabled).toBe(false);
+		});
+
+		it('turns the detector on and persists the switch', async () => {
+			const ticker = createDummyTicker(false);
+			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+			const { distractionState, settingsStorage } = createDetectorState();
+
+			const screen = await render(SettingsDrawer, {
+				open: true,
+				timerState,
+				themeState: createThemeState(),
+				distractionState,
+				portalProps: { disabled: true }
+			});
+
+			const switchEl = screen.getByRole('switch', {
+				name: 'Enable the distraction detector'
+			});
+			await switchEl.click();
+
+			expect(distractionState.enabled).toBe(true);
+			expect(settingsStorage.saveSettingsCalls).toEqual([{ distractionDetectorEnabled: true }]);
+			await expect.element(switchEl).toBeChecked();
+
+			await switchEl.click();
+
+			expect(distractionState.enabled).toBe(false);
+			await expect.element(switchEl).not.toBeChecked();
+		});
+
+		it('hides the whole section on a platform that cannot read other windows', async () => {
+			const ticker = createDummyTicker(false);
+			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+			const { distractionState } = createDetectorState(false);
+
+			const screen = await render(SettingsDrawer, {
+				open: true,
+				timerState,
+				themeState: createThemeState(),
+				distractionState,
+				portalProps: { disabled: true }
+			});
+
+			expect(screen.getByRole('heading', { name: 'Distractions' }).query()).toBeNull();
+			expect(
+				screen.getByRole('switch', { name: 'Enable the distraction detector' }).query()
+			).toBeNull();
+			// The neighbouring sections are untouched by the gate.
+			await expect
+				.element(screen.getByRole('heading', { name: 'Break Revitalization' }))
+				.toBeVisible();
+		});
 	});
 });
 

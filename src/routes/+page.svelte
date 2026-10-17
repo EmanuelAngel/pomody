@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Timer from '$lib/components/timer/timer.svelte';
 	import PlanningView from '$lib/components/planning/planning-view.svelte';
+	import DistractionView from '$lib/components/distraction/distraction-view.svelte';
 	import { navigationState } from '$lib/state/navigation.svelte';
 	import { timerState } from '$lib/state/timer.svelte';
 
@@ -32,6 +33,15 @@
 	{:else if activeTab === 'planning'}
 		<div role="tabpanel" id="tabpanel-planning" aria-labelledby="tab-planning" class="w-full">
 			<PlanningView {navigationState} />
+		</div>
+	{:else if activeTab === 'distractions'}
+		<div
+			role="tabpanel"
+			id="tabpanel-distractions"
+			aria-labelledby="tab-distractions"
+			class="w-full"
+		>
+			<DistractionView />
 		</div>
 	{/if}
 </main>

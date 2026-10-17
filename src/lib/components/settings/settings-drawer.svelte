@@ -15,6 +15,10 @@
 		type Theme
 	} from '$lib/state/theme.svelte';
 	import { localeState as defaultLocaleState, type LocaleState, t } from '$lib/state/locale.svelte';
+	import {
+		distractionState as defaultDistractionState,
+		type DistractionState
+	} from '$lib/state/distractionState.svelte';
 	import LanguageSelector from './language-selector.svelte';
 	import { DEFAULT_TIMER_CONFIG } from '$lib/domain/timer/timer-fsm';
 
@@ -23,6 +27,7 @@
 		timerState?: TimerState;
 		themeState?: ThemeState;
 		localeState?: LocaleState;
+		distractionState?: DistractionState;
 		portalProps?: { disabled?: boolean };
 	}
 
@@ -31,8 +36,12 @@
 		timerState = defaultTimerState,
 		themeState = defaultThemeState,
 		localeState = defaultLocaleState,
+		distractionState = defaultDistractionState,
 		portalProps
 	}: Props = $props();
+
+	/** No detector surface on a platform that cannot read other windows (spec §1). */
+	const distractionDetectorSupported = $derived(distractionState.isSupported);
 
 	// Local reactive override state for slider adjustments
 	let localFocus = $state<number | null>(null);
@@ -395,6 +404,35 @@
 					/>
 				</div>
 			</div>
+
+			{#if distractionDetectorSupported}
+				<Separator />
+
+				<!-- Section 6: Distraction Detector (off by default) -->
+				<div class="flex flex-col gap-3">
+					<div>
+						<h3 class="text-sm font-semibold tracking-wide text-foreground">
+							{t.settings_section_distraction()}
+						</h3>
+						<p class="mt-0.5 text-xs text-muted-foreground">
+							{t.settings_section_distraction_description()}
+						</p>
+					</div>
+
+					<div
+						class="flex items-center justify-between rounded-lg border border-border p-3.5 shadow-xs"
+					>
+						<span class="text-xs font-medium text-foreground"
+							>{t.settings_distraction_detector()}</span
+						>
+						<Switch
+							checked={distractionState.enabled}
+							onCheckedChange={(checked) => distractionState.setEnabled(checked)}
+							aria-label={t.settings_distraction_detector_aria()}
+						/>
+					</div>
+				</div>
+			{/if}
 		</div>
 	</Sheet.Content>
 </Sheet.Root>

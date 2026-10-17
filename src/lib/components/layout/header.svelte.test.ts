@@ -5,6 +5,11 @@ import { createTimerState } from '$lib/state/timer.svelte';
 import { createNavigationState } from '$lib/state/navigation.svelte';
 import { createWindowState } from '$lib/state/windowState.svelte';
 import { FakeWindowShell } from '$tests/fakes/platform/fake-window-shell';
+import { FakeDistractionMonitor } from '$tests/fakes/platform/fake-distraction-monitor';
+import { FakeDistractionRuleRepository } from '$tests/fakes/repositories/fake-distraction-rule-repository';
+import { FakeDistractionWhitelistRepository } from '$tests/fakes/repositories/fake-distraction-whitelist-repository';
+import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
+import { createDistractionState } from '$lib/state/distractionState.svelte';
 import { WebWindowShell } from '$lib/adapters/window/web-window-shell';
 
 function createDummyTicker(isRunning = false) {
@@ -203,6 +208,59 @@ describe('Header (Client Browser)', () => {
 			await trigger.click();
 
 			expect(windowState.isMiniPlayer).toBe(true);
+		});
+	});
+
+	describe('distractions tab', () => {
+		function createSupportedDistractionState(isSupported = true) {
+			return createDistractionState({
+				monitor: new FakeDistractionMonitor({ isSupported }),
+				ruleRepository: new FakeDistractionRuleRepository(),
+				whitelistRepository: new FakeDistractionWhitelistRepository(),
+				settingsStorage: new FakeSettingsStorage()
+			});
+		}
+
+		it('renders when the platform can read other windows, and switches the active tab', async () => {
+			const ticker = createDummyTicker(false);
+			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+			const navigationState = createNavigationState('timer');
+
+			const screen = await render(Header, {
+				timerState,
+				navigationState,
+				distractionState: createSupportedDistractionState()
+			});
+
+			const tab = screen.getByRole('tab', { name: 'Distractions' });
+			await expect.element(tab).toBeVisible();
+			await expect.element(tab).toHaveAttribute('id', 'tab-distractions');
+			await expect.element(tab).toHaveAttribute('aria-controls', 'tabpanel-distractions');
+			await expect.element(tab).toHaveAttribute('aria-selected', 'false');
+
+			await tab.click();
+
+			expect(navigationState.activeTab).toBe('distractions');
+			await expect.element(tab).toHaveAttribute('aria-selected', 'true');
+
+			const { localeState } = await import('$lib/state/locale.svelte');
+			localeState.setLocale('es');
+			await expect.element(screen.getByRole('tab', { name: 'Distracciones' })).toBeVisible();
+			localeState.setLocale('en');
+		});
+
+		it('stays hidden on a platform that cannot read other windows', async () => {
+			const ticker = createDummyTicker(false);
+			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+
+			const screen = await render(Header, {
+				timerState,
+				distractionState: createSupportedDistractionState(false)
+			});
+
+			expect(screen.getByRole('tab', { name: 'Distractions' }).query()).toBeNull();
+			// The Metrics tab of Milestone 6 keeps its own state untouched.
+			await expect.element(screen.getByRole('tab', { name: 'Metrics' })).toBeDisabled();
 		});
 	});
 });

@@ -1,4 +1,4 @@
-export type NavigationTab = 'timer' | 'planning';
+export type NavigationTab = 'timer' | 'planning' | 'distractions';
 
 /**
  * Reactive navigation state managing view switching in Pomody with Svelte 5 Runes ($state).
