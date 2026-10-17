@@ -49,7 +49,7 @@ S11 (#127, slice 5.5) `tauri-plugin-notification`, `notification:default` capabi
 - [x] T1 / #123 — Pure domain and ports (entity, matching, cadence policy, three ports + `server` tests) · S1-S7 · route: inline · commit `f150fa2` (squash of `02d24b6`, PR #128)
 - [x] T2 / #124 — Local rule/whitelist persistence adapters, fakes, `distractionDetectorEnabled` in settings, and tests · S8 · route: inline · commit `feat(distraction): persist rules, daily silences and the detector switch`
 - [x] T3 / #125 — Native Windows bridge, monitor adapters and platform selector · S9.1-S9.7 and S9.8 (`desktop-ci.yml` verde on PR #131: `Build Windows Desktop App` pass) · route: inline · commit `f4d4872` (squash of `feat(desktop): add the native window bridge for the distraction detector (#125)`, PR #131) · evidence: L13 (Rule 8 measurement) and L14 (implementation, tests, gates)
-- [x] T4 / #126 — "Distractions" view, picker, global switch and i18n · S10 · route: inline · commit `feat(ui): add the distractions view with the window picker (#126)` · evidence: L15-L16
+- [x] T4 / #126 — "Distractions" view, picker, global switch and i18n · S10 · route: inline · commit `8db5049` (`feat(ui): add the distraction view with the window picker (#126)`, PR #132; el hash de `main` es el del squash) · evidence: L15-L17
 - [ ] T5 / #127 — OS notification with three actions and poll/evaluate state loop · S11 · route: inline
 
 ## Log
@@ -163,3 +163,20 @@ Two things the runs caught that no reading would have:
 3. A third one came from ESLint, not from the tests: `svelte/prefer-svelte-reactivity` rejects `new Date()` inside a runes module, so the default clock of `DistractionState` is `new SvelteDate()`.
 
 Gate on the working tree before committing (`pnpm check`; `pnpm lint`; `pnpm test`): `pnpm check` → **0 errors, 0 warnings**; `pnpm lint` → exit **0** after Prettier reformatted the new table rows of `decisions.md` (first attempt exited 1 on that file only); `pnpm test` → **74 files / 1087 tests passed**. `pnpm tauri:build` was not run, per rule 9, and nothing native is touched by this slice.
+
+L17 (2026-10-16) T4 / slice 5.4 (#126) closed. Work unit: **one commit**, `8db5049` — `feat(ui): add the distraction view with the window picker (#126)` — 39 files, 1965 insertions, 30 deletions, on `feat/distraction-view`. La partición la fija el diseño (§11) y el slice es la unidad mínima coherente, igual que 5.2 (1601 líneas) y 5.3 (729): el guard de bloat de `ci.yml` no aplica a PRs del owner, así que no se partió en commits intermedios que dejarían estados a medio camino. `package.json`, `pnpm-lock.yaml` y `src/lib/components/ui/separator/` quedaron **intactos**: el CLI de shadcn los tocó al agregar `select` y se revirtieron.
+
+Gate de cierre sobre el estado commiteado (`HEAD=8db5049`, árbol limpio, los tres comandos corridos en secuencia):
+
+- `pnpm check` → `svelte-check found 0 errors and 0 warnings` (exit 0).
+- `pnpm lint` → exit 0 (Prettier "All matched files use Prettier code style!" + ESLint sin hallazgos). El primer intento había salido 1 por el formateo de las tablas nuevas de `decisions.md`, corregido antes del commit.
+- `pnpm test` → **74 archivos / 1087 tests passed** (incluye `test:browser`, que es el gate del issue).
+- `pnpm tauri:build` no se corrió localmente (regla 9) y no aplica: el diff no toca `src-tauri/` ni `Cargo.lock`. `desktop-ci.yml` igual corre en este PR porque el workflow está gateado por paths.
+
+Entrega: PR **#132** (base `main`, label `enhancement`, `Resolves #126`, chain context y tabla de gates como en #130 y #131). Este mismo commit es el que backfillea el hash de T4 arriba; el hash de `main` será el del squash-merge, que reemplaza a `8db5049` como referencia final.
+
+Lo que queda abierto, y por qué:
+
+- La tabla de verificación manual del §13 (toast, tres acciones, purga al cambiar el día) es del slice 5.5: necesita la notificación.
+- No hubo pasada manual por `pnpm dev`: en Web la UI del detector no se renderiza a propósito, así que un dev pass no puede ejercitarla; la cobertura real son los tests de navegador.
+- El disparador del refactor del drawer (sexta sección) quedó registrado en `decisions.md` §6 como work unit propio, sin hacer.
