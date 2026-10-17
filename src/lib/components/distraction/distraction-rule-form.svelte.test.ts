@@ -114,4 +114,80 @@ describe('DistractionRuleForm (Client Browser)', () => {
 		await screen.getByRole('button', { name: 'Cancel' }).click();
 		expect(onCancel).toHaveBeenCalledTimes(1);
 	});
+
+	it('clears the picked window from the trigger after a successful save', async () => {
+		const onSave = vi.fn<(input: DistractionRuleInput) => Promise<boolean>>(async () => true);
+		const screen = await render(DistractionRuleForm, {
+			windows: WINDOWS,
+			onSave,
+			portalProps: { disabled: true }
+		});
+		const trigger = screen.getByRole('button', { name: 'Open windows' });
+
+		await expect.element(trigger).toHaveTextContent('Pick a window');
+
+		await trigger.click();
+		await screen.getByRole('option', { name: 'YouTube — Google Chrome' }).click();
+		await expect.element(trigger).toHaveTextContent('YouTube — Google Chrome');
+
+		await screen.getByRole('button', { name: 'Add rule' }).click();
+
+		expect(onSave).toHaveBeenCalledTimes(1);
+		await expect.element(trigger).toHaveTextContent('Pick a window');
+		await expect.element(screen.getByLabelText('Executable')).toHaveValue('');
+	});
+
+	it('clears the picked window from the trigger when an edit is cancelled', async () => {
+		const rule: DistractionRule = {
+			id: 'rule-9',
+			exe: 'steam',
+			titlePattern: 'Steam',
+			createdAt: 1
+		};
+		const onSave = vi.fn<(input: DistractionRuleInput) => Promise<boolean>>(async () => true);
+		const onCancel = vi.fn();
+		const screen = await render(DistractionRuleForm, {
+			windows: WINDOWS,
+			editingRule: rule,
+			onSave,
+			onCancel,
+			portalProps: { disabled: true }
+		});
+		const trigger = screen.getByRole('button', { name: 'Open windows' });
+
+		await trigger.click();
+		await screen.getByRole('option', { name: 'Steam' }).click();
+		await expect.element(trigger).toHaveTextContent('Steam');
+
+		await screen.getByRole('button', { name: 'Cancel' }).click();
+
+		expect(onCancel).toHaveBeenCalledTimes(1);
+		await expect.element(trigger).toHaveTextContent('Pick a window');
+	});
+
+	it('re-fills the fields when the already picked window is picked again', async () => {
+		const onSave = vi.fn<(input: DistractionRuleInput) => Promise<boolean>>(async () => true);
+		const screen = await render(DistractionRuleForm, {
+			windows: WINDOWS,
+			onSave,
+			portalProps: { disabled: true }
+		});
+		const trigger = screen.getByRole('button', { name: 'Open windows' });
+
+		await trigger.click();
+		await screen.getByRole('option', { name: 'YouTube — Google Chrome' }).click();
+		await expect.element(screen.getByLabelText('Executable')).toHaveValue('chrome');
+
+		await userEvent.clear(screen.getByLabelText('Executable'));
+		await userEvent.clear(screen.getByLabelText('Title pattern'));
+		await expect.element(screen.getByLabelText('Executable')).toHaveValue('');
+
+		await trigger.click();
+		await screen.getByRole('option', { name: 'YouTube — Google Chrome' }).click();
+
+		await expect.element(screen.getByLabelText('Executable')).toHaveValue('chrome');
+		await expect
+			.element(screen.getByLabelText('Title pattern'))
+			.toHaveValue('YouTube — Google Chrome');
+	});
 });
