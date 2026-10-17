@@ -2589,7 +2589,7 @@ dependencies = [
 
 [[package]]
 name = "pomody-desktop"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "log",
  "serde",
@@ -2598,6 +2598,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-log",
  "tauri-plugin-single-instance",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3554,15 +3555,14 @@ dependencies = [
 
 [[package]]
 name = "tauri-plugin-single-instance"
-version = "2.4.5"
+version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db817fe9295e19b7d8357e900af31edb93703dd9fb6de524b007b47b6afc63b0"
+checksum = "a33a5b7d78f0dec4406b003ea87c40bf928d801b6fd9323a556172c91d8712c1"
 dependencies = [
  "serde",
  "serde_json",
  "tauri",
  "thiserror 2.0.21",
- "tokio",
  "tracing",
  "windows-sys 0.60.2",
  "zbus",

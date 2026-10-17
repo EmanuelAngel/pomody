@@ -27,3 +27,16 @@ tauri-plugin-log = "2"
 # the Tauri family: this plugin writes to Cargo.lock, so its version is chosen here
 # and not delegated to Cargo. See docs/features/tray/decisions.md.
 tauri-plugin-single-instance = { version = "=2.4.1", default-features = false }
+# The only native surface of the distraction detector (src/window_bridge.rs). The feature
+# list is exactly the five modules the bridge calls into, kept minimal on purpose: adding
+# the whole `Win32` umbrella would drag unrelated modules into the build. Measured on a
+# disposable copy before touching this file, and confirmed to reuse the `windows-sys
+# 0.61.2` already in Cargo.lock instead of adding a fifth copy of the crate. See
+# docs/features/distraction-detector/decisions.md §5.1.
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_System_Threading",
+    "Win32_System_SystemInformation",
+] }
