@@ -103,6 +103,26 @@ Ninguna de estas se puede resolver con Vitest. Todas van a la tabla del §13 del
 
 ---
 
+### 5.1. Medición de la regla 8 y decisión sobre el Cargo.lock
+
+La medición del slice 5.3 (issue #125) se hizo **antes de escribir una sola línea de código** (criterio S9.1 del issue), sobre una copia desechable de `src-tauri` fuera del repo (`tar --exclude=target`); el working tree nunca fue primero. Comando, sobre esa copia: `cargo add windows-sys@0.61 --features Win32_Foundation,Win32_UI_WindowsAndMessaging,Win32_UI_Input_KeyboardAndMouse,Win32_System_Threading,Win32_System_SystemInformation`.
+
+| Medición                                              | Resultado                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Familia Tauri (antes / después)                       | **Byte-idéntica**: tauri 2.11.6; tauri-build/tauri-codegen/tauri-macros/tauri-plugin 2.6.3; tauri-utils 2.9.3; tauri-runtime 2.11.3; tauri-runtime-wry 2.11.4; muda 0.19.3; wry 0.55.1.                                                                                                                                                                                                                                                              |
+| `windows-sys`                                         | Reusa el **0.61.2 que ya está en el lock**: 482 paquetes antes y después, sin quinta versión del crate.                                                                                                                                                                                                                                                                                                                                              |
+| Derivas pre-existentes que el refresco aplica de paso | Dos, y **ninguna causada por `windows-sys`**: `pomody-desktop` 0.12.0→0.13.0 (el lock nunca siguió la release 0.13.0) y `tauri-plugin-single-instance` 2.4.5→2.4.1, con su checksum nuevo y su arista `tokio` fuera. La segunda la fuerza el `Cargo.toml`, que fija `=2.4.1` desde el slice de la bandeja —el mismo commit que subió el lock con 2.4.5—, de modo que el lock commiteado contradecía al manifiesto antes de que este slice existiera. |
+
+La contradicción tiene prueba independiente de ser anterior a este slice: sobre una copia prístina, `cargo metadata --locked --offline` falla con `error: cannot update the lock file … because --locked was passed to prevent this`. Consecuencia registrada: cargo —y `desktop-ci.yml`, que corre `pnpm tauri:build` sin `--locked`— ya resuelve el 2.4.1 en cada build, así que el refresco hace que el lock commiteado sea honesto en lugar de cambiar lo que se compila.
+
+**Decisión**: se aceptó el refresco completo (opción A), por el mantenedor; son exactamente los hunks que cargo aplica por su cuenta. Se descartó la alternativa de agregar a mano sólo la línea de `windows-sys` dejando las dos derivas en pie: deja un lock que contradice el manifiesto y que no se puede validar con `--locked`.
+
+La lista de features se confirmó contra el código fuente del crate publicado (`windows-sys-0.61.2` en el registry local de cargo): cada API que el puente llama vive en el módulo que habilita uno de los cinco features (`GetForegroundWindow`, `GetWindowTextLengthW`, `GetWindowTextW`, `GetWindowThreadProcessId`, `IsWindowVisible`, `EnumWindows` en `Win32_UI_WindowsAndMessaging`; `GetLastInputInfo`/`LASTINPUTINFO` en `Win32_UI_Input_KeyboardAndMouse`; `OpenProcess`, `QueryFullProcessImageNameW`, `PROCESS_QUERY_LIMITED_INFORMATION` en `Win32_System_Threading`; `GetTickCount` en `Win32_System_SystemInformation`; `HANDLE`/`HWND`/`LPARAM`/`CloseHandle` en `Win32_Foundation`). Limitación honesta: un `cargo check` local es imposible en esta máquina (no hay toolchain MSVC y el `link.exe` en el `PATH` es el de Git), así que la compuerta de compilación del puente es `desktop-ci.yml` en el PR (regla 9 de [`AGENTS.md`](../../../AGENTS.md)).
+
+Nota operativa: el lock commiteado es CRLF en el working tree y cargo lo reescribe con LF; con `core.autocrlf=true` la reescritura es invisible para el commit.
+
+---
+
 ## 6. Deuda registrada
 
 Registrada a propósito, no olvidada.

@@ -4,6 +4,11 @@ use tauri::{
 	AppHandle, Manager, Runtime, WindowEvent,
 };
 
+/// Native window bridge of the distraction detector (spec §8): two frontend-polled reads,
+/// no thread of its own and no Rust→frontend event channel. Kept in its own module so the
+/// Win32 surface stays auditable in one file and this one keeps owning lifecycle only.
+mod window_bridge;
+
 /// Label of the single application window, as declared in `tauri.conf.json`.
 const MAIN_WINDOW_LABEL: &str = "main";
 
@@ -93,6 +98,20 @@ fn build_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 	Ok(())
 }
 
+/// Foreground window, polled by the detector state while a focus block runs (spec §8).
+///
+/// Thin on purpose: the whole Win32 judgement lives in [`window_bridge`].
+#[tauri::command]
+fn active_window() -> Option<window_bridge::WindowInfo> {
+	window_bridge::active_window()
+}
+
+/// Visible and titled top-level windows, read once when the declaration picker opens.
+#[tauri::command]
+fn open_windows() -> Vec<window_bridge::WindowInfo> {
+	window_bridge::open_windows()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
 	tauri::Builder::default()
@@ -110,6 +129,9 @@ pub fn run() {
 		.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
 			restore_main_window(app);
 		}))
+		// The two reads of the distraction detector (spec §8). Commands of the app itself
+		// need no capability entry; the poll loop that consumes them is slice 5.5.
+		.invoke_handler(tauri::generate_handler![active_window, open_windows])
 		.setup(|app| {
 			if cfg!(debug_assertions) {
 				app.handle().plugin(
