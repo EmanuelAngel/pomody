@@ -1,5 +1,5 @@
 import {
-	normalizeExe,
+	sanitizeDistractionRule,
 	type DistractionRule
 } from '../../domain/distraction/distraction-rule.entity';
 import type { IDistractionRuleRepository } from '../../domain/ports/distraction-repository.port';
@@ -10,71 +10,6 @@ export const DISTRACTION_RULES_STORAGE_VERSION = 1;
 export interface StoredDistractionRulesEnvelope {
 	readonly version: number;
 	readonly rules: readonly DistractionRule[];
-}
-
-/**
- * Defensive validation checking that raw input matches the DistractionRule shape:
- * - id: non-empty string, trimmed
- * - exe: string that normalizes to a non-empty executable key
- * - titlePattern: undefined, or a string trimmed to a non-empty substring
- * - createdAt: finite number > 0
- *
- * Returns a frozen DistractionRule or null if corrupt. The executable is always
- * normalized on the way in, so the stored key always satisfies the entity invariant.
- */
-export function sanitizeDistractionRule(raw: unknown): DistractionRule | null {
-	if (typeof raw !== 'object' || raw === null) {
-		return null;
-	}
-
-	const candidate = raw as Record<string, unknown>;
-
-	if (typeof candidate.id !== 'string') {
-		return null;
-	}
-
-	const trimmedId = candidate.id.trim();
-	if (trimmedId.length === 0) {
-		return null;
-	}
-
-	if (typeof candidate.exe !== 'string') {
-		return null;
-	}
-
-	const exe = normalizeExe(candidate.exe);
-	if (exe.length === 0) {
-		return null;
-	}
-
-	let titlePattern: string | undefined = undefined;
-	if (candidate.titlePattern !== undefined && candidate.titlePattern !== null) {
-		if (typeof candidate.titlePattern !== 'string') {
-			return null;
-		}
-
-		const trimmedPattern = candidate.titlePattern.trim();
-		if (trimmedPattern.length > 0) {
-			titlePattern = trimmedPattern;
-		}
-	}
-
-	if (
-		typeof candidate.createdAt !== 'number' ||
-		!Number.isFinite(candidate.createdAt) ||
-		candidate.createdAt <= 0
-	) {
-		return null;
-	}
-
-	const rule: DistractionRule = {
-		id: trimmedId,
-		exe,
-		createdAt: candidate.createdAt,
-		...(titlePattern !== undefined ? { titlePattern } : {})
-	};
-
-	return Object.freeze(rule);
 }
 
 /**
@@ -148,10 +83,17 @@ export class LocalStorageDistractionRuleRepository implements IDistractionRuleRe
 
 	/**
 	 * Removes a rule by id and writes the envelope to storage.
+	 * A no-op when the id is not stored: nothing is written, so deleting on empty storage
+	 * never creates the key.
 	 */
 	public async delete(ruleId: string): Promise<void> {
 		const current = this.readRules();
-		this.writeRules(current.filter((rule) => rule.id !== ruleId));
+		const remaining = current.filter((rule) => rule.id !== ruleId);
+		if (remaining.length === current.length) {
+			return;
+		}
+
+		this.writeRules(remaining);
 	}
 
 	/**

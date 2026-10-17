@@ -44,6 +44,39 @@ describe('FakeDistractionWhitelistRepository', () => {
 		await expect(repository.getSilenced(TODAY)).resolves.toEqual([]);
 	});
 
+	it('normalizes the date key and the rule id like the adapter', async () => {
+		await repository.silence('  rule-1  ', ` ${TODAY} `);
+
+		await expect(repository.getSilenced(TODAY)).resolves.toEqual(['rule-1']);
+	});
+
+	it('does not purge the day when the date key is padded, like the adapter', async () => {
+		await repository.silence('rule-1', TODAY);
+
+		await expect(repository.getSilenced(` ${TODAY} `)).resolves.toEqual(['rule-1']);
+		await expect(repository.getSilenced(TODAY)).resolves.toEqual(['rule-1']);
+	});
+
+	it('ignores empty or blank input without storing anything, like the adapter', async () => {
+		await repository.silence('   ', TODAY);
+		await repository.silence('rule-1', '');
+		await repository.silence('rule-2', '   ');
+
+		await expect(repository.getSilenced('   ')).resolves.toEqual([]);
+		await expect(repository.getSilenced('')).resolves.toEqual([]);
+		await expect(repository.getSilenced(TODAY)).resolves.toEqual([]);
+	});
+
+	it('lifts a silence with a padded rule id or date key, like the adapter', async () => {
+		await repository.silence('rule-1', TODAY);
+		await repository.unsilence('  rule-1  ', TODAY);
+		await expect(repository.getSilenced(TODAY)).resolves.toEqual([]);
+
+		await repository.silence('rule-2', TODAY);
+		await repository.unsilence('rule-2', ` ${TODAY} `);
+		await expect(repository.getSilenced(TODAY)).resolves.toEqual([]);
+	});
+
 	it('lifts the silence of a single rule and keeps the rest', async () => {
 		await repository.silence('rule-1', TODAY);
 		await repository.silence('rule-2', TODAY);

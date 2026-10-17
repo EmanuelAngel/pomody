@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
 	LocalStorageDistractionRuleRepository,
-	sanitizeDistractionRule,
 	DISTRACTION_RULES_STORAGE_KEY,
 	DISTRACTION_RULES_STORAGE_VERSION,
 	type StoredDistractionRulesEnvelope
 } from './local-distraction-rule-repository';
-import type { DistractionRule } from '../../domain/distraction/distraction-rule.entity';
+import {
+	type DistractionRule,
+	sanitizeDistractionRule
+} from '../../domain/distraction/distraction-rule.entity';
 
 const UNRELATED_STORAGE_KEY = 'pomody:settings';
 
@@ -282,6 +284,12 @@ describe('LocalStorageDistractionRuleRepository', () => {
 			await repository.delete('does-not-exist');
 
 			await expect(repository.getAll()).resolves.toEqual([createRule()]);
+		});
+
+		it('does not create the key when there is nothing to remove', async () => {
+			await repository.delete('does-not-exist');
+
+			expect(mockStorage.getItem(DISTRACTION_RULES_STORAGE_KEY)).toBeNull();
 		});
 	});
 

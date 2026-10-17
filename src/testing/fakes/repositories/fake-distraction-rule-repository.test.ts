@@ -49,6 +49,29 @@ describe('FakeDistractionRuleRepository', () => {
 		await expect(repository.getAll()).resolves.toEqual([createRule({ id: 'a', exe: 'firefox' })]);
 	});
 
+	it('normalizes the rule it stores, like the adapter', async () => {
+		await repository.save(
+			createRule({
+				id: '  a  ',
+				exe: 'C:\\Program Files\\Chrome.EXE',
+				titlePattern: '  YouTube  '
+			})
+		);
+
+		await expect(repository.getAll()).resolves.toEqual([
+			createRule({ id: 'a', exe: 'chrome', titlePattern: 'YouTube' })
+		]);
+	});
+
+	it('drops a rule the adapter would refuse to persist', async () => {
+		await repository.save(createRule({ id: '' }));
+		await repository.save(createRule({ exe: '   ' }));
+		await repository.save(createRule({ createdAt: 0 }));
+
+		await expect(repository.getAll()).resolves.toEqual([]);
+		expect(repository.saveCalls).toHaveLength(3);
+	});
+
 	it('clears every rule and records the calls it received', async () => {
 		await repository.save(createRule({ id: 'a' }));
 		await repository.save(createRule({ id: 'b' }));
