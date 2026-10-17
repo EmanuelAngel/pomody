@@ -87,6 +87,7 @@ describe('LocalSettingsStorage', () => {
 				},
 				soundEnabled: false,
 				revitalizationEnabled: false,
+				distractionDetectorEnabled: true,
 				theme: 'dawn'
 			};
 
@@ -100,6 +101,7 @@ describe('LocalSettingsStorage', () => {
 			expect(envelope.timer).toEqual(customSettings.timer);
 			expect(envelope.soundEnabled).toBe(false);
 			expect(envelope.revitalizationEnabled).toBe(false);
+			expect(envelope.distractionDetectorEnabled).toBe(true);
 			expect(envelope.theme).toBe('dawn');
 
 			const loaded = storageAdapter.loadSettings();
@@ -181,6 +183,19 @@ describe('LocalSettingsStorage', () => {
 
 			storageAdapter.saveSettings({ theme: 'oled' });
 			expect(storageAdapter.loadSettings().revitalizationEnabled).toBe(false);
+			expect(storageAdapter.loadSettings().theme).toBe('oled');
+		});
+
+		it('defaults the distraction detector to off', () => {
+			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(false);
+		});
+
+		it('preserves distractionDetectorEnabled when updating other settings', () => {
+			storageAdapter.saveSettings({ distractionDetectorEnabled: true });
+			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(true);
+
+			storageAdapter.saveSettings({ theme: 'oled' });
+			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(true);
 			expect(storageAdapter.loadSettings().theme).toBe('oled');
 		});
 	});
@@ -399,6 +414,26 @@ describe('LocalSettingsStorage', () => {
 
 			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({}));
 			expect(storageAdapter.loadSettings().revitalizationEnabled).toBe(true);
+		});
+
+		it('validates distractionDetectorEnabled boolean type and falls back to the default off', () => {
+			mockStorage.setItem(
+				SETTINGS_STORAGE_KEY,
+				JSON.stringify({ distractionDetectorEnabled: true })
+			);
+			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(true);
+
+			mockStorage.setItem(
+				SETTINGS_STORAGE_KEY,
+				JSON.stringify({ distractionDetectorEnabled: 'true' })
+			);
+			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(false);
+
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ distractionDetectorEnabled: 0 }));
+			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(false);
+
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({}));
+			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(false);
 		});
 
 		it('validates theme type and falls back invalid themes to default dark', () => {

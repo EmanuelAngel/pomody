@@ -30,8 +30,8 @@ S11 (#127, slice 5.5) `tauri-plugin-notification`, `notification:default` capabi
 
 ## Tasks
 
-- [x] T1 / #123 — Pure domain and ports (entity, matching, cadence policy, three ports + `server` tests) · S1-S7 · route: inline · commit `feat(distraction): add pure domain and ports for the detector`
-- [ ] T2 / #124 — Local persistence adapters, fakes and tests · S8 · route: inline
+- [x] T1 / #123 — Pure domain and ports (entity, matching, cadence policy, three ports + `server` tests) · S1-S7 · route: inline · commit `f150fa2` (squash of `02d24b6`, PR #128)
+- [x] T2 / #124 — Local rule/whitelist persistence adapters, fakes, `distractionDetectorEnabled` in settings, and tests · S8 · route: inline · commit `feat(distraction): persist rules, daily silences and the detector switch`
 - [ ] T3 / #125 — Native Windows bridge, monitor adapters and platform selector · S9 · route: inline
 - [ ] T4 / #126 — "Distractions" view, picker, global switch and i18n · S10 · route: inline
 - [ ] T5 / #127 — OS notification with three actions and poll/evaluate state loop · S11 · route: inline
@@ -75,3 +75,15 @@ L3 (2026-10-16) Assumption pinned in tests: the idle guard blocks when `idleSeco
 L4 (2026-10-16) T1 red→green: added `distraction-rule.entity.test.ts` and `distraction-policy.test.ts` first (observed RED), then the entity, the policy and the three ports (GREEN). Port contract tests use test-local stubs; the real fakes and Noop adapter arrive with slices 5.2/5.3 (spec §10), so they are not duplicated here.
 
 L5 (2026-10-16) T1 gate on the committed state: `pnpm test:unit` → 43 files / 735 tests passed. `pnpm check` → 0 errors, 0 warnings. `pnpm lint` → Prettier clean + ESLint clean (exit 0). Focused run: `pnpm test:unit src/lib/domain/distraction src/lib/domain/ports/distraction-*.port.test.ts` → 4 files / 33 tests passed. The slice is one commit; its short hash is backfilled into this line with the next slice's document edit, as in `break-revitalization.md`.
+
+L6 (2026-10-16) T1 merged as PR #128 via **squash**, so the work-unit commit `02d24b6` became `f150fa2` in `main`. Repo PR convention confirmed against the real repo, not the generic skill: Spanish `pull_request_template.md`, labels are `enhancement`/`bug`/`documentation` (there is no `status:approved` or `type:*`), and the `ci.yml` bloat guard is skipped for PRs authored by the repository owner. Remote branch is deleted by GitHub on merge; local deletion needs `-D` after squash, and only after `git diff main <branch>` comes back empty.
+
+L7 (2026-10-16) T2 / slice 5.2 (#124) scope read from the issue: rule repository, whitelist repository, `distractionDetectorEnabled` added to the existing settings port and adapter, and fakes. Tests written first (RED: modules not found), then the adapters and fakes (GREEN). Deliberate difference from `local-break-activity-repository.ts`: **an empty rules list is a valid state, never corruption**, because there is no seed catalogue here — a rule exists only because the user created it. The whitelist adapter keeps a single day in the envelope (`silencedUntil` + `ruleIds`) and purges lazily on read when the day changed; no timers, no periodic writes. The adapter never reads the clock: the caller passes the local `YYYY-MM-DD`.
+
+L8 (2026-10-16) Observations recorded for later slices, not acted on now:
+
+- **Port gap for 5.4**: §6.4 promises "la opción de levantar el silencio" per rule, but `IDistractionWhitelistRepository` (§3.2, frozen in 5.1) exposes only `silence`, `getSilenced` and `clearAll` — there is no per-rule release. 5.4 needs a decision (add `unsilence(ruleId, dateKey)` or release by rewriting the list). Not changed here: the design is closed and slice 5.1 froze the contract as written.
+- The whitelist fake mirrors the adapter's lazy purge (reading on a different day drops the list) so state tests cannot rely on behavior the adapter does not have.
+- `FakeSettingsStorage` needed no change: it spreads `DEFAULT_USER_SETTINGS`, so the new field flows through. Its own tests are unaffected.
+
+L9 (2026-10-16) T2 gate on the working tree: `pnpm test:unit` → 47 files / **807 tests passed** (focused run over the two adapter tests and the two fake tests: 4 files / 69 tests passed). `pnpm check` → 0 errors, 0 warnings. `pnpm lint` → exit 0. `pnpm test:browser` → 21 files / 213 tests passed (run because the slice touches the shared `settings-storage` port, even though it adds no client code). Legacy-envelope coverage pins the unchanged settings fields, so an envelope written before this slice still loads with the detector off.
