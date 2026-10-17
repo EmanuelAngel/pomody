@@ -199,7 +199,7 @@ describe('DistractionState', () => {
 			await state.deleteRule(rule.id);
 
 			expect(ruleRepository.deleteCalls).toEqual([rule.id]);
-			expect(ruleRepository.getAll()).resolves.toEqual([]);
+			await expect(ruleRepository.getAll()).resolves.toEqual([]);
 			expect(state.rules).toEqual([]);
 		});
 	});
