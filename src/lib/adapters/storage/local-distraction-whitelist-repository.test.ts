@@ -90,6 +90,38 @@ describe('LocalStorageDistractionWhitelistRepository', () => {
 			expect(mockStorage.getItem(DISTRACTION_WHITELIST_STORAGE_KEY)).toBeNull();
 		});
 
+		it('does not purge the stored day when the date key is padded', async () => {
+			await repository.silence('rule-1', TODAY);
+			const stored = mockStorage.getItem(DISTRACTION_WHITELIST_STORAGE_KEY);
+
+			await expect(repository.getSilenced(` ${TODAY} `)).resolves.toEqual(['rule-1']);
+			expect(mockStorage.getItem(DISTRACTION_WHITELIST_STORAGE_KEY)).toBe(stored);
+		});
+
+		it('ignores an empty or blank date key without touching storage', async () => {
+			await repository.silence('rule-1', TODAY);
+			const stored = mockStorage.getItem(DISTRACTION_WHITELIST_STORAGE_KEY);
+
+			await expect(repository.getSilenced('')).resolves.toEqual([]);
+			await expect(repository.getSilenced('   ')).resolves.toEqual([]);
+
+			expect(mockStorage.getItem(DISTRACTION_WHITELIST_STORAGE_KEY)).toBe(stored);
+			await expect(repository.getSilenced(TODAY)).resolves.toEqual(['rule-1']);
+		});
+
+		it('ignores a non-string date key without touching storage', async () => {
+			await repository.silence('rule-1', TODAY);
+			const stored = mockStorage.getItem(DISTRACTION_WHITELIST_STORAGE_KEY);
+
+			await expect(repository.getSilenced(42 as unknown as string)).resolves.toEqual([]);
+			await expect(repository.getSilenced(null as unknown as string)).resolves.toEqual([]);
+			await expect(repository.getSilenced(undefined as unknown as string)).resolves.toEqual([]);
+			await expect(repository.getSilenced({} as unknown as string)).resolves.toEqual([]);
+
+			expect(mockStorage.getItem(DISTRACTION_WHITELIST_STORAGE_KEY)).toBe(stored);
+			await expect(repository.getSilenced(TODAY)).resolves.toEqual(['rule-1']);
+		});
+
 		it('purges only when the day changes, not for a repeated read on the same day', async () => {
 			await repository.silence('rule-1', TODAY);
 

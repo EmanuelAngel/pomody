@@ -77,15 +77,26 @@ export class LocalStorageDistractionWhitelistRepository implements IDistractionW
 
 	/**
 	 * Returns the rules silenced for the given local date.
-	 * If the stored day is not `dateKey`, the list is stale: it is ignored and purged.
+	 * The date is normalized like the write path (`silence` / `unsilence`), so a read can
+	 * never purge the day it was asked about: invalid input returns an empty list without
+	 * touching storage, and the stored list is purged only when the day genuinely changed.
 	 */
 	public async getSilenced(dateKey: string): Promise<readonly string[]> {
+		if (typeof dateKey !== 'string') {
+			return Object.freeze([]);
+		}
+
+		const trimmedDate = dateKey.trim();
+		if (trimmedDate.length === 0) {
+			return Object.freeze([]);
+		}
+
 		const envelope = this.readEnvelope();
 		if (envelope === null) {
 			return Object.freeze([]);
 		}
 
-		if (envelope.silencedUntil !== dateKey) {
+		if (envelope.silencedUntil !== trimmedDate) {
 			this.removeEnvelope();
 			return Object.freeze([]);
 		}
