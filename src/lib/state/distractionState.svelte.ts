@@ -92,6 +92,13 @@ export class DistractionState {
 		this.settingsStorage = options.settingsStorage ?? new LocalSettingsStorage();
 		this.monitor = options.monitor ?? createDefaultDistractionMonitor();
 		this.now = options.now ?? (() => new SvelteDate());
+
+		// Seed the persisted switch eagerly, like `timer.svelte.ts` and `theme.svelte.ts`
+		// read their settings in the constructor: the settings drawer renders
+		// `enabled` on first paint, so a persisted ON preference must be visible
+		// before the Distractions view ever mounts. `load()` re-reads the same
+		// source, so seeding here stays idempotent.
+		this._enabled = this.settingsStorage.loadSettings().distractionDetectorEnabled;
 	}
 
 	/** True only when the platform can read other processes' windows (spec §1). */

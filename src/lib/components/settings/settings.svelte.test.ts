@@ -679,6 +679,37 @@ describe('SettingsDrawer (Client Browser)', () => {
 			await expect.element(switchEl).not.toBeChecked();
 		});
 
+		it('shows a persisted ON preference as checked on first render, without the Distractions view', async () => {
+			const ticker = createDummyTicker(false);
+			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+			const { distractionState, settingsStorage } = createDetectorState(true, true);
+
+			const screen = await render(SettingsDrawer, {
+				open: true,
+				timerState,
+				themeState: createThemeState(),
+				distractionState,
+				portalProps: { disabled: true }
+			});
+
+			const switchEl = screen.getByRole('switch', {
+				name: 'Enable the distraction detector'
+			});
+			await expect.element(switchEl).toBeVisible();
+			await expect.element(switchEl).toBeChecked();
+			expect(distractionState.enabled).toBe(true);
+
+			// Toggling still persists in both directions after the eager seed.
+			await switchEl.click();
+			expect(distractionState.enabled).toBe(false);
+			expect(settingsStorage.saveSettingsCalls).toEqual([{ distractionDetectorEnabled: false }]);
+			await expect.element(switchEl).not.toBeChecked();
+
+			await switchEl.click();
+			expect(distractionState.enabled).toBe(true);
+			await expect.element(switchEl).toBeChecked();
+		});
+
 		it('hides the whole section on a platform that cannot read other windows', async () => {
 			const ticker = createDummyTicker(false);
 			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);

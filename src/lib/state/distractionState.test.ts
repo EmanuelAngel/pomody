@@ -236,6 +236,15 @@ describe('DistractionState', () => {
 	});
 
 	describe('global switch', () => {
+		it('seeds the persisted switch eagerly, before any load() call', () => {
+			const { state } = createHarness({ detectorEnabled: true });
+
+			// No load() has run: the storage value must already be visible so the
+			// settings drawer renders the correct state on a cold start.
+			expect(state.enabled).toBe(true);
+			expect(createHarness().state.enabled).toBe(false);
+		});
+
 		it('persists the switch and reloads it as enabled', async () => {
 			const { state, settingsStorage } = createHarness();
 
