@@ -5,40 +5,16 @@ import {
 	SETTINGS_STORAGE_VERSION,
 	type StoredSettingsEnvelope
 } from './local-settings-storage';
+import { InMemoryStorage } from './in-memory-storage';
 import { DEFAULT_USER_SETTINGS, type UserSettings } from '../../domain/ports/settings-storage.port';
 import { DEFAULT_TIMER_CONFIG } from '../../domain/timer/timer-fsm';
-
-function createMockStorage(initialData: Record<string, string> = {}): Storage {
-	const map = new Map<string, string>(Object.entries(initialData));
-
-	return {
-		get length(): number {
-			return map.size;
-		},
-		clear(): void {
-			map.clear();
-		},
-		getItem(key: string): string | null {
-			return map.get(key) ?? null;
-		},
-		key(index: number): string | null {
-			return Array.from(map.keys())[index] ?? null;
-		},
-		removeItem(key: string): void {
-			map.delete(key);
-		},
-		setItem(key: string, value: string): void {
-			map.set(key, String(value));
-		}
-	};
-}
 
 describe('LocalSettingsStorage', () => {
 	let mockStorage: Storage;
 	let storageAdapter: LocalSettingsStorage;
 
 	beforeEach(() => {
-		mockStorage = createMockStorage();
+		mockStorage = new InMemoryStorage();
 		storageAdapter = new LocalSettingsStorage(mockStorage);
 	});
 
@@ -87,6 +63,7 @@ describe('LocalSettingsStorage', () => {
 				},
 				soundEnabled: false,
 				revitalizationEnabled: false,
+				distractionDetectorEnabled: true,
 				theme: 'dawn'
 			};
 
@@ -100,6 +77,7 @@ describe('LocalSettingsStorage', () => {
 			expect(envelope.timer).toEqual(customSettings.timer);
 			expect(envelope.soundEnabled).toBe(false);
 			expect(envelope.revitalizationEnabled).toBe(false);
+			expect(envelope.distractionDetectorEnabled).toBe(true);
 			expect(envelope.theme).toBe('dawn');
 
 			const loaded = storageAdapter.loadSettings();
@@ -181,6 +159,19 @@ describe('LocalSettingsStorage', () => {
 
 			storageAdapter.saveSettings({ theme: 'oled' });
 			expect(storageAdapter.loadSettings().revitalizationEnabled).toBe(false);
+			expect(storageAdapter.loadSettings().theme).toBe('oled');
+		});
+
+		it('defaults the distraction detector to off', () => {
+			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(false);
+		});
+
+		it('preserves distractionDetectorEnabled when updating other settings', () => {
+			storageAdapter.saveSettings({ distractionDetectorEnabled: true });
+			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(true);
+
+			storageAdapter.saveSettings({ theme: 'oled' });
+			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(true);
 			expect(storageAdapter.loadSettings().theme).toBe('oled');
 		});
 	});
@@ -401,6 +392,26 @@ describe('LocalSettingsStorage', () => {
 			expect(storageAdapter.loadSettings().revitalizationEnabled).toBe(true);
 		});
 
+		it('validates distractionDetectorEnabled boolean type and falls back to the default off', () => {
+			mockStorage.setItem(
+				SETTINGS_STORAGE_KEY,
+				JSON.stringify({ distractionDetectorEnabled: true })
+			);
+			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(true);
+
+			mockStorage.setItem(
+				SETTINGS_STORAGE_KEY,
+				JSON.stringify({ distractionDetectorEnabled: 'true' })
+			);
+			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(false);
+
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ distractionDetectorEnabled: 0 }));
+			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(false);
+
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({}));
+			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(false);
+		});
+
 		it('validates theme type and falls back invalid themes to default dark', () => {
 			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ theme: 'invalid-theme' }));
 			expect(storageAdapter.loadSettings().theme).toBe('dark');
@@ -437,12 +448,10 @@ describe('LocalSettingsStorage', () => {
 
 	describe('Resilience and Exception Handling', () => {
 		it('handles SecurityError on getItem gracefully without throwing', () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				getItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The operation is insecure.', 'SecurityError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'getItem').mockImplementation(() => {
+				throw new DOMException('The operation is insecure.', 'SecurityError');
+			});
 
 			const adapter = new LocalSettingsStorage(throwingStorage);
 			expect(() => adapter.loadSettings()).not.toThrow();
@@ -450,24 +459,20 @@ describe('LocalSettingsStorage', () => {
 		});
 
 		it('handles QuotaExceededError or DOMException on setItem gracefully without throwing', () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				setItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'setItem').mockImplementation(() => {
+				throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+			});
 
 			const adapter = new LocalSettingsStorage(throwingStorage);
 			expect(() => adapter.saveSettings({ theme: 'dawn' })).not.toThrow();
 		});
 
 		it('handles SecurityError on removeItem gracefully without throwing', () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				removeItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The operation is insecure.', 'SecurityError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'removeItem').mockImplementation(() => {
+				throw new DOMException('The operation is insecure.', 'SecurityError');
+			});
 
 			const adapter = new LocalSettingsStorage(throwingStorage);
 			expect(() => adapter.resetSettings()).not.toThrow();

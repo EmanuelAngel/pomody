@@ -42,6 +42,13 @@ class StubWhitelistRepository implements IDistractionWhitelistRepository {
 		this.#silenced.set(dateKey, [...(this.#silenced.get(dateKey) ?? []), ruleId]);
 	}
 
+	async unsilence(ruleId: string, dateKey: string): Promise<void> {
+		this.#silenced.set(
+			dateKey,
+			(this.#silenced.get(dateKey) ?? []).filter((silencedId) => silencedId !== ruleId)
+		);
+	}
+
 	async clearAll(): Promise<void> {
 		this.#silenced.clear();
 	}
@@ -78,7 +85,12 @@ describe('IDistractionWhitelistRepository contract', () => {
 		expect(await repository.getSilenced('2026-10-16')).toEqual(['rule-1']);
 		expect(await repository.getSilenced('2026-10-17')).toEqual(['rule-2']);
 
+		await repository.unsilence('rule-1', '2026-10-16');
+		expect(await repository.getSilenced('2026-10-16')).toEqual([]);
+		expect(await repository.getSilenced('2026-10-17')).toEqual(['rule-2']);
+
 		await repository.clearAll();
 		expect(await repository.getSilenced('2026-10-16')).toEqual([]);
+		expect(await repository.getSilenced('2026-10-17')).toEqual([]);
 	});
 });

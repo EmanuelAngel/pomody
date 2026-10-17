@@ -39,6 +39,32 @@ export default defineConfig(
 		rules: {}
 	},
 	{
+		// One Storage double for the whole repo. Adapters use InMemoryStorage as their SSR
+		// fallback and tests use it as their double: a local copy drifts silently and the
+		// copies already diverged once (six identical hand-rolled mocks across adapters).
+		files: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
+		rules: {
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector: 'FunctionDeclaration[id.name=/Storage$/]',
+					message:
+						'Hand-rolled Storage double: import InMemoryStorage from $lib/adapters/storage/in-memory-storage instead.'
+				},
+				{
+					selector: 'ClassDeclaration[id.name=/Storage$/]',
+					message:
+						'Hand-rolled Storage double: import InMemoryStorage from $lib/adapters/storage/in-memory-storage instead.'
+				},
+				{
+					selector: 'VariableDeclarator[id.name=/Storage$/] > ObjectExpression',
+					message:
+						'Hand-rolled Storage double: import InMemoryStorage from $lib/adapters/storage/in-memory-storage instead.'
+				}
+			]
+		}
+	},
+	{
 		files: ['src/lib/components/ui/**/*.svelte'],
 		rules: {
 			'svelte/no-navigation-without-resolve': 'off'

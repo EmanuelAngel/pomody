@@ -11,6 +11,8 @@ export interface UserSettings {
 	readonly timer: TimerConfig;
 	readonly soundEnabled: boolean;
 	readonly revitalizationEnabled: boolean;
+	/** Global switch of the distraction detector. Off by default: the user opts in. */
+	readonly distractionDetectorEnabled: boolean;
 	readonly theme: Theme;
 }
 
@@ -21,6 +23,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = Object.freeze({
 	timer: DEFAULT_TIMER_CONFIG,
 	soundEnabled: true,
 	revitalizationEnabled: true,
+	distractionDetectorEnabled: false,
 	theme: 'dark'
 });
 

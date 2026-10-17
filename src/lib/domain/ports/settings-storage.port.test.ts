@@ -11,16 +11,18 @@ describe('Settings Storage Port & UserSettings Model', () => {
 	});
 
 	describe('DEFAULT_USER_SETTINGS', () => {
-		it('should match DEFAULT_TIMER_CONFIG, soundEnabled true, revitalizationEnabled true, and dark theme', () => {
+		it('should match DEFAULT_TIMER_CONFIG, soundEnabled true, revitalizationEnabled true, detector off, and dark theme', () => {
 			expect(DEFAULT_USER_SETTINGS).toEqual({
 				timer: DEFAULT_TIMER_CONFIG,
 				soundEnabled: true,
 				revitalizationEnabled: true,
+				distractionDetectorEnabled: false,
 				theme: 'dark'
 			});
 			expect(DEFAULT_USER_SETTINGS.timer).toBe(DEFAULT_TIMER_CONFIG);
 			expect(DEFAULT_USER_SETTINGS.soundEnabled).toBe(true);
 			expect(DEFAULT_USER_SETTINGS.revitalizationEnabled).toBe(true);
+			expect(DEFAULT_USER_SETTINGS.distractionDetectorEnabled).toBe(false);
 			expect(DEFAULT_USER_SETTINGS.theme).toBe('dark');
 		});
 
@@ -39,11 +41,13 @@ describe('Settings Storage Port & UserSettings Model', () => {
 			storage.saveSettings({
 				theme: 'dawn',
 				soundEnabled: false,
-				revitalizationEnabled: false
+				revitalizationEnabled: false,
+				distractionDetectorEnabled: true
 			});
 			expect(storage.loadSettings().theme).toBe('dawn');
 			expect(storage.loadSettings().soundEnabled).toBe(false);
 			expect(storage.loadSettings().revitalizationEnabled).toBe(false);
+			expect(storage.loadSettings().distractionDetectorEnabled).toBe(true);
 
 			storage.resetSettings();
 			expect(storage.loadSettings()).toEqual(DEFAULT_USER_SETTINGS);

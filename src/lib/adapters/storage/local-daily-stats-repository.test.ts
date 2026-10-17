@@ -5,42 +5,15 @@ import {
 	DAILY_STATS_STORAGE_VERSION,
 	getLocalDateString
 } from './local-daily-stats-repository';
+import { InMemoryStorage } from './in-memory-storage';
 import type { DailyStats } from '../../domain/ports/daily-stats-repository.port';
 
-class MockStorage implements Storage {
-	private store: Map<string, string> = new Map();
-
-	get length(): number {
-		return this.store.size;
-	}
-
-	public clear(): void {
-		this.store.clear();
-	}
-
-	public getItem(key: string): string | null {
-		return this.store.has(key) ? this.store.get(key)! : null;
-	}
-
-	public key(index: number): string | null {
-		return Array.from(this.store.keys())[index] ?? null;
-	}
-
-	public removeItem(key: string): void {
-		this.store.delete(key);
-	}
-
-	public setItem(key: string, value: string): void {
-		this.store.set(key, value);
-	}
-}
-
 describe('LocalDailyStatsRepository', () => {
-	let storage: MockStorage;
+	let storage: InMemoryStorage;
 	let fixedNow: Date;
 
 	beforeEach(() => {
-		storage = new MockStorage();
+		storage = new InMemoryStorage();
 		fixedNow = new Date('2026-10-03T14:30:00');
 	});
 
@@ -177,7 +150,7 @@ describe('LocalDailyStatsRepository', () => {
 		});
 
 		it('should not throw if storage.setItem throws an error (e.g. QuotaExceededError)', () => {
-			const throwingStorage = new MockStorage();
+			const throwingStorage = new InMemoryStorage();
 			vi.spyOn(throwingStorage, 'setItem').mockImplementation(() => {
 				throw new Error('QuotaExceededError');
 			});
@@ -223,7 +196,7 @@ describe('LocalDailyStatsRepository', () => {
 		});
 
 		it('should not throw on getItem throwing (SecurityError)', () => {
-			const throwingStorage = new MockStorage();
+			const throwingStorage = new InMemoryStorage();
 			vi.spyOn(throwingStorage, 'getItem').mockImplementation(() => {
 				throw new Error('SecurityError: access denied');
 			});

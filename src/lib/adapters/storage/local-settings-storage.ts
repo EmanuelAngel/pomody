@@ -22,6 +22,7 @@ export interface StoredSettingsEnvelope {
 	readonly timer: TimerConfig;
 	readonly soundEnabled: boolean;
 	readonly revitalizationEnabled?: boolean;
+	readonly distractionDetectorEnabled?: boolean;
 	readonly theme: Theme;
 }
 
@@ -124,6 +125,10 @@ export class LocalSettingsStorage implements ISettingsStorage {
 				patch.revitalizationEnabled !== undefined
 					? patch.revitalizationEnabled
 					: current.revitalizationEnabled,
+			distractionDetectorEnabled:
+				patch.distractionDetectorEnabled !== undefined
+					? patch.distractionDetectorEnabled
+					: current.distractionDetectorEnabled,
 			theme: patch.theme !== undefined ? patch.theme : current.theme
 		};
 
@@ -134,6 +139,7 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			timer: validated.timer,
 			soundEnabled: validated.soundEnabled,
 			revitalizationEnabled: validated.revitalizationEnabled,
+			distractionDetectorEnabled: validated.distractionDetectorEnabled,
 			theme: validated.theme
 		};
 
@@ -214,6 +220,10 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			? obj.revitalizationEnabled
 			: DEFAULT_USER_SETTINGS.revitalizationEnabled;
 
+		const distractionDetectorEnabled = isValidBoolean(obj.distractionDetectorEnabled)
+			? obj.distractionDetectorEnabled
+			: DEFAULT_USER_SETTINGS.distractionDetectorEnabled;
+
 		const theme = isValidTheme(obj.theme) ? obj.theme : DEFAULT_USER_SETTINGS.theme;
 
 		return {
@@ -225,6 +235,7 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			},
 			soundEnabled,
 			revitalizationEnabled,
+			distractionDetectorEnabled,
 			theme
 		};
 	}

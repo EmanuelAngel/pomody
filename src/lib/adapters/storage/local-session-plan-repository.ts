@@ -6,6 +6,7 @@ import type {
 import { validateSessionPlan } from '../../domain/planning/session-plan.entity';
 import type { TimerConfig } from '../../domain/timer/timer-fsm';
 import type { ISessionPlanRepository } from '../../domain/ports/session-plan-repository.port';
+import { InMemoryStorage } from './in-memory-storage';
 
 export const SESSION_PLAN_STORAGE_KEY = 'pomody:session-plan';
 export const SESSION_PLAN_STORAGE_VERSION = 1;
@@ -13,38 +14,6 @@ export const SESSION_PLAN_STORAGE_VERSION = 1;
 export interface StoredSessionPlanEnvelope {
 	readonly version: number;
 	readonly plan: SessionPlan | null;
-}
-
-/**
- * Standard Web Storage API compliant in-memory storage fallback.
- * Used when localStorage is unavailable, restricted (SecurityError), or in SSR/Node contexts.
- */
-export class InMemoryStorage implements Storage {
-	private readonly items = new Map<string, string>();
-
-	public get length(): number {
-		return this.items.size;
-	}
-
-	public clear(): void {
-		this.items.clear();
-	}
-
-	public getItem(key: string): string | null {
-		return this.items.get(key) ?? null;
-	}
-
-	public key(index: number): string | null {
-		return Array.from(this.items.keys())[index] ?? null;
-	}
-
-	public removeItem(key: string): void {
-		this.items.delete(key);
-	}
-
-	public setItem(key: string, value: string): void {
-		this.items.set(key, String(value));
-	}
 }
 
 /**

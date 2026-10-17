@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
 	LocalStoragePlanRepository,
 	LocalStorageSessionPlanRepository,
-	InMemoryStorage,
 	sanitizePlanBlock,
 	sanitizeSessionPlan,
 	SESSION_PLAN_STORAGE_KEY,
 	SESSION_PLAN_STORAGE_VERSION,
 	type StoredSessionPlanEnvelope
 } from './local-session-plan-repository';
+import { InMemoryStorage } from './in-memory-storage';
 import {
 	calculateSessionBudgetByBlocks,
 	calculateSessionBudgetByEndTime,
@@ -19,54 +19,6 @@ import {
 	type SessionPlan
 } from '../../domain/planning/session-plan.entity';
 import { DEFAULT_TIMER_CONFIG } from '../../domain/timer/timer-fsm';
-
-function createMockStorage(initialData: Record<string, string> = {}): Storage {
-	const map = new Map<string, string>(Object.entries(initialData));
-
-	return {
-		get length(): number {
-			return map.size;
-		},
-		clear(): void {
-			map.clear();
-		},
-		getItem(key: string): string | null {
-			return map.get(key) ?? null;
-		},
-		key(index: number): string | null {
-			return Array.from(map.keys())[index] ?? null;
-		},
-		removeItem(key: string): void {
-			map.delete(key);
-		},
-		setItem(key: string, value: string): void {
-			map.set(key, String(value));
-		}
-	};
-}
-
-describe('InMemoryStorage', () => {
-	it('supports basic Storage interface operations', () => {
-		const storage = new InMemoryStorage();
-		expect(storage.length).toBe(0);
-		expect(storage.getItem('key1')).toBeNull();
-
-		storage.setItem('key1', 'val1');
-		expect(storage.length).toBe(1);
-		expect(storage.getItem('key1')).toBe('val1');
-		expect(storage.key(0)).toBe('key1');
-
-		storage.removeItem('key1');
-		expect(storage.length).toBe(0);
-		expect(storage.getItem('key1')).toBeNull();
-
-		storage.setItem('k1', 'v1');
-		storage.setItem('k2', 'v2');
-		expect(storage.length).toBe(2);
-		storage.clear();
-		expect(storage.length).toBe(0);
-	});
-});
 
 describe('sanitizePlanBlock', () => {
 	it('returns a frozen PlanBlock for valid input', () => {
@@ -340,7 +292,7 @@ describe('LocalStoragePlanRepository', () => {
 	let repository: LocalStoragePlanRepository;
 
 	beforeEach(() => {
-		mockStorage = createMockStorage();
+		mockStorage = new InMemoryStorage();
 		repository = new LocalStoragePlanRepository(mockStorage);
 	});
 
@@ -584,7 +536,7 @@ describe('LocalStoragePlanRepository', () => {
 		it('returns window.localStorage when window is present and accessible', () => {
 			const originalWindow = globalThis.window;
 			try {
-				const mockWindowStorage = createMockStorage();
+				const mockWindowStorage = new InMemoryStorage();
 				const mockWindow = { localStorage: mockWindowStorage } as unknown as Window &
 					typeof globalThis;
 				(globalThis as unknown as { window: unknown }).window = mockWindow;
@@ -601,12 +553,10 @@ describe('LocalStoragePlanRepository', () => {
 		});
 
 		it('handles SecurityError on getItem gracefully without throwing', async () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				getItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The operation is insecure.', 'SecurityError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'getItem').mockImplementation(() => {
+				throw new DOMException('The operation is insecure.', 'SecurityError');
+			});
 
 			const repo = new LocalStoragePlanRepository(throwingStorage);
 			expect(await repo.getActivePlan()).toBeNull();
@@ -614,12 +564,10 @@ describe('LocalStoragePlanRepository', () => {
 
 		it('handles SecurityError on removeItem gracefully without throwing', async () => {
 			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-			const throwingStorage: Storage = {
-				...mockStorage,
-				removeItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The operation is insecure.', 'SecurityError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'removeItem').mockImplementation(() => {
+				throw new DOMException('The operation is insecure.', 'SecurityError');
+			});
 
 			const repo = new LocalStoragePlanRepository(throwingStorage);
 			await expect(repo.clearActivePlan()).resolves.not.toThrow();
@@ -635,12 +583,10 @@ describe('LocalStoragePlanRepository', () => {
 		it('handles QuotaExceededError on setItem gracefully without throwing and logs console.error', async () => {
 			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 			const quotaError = new DOMException('The quota has been exceeded.', 'QuotaExceededError');
-			const throwingStorage: Storage = {
-				...mockStorage,
-				setItem: vi.fn().mockImplementation(() => {
-					throw quotaError;
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'setItem').mockImplementation(() => {
+				throw quotaError;
+			});
 
 			const repo = new LocalStoragePlanRepository(throwingStorage);
 			const plan = calculateSessionBudgetByBlocks({

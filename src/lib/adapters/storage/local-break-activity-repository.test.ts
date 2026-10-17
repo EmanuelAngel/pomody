@@ -6,6 +6,7 @@ import {
 	BREAK_ACTIVITIES_STORAGE_VERSION,
 	type StoredBreakActivitiesEnvelope
 } from './local-break-activity-repository';
+import { InMemoryStorage } from './in-memory-storage';
 import {
 	createBreakActivity,
 	PRESET_BREAK_ACTIVITIES,
@@ -13,37 +14,12 @@ import {
 } from '../../domain/breaks/break-activity.entity';
 import { sortBreakActivities } from '../../domain/ports/break-activity-repository.port';
 
-function createMockStorage(initialData: Record<string, string> = {}): Storage {
-	const map = new Map<string, string>(Object.entries(initialData));
-
-	return {
-		get length(): number {
-			return map.size;
-		},
-		clear(): void {
-			map.clear();
-		},
-		getItem(key: string): string | null {
-			return map.get(key) ?? null;
-		},
-		key(index: number): string | null {
-			return Array.from(map.keys())[index] ?? null;
-		},
-		removeItem(key: string): void {
-			map.delete(key);
-		},
-		setItem(key: string, value: string): void {
-			map.set(key, String(value));
-		}
-	};
-}
-
 describe('LocalStorageBreakActivityRepository', () => {
 	let mockStorage: Storage;
 	let repository: LocalStorageBreakActivityRepository;
 
 	beforeEach(() => {
-		mockStorage = createMockStorage();
+		mockStorage = new InMemoryStorage();
 		repository = new LocalStorageBreakActivityRepository(mockStorage);
 	});
 
@@ -602,12 +578,10 @@ describe('LocalStorageBreakActivityRepository', () => {
 		});
 
 		it('handles SecurityError on getItem gracefully without throwing', async () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				getItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The operation is insecure.', 'SecurityError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'getItem').mockImplementation(() => {
+				throw new DOMException('The operation is insecure.', 'SecurityError');
+			});
 
 			const repo = new LocalStorageBreakActivityRepository(throwingStorage);
 			const all = await repo.getAll();
@@ -615,12 +589,10 @@ describe('LocalStorageBreakActivityRepository', () => {
 		});
 
 		it('handles SecurityError on removeItem gracefully without throwing', async () => {
-			const throwingStorage: Storage = {
-				...mockStorage,
-				removeItem: vi.fn().mockImplementation(() => {
-					throw new DOMException('The operation is insecure.', 'SecurityError');
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'removeItem').mockImplementation(() => {
+				throw new DOMException('The operation is insecure.', 'SecurityError');
+			});
 
 			const repo = new LocalStorageBreakActivityRepository(throwingStorage);
 			await expect(repo.clearAll()).resolves.not.toThrow();
@@ -629,12 +601,10 @@ describe('LocalStorageBreakActivityRepository', () => {
 		it('handles QuotaExceededError on setItem gracefully and logs error', async () => {
 			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 			const quotaError = new DOMException('The quota has been exceeded.', 'QuotaExceededError');
-			const throwingStorage: Storage = {
-				...mockStorage,
-				setItem: vi.fn().mockImplementation(() => {
-					throw quotaError;
-				})
-			};
+			const throwingStorage = new InMemoryStorage();
+			vi.spyOn(throwingStorage, 'setItem').mockImplementation(() => {
+				throw quotaError;
+			});
 
 			const repo = new LocalStorageBreakActivityRepository(throwingStorage);
 			const act = createBreakActivity({ id: 'act-1', title: 'Test', category: 'physical' });
