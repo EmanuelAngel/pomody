@@ -1,13 +1,25 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { NoopDistractionMonitor } from '$lib/adapters/window/noop-distraction-monitor';
 import { TauriDistractionMonitor } from '$lib/adapters/window/tauri-distraction-monitor';
-import type { IDistractionMonitor } from '$lib/domain/ports/distraction-monitor.port';
+import type {
+	IDistractionMonitor,
+	WindowObservation
+} from '$lib/domain/ports/distraction-monitor.port';
 import type { DistractionRule } from '$lib/domain/distraction/distraction-rule.entity';
+import { TimerFSM } from '$lib/domain/timer/timer-fsm';
+import * as m from '$lib/paraglide/messages';
 import { FakeDistractionMonitor } from '$tests/fakes/platform/fake-distraction-monitor';
+import { FakeDistractionNotifier } from '$tests/fakes/platform/fake-distraction-notifier';
+import { NoopDistractionNotifier } from '$lib/adapters/notification/noop-distraction-notifier';
+import { TauriDistractionNotifier } from '$lib/adapters/notification/tauri-distraction-notifier';
 import { FakeDistractionRuleRepository } from '$tests/fakes/repositories/fake-distraction-rule-repository';
 import { FakeDistractionWhitelistRepository } from '$tests/fakes/repositories/fake-distraction-whitelist-repository';
 import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
-import { createDefaultDistractionMonitor, createDistractionState } from './distractionState.svelte';
+import {
+	createDefaultDistractionMonitor,
+	createDefaultDistractionNotifier,
+	createDistractionState
+} from './distractionState.svelte';
 
 /** 2026-10-16, 10:00 local time — the day every state test runs on. */
 const NOW = new Date(2026, 9, 16, 10, 0, 0);
@@ -69,6 +81,25 @@ describe('createDefaultDistractionMonitor', () => {
 		vi.stubGlobal('__TAURI_INTERNALS__', { invoke: () => Promise.resolve(null) });
 
 		expect(createDefaultDistractionMonitor()).toBeInstanceOf(TauriDistractionMonitor);
+	});
+});
+
+describe('createDefaultDistractionNotifier', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it('should fall back to the no-op notifier outside a Tauri runtime', () => {
+		const notifier = createDefaultDistractionNotifier();
+
+		expect(notifier).toBeInstanceOf(NoopDistractionNotifier);
+		expect(notifier.isSupported).toBe(false);
+	});
+
+	it('should select the Tauri notifier when the Tauri runtime is present', () => {
+		vi.stubGlobal('__TAURI_INTERNALS__', { invoke: () => Promise.resolve(null) });
+
+		expect(createDefaultDistractionNotifier()).toBeInstanceOf(TauriDistractionNotifier);
 	});
 });
 
@@ -272,6 +303,339 @@ describe('DistractionState', () => {
 
 			await expect(state.openWindows()).resolves.toEqual(windows);
 			expect((monitor as FakeDistractionMonitor).listCalls).toBe(1);
+		});
+	});
+
+	/**
+	 * The poll loop of slice 5.5 (issue #127, spec §4).
+	 *
+	 * The timer is the real `TimerFSM`, because the composition root's contract with it —
+	 * "arm only while a focus block is running" — is exactly what these tests have to pin,
+	 * and the fake would only re-state it. The clock and the interval advance together.
+	 */
+	describe('poll loop', () => {
+		const CHROME_WINDOW: WindowObservation = {
+			exe: 'chrome',
+			title: 'YouTube — Google Chrome',
+			idleSeconds: 5
+		};
+
+		async function createLoopHarness(
+			options: {
+				rules?: readonly DistractionRule[];
+				silencedRuleIds?: readonly string[];
+				detectorEnabled?: boolean;
+				foregroundWindow?: WindowObservation | null;
+				monitorSupported?: boolean;
+				notifier?: FakeDistractionNotifier;
+			} = {}
+		) {
+			const timer = new TimerFSM();
+			const monitor = new FakeDistractionMonitor({
+				isSupported: options.monitorSupported ?? true,
+				foregroundWindow:
+					options.foregroundWindow === undefined ? CHROME_WINDOW : options.foregroundWindow
+			});
+			const notifier = options.notifier ?? new FakeDistractionNotifier();
+			const ruleRepository = new FakeDistractionRuleRepository(options.rules);
+			const whitelistRepository = new FakeDistractionWhitelistRepository(
+				options.silencedRuleIds !== undefined
+					? { silencedUntil: TODAY_KEY, ruleIds: options.silencedRuleIds }
+					: undefined
+			);
+			const settingsStorage = new FakeSettingsStorage({
+				distractionDetectorEnabled: options.detectorEnabled ?? true
+			});
+
+			let clock = NOW.getTime();
+			const state = createDistractionState({
+				ruleRepository,
+				whitelistRepository,
+				settingsStorage,
+				monitor,
+				notifier,
+				timer,
+				now: () => new Date(clock)
+			});
+			await state.load();
+
+			/** Advances the injected clock and the poll interval together, as real time would. */
+			async function advance(ms: number): Promise<void> {
+				clock += ms;
+				await vi.advanceTimersByTimeAsync(ms);
+			}
+
+			return { state, timer, monitor, notifier, ruleRepository, whitelistRepository, advance };
+		}
+
+		beforeEach(() => {
+			vi.useFakeTimers();
+		});
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		it('polls only while a focus block is running, and disarms on pause, reset and block end', async () => {
+			const { timer, monitor, advance } = await createLoopHarness();
+
+			await advance(9_000);
+			expect(monitor.foregroundCalls).toBe(0);
+
+			timer.start();
+			await advance(3_000);
+			expect(monitor.foregroundCalls).toBe(1);
+
+			timer.pause();
+			await advance(9_000);
+			expect(monitor.foregroundCalls).toBe(1);
+
+			timer.resume();
+			await advance(3_000);
+			expect(monitor.foregroundCalls).toBe(2);
+
+			timer.reset();
+			await advance(9_000);
+			expect(monitor.foregroundCalls).toBe(2);
+
+			timer.start();
+			await advance(3_000);
+			timer.tick(1_500_000);
+			await advance(9_000);
+			expect(monitor.foregroundCalls).toBe(3);
+		});
+
+		it('never polls during a break block', async () => {
+			const { timer, monitor, advance } = await createLoopHarness();
+
+			timer.start();
+			timer.tick(1_500_000);
+			timer.start();
+			const breakMode = timer.snapshot.mode;
+
+			await advance(9_000);
+
+			expect(breakMode).toBe('shortBreak');
+			expect(monitor.foregroundCalls).toBe(0);
+		});
+
+		it('never polls in the web degradation, where the monitor reads no windows', async () => {
+			const { timer, monitor, advance } = await createLoopHarness({ monitorSupported: false });
+
+			timer.start();
+			await advance(9_000);
+
+			expect(monitor.foregroundCalls).toBe(0);
+		});
+
+		it('disarms the instant the switch goes off, and never fires while it is off', async () => {
+			const { state, timer, monitor, notifier, advance } = await createLoopHarness({
+				rules: [makeRule()]
+			});
+
+			timer.start();
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(1);
+
+			state.setEnabled(false);
+			await advance(9_000);
+
+			expect(notifier.notifyCalls).toHaveLength(1);
+			expect(monitor.foregroundCalls).toBe(1);
+
+			// The notice history belongs to the block, not to the switch: turning it back on
+			// neither replays what was missed nor repeats what this block already announced.
+			state.setEnabled(true);
+			await advance(3_000);
+
+			expect(notifier.notifyCalls).toHaveLength(1);
+		});
+
+		it('evaluates fresh when the switch goes back on instead of replaying what it missed', async () => {
+			const { state, timer, notifier, advance } = await createLoopHarness({
+				rules: [makeRule()],
+				detectorEnabled: false
+			});
+
+			timer.start();
+			await advance(6_000);
+			expect(notifier.notifyCalls).toHaveLength(0);
+
+			state.setEnabled(true);
+			await advance(3_000);
+
+			// Nothing that happened while the switch was off is replayed: the single notice is
+			// the current window being declared, evaluated from scratch (spec §4).
+			expect(notifier.notifyCalls).toHaveLength(1);
+		});
+
+		it('notifies once per rule and holds the interval between two notices of the same rule', async () => {
+			const { timer, notifier, advance } = await createLoopHarness({ rules: [makeRule()] });
+
+			timer.start();
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(1);
+
+			await advance(180_000);
+			expect(notifier.notifyCalls).toHaveLength(1);
+
+			await advance(180_000);
+			expect(notifier.notifyCalls).toHaveLength(2);
+		});
+
+		it('keeps each rule on its own cadence', async () => {
+			const chrome = makeRule({ id: 'rule-chrome', exe: 'chrome' });
+			const steam = makeRule({ id: 'rule-steam', exe: 'steam' });
+			const { timer, monitor, notifier, advance } = await createLoopHarness({
+				rules: [chrome, steam]
+			});
+
+			timer.start();
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(1);
+
+			monitor.foregroundWindow = { ...CHROME_WINDOW, exe: 'steam', title: 'Steam' };
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(2);
+
+			// Back to the first rule: its own interval is what counts, not the rule that fired last.
+			monitor.foregroundWindow = CHROME_WINDOW;
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(2);
+		});
+
+		it('emits nothing while the idle guard holds and resumes below it', async () => {
+			const { timer, monitor, notifier, advance } = await createLoopHarness({
+				rules: [makeRule()],
+				foregroundWindow: { ...CHROME_WINDOW, idleSeconds: 300 }
+			});
+
+			timer.start();
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(0);
+
+			monitor.foregroundWindow = { ...CHROME_WINDOW, idleSeconds: 299 };
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(1);
+		});
+
+		it('skips a rule silenced for today, and honours a silence taken during the block', async () => {
+			const rule = makeRule();
+			const { state, timer, notifier, advance } = await createLoopHarness({
+				rules: [rule],
+				silencedRuleIds: [rule.id]
+			});
+
+			timer.start();
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(0);
+
+			await state.unsilenceRule(rule.id);
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(1);
+
+			await state.silenceRule(rule.id);
+			await advance(180_000);
+			expect(notifier.notifyCalls).toHaveLength(1);
+		});
+
+		it('picks up a rule declared during the block, and drops one deleted during the block', async () => {
+			const { state, timer, notifier, advance } = await createLoopHarness();
+
+			timer.start();
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(0);
+
+			await state.saveRule({ exe: 'chrome' });
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(1);
+
+			await state.deleteRule(state.rules[0].id);
+			await advance(180_000);
+			expect(notifier.notifyCalls).toHaveLength(1);
+		});
+
+		it('discards the block notice history when the block ends', async () => {
+			const { timer, notifier, advance } = await createLoopHarness({ rules: [makeRule()] });
+
+			timer.start();
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(1);
+
+			timer.tick(1_500_000);
+			timer.start();
+			timer.tick(300_000);
+			timer.start();
+			await advance(3_000);
+
+			// A new focus block starts with an empty history, so the same rule can fire at once.
+			expect(notifier.notifyCalls).toHaveLength(2);
+		});
+
+		it('does nothing when there is no valid foreground window', async () => {
+			const { timer, notifier, advance } = await createLoopHarness({
+				rules: [makeRule()],
+				foregroundWindow: null
+			});
+
+			timer.start();
+			await advance(9_000);
+
+			expect(notifier.notifyCalls).toHaveLength(0);
+		});
+
+		it('builds the notice from i18n naming the observed window, and persists no window title', async () => {
+			const { timer, notifier, ruleRepository, whitelistRepository, advance } =
+				await createLoopHarness({ rules: [makeRule()] });
+
+			timer.start();
+			await advance(3_000);
+
+			expect(notifier.notifyCalls).toEqual([
+				{
+					title: m.distraction_notice_title(),
+					body: m.distraction_notice_body({ window: CHROME_WINDOW.title })
+				}
+			]);
+			expect(notifier.notifyCalls[0].body).toContain(CHROME_WINDOW.title);
+			expect(ruleRepository.saveCalls).toEqual([]);
+			expect(whitelistRepository.silenceCalls).toEqual([]);
+		});
+
+		it('asks for the notification permission when the switch goes on', async () => {
+			const notifier = new FakeDistractionNotifier({ permissionGranted: false });
+			const { state } = await createLoopHarness({ detectorEnabled: false, notifier });
+
+			state.setEnabled(true);
+
+			expect(notifier.requestPermissionCalls).toBe(1);
+		});
+
+		it('never asks for a notification permission the platform cannot grant', async () => {
+			const notifier = new FakeDistractionNotifier({ isSupported: false });
+			const { state } = await createLoopHarness({ detectorEnabled: false, notifier });
+
+			state.setEnabled(true);
+
+			expect(notifier.requestPermissionCalls).toBe(0);
+		});
+
+		/**
+		 * Known consequence, not an endorsed behaviour: `saveRule` mints a new id per save and
+		 * the repository upserts by id, so two identical rules coexist and each one fires its
+		 * own notice for the same distraction (L18 of `odd/tasks/distraction-detector.md`).
+		 * The product decision — silent upsert on (exe, pattern) or a visible refusal — is
+		 * still open, so this test pins today's behaviour instead of hiding it.
+		 */
+		it('emits one notice per rule when two rules declare the same target', async () => {
+			const { timer, notifier, advance } = await createLoopHarness({
+				rules: [makeRule({ id: 'rule-1' }), makeRule({ id: 'rule-2' })]
+			});
+
+			timer.start();
+			await advance(3_000);
+
+			expect(notifier.notifyCalls).toHaveLength(2);
 		});
 	});
 });

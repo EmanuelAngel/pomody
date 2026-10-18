@@ -287,5 +287,5 @@
 	"distraction_silenced_release": "Levantar",
 	"distraction_silenced_release_aria": "Levantar el silencio de {exe}",
 	"distraction_notice_title": "Estás en una ventana declarada",
-	"distraction_notice_body": "Volviste a {window}."
+	"distraction_notice_body": "Volviste a {window}, que declaraste como distracción."
 }

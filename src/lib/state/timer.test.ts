@@ -688,4 +688,48 @@ describe('TimerState Composition Root', () => {
 			expect(subscriber).not.toHaveBeenCalled();
 		});
 	});
+
+	describe('subscribe snapshot subscription', () => {
+		it('notifies subscribers with the new snapshot on every transition', () => {
+			const timer = createTimerState(undefined, mockTicker);
+			const subscriber = vi.fn();
+
+			timer.subscribe(subscriber);
+			timer.start();
+			timer.pause();
+			timer.reset();
+
+			expect(subscriber).toHaveBeenCalledTimes(3);
+			expect(subscriber.mock.calls[0][0].state).toBe('running');
+			expect(subscriber.mock.calls[1][0].state).toBe('paused');
+			expect(subscriber.mock.calls[2][0].state).toBe('idle');
+
+			timer.destroy();
+		});
+
+		it('does not emit the current snapshot on subscription', () => {
+			const timer = createTimerState(undefined, mockTicker);
+			const subscriber = vi.fn();
+
+			timer.subscribe(subscriber);
+
+			expect(subscriber).not.toHaveBeenCalled();
+
+			timer.destroy();
+		});
+
+		it('stops notifying after the returned unsubscribe runs', () => {
+			const timer = createTimerState(undefined, mockTicker);
+			const subscriber = vi.fn();
+
+			const unsubscribe = timer.subscribe(subscriber);
+			timer.start();
+			unsubscribe();
+			timer.pause();
+
+			expect(subscriber).toHaveBeenCalledTimes(1);
+
+			timer.destroy();
+		});
+	});
 });

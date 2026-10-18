@@ -129,6 +129,16 @@ pub fn run() {
 		.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
 			restore_main_window(app);
 		}))
+		// OS notice of the distraction detector (spec §5). Registered after the
+		// single-instance plugin, which must stay first: its mutex is created during
+		// `setup`, and any plugin that touches the app before that would race it.
+		//
+		// The version is pinned to the 2.4 minor on purpose, and it is the newest one the
+		// pinned Tauri family admits: 2.5 and above require `tauri = "2.12"`, so taking them
+		// would move the family (AGENTS.md rule 8). Consequence, measured and documented in
+		// docs/features/distraction-detector/decisions.md §5.2: no desktop action API, hence
+		// the notice is a faro and the classification gestures live in the view.
+		.plugin(tauri_plugin_notification::init())
 		// The two reads of the distraction detector (spec §8). Commands of the app itself
 		// need no capability entry; the poll loop that consumes them is slice 5.5.
 		.invoke_handler(tauri::generate_handler![active_window, open_windows])

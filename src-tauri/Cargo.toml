@@ -40,3 +40,11 @@ windows-sys = { version = "0.61", features = [
     "Win32_System_Threading",
     "Win32_System_SystemInformation",
 ] }
+# OS notice of the distraction detector (src/lib/adapters/notification, spec §5). Pinned to
+# the 2.4 minor on purpose: it is the newest version the pinned Tauri family admits, since
+# 2.5 and above require `tauri = "2.12"` and moving the family is rule 8 territory. Measured
+# on a disposable copy before this line existed; the refresh it applies is purely additive
+# (18 new packages, zero existing lock entry changed, the whole Tauri family byte-identical).
+# Consequence, documented in docs/features/distraction-detector/decisions.md §5.2: 2.4 has no
+# desktop action API, so on Windows the notice is a faro and classification lives in the view.
+tauri-plugin-notification = "~2.4.0"
