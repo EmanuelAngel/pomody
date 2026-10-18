@@ -42,7 +42,7 @@
 
 - **ID Referencia:** JD-10
 - **Ubicación:** `src/lib/components/distraction/distraction-view.svelte:66-82`
-- **Descripción:** Al confirmar el borrado de la regla que se está editando, la vista limpia `editingRule` pero no los campos del formulario, que queda mostrando `exe` y `titlePattern` de la regla eliminada con la etiqueta de alta; enviarlo crea una regla nueva con esos valores. Sospechoso: lo reportó un solo juez (Judgment Day ronda 1, fila F5).
+- **Descripción:** Al confirmar el borrado de la regla que se está editando, la vista limpia `editingRule` pero no los campos del formulario, que queda mostrando `exe` y `titlePattern` de la regla eliminada con la etiqueta de alta; enviarlo crea una regla nueva con esos valores. ~~Sospechoso: lo reportó un solo juez~~ **Confirmado en la app real** (pasada manual del 2026-10-18, ver `odd/tasks/distraction-detector.md` L18): el fix de F2 agregó `reset()` al formulario, pero nada lo dispara cuando `editingRule` se vacía por un borrado, así que el formulario conserva los valores y enviarlo crea la regla fantasma. Pasos: editar una regla → borrarla con su botón → el formulario queda prellenado → enviar.
 
 ## 11. Rechazo No Manejado al Enumerar Ventanas
 
@@ -55,3 +55,9 @@
 - **ID Referencia:** JD-12
 - **Ubicación:** `docs/features/distraction-detector/spec.md:298`
 - **Descripción:** La tabla de pruebas del §10 refiere a `src/lib/state/distraction.test.ts`, pero el archivo real es `src/lib/state/distractionState.test.ts`. Desajuste preexistente, no introducido por la vista de distracciones. Sospechoso: un solo juez (Judgment Day ronda 1, fila F7).
+
+## 13. La Vista de Distracciones No Está Centrada Como sus Hermanas
+
+- **ID Referencia:** UI-01
+- **Ubicación:** `src/lib/components/distraction/distraction-view.svelte:88`
+- **Descripción:** La raíz es `flex w-full max-w-2xl flex-col gap-6`, **sin `mx-auto`**. La vista del timer (`timer.svelte:49`) usa `mx-auto ... max-w-sm` y la de planning (`planning-view.svelte:87`) usa `mx-auto w-full max-w-5xl`: las dos quedan centradas en el panel, esta queda pegada a la izquierda. Como el panel de `+page.svelte` es `w-full`, en ventanas anchas el contenido tope de 672px se estira a la izquierda y deja un vacío grande a la derecha que aparenta ser un layout de dos columnas. No hay ninguna decisión documentada que lo justifique: es una omisión. Arreglo: una clase. Reportado por el maintainer en la pasada manual del 2026-10-18.

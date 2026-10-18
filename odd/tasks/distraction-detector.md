@@ -180,3 +180,22 @@ Lo que queda abierto, y por qué:
 - La tabla de verificación manual del §13 (toast, tres acciones, purga al cambiar el día) es del slice 5.5: necesita la notificación.
 - No hubo pasada manual por `pnpm dev`: en Web la UI del detector no se renderiza a propósito, así que un dev pass no puede ejercitarla; la cobertura real son los tests de navegador.
 - El disparador del refactor del drawer (sexta sección) quedó registrado en `decisions.md` §6 como work unit propio, sin hacer.
+
+L18 (2026-10-18) First manual verification pass on a **real desktop build**, requested by the maintainer, run on the artifact of this branch. Logistics, because the paths filter hides the desktop job from frontend-only PRs: `desktop-ci.yml` is gated on `src-tauri/**`, so #132 never gets a `Build Windows Desktop App` run on its own; the binary came from a manual dispatch (`gh workflow run "Desktop CI (Windows)" --ref feat/distraction-view`, `release_tag` left empty so nothing is published) plus `gh run download -n Pomody-Windows-x64`. This is the only pass that can exercise the detector's own surface: the view does not render on Web by design (§1), so `pnpm dev` cannot reach it and CI never builds a desktop artifact for this branch.
+
+Results, per step of the checklist the maintainer ran:
+
+- **OK — F1 holds on a real cold start.** The switch is ON after quitting from the tray and reopening, without visiting the Distractions tab. The round-1 severe finding is now verified fixed where no test could see it (the component-test helper never passed `true`).
+- **OK** — turning the switch off and on again preserves the rules and the day's silence.
+- **OK** — empty states, the third tab and navigation through Timer/Planning are intact.
+- **OK** — ES/EN across the tab, the form, the picker and the drawer, with no raw i18n key leaking.
+- **JD-10 reproduced.** Editing a rule and deleting it from its own row clears `editingRule` but leaves the form fields populated; submitting then creates a new rule from the deleted one's values. Upgraded in `docs/review-findings.md` §10 from single-judge suspect to confirmed, with the reproduction steps.
+- **NEW — duplicate rules.** Saving the same target twice yields two rows: `saveRule` mints a new id per save (`createRuleId`) and `IDistractionRuleRepository.save` upserts **by id**, so two rules with identical `exe` and pattern coexist. Nothing in the entity, the port or the sanitizer enforces uniqueness, and neither judge reported it. Consequence for 5.5: two rules over the same window mean two notices for one distraction, against the "no avalanche" principle (decisions §3). Product decision pending, not taken here — silent upsert on (exe, pattern), where the second save edits the first, or a visible refusal.
+- **NOT A DEFECT — "Hoy no" is absent from the rows**, and that is what the maintainer expected to find. Spec §5 puts the three actions on the toast ("El diálogo es el toast", decisions §3) and the view deliberately carries no silence action: deleting a rule **is** the "Nunca" gesture. The consequence worth recording is that the silenced section is unreachable until 5.5 lands — built ahead of its trigger, not broken.
+- **NEW (cosmetic) — the view is not centered**: its root lacks the `mx-auto` that `timer.svelte:49` and `planning-view.svelte:87` both have. Recorded in the buffer as UI-01.
+
+Merge decision: the maintainer chose to merge PR #132 with these open ("voy a mergear igual"), because the question that matters for the epic is whether the next slice is even feasible. Nothing here reopens that; the findings are recorded so the next session reads them instead of rediscovering them.
+
+Open product question, recorded so it is not silently re-decided: the maintainer states they had asked for the "Métricas" tab to be **enabled with internal tabs**, one of them being Distractions. The repository records the opposite — `decisions.md` §4 discards exactly that option ("un tab que dice una cosa y contiene otra"), `spec.md` §6 keeps Métricas disabled, `roadmap.md:110-111` assigns its unlock to Milestone 6 — and no verbatim record of that instruction exists in the logbook or in the docs. If the intent stands, it needs its own work unit plus the spec/decisions/roadmap amendment, not a silent reversal inside a later slice.
+
+Gate: documentation only, no source touched, no test run needed.
