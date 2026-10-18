@@ -20,6 +20,14 @@ describe('NavigationState', () => {
 	});
 
 	describe('Tab Switching', () => {
+		it('should switch to the distractions tab', () => {
+			const nav = createNavigationState('timer');
+
+			nav.setTab('distractions');
+
+			expect(nav.activeTab).toBe('distractions');
+		});
+
 		it('should update activeTab when setTab is called', () => {
 			const nav = createNavigationState();
 			expect(nav.activeTab).toBe('timer');
