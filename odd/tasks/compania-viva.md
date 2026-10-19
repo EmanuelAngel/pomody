@@ -2,7 +2,7 @@
 
 - **Issue**: #114 (comment 6186935872)
 - **Branch**: `feat/compania-viva`
-- **Status**: In progress
+- **Status**: Implemented (pending PR)
 - **Delivery Strategy**: `feature-branch-chain` (4 reviewable PRs + final PR to `main`)
 - **TDD Mode**: Standard Unit (`vitest run --project server`) + Web-First Browser Mode (`vitest run --project client`)
 
@@ -50,7 +50,8 @@ Verbatim user decision: "Una ilustración de landscape pixel art minismalista de
 
 ### S5 — Motion
 
-- CSS-only ambient animation. `shouldAnimate = enabled && motionEnabled && focusRunning && !prefersReducedMotion`.
+- CSS-only ambient animation. `shouldAnimate = enabled && motionEnabled && focusRunning`.
+- `prefersReducedMotion` is enforced by the component's CSS media query (equivalent effect, no JS media listener).
 - When not animating, `animation-play-state: paused` (no animation runs during pause or breaks).
 - System `prefers-reduced-motion` disables the motion entirely.
 - No JS clock and no requestAnimationFrame loop.
@@ -81,16 +82,16 @@ Verbatim user decision: "Una ilustración de landscape pixel art minismalista de
 
 ## Tasks
 
-| ID  | Scope                                          | Specs      | Route  | Status  | Commit |
-| --- | ---------------------------------------------- | ---------- | ------ | ------- | ------ |
-| T1  | Domain progress + catalog metadata + tests     | S1, S2, S6 | inline | pending | —      |
-| T2  | Settings port, defaults, sanitize + tests      | S4         | inline | pending | —      |
-| T3  | Illustration state + tests (incl. integration) | S1, S5, S7 | inline | pending | —      |
-| T4  | Forest + desert renderers + contract test      | S2, S6     | inline | pending | —      |
-| T5  | Timer-tab background layer + component test    | S3, S5     | inline | pending | —      |
-| T6  | Settings UI (switches + selector + i18n)       | S4, S7     | inline | pending | —      |
-| T7  | Feature docs                                   | S8         | inline | pending | —      |
-| T8  | Full verification gates                        | S7         | inline | pending | —      |
+| ID  | Scope                                          | Specs      | Route  | Status | Commit  |
+| --- | ---------------------------------------------- | ---------- | ------ | ------ | ------- |
+| T1  | Domain progress + catalog metadata + tests     | S1, S2, S6 | inline | done   | 16731a6 |
+| T2  | Settings port, defaults, sanitize + tests      | S4         | inline | done   | 817660f |
+| T3  | Illustration state + tests (incl. integration) | S1, S5, S7 | inline | done   | c92233a |
+| T4  | Forest + desert renderers + contract test      | S2, S6     | inline | done   | 07e03b4 |
+| T5  | Timer-tab background layer + component test    | S3, S5     | inline | done   | 07e03b4 |
+| T6  | Settings UI (switches + selector + i18n)       | S4, S7     | inline | done   | 750a301 |
+| T7  | Feature docs                                   | S8         | inline | done   | fde1120 |
+| T8  | Full verification gates                        | S7         | inline | done   | n/a     |
 
 ## Log
 
@@ -124,3 +125,14 @@ Verbatim user decision: "Una ilustración de landscape pixel art minismalista de
 - `BlockCompletedEvent` carries `mode` and `durationMs` (`src/lib/domain/events/block-completed.event.ts:3`).
 - No Zen preference, no `prefers-reduced-motion` handling, no background layer exist today.
 - `docs/proposals/fede-ideas.md` has no Idea 6 and its Idea 2 conflicts with the new model; feature docs supersede it.
+
+### L4 — Implementation evidence
+
+- RED observed before GREEN in every unit: `Cannot find module './illustration-progress'`, then 3 failing settings tests, then the state suite.
+- T1 domain: 21 tests (step, cap, invalid input, 1/3/5/15 phase mapping, clamp, integer scale).
+- T2 settings: defaults, roundtrip, legacy envelope fallback, per-field sanitize, unrelated-update preservation.
+- T3 state: 15 tests, including the `block-completed (focus) -> daily-stats -> phase` integration and break isolation.
+- T4/T5 components: 20 browser tests; the catalog contract is parameterized by `ILLUSTRATION_CATALOG`, so a new illustration adds zero authored tests.
+- T6 settings UI: 4 new browser tests (master switch, static switch, hide-while-focusing, illustration selector).
+- T8 gates observed on the committed tree: `pnpm check` 0 errors / 0 warnings; `pnpm test` 82 files / 1227 tests passed; `pnpm lint` clean.
+- Pending manual visual check: the two scenes have not been eyeballed in a running browser at desktop sizes and in all three themes.
