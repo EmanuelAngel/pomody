@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.13.0...pomody-v0.14.0) (2026-10-19)
+
+
+### Features
+
+* **desktop:** add the native window bridge for the distraction detector ([#125](https://github.com/EmanuelAngel/pomody/issues/125)) ([#131](https://github.com/EmanuelAngel/pomody/issues/131)) ([f4d4872](https://github.com/EmanuelAngel/pomody/commit/f4d48722204fc1e4717f19eca0ed076cc9d22578))
+* **distraction:** add pure domain and ports for the detector ([#128](https://github.com/EmanuelAngel/pomody/issues/128)) ([f150fa2](https://github.com/EmanuelAngel/pomody/commit/f150fa215bd42f2ae0d70a9a40dcd7fdb938602b))
+* **distraction:** OS notice, poll loop and toast actions ([#127](https://github.com/EmanuelAngel/pomody/issues/127)) ([#133](https://github.com/EmanuelAngel/pomody/issues/133)) ([6232c9f](https://github.com/EmanuelAngel/pomody/commit/6232c9f1882959234c01f552a6441a8eaed39cbb))
+* **distraction:** persist rules, daily silences and the detector switch ([#124](https://github.com/EmanuelAngel/pomody/issues/124)) ([#130](https://github.com/EmanuelAngel/pomody/issues/130)) ([e6b378c](https://github.com/EmanuelAngel/pomody/commit/e6b378c59ee825bb418265f97a38bfa5a7f7a6fc))
+* **ui:** add the distraction view with the window picker ([#126](https://github.com/EmanuelAngel/pomody/issues/126)) ([#132](https://github.com/EmanuelAngel/pomody/issues/132)) ([5fa91fa](https://github.com/EmanuelAngel/pomody/commit/5fa91fa62a35762d1df0c7e451d9590472f63423))
+
 ## [0.13.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.12.0...pomody-v0.13.0) (2026-10-13)
 
 
