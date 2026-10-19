@@ -15,6 +15,8 @@ import type {
 } from '../domain/ports/distraction-repository.port';
 import type { ISettingsStorage } from '../domain/ports/settings-storage.port';
 import type {
+	DistractionAction,
+	DistractionActionId,
 	DistractionNotice,
 	IDistractionNotifier
 } from '../domain/ports/distraction-notifier.port';
@@ -128,6 +130,7 @@ export class DistractionState {
 	private focusLive = false;
 	private pollHandle: ReturnType<typeof setInterval> | null = null;
 	private unsubscribeTimer: Unsubscribe | null = null;
+	private unsubscribeActions: Unsubscribe | null = null;
 
 	public readonly rules = $derived.by(() => this._rules);
 	/**
@@ -155,6 +158,18 @@ export class DistractionState {
 		// before the Distractions view ever mounts. `load()` re-reads the same
 		// source, so seeding here stays idempotent.
 		this._enabled = this.settingsStorage.loadSettings().distractionDetectorEnabled;
+
+		// The toast's three actions are the reason this feature exists (spec §5), so the
+		// subscription and the registration do not wait for a new opt-in: a detector that
+		// starts enabled must have working buttons from the first notice.
+		this.unsubscribeActions = this.notifier.onAction((actionId, ruleId) =>
+			this.onNoticeAction(actionId, ruleId)
+		);
+		void this.registerNoticeActions();
+
+		if (this._enabled) {
+			void this.ensureNotificationPermission();
+		}
 
 		if (options.timer) {
 			this.attachTimer(options.timer);
@@ -278,19 +293,27 @@ export class DistractionState {
 	/**
 	 * Arms or disarms the poll from the timer's own transitions (spec §4): only a focus block
 	 * in `Running` watches windows, and ending, pausing, restarting or skipping it disarms at
-	 * once. The notice history dies with the block, so the next block starts clean.
+	 * once.
+	 *
+	 * The notice history survives a pause on purpose: the block in progress is immutable
+	 * (spec §4), so resuming the same block must not re-announce a rule the block already
+	 * announced. It dies when the block itself ends — completed, restarted, skipped or
+	 * replaced by another mode — so the next block starts clean.
 	 */
 	private onTimerSnapshot(snapshot: TimerSnapshot): void {
 		const live = snapshot.state === 'running' && snapshot.mode === 'focus';
+		const blockEnded =
+			snapshot.state === 'idle' || snapshot.state === 'completed' || snapshot.mode !== 'focus';
+
+		if (blockEnded && this.notices.length > 0) {
+			this.notices = [];
+		}
+
 		if (live === this.focusLive) {
 			return;
 		}
 
 		this.focusLive = live;
-		if (!live) {
-			this.notices = [];
-		}
-
 		this.syncLoop();
 	}
 
@@ -363,7 +386,7 @@ export class DistractionState {
 				}
 
 				this.notices = [...this.notices, { ruleId: rule.id, firedAt: now }];
-				await this.notifier.notify(buildNotice(observation.title));
+				await this.notifier.notify(buildNotice(observation.title, rule.id));
 			}
 		} catch {
 			// A failing poll must never break the focus block, and a timer callback must never
@@ -384,6 +407,38 @@ export class DistractionState {
 		}
 	}
 
+	/** Declares the toast's actions under one type, in the language in use at this moment. */
+	private async registerNoticeActions(): Promise<void> {
+		if (!this.notifier.supportsActions) {
+			return;
+		}
+
+		try {
+			await this.notifier.registerActions(buildNoticeActions());
+		} catch {
+			// Without registered actions the notice is a faro; the detector keeps working.
+		}
+	}
+
+	/**
+	 * What one of the toast's buttons does (spec §5).
+	 *
+	 * `ack` writes nothing at all, which is exactly what a notice fading away unanswered
+	 * means; "Hoy no" silences that rule until the local day changes; "Nunca" deletes it,
+	 * because the rule's absence is what makes the refusal permanent (decisions.md §3.1).
+	 */
+	private onNoticeAction(actionId: DistractionActionId, ruleId: string): void {
+		switch (actionId) {
+			case 'ack':
+				return;
+			case 'silence_day':
+				void this.silenceRule(ruleId);
+				return;
+			case 'silence_permanent':
+				void this.deleteRule(ruleId);
+		}
+	}
+
 	private async refreshSilences(): Promise<void> {
 		this._silencedRuleIds = [...(await this.whitelistRepository.getSilenced(this.todayKey))];
 	}
@@ -392,13 +447,27 @@ export class DistractionState {
 /**
  * Notice copy (spec §5). Built here, in the frontend, so it goes through Paraglide and both
  * languages are covered by the repo's translation flow; the observed window title is passed
- * through and never stored.
+ * through and never stored, and the rule id travels with the notice so its button can act
+ * on it when the platform reports the action back.
  */
-function buildNotice(windowTitle: string): DistractionNotice {
+function buildNotice(windowTitle: string, ruleId: string): DistractionNotice {
 	return {
 		title: t.distraction_notice_title(),
-		body: t.distraction_notice_body({ window: windowTitle })
+		body: t.distraction_notice_body({ window: windowTitle }),
+		ruleId
 	};
+}
+
+/**
+ * The three buttons of the toast, in the user's language (spec §9). Read on every
+ * registration so a locale change is picked up by the next notice rather than by a reload.
+ */
+function buildNoticeActions(): readonly DistractionAction[] {
+	return [
+		{ id: 'ack', title: t.distraction_notice_action_ack() },
+		{ id: 'silence_day', title: t.distraction_notice_action_silence_day() },
+		{ id: 'silence_permanent', title: t.distraction_notice_action_silence_permanent() }
+	];
 }
 
 /**

@@ -25,6 +25,12 @@ import {
 const NOW = new Date(2026, 9, 16, 10, 0, 0);
 const TODAY_KEY = '2026-10-16';
 
+/** Lets the promises the state fires without awaiting settle before the assertion. */
+async function flush(): Promise<void> {
+	await Promise.resolve();
+	await Promise.resolve();
+}
+
 function makeRule(overrides: Partial<DistractionRule> = {}): DistractionRule {
 	return {
 		id: 'rule-1',
@@ -594,7 +600,9 @@ describe('DistractionState', () => {
 			expect(notifier.notifyCalls).toEqual([
 				{
 					title: m.distraction_notice_title(),
-					body: m.distraction_notice_body({ window: CHROME_WINDOW.title })
+					body: m.distraction_notice_body({ window: CHROME_WINDOW.title }),
+					// The rule travels with the notice: it is what its buttons act upon.
+					ruleId: 'rule-1'
 				}
 			]);
 			expect(notifier.notifyCalls[0].body).toContain(CHROME_WINDOW.title);
@@ -618,6 +626,123 @@ describe('DistractionState', () => {
 			state.setEnabled(true);
 
 			expect(notifier.requestPermissionCalls).toBe(0);
+		});
+
+		/**
+		 * Finding 1 of the independent verification of `6aeab5f`: the switch is seeded from
+		 * storage, so a detector that starts enabled never went through `setEnabled(true)`
+		 * and, on Windows, nothing ever asked the OS for the permission. The notice was then
+		 * dropped in silence for the whole session.
+		 */
+		it('asks for the permission on a cold start where the switch is already on', async () => {
+			const notifier = new FakeDistractionNotifier({ permissionGranted: false });
+
+			await createLoopHarness({ detectorEnabled: true, notifier });
+
+			expect(notifier.requestPermissionCalls).toBe(1);
+		});
+
+		/**
+		 * Finding 2 of the same verification: a pause is not the end of the block, so the
+		 * history must survive it (spec §4 — the block in progress is immutable). The rule
+		 * was re-announced inside the same block, and inside the five-minute interval, every
+		 * time the user resumed.
+		 */
+		it('keeps the cadence of a focus block across a pause and resume', async () => {
+			const { timer, notifier, advance } = await createLoopHarness({ rules: [makeRule()] });
+
+			timer.start();
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(1);
+
+			timer.pause();
+			await advance(60_000);
+			timer.resume();
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(1);
+
+			// Still inside the interval of the first notice, counted from the block, not the resume.
+			await advance(180_000);
+			expect(notifier.notifyCalls).toHaveLength(1);
+
+			await advance(60_000);
+			expect(notifier.notifyCalls).toHaveLength(2);
+		});
+
+		it('starts the next focus block with a clean history when the block is reset', async () => {
+			const { timer, notifier, advance } = await createLoopHarness({ rules: [makeRule()] });
+
+			timer.start();
+			await advance(3_000);
+			expect(notifier.notifyCalls).toHaveLength(1);
+
+			timer.reset();
+			timer.start();
+			await advance(3_000);
+
+			expect(notifier.notifyCalls).toHaveLength(2);
+		});
+
+		describe('the three actions of the toast', () => {
+			it('declares them in the user language, under the notice they belong to', async () => {
+				const notifier = new FakeDistractionNotifier();
+
+				await createLoopHarness({ notifier });
+
+				expect(notifier.registerActionsCalls).toEqual([
+					[
+						{ id: 'ack', title: m.distraction_notice_action_ack() },
+						{ id: 'silence_day', title: m.distraction_notice_action_silence_day() },
+						{ id: 'silence_permanent', title: m.distraction_notice_action_silence_permanent() }
+					]
+				]);
+			});
+
+			it('declares nothing where the platform cannot draw or report the buttons', async () => {
+				const notifier = new FakeDistractionNotifier({ supportsActions: false });
+
+				await createLoopHarness({ notifier });
+
+				expect(notifier.registerActionsCalls).toEqual([]);
+			});
+
+			it('writes nothing when "Gracias" is picked: fading the notice means the same thing', async () => {
+				const rule = makeRule();
+				const notifier = new FakeDistractionNotifier();
+				const { whitelistRepository, ruleRepository } = await createLoopHarness({
+					rules: [rule],
+					notifier
+				});
+
+				notifier.emitAction('ack', rule.id);
+
+				expect(whitelistRepository.silenceCalls).toEqual([]);
+				expect(ruleRepository.deleteCalls).toEqual([]);
+			});
+
+			it('silences that rule until the local day changes when "Hoy no" is picked', async () => {
+				const rule = makeRule();
+				const notifier = new FakeDistractionNotifier();
+				const { state, whitelistRepository } = await createLoopHarness({ rules: [rule], notifier });
+
+				notifier.emitAction('silence_day', rule.id);
+				await flush();
+
+				expect(whitelistRepository.silenceCalls).toEqual([{ ruleId: rule.id, dateKey: TODAY_KEY }]);
+				expect(state.silencedRules.map((current) => current.id)).toEqual([rule.id]);
+			});
+
+			it('deletes the rule when "Nunca" is picked: its absence is what makes it permanent', async () => {
+				const rule = makeRule();
+				const notifier = new FakeDistractionNotifier();
+				const { state, ruleRepository } = await createLoopHarness({ rules: [rule], notifier });
+
+				notifier.emitAction('silence_permanent', rule.id);
+				await flush();
+
+				expect(ruleRepository.deleteCalls).toEqual([rule.id]);
+				expect(state.rules).toEqual([]);
+			});
 		});
 
 		/**

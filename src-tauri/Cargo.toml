@@ -6,7 +6,7 @@ authors = ["Pomody Contributors"]
 license = ""
 repository = "https://github.com/EmanuelAngel/pomody"
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.90"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -15,13 +15,13 @@ name = "pomody_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "~2.6.3" }
+tauri-build = "~2.7.0"
 
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
-tauri = { version = "~2.11.6", features = ["tray-icon"] }
+tauri = { version = "~2.12.0", features = ["tray-icon"] }
 tauri-plugin-log = "2"
 # Pinned exactly (`=2.4.1`) on purpose, and diverging from the `~` convention used by
 # the Tauri family: this plugin writes to Cargo.lock, so its version is chosen here
@@ -47,4 +47,4 @@ windows-sys = { version = "0.61", features = [
 # (18 new packages, zero existing lock entry changed, the whole Tauri family byte-identical).
 # Consequence, documented in docs/features/distraction-detector/decisions.md §5.2: 2.4 has no
 # desktop action API, so on Windows the notice is a faro and classification lives in the view.
-tauri-plugin-notification = "~2.4.0"
+tauri-plugin-notification = "~2.6.0"

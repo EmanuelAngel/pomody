@@ -7,11 +7,16 @@ import type { DistractionNotice, IDistractionNotifier } from './distraction-noti
  */
 const unsupportedNotifier: IDistractionNotifier = {
 	isSupported: false,
+	supportsActions: false,
+	async registerActions(): Promise<void> {},
 	requestPermission(): Promise<boolean> {
 		return Promise.resolve(false);
 	},
 	notify(): Promise<void> {
 		return Promise.resolve();
+	},
+	onAction(): () => void {
+		return () => {};
 	}
 };
 
@@ -20,19 +25,31 @@ describe('IDistractionNotifier contract', () => {
 		expect(unsupportedNotifier.isSupported).toBe(false);
 	});
 
+	it('exposes a supportsActions flag that an unsupported platform can report as false', () => {
+		expect(unsupportedNotifier.supportsActions).toBe(false);
+	});
+
 	it('resolves requestPermission to false when the platform cannot ask for it', async () => {
 		await expect(unsupportedNotifier.requestPermission()).resolves.toBe(false);
 	});
 
 	it('resolves notify without throwing when the platform cannot show notices', async () => {
-		const notice: DistractionNotice = { title: 'Declared window', body: 'You went back to A.' };
+		const notice: DistractionNotice = {
+			title: 'Declared window',
+			body: 'You went back to A.',
+			ruleId: 'rule-1'
+		};
 
 		await expect(unsupportedNotifier.notify(notice)).resolves.toBeUndefined();
 	});
 
-	it('carries exactly a title and a body: the port never sees a rule, a policy or a locale', () => {
-		const notice: DistractionNotice = { title: 'Declared window', body: 'You went back to A.' };
+	it('carries a title, a body and the ruleId the notice is about', () => {
+		const notice: DistractionNotice = {
+			title: 'Declared window',
+			body: 'You went back to A.',
+			ruleId: 'rule-1'
+		};
 
-		expect(Object.keys(notice).sort()).toEqual(['body', 'title']);
+		expect(Object.keys(notice).sort()).toEqual(['body', 'ruleId', 'title']);
 	});
 });

@@ -287,5 +287,8 @@
 	"distraction_silenced_release": "Release",
 	"distraction_silenced_release_aria": "Release the silence for {exe}",
 	"distraction_notice_title": "You are on a declared window",
-	"distraction_notice_body": "You went back to {window}, which you declared as a distraction."
+	"distraction_notice_body": "You went back to {window}, which you declared as a distraction.",
+	"distraction_notice_action_ack": "Thanks",
+	"distraction_notice_action_silence_day": "Not today",
+	"distraction_notice_action_silence_permanent": "Never"
 }
