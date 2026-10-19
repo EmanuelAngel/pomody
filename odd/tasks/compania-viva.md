@@ -135,4 +135,4 @@ Verbatim user decision: "Una ilustración de landscape pixel art minismalista de
 - T4/T5 components: 20 browser tests; the catalog contract is parameterized by `ILLUSTRATION_CATALOG`, so a new illustration adds zero authored tests.
 - T6 settings UI: 4 new browser tests (master switch, static switch, hide-while-focusing, illustration selector).
 - T8 gates observed on the committed tree: `pnpm check` 0 errors / 0 warnings; `pnpm test` 82 files / 1227 tests passed; `pnpm lint` clean.
-- Pending manual visual check: the two scenes have not been eyeballed in a running browser at desktop sizes and in all three themes.
+- Visual check: screenshots at 1280x720 in Dark, Dawn and OLED for both scenes. The first pass let tall trees and the sun cover the digits; the scenes were recomposed with a clear centre (x 116..204) and side framing, then re-checked. Digits, controls and task pill keep their space.
