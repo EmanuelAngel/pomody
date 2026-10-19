@@ -4,6 +4,7 @@ import { TauriDistractionMonitor } from '../adapters/window/tauri-distraction-mo
 import { isTauriRuntimeAvailable } from '../adapters/window/tauri-window-shell';
 import { NoopDistractionNotifier } from '../adapters/notification/noop-distraction-notifier';
 import { TauriDistractionNotifier } from '../adapters/notification/tauri-distraction-notifier';
+import { WebAudioNotifier } from '../adapters/audio/web-audio-notifier';
 import { LocalStorageDistractionRuleRepository } from '../adapters/storage/local-distraction-rule-repository';
 import { LocalStorageDistractionWhitelistRepository } from '../adapters/storage/local-distraction-whitelist-repository';
 import { LocalSettingsStorage } from '../adapters/storage/local-settings-storage';
@@ -20,6 +21,7 @@ import type {
 	DistractionNotice,
 	IDistractionNotifier
 } from '../domain/ports/distraction-notifier.port';
+import type { IAudioNotifier } from '../domain/ports/IAudioNotifier';
 import {
 	type DistractionRule,
 	matchesRule,
@@ -61,6 +63,7 @@ export interface DistractionStateOptions {
 	readonly settingsStorage?: ISettingsStorage;
 	readonly monitor?: IDistractionMonitor;
 	readonly notifier?: IDistractionNotifier;
+	readonly audioNotifier?: IAudioNotifier;
 	readonly timer?: DistractionTimerSource;
 	/** Cadence of the notice (spec §3.4). Injected so tests can pin a tighter interval. */
 	readonly policy?: NotifyPolicy;
@@ -115,6 +118,7 @@ export class DistractionState {
 	private readonly settingsStorage: ISettingsStorage;
 	private readonly monitor: IDistractionMonitor;
 	private readonly notifier: IDistractionNotifier;
+	private readonly audioNotifier: IAudioNotifier;
 	private readonly policy: NotifyPolicy;
 	private readonly now: () => Date;
 
@@ -149,6 +153,7 @@ export class DistractionState {
 		this.settingsStorage = options.settingsStorage ?? new LocalSettingsStorage();
 		this.monitor = options.monitor ?? createDefaultDistractionMonitor();
 		this.notifier = options.notifier ?? createDefaultDistractionNotifier();
+		this.audioNotifier = options.audioNotifier ?? new WebAudioNotifier();
 		this.policy = options.policy ?? DEFAULT_NOTIFY_POLICY;
 		this.now = options.now ?? (() => new SvelteDate());
 
@@ -271,8 +276,9 @@ export class DistractionState {
 
 		if (enabled) {
 			// The switch is the user's explicit opt-in, so this is where the OS is asked for
-			// the notification permission (spec §13).
+			// the notification permission (spec §13) and the audio context is unlocked.
 			void this.ensureNotificationPermission();
+			void this.audioNotifier.unlock();
 		}
 
 		this.syncLoop();
@@ -386,6 +392,9 @@ export class DistractionState {
 				}
 
 				this.notices = [...this.notices, { ruleId: rule.id, firedAt: now }];
+				if (this.settingsStorage.loadSettings().soundEnabled) {
+					void this.audioNotifier.notifyDistraction();
+				}
 				await this.notifier.notify(buildNotice(observation.title, rule.id));
 			}
 		} catch {

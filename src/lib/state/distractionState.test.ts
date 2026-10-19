@@ -15,6 +15,7 @@ import { TauriDistractionNotifier } from '$lib/adapters/notification/tauri-distr
 import { FakeDistractionRuleRepository } from '$tests/fakes/repositories/fake-distraction-rule-repository';
 import { FakeDistractionWhitelistRepository } from '$tests/fakes/repositories/fake-distraction-whitelist-repository';
 import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
+import { FakeAudioNotifier } from '$tests/fakes/engine/fake-audio-notifier';
 import {
 	createDefaultDistractionMonitor,
 	createDefaultDistractionNotifier,
@@ -47,6 +48,7 @@ function createHarness(
 		silencedRuleIds?: readonly string[];
 		detectorEnabled?: boolean;
 		monitor?: IDistractionMonitor;
+		audioNotifier?: FakeAudioNotifier;
 	} = {}
 ) {
 	const ruleRepository = new FakeDistractionRuleRepository(options.rules);
@@ -59,16 +61,18 @@ function createHarness(
 		distractionDetectorEnabled: options.detectorEnabled ?? false
 	});
 	const monitor = options.monitor ?? new FakeDistractionMonitor();
+	const audioNotifier = options.audioNotifier ?? new FakeAudioNotifier();
 
 	const state = createDistractionState({
 		ruleRepository,
 		whitelistRepository,
 		settingsStorage,
 		monitor,
+		audioNotifier,
 		now: () => NOW
 	});
 
-	return { state, ruleRepository, whitelistRepository, settingsStorage, monitor };
+	return { state, ruleRepository, whitelistRepository, settingsStorage, monitor, audioNotifier };
 }
 
 describe('createDefaultDistractionMonitor', () => {
@@ -295,6 +299,16 @@ describe('DistractionState', () => {
 
 			expect(reloaded.enabled).toBe(true);
 		});
+
+		it('unlocks audio context when switch is turned on', () => {
+			const { state, audioNotifier } = createHarness();
+
+			expect(audioNotifier.unlockCallCount).toBe(0);
+
+			state.setEnabled(true);
+
+			expect(audioNotifier.unlockCallCount).toBe(1);
+		});
 	});
 
 	describe('openWindows', () => {
@@ -331,9 +345,11 @@ describe('DistractionState', () => {
 				rules?: readonly DistractionRule[];
 				silencedRuleIds?: readonly string[];
 				detectorEnabled?: boolean;
+				soundEnabled?: boolean;
 				foregroundWindow?: WindowObservation | null;
 				monitorSupported?: boolean;
 				notifier?: FakeDistractionNotifier;
+				audioNotifier?: FakeAudioNotifier;
 			} = {}
 		) {
 			const timer = new TimerFSM();
@@ -343,6 +359,7 @@ describe('DistractionState', () => {
 					options.foregroundWindow === undefined ? CHROME_WINDOW : options.foregroundWindow
 			});
 			const notifier = options.notifier ?? new FakeDistractionNotifier();
+			const audioNotifier = options.audioNotifier ?? new FakeAudioNotifier();
 			const ruleRepository = new FakeDistractionRuleRepository(options.rules);
 			const whitelistRepository = new FakeDistractionWhitelistRepository(
 				options.silencedRuleIds !== undefined
@@ -350,7 +367,8 @@ describe('DistractionState', () => {
 					: undefined
 			);
 			const settingsStorage = new FakeSettingsStorage({
-				distractionDetectorEnabled: options.detectorEnabled ?? true
+				distractionDetectorEnabled: options.detectorEnabled ?? true,
+				soundEnabled: options.soundEnabled ?? true
 			});
 
 			let clock = NOW.getTime();
@@ -360,6 +378,7 @@ describe('DistractionState', () => {
 				settingsStorage,
 				monitor,
 				notifier,
+				audioNotifier,
 				timer,
 				now: () => new Date(clock)
 			});
@@ -371,7 +390,16 @@ describe('DistractionState', () => {
 				await vi.advanceTimersByTimeAsync(ms);
 			}
 
-			return { state, timer, monitor, notifier, ruleRepository, whitelistRepository, advance };
+			return {
+				state,
+				timer,
+				monitor,
+				notifier,
+				audioNotifier,
+				ruleRepository,
+				whitelistRepository,
+				advance
+			};
 		}
 
 		beforeEach(() => {
@@ -681,6 +709,29 @@ describe('DistractionState', () => {
 			await advance(3_000);
 
 			expect(notifier.notifyCalls).toHaveLength(2);
+		});
+
+		it('plays double attention chime when distraction notice is fired', async () => {
+			const { timer, audioNotifier, advance } = await createLoopHarness({
+				rules: [makeRule()]
+			});
+
+			timer.start();
+			await advance(3_000);
+
+			expect(audioNotifier.notifyDistractionCalls).toBe(1);
+		});
+
+		it('does not play distraction chime when sound is disabled in settings', async () => {
+			const { timer, audioNotifier, advance } = await createLoopHarness({
+				rules: [makeRule()],
+				soundEnabled: false
+			});
+
+			timer.start();
+			await advance(3_000);
+
+			expect(audioNotifier.notifyDistractionCalls).toBe(0);
 		});
 
 		describe('the three actions of the toast', () => {

@@ -287,3 +287,16 @@ L21 (2026-10-19) T6 / slice 5.5 (#127) finalizado y verificado.
   - `pnpm check` → `svelte-check found 0 errors and 0 warnings` (exit 0).
   - `pnpm lint` → exit 0 (Prettier "All matched files use Prettier code style!" + ESLint limpio).
   - `pnpm test` → **77 archivos / 1153 pruebas pasadas** (54 unitarias / 917 tests en `server` + 23 en navegador / 232 tests en `client`).
+
+L22 (2026-10-19) Alerta sonora de atención para el detector de dispersión.
+
+- **Motivación**: En las pruebas del `.exe` real, el toast nativo de Windows pasa desapercibido si el sistema está en No Molestar o si la notificación expira sin ser vista. Se añade un pítido doble de atención inmediato para romper el trance de la distracción.
+- **Implementación**:
+  - `IAudioNotifier`: nuevo método de puerto `notifyDistraction(): Promise<void> | void;`.
+  - `WebAudioNotifier`: síntesis nativa con Web Audio API (dos pulsos senoidales breves de 70 ms en G5 = 783.99 Hz, tono armónico consistente con Pomody, con separación de 60 ms y ganancia de pico 0.2).
+  - `FakeAudioNotifier`: soporte de contador `notifyDistractionCalls` y `reset()`.
+  - `distractionState.svelte.ts`: inyección opcional de `audioNotifier`, desbloqueo de `AudioContext` en `setEnabled(true)` y reproducción en `evaluate()` cuando `soundEnabled` está activo en la configuración.
+- **Compuertas de calidad (gates)**:
+  - `pnpm check` → 0 errores, 0 advertencias.
+  - `pnpm lint` → exit 0 (Prettier + ESLint limpios).
+  - `pnpm test` → **77 archivos / 1159 pruebas pasadas** (+6 tests de sonido y estado).

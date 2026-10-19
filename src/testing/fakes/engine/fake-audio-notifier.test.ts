@@ -29,6 +29,23 @@ describe('FakeAudioNotifier', () => {
 		expect(notifier.notifyBlockCompletedCalls).toEqual(['focus']);
 	});
 
+	it('increments notifyDistractionCalls on notifyDistraction()', () => {
+		const notifier = new FakeAudioNotifier();
+
+		notifier.notifyDistraction();
+		notifier.notifyDistraction();
+
+		expect(notifier.notifyDistractionCalls).toBe(2);
+	});
+
+	it('supports awaiting notifyDistraction for async callers', async () => {
+		const notifier = new FakeAudioNotifier();
+
+		await notifier.notifyDistraction();
+
+		expect(notifier.notifyDistractionCalls).toBe(1);
+	});
+
 	it('increments unlockCallCount on unlock()', () => {
 		const notifier = new FakeAudioNotifier();
 
@@ -50,14 +67,17 @@ describe('FakeAudioNotifier', () => {
 		const notifier = new FakeAudioNotifier();
 
 		notifier.notifyBlockCompleted('focus');
+		notifier.notifyDistraction();
 		notifier.unlock();
 
 		expect(notifier.notifyBlockCompletedCalls).toHaveLength(1);
+		expect(notifier.notifyDistractionCalls).toBe(1);
 		expect(notifier.unlockCallCount).toBe(1);
 
 		notifier.reset();
 
 		expect(notifier.notifyBlockCompletedCalls).toEqual([]);
+		expect(notifier.notifyDistractionCalls).toBe(0);
 		expect(notifier.unlockCallCount).toBe(0);
 	});
 
@@ -66,6 +86,7 @@ describe('FakeAudioNotifier', () => {
 		notifier.unlock();
 		const mode: TimerMode = 'focus';
 		notifier.notifyBlockCompleted(mode);
+		notifier.notifyDistraction();
 		expect(notifier).toBeDefined();
 	});
 });

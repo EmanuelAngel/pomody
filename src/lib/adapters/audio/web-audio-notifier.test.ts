@@ -186,6 +186,37 @@ describe('WebAudioNotifier', () => {
 			);
 		});
 
+		it('synthesizes crisp double attention chime when distraction is detected', async () => {
+			const notifier = new WebAudioNotifier({ audioContext: mockCtx });
+
+			await notifier.notifyDistraction();
+
+			expect(oscillators).toHaveLength(2);
+			expect(gains).toHaveLength(2);
+
+			// Two pulses at G5 with 60ms gap
+			expect(oscillators[0].frequency.setValueAtTime).toHaveBeenCalledWith(
+				CHIME_FREQUENCIES.distraction[0],
+				5.0
+			);
+			expect(oscillators[1].frequency.setValueAtTime).toHaveBeenCalledWith(
+				CHIME_FREQUENCIES.distraction[1],
+				5.13
+			);
+
+			for (const osc of oscillators) {
+				expect(osc.type).toBe('sine');
+				expect(osc.start).toHaveBeenCalled();
+				expect(osc.stop).toHaveBeenCalled();
+			}
+
+			// Verify peakGain 0.2
+			for (const g of gains) {
+				const [peakGain] = g.gain.linearRampToValueAtTime.mock.calls[0];
+				expect(peakGain).toBe(0.2);
+			}
+		});
+
 		it('disconnects oscillator and gain when onended event fires', async () => {
 			const notifier = new WebAudioNotifier({ audioContext: mockCtx });
 
