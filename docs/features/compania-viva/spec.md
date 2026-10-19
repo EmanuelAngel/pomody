@@ -25,6 +25,7 @@ Agregar una compañía visual tranquila al timer: un paisaje pixel art de fondo 
 
 - Las fases deben dividir 15: `1`, `3`, `5` o `15`.
 - El desierto ata día, atardecer y noche al **progreso**, nunca a la hora real.
+- El bosque progresa de amanecer a hora dorada y suma capas: semilla, brotes, árboles jóvenes, arboleda y bosque completo con hongos, flores y luciérnagas.
 - Paleta derivada de tokens Rosé Pine con opacidades (`pine`, `foam`, `gold`, `love`, `rose`, `iris`): el límite inicial de 3 acentos se relajó para dar profundidad. El fondo del tema sigue actuando como cielo/base.
 - Arte en una grilla nativa de `320 × 180`, con escala entera en modo **cover** calculada por `ResizeObserver`: `scale = ceil(max(w / 320, h / 180))`. La escena llena siempre la ventana y el sobrante se recorta.
 - Sin `<canvas>`, WebGL, librerías de animación ni dependencias nuevas.

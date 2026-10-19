@@ -93,6 +93,7 @@ Verbatim user decision: "Una ilustración de landscape pixel art minismalista de
 | T7  | Feature docs                                   | S8         | inline | done   | fde1120 |
 | T8  | Full verification gates                        | S7         | inline | done   | n/a     |
 | T9  | Desert art pass + full-bleed cover scale       | S2, S3     | inline | done   | pending |
+| T10 | Forest art pass (layered, dawn-to-golden)      | S2         | inline | done   | pending |
 
 ## Log
 
@@ -147,3 +148,11 @@ Verbatim: "LGTM! El motor funciona como tiene que ser. Eso sí, las ilustracione
 - Added top and bottom theme scrims for header and daily-counter contrast.
 - Palette cap relaxed from 3 accents to token shades via opacity.
 - Reference image provided by the user for the desert phases; the forest stays on the previous composition until the desert is approved.
+
+### L6 — Forest art pass
+
+Verbatim authorization: "Sí, por favor."
+
+- Rewrote the forest with the desert language: gradient sky, two hill ranges, grass floor, textured canopies with shade patches, trunks with branches, saplings, bushes, rocks, mushrooms, flowers and fireflies.
+- Visual progression across the 5 phases: dawn with a seed, saplings, young trees, grove, full forest at golden hour.
+- Centre kept clear (x 116..204) so the digits stay readable.

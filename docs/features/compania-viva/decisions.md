@@ -91,3 +91,11 @@ Registro de las decisiones cerradas durante el grill previo al sign-off del issu
 **Decisión.** El desierto se rehizo con cielo en gradiente, tres cordilleras, dunas, saguaros con textura y flores, rocas, nubes y fauna. La paleta usa tokens Rosé Pine con opacidades en lugar de un tope fijo de tres acentos.
 
 **Motivo.** El minimalismo sigue siendo el objetivo, pero la escena tiene que leerse como una ilustración y no como un diagrama. Las opacidades dan profundidad sin inventar colores fuera de la paleta.
+
+## D15 — Bosque con el mismo lenguaje visual
+
+**Contexto.** El bosque conservaba la primera pasada plana mientras el desierto ya tenía capas y textura.
+
+**Decisión.** Se rehizo con cielo en gradiente, dos cordilleras, suelo con matas de pasto, árboles con copas texturadas, troncos con ramas, hongos, flores y luciérnagas. La luz avanza de amanecer a hora dorada a medida que crece el bosque.
+
+**Motivo.** Unificar la calidad entre las dos ilustraciones y hacer que la recompensa por progresar se lea también en la luz, no solo en la cantidad de árboles.
