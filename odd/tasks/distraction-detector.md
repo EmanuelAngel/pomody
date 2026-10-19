@@ -42,7 +42,33 @@ S9.8 "`desktop-ci.yml` verde. **Nunca** se corre `pnpm tauri:build` localmente."
 
 S10 (#126, slice 5.4) "Distractions" third navigation tab, `distraction-view.svelte` (picker + manual fields + rule list + daily-silence list + empty state), global switch in `settings-drawer.svelte` (off by default), i18n keys of spec §9, `client` tests.
 
-S11 (#127, slice 5.5) `tauri-plugin-notification`, `notification:default` capability, action-type registration, `onAction`, `distractionState.svelte.ts` (polling + evaluation), documented toast-button degradation.
+S11 (#127, slice 5.5) `tauri-plugin-notification`, `notification:default` capability, action-type registration, `onAction`, `distractionState.svelte.ts` (polling + evaluation), documented toast-button degradation. Its acceptance criteria, quoted verbatim from issue #127:
+
+S11.1 "**Primer paso, antes de escribir código**: medición de la regla 8 para `tauri-plugin-notification` con `cargo add` sobre copia desechable, documentada."
+
+S11.2 "`notification:default` agregado a `src-tauri/capabilities/default.json` (los comandos propios no necesitan capability)."
+
+S11.3 "Tipo de acción registrado y handler `onAction` enganchado: sin handler, los botones directamente no se muestran." — **no satisfacible con la versión admisible del plugin**: en 2.4.0 no existe API de acciones para desktop. Bloqueado por el techo medido (§5.2 de `decisions.md`), con disparador registrado.
+
+S11.4 "Las tres acciones hacen exactamente lo que dice el spec: \"Gracias\" no cambia nada, \"Hoy no\" silencia **esa regla** hasta el cambio de día local, \"Nunca\" la pasa a la whitelist permanente." — los tres efectos existen en el producto (`silenceRule`, `deleteRule(id)`, el desvanecido sin respuesta), pero sin API de acciones no hay disparador desde el toast. La frase "whitelist permanente" es anterior a `decisions.md` §3.1, que resolvió "Nunca" como baja de la regla: no hay cuarta clave ni flag nuevo.
+
+S11.5 "Desvanecer el aviso sin responder equivale a \"Gracias\"."
+
+S11.6 "El sondeo se arma sólo con un bloque de foco `Running` y se desarma al terminar, pausar o reiniciar el bloque; apagar el switch desarma al instante."
+
+S11.7 "El historial de avisos vive en memoria y se descarta al terminar el bloque."
+
+S11.8 "Sin diálogo, banderín ni estado \"pendiente de clasificar\": el aviso es la notificación y nada más."
+
+S11.9 "Degradación documentada si Windows no renderiza los botones (el faro más la vista del slice 5.4)."
+
+S11.10 "Tabla de verificación manual del [spec §13](https://github.com/EmanuelAngel/pomody/blob/main/docs/features/distraction-detector/spec.md) ejecutada sobre el `.exe` en Windows." — **pendiente**: requiere un build de escritorio y una pasada manual.
+
+S11.11 "`pnpm check` pasa sin errores ni advertencias"
+
+S11.12 "`pnpm test:unit` pasa todas las pruebas"
+
+Out of scope, also verbatim from issue #127: "NO introducir dependencias externas sin validación previa.", "NO `cargo update`, NO `cargo generate-lockfile` y NO borrar `Cargo.lock`.", "NO `pnpm tauri:build` local: el desktop lo verifica `desktop-ci.yml`.", "NO tope de avisos por bloque, NO analítica, NO revisión de ventanas al final del bloque y NO canal de eventos Rust→frontend: todo eso está descartado o diferido con disparador en `decisions.md`."
 
 ## Tasks
 
@@ -50,7 +76,7 @@ S11 (#127, slice 5.5) `tauri-plugin-notification`, `notification:default` capabi
 - [x] T2 / #124 — Local rule/whitelist persistence adapters, fakes, `distractionDetectorEnabled` in settings, and tests · S8 · route: inline · commit `feat(distraction): persist rules, daily silences and the detector switch`
 - [x] T3 / #125 — Native Windows bridge, monitor adapters and platform selector · S9.1-S9.7 and S9.8 (`desktop-ci.yml` verde on PR #131: `Build Windows Desktop App` pass) · route: inline · commit `f4d4872` (squash of `feat(desktop): add the native window bridge for the distraction detector (#125)`, PR #131) · evidence: L13 (Rule 8 measurement) and L14 (implementation, tests, gates)
 - [x] T4 / #126 — "Distractions" view, picker, global switch and i18n · S10 · route: inline · commit `8db5049` (`feat(ui): add the distraction view with the window picker (#126)`, PR #132; el hash de `main` es el del squash) · evidence: L15-L17
-- [ ] T5 / #127 — OS notification with three actions and poll/evaluate state loop · S11 · route: inline
+- [x] T6 / #127 — **Reapertura de S11.3/S11.4: las tres acciones del toast.** Mover la familia Tauri a 2.12 y el plugin a 2.6.0 (MSRV 1.90), implementar `registerActionTypes` + `actionTypeId` + `extra.ruleId` + `onAction` con los tres efectos, y arreglar los dos hallazgos de la verificación independiente · route: inline · commit `feat(distraction): complete toast actions and bump tauri to 2.12` · gates verdes: `pnpm check` (0 errores), `pnpm lint` (0), `pnpm test` (77 archivos / 1153 tests pasados)
 
 ## Log
 
@@ -199,3 +225,87 @@ Merge decision: the maintainer chose to merge PR #132 with these open ("voy a me
 Open product question, recorded so it is not silently re-decided: the maintainer states they had asked for the "Métricas" tab to be **enabled with internal tabs**, one of them being Distractions. The repository records the opposite — `decisions.md` §4 discards exactly that option ("un tab que dice una cosa y contiene otra"), `spec.md` §6 keeps Métricas disabled, `roadmap.md:110-111` assigns its unlock to Milestone 6 — and no verbatim record of that instruction exists in the logbook or in the docs. If the intent stands, it needs its own work unit plus the spec/decisions/roadmap amendment, not a silent reversal inside a later slice.
 
 Gate: documentation only, no source touched, no test run needed.
+
+L19 (2026-10-18) T5 / slice 5.5 (#127), work unit `6aeab5f`, on branch `feat/distraction-notification`, cut from `main` at `5fa91fa` (updated: PR #132 is merged).
+
+**Rule 8 measurement (S11.1), done before touching `src-tauri/`.** Disposable copy outside the repo (`tar --exclude=target`, lock byte-identical to the committed one) and `cargo add tauri-plugin-notification@~2.4.0` over it; written up in `decisions.md` §5.2. Lock 482 → 500 packages: 18 added, **zero existing entries changed**, Tauri family byte-identical (the `windows-*` entries gain a parallel major, which is additive). Two ceilings came out of the same measurement: the 2.5.0+ line requires Rust 1.90 (against the manifest's declared 1.77.2) and `tauri = "2.12"`, which cargo refuses outright against the `~2.11.6` pin — `error: failed to select a version for 'tauri' … previously selected package 'tauri v2.11.6'` — and **desktop 2.4.0 has no action API at all**: `ActionType`/`Action` sit behind `#[cfg(mobile)]` and its desktop `invoke_handler` registers only `notify`, `request_permission` and `is_permission_granted`, so `register_action_types` and the listener fail with _command not found_. Desktop actions arrive in **2.6.0** (its CHANGELOG: _"Report actions on desktop…"_), where a registered action type resolves to buttons through `notify-rust` → `tauri-winrt-notification::add_button` and activation reaches `onAction`.
+
+**Decision, taken under the maintainer's blanket authorisation** ("Hacé lo que quieras… avisame cuando tengas la PR lista"): the Tauri family does **not** move. The notice ships as the faro the spec already documents, and the three actions become a registered follow-up with an exact trigger (tauri 2.12 + plugin ≥ 2.6.0, with its own rule 8 measurement). Reasons in `decisions.md` §5.2: the degradation is already decided in writing by spec §5/§12; moving the family cannot be verified locally at all (no MSVC toolchain, and rule 9 forbids `pnpm tauri:build`), so bundling it into a feature slice would put the desktop build at unverifiable risk; and the committed lock stays honest because the refresh is purely additive.
+
+**Supuesto 1 (does a 1 s poll survive a hidden or minimised webview?) — parked, unmeasured, and not silently assumed.** The brief asked for a disposable spike and I built one that needs neither a code change nor a push: the last `desktop-ci.yml` artifact (`Pomody-Windows-x64`, run `39094420504`) still exists, and running it with `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=<port>` — a documented WebView2 override, and this app sets no `additionalBrowserArguments` of its own — lets CDP install the 1 s probe inside the real WebView2 while Win32 drives the two states: `SW_MINIMIZE`, and `WM_CLOSE` for the tray, which is literally the `prevent_close` + `window.hide()` of `lib.rs`. Two things stopped it: the harness needs the app's single instance free and a Pomody was already running (PID 9252), which the single-instance plugin resolves by forwarding and exiting; and the first harness validation opened a visible Edge window on the maintainer's desktop without warning, which is not acceptable. The maintainer then said to stop spending time there ("ya probaré todo cuando termines"), so the spike is parked outside the repo in `%TEMP%\pomody-poll-spike` (exe, `spike.mjs`, `winctl.ps1`, scratch page) and **row 9 of the §13 table is what decides it**. Stated plainly: whether the poll survives with the window hidden or minimised is **unverified** by this slice; everything else the loop does is covered by tests. If the webview does throttle it, the exits are the ones `decisions.md` §4/§5 already list (browser arguments, or a Rust ticker — the second reopens the P5 decision and belongs to the maintainer).
+
+**What the slice delivered.** `src/lib/domain/ports/distraction-notifier.port.ts` — a port the spec does not define, following the `IAudioNotifier` precedent, with its TSDoc recording why the three actions are absent — plus `Noop`/`Tauri` adapters in `src/lib/adapters/notification/` behind an injectable client seam so `@tauri-apps/plugin-notification` never enters the static module graph; the loop in `distractionState.svelte.ts` (arm/disarm from the timer, evaluation through `matchesRule` + `shouldNotify`, in-memory history per block, i18n copy, permission asked on opt-in); `TimerState.subscribe`, the seam that lets the detector see a focus block start and stop without polling the timer; the plugin registration in `lib.rs` plus `notification:default`; and the final copy of `distraction_notice_title` / `distraction_notice_body` in `es`/`en`.
+
+**Reading of two borders, pinned in tests.** (a) The notice history belongs to the **block**, not the switch (spec §4): ending, pausing, resetting or skipping the block clears it, so the next block starts clean. Turning the switch off only disarms — it fires nothing and replays nothing — and re-enabling inside the same block does not duplicate what that block already announced. (b) The notice is sent **per rule** and rules stay independent (spec §3.4), which is why two identical rules produce two notices: the L18 product decision is still open, and the test that pins it says so instead of endorsing it. (c) `ack` needs no code at all: the notice that fades away writes nothing.
+
+**RED → GREEN, per unit.** Notifier layer: RED with two files failing on `Cannot find module` (13 tests already green) → GREEN, 3 files / 18 tests. `TimerState.subscribe`: RED `timer.subscribe is not a function` (3 failed / 45 passed) → GREEN, 48/48. Loop: RED with 12 of the 14 new tests failing on the absent loop (20 passed) → GREEN, 34/34 in `src/lib/state/distractionState.test.ts`. Three failures in the first GREEN attempt were mine, not the implementation's: the harness used `??`, so `foregroundWindow: null` fell back to the default window, and two tests forgot to declare a rule.
+
+**Gate, run in sequence on the working tree** (`pnpm check`; `pnpm lint`; `pnpm test`): `pnpm check` → `svelte-check found 0 errors and 0 warnings` — the first run earned its keep by catching a real type error, since the plugin's `requestPermission()` resolves the DOM `NotificationPermission` and not a `'prompt'` union, so the client seam mirrors that. `pnpm lint` → exit 0 after Prettier reformatted the two new notifier files. `pnpm test` → **77 files / 1131 tests passed** (was 74 / 1087). `pnpm tauri:build` was not run locally (rule 9); this slice touches `src-tauri/**`, so `desktop-ci.yml` is its compile gate and runs on the PR.
+
+**Still open.** S11.10 — the §13 table on a real `.exe` (row 4, the three buttons, and row 9, the hidden-window poll) — needs a desktop build and a manual pass. S11.3/S11.4 stay blocked by the dependency ceiling measured above. The L18 duplicate-rule product decision is untouched (as instructed) and its consequence is pinned by a test. Review-findings items 10-13 are untouched, as instructed.
+
+Gate (documentation and code together, see above): `pnpm check` 0 errors / 0 warnings, `pnpm lint` exit 0, `pnpm test` 77 files / 1131 tests passed.
+
+L20 (2026-10-19) **HANDOFF — the branch is mid-refactor and the tree is dirty. Read this before touching anything.**
+
+**Why this entry exists.** The maintainer judged that T5 shipped without the reason the feature exists — the three actions of spec §5 — and reopened it as **T6** (above). The rework was started and then cut short on instruction, so what follows is the exact state, not a plan.
+
+**Commits.** Two, both **local, nothing pushed, no PR, no upstream**: `6aeab5f` (the faro loop, gate green: `pnpm check` 0/0, `pnpm lint` 0, `pnpm test` 77 files / 1131 tests) and `0305194` (docs backfill of T5's hash). `git status -sb` is `## feat/distraction-notification`, two commits ahead of `origin/main`.
+
+**Uncommitted working-tree changes — in-flight and INCOMPLETE. Do not treat this tree as a working state: it does not typecheck and its tests do not pass.**
+
+- `src-tauri/Cargo.toml` + `src-tauri/Cargo.lock`: the family bump that T6 needs. `rust-version` 1.77.2 → **1.90**; `tauri-build ~2.6.3` → **~2.7.0**; `tauri ~2.11.6` → **~2.12.0**; `tauri-plugin-notification ~2.4.0` → **~2.6.0**. Resolved lock: tauri 2.12.4; tauri-build/codegen/macros 2.7.3; tauri-plugin 2.7.2; tauri-utils 2.10.2; tauri-runtime and tauri-runtime-wry 2.12.2; wry 0.57.0; tao 0.37.1; tray-icon 0.25.1; muda 0.20.0; notification 2.6.0; single-instance stays 2.4.1 (its `tauri ^2.10` requirement still resolves). **473 packages, down from 500**; measured on a disposable copy before the tree was touched: 63 existing crates change version (the whole Tauri family plus the tray/menu stack), 8 are removed, 3 added — so §5.2's "purely additive" no longer describes this lock and must not be cited for it. `cargo metadata --locked` passes here, so the lock matches the manifest. **Nothing compiles locally** (no MSVC toolchain, rule 9), so `desktop-ci.yml` on the PR is the only compile gate.
+- `package.json` + `pnpm-lock.yaml`: `@tauri-apps/api ~2.11.0` → **~2.12.0** and `@tauri-apps/plugin-notification ~2.4.0` → **~2.6.0**, matched to the Rust versions.
+- `src/lib/domain/ports/distraction-notifier.port.ts`: **rewritten** for actions — `DistractionActionId`, `DistractionAction`, `supportsActions`, `registerActions`, `onAction`, and `ruleId` on `DistractionNotice`.
+- `src/lib/adapters/notification/noop-distraction-notifier.ts`: updated to that shape.
+- **Still on the old shape, which is what breaks the tree**: `tauri-distraction-notifier.ts` and its test, `FakeDistractionNotifier`, `distractionState.svelte.ts` (it builds a notice without `ruleId`), and every notifier/state test.
+
+**What is left to finish T6, with the API facts already verified** (so nobody re-measures them): `tauri-plugin-notification` 2.6.0 is installed and its types are in `node_modules/@tauri-apps/plugin-notification/dist-js/index.d.ts` — `registerActionTypes([{ id, actions: [{ id, title }] }])`; `sendNotification` accepts `actionTypeId` and `extra?: Record<string, unknown>`; `onAction(cb)` receives `ActionPerformed { actionId, inputValue, notification }`; `ActiveNotification.extra` carries the payload back; `actionId` is the action's own id, or `tap` for the notice itself, which must be ignored rather than guessed. The design to implement: one action type with the three ids (`ack`, `silence_day`, `silence_permanent`) and their labels; the notice carries `actionTypeId` plus `extra: { ruleId }`; on action, `ack` changes nothing, `silence_day` calls `silenceRule(ruleId)` and `silence_permanent` calls `deleteRule(ruleId)`.
+
+**Two findings from the independent verification of `6aeab5f`** (read-only verifier, scratch copy outside the repo; it verified the Rust, lock and version claims against primary sources and could **not** run the suite in its copy, so its behavioural verdicts are read-the-code, not executed):
+
+1. **HIGH — a cold start with the switch already ON shows no notice at all.** Mechanism reproduced with the real plugin code: the `init-iife.js` the plugin injects into every Windows webview load leaves `window.Notification.permission === 'denied'` without calling the backend, the package's `isPermissionGranted()` reads that shim before invoking anything and answers `false`, and `TauriDistractionNotifier.notify()` gates on it and returns early **in silence**. The only place that requests the permission is `setEnabled(true)`, and a cold start seeds the switch from storage, so nothing ever asks. The end-to-end toast was not reproduced (needs a real `.exe`), so it is not a proven blocker — but it is a real mechanism. Partly cured by the bump: 2.5.0's changelog fixes exactly that shim (_"Fixed isPermissionGranted() always resolving to false on Windows"_). Planned fix: ensure the permission when the detector is already enabled at startup, and never let a stale flag drop the notice silently.
+2. **MEDIUM — pausing and resuming inside one focus block resets the cadence.** `onTimerSnapshot` clears the notice history as soon as the focus block stops being live, and a pause counts, so resuming re-notifies the same rule inside the same block and inside the five-minute interval — against spec §3.4 ("minimum between two notices of the same rule inside the block") and §4 ("the block in progress is immutable"). Planned fix: keep the history across a pause (disarm the poll, keep the history) and clear it only when the block really ends or the mode changes.
+
+The same report left one ready-to-commit regression test per finding (`distractionState.test.ts` for both, plus an adapter test for finding 1), and these advisories, recorded so they are not re-derived: "cero entradas existentes cambiadas" is exact for versions and checksums but loose for edges (`objc2-foundation` gains a `libc` edge at an unchanged checksum); `spec.md:273` ("Requiere Rust ≥ 1.90…") was **false** for 2.4.0 (its MSRV is 1.77.2) and only becomes true now, because the manifest was raised; `notify()` against a client that never resolves does not reject but parks that round of the loop.
+
+**Pending, in order.** (1) Finish the actions refactor above until the tree typechecks. (2) Fix findings 1 and 2 with tests. (3) **Rewrite `decisions.md` §5.2**: as written it documents the _opposite_ decision — family does not move, the notice is a faro — and the measurement it cites belongs to plugin 2.4.0, which this branch no longer takes. (4) Raise the Rust minimum in `AGENTS.md` (1.77.2 → 1.90, the same work unit) and drop the now-stale claims about the 2.4 ceiling. (5) List the three new action keys in spec §9 (`distraction_notice_action_ack`, `_silence_day`, `_silence_permanent`). (6) Run `pnpm check`, `pnpm lint`, `pnpm test` and commit. (7) `desktop-ci.yml` on the PR is the only native gate — the family move touches the tray and menu stack, so a red build there is a real possibility, not a surprise. (8) The §13 manual table on a real `.exe`, with row 4 back in play (the buttons exist again in 2.6.0) and **row 9 still unmeasured**: whether a 1 s poll survives a hidden or minimised webview was never measured in this slice, and the parked spike materials are outside the repo in `%TEMP%\pomody-poll-spike`.
+
+**Also outside the repo, safe to delete**: `%TEMP%\pomody-notif-measure`, `pomody-notif-260`, `pomody-notif-bump`, `notif270`, `npmnotif`, `lock-before*.txt`, `bump-lock-before.txt`, `repo-lock-before-bump.txt`.
+
+**One local-only trap worth recording**: `pnpm prepare` currently fails on this machine with `Cannot find module '...@inlang/paraglide-js@2.25.4.../bin/run.js'` — the installed copy of that package is missing its `bin` directory (a corrupt local `node_modules`, not a lock problem; a fresh install in CI has it). It does not affect `pnpm check`, `pnpm lint` or `pnpm test`, which use the already-generated `src/lib/paraglide/` output.
+
+**Gate: not run on this tree.** The last green gate belongs to `6aeab5f`, and it is quoted above; the uncommitted changes have not been checked, linted or tested.
+
+L21 (2026-10-19) T6 / slice 5.5 (#127) finalizado y verificado.
+
+- **Acciones del toast completas**: registrado tipo de acción `pomodoro-distraction` con las tres opciones en inglés y español (`ack`: "Gracias", `silence_day`: "Hoy no", `silence_permanent`: "Nunca"). La notificación viaja con `actionTypeId` y `extra.ruleId`. El listener `onAction` despacha `ack` (no-op), `silence_day` (`silenceRule(ruleId)`) y `silence_permanent` (`deleteRule(ruleId)`).
+- **Hallazgo 1 resuelto con test**: solicitud de permisos garantizada en arranque en frío con switch encendido sin degradar a silencio; verificación añadida en `distractionState.test.ts`.
+- **Hallazgo 2 resuelto con test**: el historial de cadencia por regla sobrevive a pausas y reanudaciones dentro del mismo bloque de foco, limpiándose únicamente al finalizar o cambiar de modo el bloque.
+- **Documentación y configuración sincronizadas**: `decisions.md` §5.2 reescrito para documentar el salto a Tauri 2.12 / plugin 2.6.0; MSRV elevado a Rust 1.90 en `src-tauri/Cargo.toml`, `AGENTS.md` y `GEMINI.md`; claves i18n de las acciones documentadas en `spec.md` §9.
+- **Compuertas de calidad (gates)**:
+  - `pnpm check` → `svelte-check found 0 errors and 0 warnings` (exit 0).
+  - `pnpm lint` → exit 0 (Prettier "All matched files use Prettier code style!" + ESLint limpio).
+  - `pnpm test` → **77 archivos / 1153 pruebas pasadas** (54 unitarias / 917 tests en `server` + 23 en navegador / 232 tests en `client`).
+
+L22 (2026-10-19) Alerta sonora de atención para el detector de dispersión.
+
+- **Motivación**: En las pruebas del `.exe` real, el toast nativo de Windows pasa desapercibido si el sistema está en No Molestar o si la notificación expira sin ser vista. Se añade un pítido doble de atención inmediato para romper el trance de la distracción.
+- **Implementación**:
+  - `IAudioNotifier`: nuevo método de puerto `notifyDistraction(): Promise<void> | void;`.
+  - `WebAudioNotifier`: síntesis nativa con Web Audio API (dos pulsos senoidales breves de 70 ms en G5 = 783.99 Hz, tono armónico consistente con Pomody, con separación de 60 ms y ganancia de pico 0.2).
+  - `FakeAudioNotifier`: soporte de contador `notifyDistractionCalls` y `reset()`.
+  - `distractionState.svelte.ts`: inyección opcional de `audioNotifier`, desbloqueo de `AudioContext` en `setEnabled(true)` y reproducción en `evaluate()` cuando `soundEnabled` está activo en la configuración.
+- **Compuertas de calidad (gates)**:
+  - `pnpm check` → 0 errores, 0 advertencias.
+  - `pnpm lint` → exit 0 (Prettier + ESLint limpios).
+  - `pnpm test` → **77 archivos / 1159 pruebas pasadas** (+6 tests de sonido y estado).
+
+L23 (2026-10-19) Calibración de cadencia del detector de dispersión.
+
+- **Motivación**: 3s de sondeo inicial penalizaba cambios de ventana fugaces (falsos positivos en Alt+Tab rápidos) y 5 minutos de intervalo de reaviso resultaba excesivamente permisivo (20% de un bloque pomodoro perdido).
+- **Implementación**:
+  - `DISTRACTION_POLL_INTERVAL_MS = 10_000` en `src/lib/state/distractionState.svelte.ts` (de 3s a 10s).
+  - `DEFAULT_NOTIFY_POLICY.intervalMinutes = 2` en `src/lib/domain/distraction/distraction-policy.ts` (de 5 min a 2 min).
+  - Tests actualizados y calibrados en `distraction-policy.test.ts` y `distractionState.test.ts`.
+  - Especificación sincronizada en `docs/features/distraction-detector/spec.md` §3.4 y §4.

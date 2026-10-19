@@ -3,7 +3,8 @@ import type { IAudioNotifier } from '../../domain/ports/IAudioNotifier';
 
 export const CHIME_FREQUENCIES = {
 	focus: [523.25, 659.25, 783.99], // C5, E5, G5 (uplifting major triad)
-	break: [587.33, 440.0] // D5 -> A4 (soothing grounding cadence)
+	break: [587.33, 440.0], // D5 -> A4 (soothing grounding cadence)
+	distraction: [783.99, 783.99] // G5, G5 (crisp double attention beep)
 } as const;
 
 export interface WebAudioNotifierOptions {
@@ -78,6 +79,31 @@ export class WebAudioNotifier implements IAudioNotifier {
 			} else if (mode === 'shortBreak' || mode === 'longBreak') {
 				this.playBreakChime(context);
 			}
+		} catch {
+			// Graceful degradation on synthesis error
+		}
+	}
+
+	/**
+	 * Synthesizes and plays a crisp double attention chime when a distraction is detected.
+	 * Two short sine beeps at G5 (783.99 Hz) with a short pause in between.
+	 */
+	public async notifyDistraction(): Promise<void> {
+		const context = this.getOrCreateContext();
+		if (!context || context.state === 'closed') {
+			return;
+		}
+
+		if (context.state === 'suspended') {
+			try {
+				await context.resume();
+			} catch {
+				// Autoplay restriction prevented resuming; attempt synthesis regardless
+			}
+		}
+
+		try {
+			this.playDistractionChime(context);
 		} catch {
 			// Graceful degradation on synthesis error
 		}
@@ -159,6 +185,13 @@ export class WebAudioNotifier implements IAudioNotifier {
 		// Soothing grounding D5 -> A4 cadence
 		this.playTone(context, CHIME_FREQUENCIES.break[0], now, 0.8, 0.15);
 		this.playTone(context, CHIME_FREQUENCIES.break[1], now + 0.18, 1.0, 0.15);
+	}
+
+	private playDistractionChime(context: AudioContext): void {
+		const now = context.currentTime;
+		// Crisp double attention beep: two 70ms pulses at G5 with a 60ms gap
+		this.playTone(context, CHIME_FREQUENCIES.distraction[0], now, 0.07, 0.2);
+		this.playTone(context, CHIME_FREQUENCIES.distraction[1], now + 0.13, 0.07, 0.2);
 	}
 
 	private playTone(

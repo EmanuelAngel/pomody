@@ -7,6 +7,7 @@ import type { TimerMode } from '$lib/domain/timer/timer-fsm';
  */
 export class FakeAudioNotifier implements IAudioNotifier {
 	public notifyBlockCompletedCalls: TimerMode[] = [];
+	public notifyDistractionCalls = 0;
 	public unlockCallCount = 0;
 
 	/**
@@ -14,6 +15,13 @@ export class FakeAudioNotifier implements IAudioNotifier {
 	 */
 	notifyBlockCompleted(mode: TimerMode): void {
 		this.notifyBlockCompletedCalls.push(mode);
+	}
+
+	/**
+	 * Increments the distraction notification call counter.
+	 */
+	notifyDistraction(): void {
+		this.notifyDistractionCalls++;
 	}
 
 	/**
@@ -28,6 +36,7 @@ export class FakeAudioNotifier implements IAudioNotifier {
 	 */
 	reset(): void {
 		this.notifyBlockCompletedCalls = [];
+		this.notifyDistractionCalls = 0;
 		this.unlockCallCount = 0;
 	}
 }

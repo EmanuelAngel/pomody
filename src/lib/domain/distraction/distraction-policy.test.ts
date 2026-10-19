@@ -27,8 +27,8 @@ function policy(overrides: Partial<NotifyPolicy> = {}): NotifyPolicy {
 }
 
 describe('DEFAULT_NOTIFY_POLICY', () => {
-	it('exposes the documented 5-minute interval and 300-second idle guard', () => {
-		expect(DEFAULT_NOTIFY_POLICY.intervalMinutes).toBe(5);
+	it('exposes the documented 2-minute interval and 300-second idle guard', () => {
+		expect(DEFAULT_NOTIFY_POLICY.intervalMinutes).toBe(2);
 		expect(DEFAULT_NOTIFY_POLICY.idleGuardSeconds).toBe(300);
 	});
 });
@@ -79,39 +79,39 @@ describe('shouldNotify', () => {
 	});
 
 	it('does not notify the same rule before the interval has elapsed', () => {
-		const fourMinutesAgo = NOW - 4 * 60_000;
+		const oneMinuteAgo = NOW - 1 * 60_000;
 
 		expect(
 			shouldNotify({
 				ruleId: 'rule-1',
 				observation: observation(),
-				firedThisBlock: [fired('rule-1', fourMinutesAgo)],
+				firedThisBlock: [fired('rule-1', oneMinuteAgo)],
 				now: NOW
 			})
 		).toBe(false);
 	});
 
 	it('notifies the same rule exactly at the interval boundary', () => {
-		const fiveMinutesAgo = NOW - DEFAULT_NOTIFY_POLICY.intervalMinutes * 60_000;
+		const boundaryAgo = NOW - DEFAULT_NOTIFY_POLICY.intervalMinutes * 60_000;
 
 		expect(
 			shouldNotify({
 				ruleId: 'rule-1',
 				observation: observation(),
-				firedThisBlock: [fired('rule-1', fiveMinutesAgo)],
+				firedThisBlock: [fired('rule-1', boundaryAgo)],
 				now: NOW
 			})
 		).toBe(true);
 	});
 
 	it('notifies the same rule once the interval has elapsed', () => {
-		const sixMinutesAgo = NOW - 6 * 60_000;
+		const threeMinutesAgo = NOW - 3 * 60_000;
 
 		expect(
 			shouldNotify({
 				ruleId: 'rule-1',
 				observation: observation(),
-				firedThisBlock: [fired('rule-1', sixMinutesAgo)],
+				firedThisBlock: [fired('rule-1', threeMinutesAgo)],
 				now: NOW
 			})
 		).toBe(true);

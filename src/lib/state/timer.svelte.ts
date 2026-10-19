@@ -260,6 +260,18 @@ export class TimerState {
 	}
 
 	/**
+	 * Subscribes to state transitions of the timer.
+	 *
+	 * Added for the distraction detector, which arms its poll only while a focus block is
+	 * `running` and must disarm the instant the block ends, pauses or restarts (spec §4).
+	 * Like `onEvent`, the current snapshot is not emitted on subscription, so a subscriber
+	 * that needs the initial state reads `snapshot` once after subscribing.
+	 */
+	public subscribe(subscriber: (snapshot: TimerSnapshot) => void): Unsubscribe {
+		return this.fsm.subscribe(subscriber);
+	}
+
+	/**
 	 * Subscribes to timer configuration changes.
 	 */
 	public onConfigChange(subscriber: (config: TimerConfig) => void): () => void {

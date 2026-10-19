@@ -144,7 +144,7 @@ export interface NotifyPolicy {
 }
 
 export const DEFAULT_NOTIFY_POLICY: NotifyPolicy = {
-	intervalMinutes: 5,
+	intervalMinutes: 2,
 	idleGuardSeconds: 300
 };
 
@@ -179,7 +179,7 @@ sequenceDiagram
 
     FSM->>State: bloque de foco pasa a Running
     State->>State: arma el sondeo
-    loop cada ~3s mientras corre el bloque
+    loop cada ~10s mientras corre el bloque
         State->>Mon: getForegroundWindow()
         Mon-->>State: { exe, title, idleSeconds }
         State->>Policy: ¿corresponde avisar?
@@ -270,7 +270,7 @@ Notas de implementación, todas verificables en revisión:
 - **Procesos elevados**: si la app observada corre como administrador y Pomody no, el nombre del ejecutable puede no ser legible. Se omiten del picker; no es un defecto a corregir.
 - **Regla 8 — `Cargo.lock`**: agregar `windows-sys` **toca el lock**. Primer paso del slice 3: medir con `cargo add` sobre una copia desechable (`cargo update`, `cargo generate-lockfile` y borrar el lock están prohibidos). Si la familia Tauri se mueve, se para y se reporta.
 - **Regla 9 — verificación del desktop**: `desktop-ci.yml` valida que compile y que los permisos sean válidos; **no** valida comportamiento. Local nunca se corre `pnpm tauri:build`.
-- **Requiere Rust ≥ 1.90** para `tauri-plugin-notification` (slice 5).
+- **Requiere Rust ≥ 1.90** para `tauri 2.12` y `tauri-plugin-notification ≥ 2.6.0` (slice 5).
 
 ---
 
@@ -283,7 +283,7 @@ Claves nuevas, en `messages/es.json` y `messages/en.json` (dominio emite código
 - **Estado vacío y listas**: `distraction_view_empty_title`, `distraction_view_empty_description`, `distraction_rules_heading`, `distraction_silenced_heading`, `distraction_silenced_release`, `distraction_silenced_release_aria` (`{exe}`).
 - **Alta, edición y baja**: `distraction_rule_add`, `distraction_rule_save`, `distraction_rule_cancel`, `distraction_rule_edit_aria` (`{exe}`), `distraction_rule_delete_aria` (`{exe}`), `distraction_rule_delete_confirm`.
 - **Picker y campos manuales**: `distraction_rule_picker_label`, `distraction_rule_picker_placeholder`, `distraction_rule_picker_empty`, `distraction_rule_exe_label`, `distraction_rule_exe_placeholder`, `distraction_rule_title_pattern_label`, `distraction_rule_title_pattern_hint`.
-- **Aviso** (las consume el slice 5.5; su copy queda a cargo de ese slice): `distraction_notice_title`, `distraction_notice_body` (`{window}`).
+- **Aviso** (las consume el slice 5.5): `distraction_notice_title`, `distraction_notice_body` (`{window}`), `distraction_notice_action_ack`, `distraction_notice_action_silence_day`, `distraction_notice_action_silence_permanent`.
 
 ---
 

@@ -56,7 +56,7 @@ To maintain sub-second feedback during development without sacrificing regressio
 | **Node.js**             | `>= 20.18.0 LTS`    | `v22 LTS` or `v24` | JavaScript runtime for Vite, SvelteKit, and Vitest     |
 | **pnpm**                | `>= 9.0.0`          | `v10.x`            | Mandatory package manager (`corepack enable`)          |
 | **Playwright Chromium** | `v1.60.0+`          | Latest             | Optional for domain; required for `test:browser` / E2E |
-| **Rust & Cargo**        | `Stable >= 1.77.2`  | Latest stable      | Only required when compiling desktop app (Tauri v2)    |
+| **Rust & Cargo**        | `Stable >= 1.90.0`  | Latest stable      | Only required when compiling desktop app (Tauri v2)    |
 | **C++ Build Tools**     | VS Build Tools 2022 | Latest             | Required MSVC toolchain dependency for Rust on Windows |
 
 ## Architecture & Code Boundaries

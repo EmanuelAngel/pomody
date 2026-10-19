@@ -8,6 +8,11 @@ export interface IAudioNotifier {
 	notifyBlockCompleted(mode: TimerMode): Promise<void> | void;
 
 	/**
+	 * Synthesizes and plays a crisp double attention chime when a distraction is detected.
+	 */
+	notifyDistraction(): Promise<void> | void;
+
+	/**
 	 * Resumes or unlocks the underlying AudioContext in response to a user interaction gesture.
 	 */
 	unlock(): Promise<void> | void;

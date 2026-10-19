@@ -135,6 +135,35 @@ Nota operativa: el lock commiteado es CRLF en el working tree y cargo lo reescri
 
 ---
 
+### 5.2. Medición de la regla 8 para `tauri-plugin-notification`, el salto a Tauri 2.12 y las tres acciones
+
+La implementación del slice 5.5 (issue #127) transitó dos fases:
+
+1. **Fase inicial (techo medido en 2.4.0)**: se midió `cargo add tauri-plugin-notification@~2.4.0` sobre `tauri ~2.11.6` en copia desechable. En 2.4.0 las acciones de notificación estaban tras `#[cfg(mobile)]` en el backend nativo, por lo que el aviso funcionó provisionalmente como faro.
+2. **Reapertura e implementación completa (salto a Tauri 2.12 y plugin 2.6.0)**: a requerimiento del mantenedor para completar las tres acciones del spec §5, se levantó el techo de dependencia actualizando la familia Tauri a `~2.12.0` y `tauri-plugin-notification` a `~2.6.0`, elevando el MSRV a Rust 1.90 (`rust-version = "1.90"` en `Cargo.toml`).
+
+Medición de la regla 8 para el salto a 2.12 / 2.6.0 (hecha sobre copia desechable antes de tocar el working tree):
+
+| Medición               | Resultado                                                                                                                                                                                                                                            |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lock (antes → después) | 500 → **473 paquetes** (63 existentes cambiaron de versión —la familia Tauri completa más el stack de bandeja y menú—, 8 removidos, 3 agregados).                                                                                                    |
+| Familia Tauri          | tauri **2.12.4**; tauri-build/codegen/macros **2.7.3**; tauri-plugin **2.7.2**; tauri-utils **2.10.2**; tauri-runtime y tauri-runtime-wry **2.12.2**; wry **0.57.0**; tao **0.37.1**; tray-icon **0.25.1**; muda **0.20.0**; notification **2.6.0**. |
+| Compatibilidad         | `tauri-plugin-single-instance` se mantiene en **2.4.1** (su requisito `tauri ^2.10` resuelve sin problemas). `cargo metadata --locked` valida limpiamente.                                                                                           |
+| Rust MSRV              | Requiere Rust **1.90**, actualizado en `src-tauri/Cargo.toml`, `AGENTS.md` y `GEMINI.md`.                                                                                                                                                            |
+
+**Implementación de las tres acciones**:
+`tauri-plugin-notification 2.6.0` implementa soporte nativo de acciones en desktop Windows vía `notify-rust` y WinRT toast buttons.
+
+- Se registra un tipo de acción `pomodoro-distraction` vía `registerActionTypes` con las tres acciones localizadas en el idioma del usuario (`ack`: "Gracias", `silence_day`: "Hoy no", `silence_permanent`: "Nunca").
+- Cada notificación de dispersión incluye `actionTypeId: 'pomodoro-distraction'` y `extra: { ruleId }`.
+- Al activarse un botón, el evento llega vía `onAction`:
+  - `ack` (o el desvanecido del toast): no modifica el almacenamiento.
+  - `silence_day`: silencia la regla hasta el cambio de día local (`silenceRule(ruleId)`).
+  - `silence_permanent`: elimina la regla del catálogo (`deleteRule(ruleId)`), logrando el silencio permanente sin claves adicionales.
+- Si la plataforma no soporta acciones (`supportsActions: false`), el aviso degrada de forma segura al comportamiento de faro sin lanzar excepciones.
+
+---
+
 ## 6. Deuda registrada
 
 Registrada a propósito, no olvidada.
@@ -142,7 +171,7 @@ Registrada a propósito, no olvidada.
 | Deuda                                                                  | Por qué no se hizo ahora y cuál es el disparador                                                                                                                                                                                                                                                                                                      |
 | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Revisión de ventanas al final del bloque** (descubrir sin acordarse) | Agregaría una pantalla más y una fase de calibración antes de saber si el disparo funciona. Disparador: después del primer dogfooding real.                                                                                                                                                                                                           |
-| **Etiquetas del toast en el idioma del usuario**                       | Depende de si el plugin expone el registro de tipos de acción desde JS. Disparador: verificarlo en el slice 5; si existe, pasan a Paraglide y esta deuda se borra.                                                                                                                                                                                    |
+| **Etiquetas del toast en el idioma del usuario**                       | **RESUELTO en la reapertura del slice 5.5**: con el salto a `tauri-plugin-notification 2.6.0`, las acciones se registran desde el frontend mediante `registerActionTypes` pasando los textos resueltos por Paraglide (`distraction_notice_action_ack`, `_silence_day`, `_silence_permanent`).                                                         |
 | **Intervalo configurable por regla desde la UI**                       | Es un parámetro puro (`DEFAULT_NOTIFY_POLICY`), no una arquitectura. Hoy el default alcanza. Disparador: pedido concreto de dogfooding.                                                                                                                                                                                                               |
 | **Contadores de dispersión para el Milestone 6**                       | Es analítica y le corresponde a M6. El diseño no lo impide: la evaluación de cadencia ya vive en el dominio y se puede emitir un evento después.                                                                                                                                                                                                      |
 | **Refactor del drawer a diálogo con tabs**                             | Refactor de una superficie sana. Disparador: que el drawer pase de cinco secciones o que alguna necesite sub-tabs. **Disparador cumplido en el slice 5.4** (issue #126): la sección de Distracciones es la sexta. No se hizo ahí —el issue no lo pide y mezclarlo con la vista habría inflado el diff—, queda como work unit propio con su propio PR. |
