@@ -6,6 +6,7 @@ import SettingsDrawer from './settings-drawer.svelte';
 import SettingsTestHost from './settings-test-host.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
 import { createThemeState } from '$lib/state/theme.svelte';
+import { createIllustrationState } from '$lib/state/illustration.svelte';
 import { localeState } from '$lib/state/locale.svelte';
 import { DEFAULT_TIMER_CONFIG } from '$lib/domain/timer/timer-fsm';
 import { createDistractionState } from '$lib/state/distractionState.svelte';
@@ -985,7 +986,7 @@ describe('SettingsDrawer Internationalization (Client Browser)', () => {
 
 		// Reactively switched to Spanish
 		await expect.element(screen.getByRole('heading', { level: 2, name: 'Ajustes' })).toBeVisible();
-		await expect.element(screen.getByText('Foco')).toBeVisible();
+		await expect.element(screen.getByText('Foco', { exact: true })).toBeVisible();
 		await expect.element(screen.getByText('4 rondas', { exact: true })).toBeVisible();
 
 		// Switch back to English
@@ -994,7 +995,84 @@ describe('SettingsDrawer Internationalization (Client Browser)', () => {
 
 		// Reactively restored to English
 		await expect.element(screen.getByRole('heading', { level: 2, name: 'Settings' })).toBeVisible();
-		await expect.element(screen.getByText('Focus')).toBeVisible();
+		await expect.element(screen.getByText('Focus', { exact: true })).toBeVisible();
 		await expect.element(screen.getByText('4 rounds', { exact: true })).toBeVisible();
+	});
+});
+
+describe('SettingsDrawer illustration preferences (Client Browser)', () => {
+	function renderDrawer() {
+		const storage = new FakeSettingsStorage();
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+		const illustrationState = createIllustrationState(
+			storage,
+			{ accumulatedMinutes: 0 },
+			{ isRunning: false, mode: 'focus' }
+		);
+
+		return {
+			storage,
+			illustrationState,
+			render: render(SettingsDrawer, {
+				open: true,
+				timerState,
+				themeState: createThemeState(),
+				illustrationState,
+				portalProps: { disabled: true }
+			})
+		};
+	}
+
+	it('shows the living companion section with the master switch off by default', async () => {
+		const { illustrationState, render: rendering } = renderDrawer();
+		const screen = await rendering;
+
+		await expect.element(screen.getByRole('heading', { name: 'Living companion' })).toBeVisible();
+		const master = screen.getByRole('switch', { name: 'Show the living companion illustration' });
+
+		expect(illustrationState.enabled).toBe(false);
+		await expect.element(master).not.toBeChecked();
+
+		await master.click();
+
+		expect(illustrationState.enabled).toBe(true);
+		await expect.element(master).toBeChecked();
+	});
+
+	it('toggles the static scene preference', async () => {
+		const { illustrationState, render: rendering } = renderDrawer();
+		const screen = await rendering;
+
+		const motion = screen.getByRole('switch', { name: 'Enable ambient illustration motion' });
+		await expect.element(motion).toBeChecked();
+
+		await motion.click();
+
+		expect(illustrationState.motionEnabled).toBe(false);
+		await expect.element(motion).not.toBeChecked();
+	});
+
+	it('toggles hiding the illustration while focusing', async () => {
+		const { illustrationState, render: rendering } = renderDrawer();
+		const screen = await rendering;
+
+		const hide = screen.getByRole('switch', { name: 'Hide the illustration while focusing' });
+		await expect.element(hide).not.toBeChecked();
+
+		await hide.click();
+
+		expect(illustrationState.hideWhileFocusing).toBe(true);
+		await expect.element(hide).toBeChecked();
+	});
+
+	it('selects the desert illustration and persists it', async () => {
+		const { illustrationState, render: rendering } = renderDrawer();
+		const screen = await rendering;
+
+		const desert = screen.getByRole('radio', { name: 'Desert' });
+		await desert.click();
+
+		expect(illustrationState.selectedId).toBe('desert');
 	});
 });
