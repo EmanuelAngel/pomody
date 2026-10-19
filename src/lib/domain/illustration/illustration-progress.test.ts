@@ -108,12 +108,14 @@ describe('resolvePhase', () => {
 });
 
 describe('calculatePixelScale', () => {
-	it('uses the largest integer multiple that fits', () => {
+	it('uses the smallest integer multiple that covers the viewport', () => {
 		expect(ART_WIDTH).toBe(320);
 		expect(ART_HEIGHT).toBe(180);
 		expect(calculatePixelScale(1280, 720)).toBe(4);
 		expect(calculatePixelScale(1920, 1080)).toBe(6);
-		expect(calculatePixelScale(800, 600)).toBe(2);
+		expect(calculatePixelScale(1440, 900)).toBe(5);
+		expect(calculatePixelScale(1000, 720)).toBe(4);
+		expect(calculatePixelScale(800, 600)).toBe(4);
 	});
 
 	it('never returns less than 1', () => {

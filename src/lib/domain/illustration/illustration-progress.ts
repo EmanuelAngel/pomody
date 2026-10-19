@@ -13,7 +13,8 @@ export const ART_WIDTH = 320;
 export const ART_HEIGHT = 180;
 
 /**
- * Largest integer scale that fits the art inside the available space.
+ * Smallest integer scale that covers the available space (like `object-fit: cover`).
+ * Integer multiples keep the pixel grid crisp; the overflow is cropped by the layer.
  * Never returns less than 1 so the scene is always rendered.
  */
 export function calculatePixelScale(
@@ -33,7 +34,7 @@ export function calculatePixelScale(
 		return 1;
 	}
 
-	return Math.max(1, Math.floor(Math.min(width / artWidth, height / artHeight)));
+	return Math.max(1, Math.ceil(Math.max(width / artWidth, height / artHeight)));
 }
 
 /**

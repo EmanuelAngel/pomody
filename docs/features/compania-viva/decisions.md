@@ -75,3 +75,19 @@ Registro de las decisiones cerradas durante el grill previo al sign-off del issu
 **Decisión.** Cuatro commits/PRs revisables sobre la rama de feature y un PR final a `main`.
 
 **Motivo.** El forecast supera las 400 líneas autoradas y el propio informe técnico pide PRs chicos.
+
+## D13 — Encuadre full-bleed en modo cover
+
+**Contexto.** La primera versión usaba la mayor escala entera que entraba, lo que dejaba barras del color del fondo en los costados.
+
+**Decisión.** Escala entera en modo cover: el menor múltiplo que cubre la ventana, recortando el sobrante y anclando la escena abajo.
+
+**Motivo.** La ilustración debe sentirse como un lienzo de fondo, no como una imagen encajada. El recorte mantiene la grilla de píxeles nítida y la composición conserva el centro libre para el timer.
+
+## D14 — Más detalle, paleta ampliada
+
+**Contexto.** La primera pasada era demasiado plana: bloques grandes, pocas capas y tres acentos rígidos.
+
+**Decisión.** El desierto se rehizo con cielo en gradiente, tres cordilleras, dunas, saguaros con textura y flores, rocas, nubes y fauna. La paleta usa tokens Rosé Pine con opacidades en lugar de un tope fijo de tres acentos.
+
+**Motivo.** El minimalismo sigue siendo el objetivo, pero la escena tiene que leerse como una ilustración y no como un diagrama. Las opacidades dan profundidad sin inventar colores fuera de la paleta.

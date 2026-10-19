@@ -34,10 +34,12 @@ flowchart LR
 ## 3. Render
 
 - Lienzo nativo `320 × 180` (`ART_WIDTH` / `ART_HEIGHT`).
-- `calculatePixelScale(ancho, alto)` devuelve el mayor múltiplo entero que entra, con mínimo 1.
+- `calculatePixelScale(ancho, alto)` devuelve el menor múltiplo entero que cubre la ventana (`cover`), con mínimo 1. El sobrante se recorta en el contenedor.
 - `illustration-background` mide su contenedor con un `ResizeObserver` y fija el tamaño exacto del lienzo. El observer solo reacciona a cambios de tamaño: no hay bucle por frame.
 - El SVG usa `shape-rendering="crispEdges"` y `preserveAspectRatio="xMidYMax slice"`.
-- La capa se ancla abajo (`items-end`) para que la línea de suelo quede estable.
+- La capa se ancla abajo (`items-end`) para que la línea de suelo quede estable, y el recorte se reparte centrado en horizontal.
+- La composición deja libre el centro (`x 116..204`) para que los dígitos no pierdan contraste; el arte crece hacia los laterales.
+- Dos scrims del color de fondo del tema (`from-bg-base/85`) protegen el contraste del header y del contador diario.
 
 ## 4. Animación
 
@@ -65,4 +67,4 @@ flowchart LR
 - **Reset perezoso**: una app abierta toda la noche conserva la escena del día anterior hasta el próximo bloque. Se acepta y se documenta.
 - **Cruce de medianoche**: un bloque que empieza antes y termina después de las 00:00 puede reiniciar el contador al completarse.
 - **Ventanas angostas**: por debajo de `md` no se monta la capa. El Mini-Player nunca la renderiza porque reemplaza el shell completo.
-- **Escala fraccionaria**: el observer solo aplica múltiplos enteros; en ventanas muy chicas la escena se dibuja a escala 1.
+- **Escala fraccionaria**: el observer solo aplica múltiplos enteros en modo cover; el recorte reemplaza las barras laterales.

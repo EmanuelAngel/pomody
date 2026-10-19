@@ -47,5 +47,11 @@
 				<Renderer phase={illustration.phase} animated={illustration.shouldAnimate} />
 			</div>
 		</div>
+		<div
+			class="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-bg-base/85 to-transparent"
+		></div>
+		<div
+			class="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-bg-base/85 to-transparent"
+		></div>
 	</div>
 {/if}

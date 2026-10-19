@@ -29,8 +29,8 @@ Verbatim user decision: "Una ilustración de landscape pixel art minismalista de
 
 - Forest: 5 phases (changes every 75 minutes).
 - Desert: 3 phases bound to progress only (day → sunset → night with bats), never to the real clock.
-- Palette: 3 accent tokens per illustration, `--bg-base` acts as sky and does not count. Forest: `pine` + `foam` + `text-subtle`. Desert: `gold` + `pine` + `love`. Must work in Dark, Dawn and OLED.
-- Integer pixel scale via `ResizeObserver`: `scale = floor(min(width / artWidth, height / artHeight))`. Resize only, never a per-frame loop.
+- Palette: Rosé Pine tokens with opacity shades. The initial 3-accent cap was relaxed after visual review to add depth. Must work in Dark, Dawn and OLED.
+- Integer pixel scale via `ResizeObserver` in cover mode: `scale = ceil(max(width / artWidth, height / artHeight))`. The overflow is cropped, the scene fills the window. Resize only, never a per-frame loop.
 - No `<canvas>`, WebGL, animation libraries, or new dependencies.
 
 ### S3 — Placement
@@ -92,6 +92,7 @@ Verbatim user decision: "Una ilustración de landscape pixel art minismalista de
 | T6  | Settings UI (switches + selector + i18n)       | S4, S7     | inline | done   | 750a301 |
 | T7  | Feature docs                                   | S8         | inline | done   | fde1120 |
 | T8  | Full verification gates                        | S7         | inline | done   | n/a     |
+| T9  | Desert art pass + full-bleed cover scale       | S2, S3     | inline | done   | pending |
 
 ## Log
 
@@ -136,3 +137,13 @@ Verbatim user decision: "Una ilustración de landscape pixel art minismalista de
 - T6 settings UI: 4 new browser tests (master switch, static switch, hide-while-focusing, illustration selector).
 - T8 gates observed on the committed tree: `pnpm check` 0 errors / 0 warnings; `pnpm test` 82 files / 1227 tests passed; `pnpm lint` clean.
 - Visual check: screenshots at 1280x720 in Dark, Dawn and OLED for both scenes. The first pass let tall trees and the sun cover the digits; the scenes were recomposed with a clear centre (x 116..204) and side framing, then re-checked. Digits, controls and task pill keep their space.
+
+### L5 — Visual review feedback
+
+Verbatim: "LGTM! El motor funciona como tiene que ser. Eso sí, las ilustraciones me parecen horribles. Está bien que dije minimalistas y simples pero tampoco tanto. Y no veo que ocupe toda la pantalla, se corta a los costados."
+
+- Rejected the flat block look: the desert was redrawn with a gradient sky, three mountain ranges, curved dunes, textured saguaros, flowers, rocks, clouds, birds/bats and a foreground shadow.
+- Changed the scale to cover (`ceil(max(...))`) so the scene fills the viewport by cropping instead of letterboxing.
+- Added top and bottom theme scrims for header and daily-counter contrast.
+- Palette cap relaxed from 3 accents to token shades via opacity.
+- Reference image provided by the user for the desert phases; the forest stays on the previous composition until the desert is approved.
