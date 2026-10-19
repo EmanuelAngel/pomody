@@ -40,10 +40,10 @@ import { timerState } from './timer.svelte';
 /**
  * Poll cadence of the detector while a focus block runs (spec §4).
  *
- * Not exported on purpose: the tests pin the documented ~3 s with their own literal, so
+ * Not exported on purpose: the tests pin the documented ~10 s with their own literal, so
  * changing this number is a decision that fails them instead of silently following along.
  */
-const DISTRACTION_POLL_INTERVAL_MS = 3_000;
+const DISTRACTION_POLL_INTERVAL_MS = 10_000;
 
 /**
  * What the user typed in the declaration form. The executable is normalized and the

@@ -8,7 +8,7 @@ export interface NotifyPolicy {
 }
 
 export const DEFAULT_NOTIFY_POLICY: NotifyPolicy = Object.freeze({
-	intervalMinutes: 5,
+	intervalMinutes: 2,
 	idleGuardSeconds: 300
 });
 

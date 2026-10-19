@@ -144,7 +144,7 @@ export interface NotifyPolicy {
 }
 
 export const DEFAULT_NOTIFY_POLICY: NotifyPolicy = {
-	intervalMinutes: 5,
+	intervalMinutes: 2,
 	idleGuardSeconds: 300
 };
 
@@ -179,7 +179,7 @@ sequenceDiagram
 
     FSM->>State: bloque de foco pasa a Running
     State->>State: arma el sondeo
-    loop cada ~3s mientras corre el bloque
+    loop cada ~10s mientras corre el bloque
         State->>Mon: getForegroundWindow()
         Mon-->>State: { exe, title, idleSeconds }
         State->>Policy: ¿corresponde avisar?

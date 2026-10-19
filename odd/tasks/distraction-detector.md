@@ -300,3 +300,12 @@ L22 (2026-10-19) Alerta sonora de atención para el detector de dispersión.
   - `pnpm check` → 0 errores, 0 advertencias.
   - `pnpm lint` → exit 0 (Prettier + ESLint limpios).
   - `pnpm test` → **77 archivos / 1159 pruebas pasadas** (+6 tests de sonido y estado).
+
+L23 (2026-10-19) Calibración de cadencia del detector de dispersión.
+
+- **Motivación**: 3s de sondeo inicial penalizaba cambios de ventana fugaces (falsos positivos en Alt+Tab rápidos) y 5 minutos de intervalo de reaviso resultaba excesivamente permisivo (20% de un bloque pomodoro perdido).
+- **Implementación**:
+  - `DISTRACTION_POLL_INTERVAL_MS = 10_000` en `src/lib/state/distractionState.svelte.ts` (de 3s a 10s).
+  - `DEFAULT_NOTIFY_POLICY.intervalMinutes = 2` en `src/lib/domain/distraction/distraction-policy.ts` (de 5 min a 2 min).
+  - Tests actualizados y calibrados en `distraction-policy.test.ts` y `distractionState.test.ts`.
+  - Especificación sincronizada en `docs/features/distraction-detector/spec.md` §3.4 y §4.

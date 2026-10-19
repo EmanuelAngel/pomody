@@ -413,29 +413,29 @@ describe('DistractionState', () => {
 		it('polls only while a focus block is running, and disarms on pause, reset and block end', async () => {
 			const { timer, monitor, advance } = await createLoopHarness();
 
-			await advance(9_000);
+			await advance(30_000);
 			expect(monitor.foregroundCalls).toBe(0);
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 			expect(monitor.foregroundCalls).toBe(1);
 
 			timer.pause();
-			await advance(9_000);
+			await advance(30_000);
 			expect(monitor.foregroundCalls).toBe(1);
 
 			timer.resume();
-			await advance(3_000);
+			await advance(10_000);
 			expect(monitor.foregroundCalls).toBe(2);
 
 			timer.reset();
-			await advance(9_000);
+			await advance(30_000);
 			expect(monitor.foregroundCalls).toBe(2);
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 			timer.tick(1_500_000);
-			await advance(9_000);
+			await advance(30_000);
 			expect(monitor.foregroundCalls).toBe(3);
 		});
 
@@ -447,7 +447,7 @@ describe('DistractionState', () => {
 			timer.start();
 			const breakMode = timer.snapshot.mode;
 
-			await advance(9_000);
+			await advance(30_000);
 
 			expect(breakMode).toBe('shortBreak');
 			expect(monitor.foregroundCalls).toBe(0);
@@ -468,11 +468,11 @@ describe('DistractionState', () => {
 			});
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(1);
 
 			state.setEnabled(false);
-			await advance(9_000);
+			await advance(30_000);
 
 			expect(notifier.notifyCalls).toHaveLength(1);
 			expect(monitor.foregroundCalls).toBe(1);
@@ -480,7 +480,7 @@ describe('DistractionState', () => {
 			// The notice history belongs to the block, not to the switch: turning it back on
 			// neither replays what was missed nor repeats what this block already announced.
 			state.setEnabled(true);
-			await advance(3_000);
+			await advance(10_000);
 
 			expect(notifier.notifyCalls).toHaveLength(1);
 		});
@@ -492,11 +492,11 @@ describe('DistractionState', () => {
 			});
 
 			timer.start();
-			await advance(6_000);
+			await advance(20_000);
 			expect(notifier.notifyCalls).toHaveLength(0);
 
 			state.setEnabled(true);
-			await advance(3_000);
+			await advance(10_000);
 
 			// Nothing that happened while the switch was off is replayed: the single notice is
 			// the current window being declared, evaluated from scratch (spec §4).
@@ -507,13 +507,13 @@ describe('DistractionState', () => {
 			const { timer, notifier, advance } = await createLoopHarness({ rules: [makeRule()] });
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(1);
 
-			await advance(180_000);
+			await advance(60_000);
 			expect(notifier.notifyCalls).toHaveLength(1);
 
-			await advance(180_000);
+			await advance(60_000);
 			expect(notifier.notifyCalls).toHaveLength(2);
 		});
 
@@ -525,16 +525,16 @@ describe('DistractionState', () => {
 			});
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(1);
 
 			monitor.foregroundWindow = { ...CHROME_WINDOW, exe: 'steam', title: 'Steam' };
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(2);
 
 			// Back to the first rule: its own interval is what counts, not the rule that fired last.
 			monitor.foregroundWindow = CHROME_WINDOW;
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(2);
 		});
 
@@ -545,11 +545,11 @@ describe('DistractionState', () => {
 			});
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(0);
 
 			monitor.foregroundWindow = { ...CHROME_WINDOW, idleSeconds: 299 };
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(1);
 		});
 
@@ -561,15 +561,15 @@ describe('DistractionState', () => {
 			});
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(0);
 
 			await state.unsilenceRule(rule.id);
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(1);
 
 			await state.silenceRule(rule.id);
-			await advance(180_000);
+			await advance(120_000);
 			expect(notifier.notifyCalls).toHaveLength(1);
 		});
 
@@ -577,15 +577,15 @@ describe('DistractionState', () => {
 			const { state, timer, notifier, advance } = await createLoopHarness();
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(0);
 
 			await state.saveRule({ exe: 'chrome' });
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(1);
 
 			await state.deleteRule(state.rules[0].id);
-			await advance(180_000);
+			await advance(120_000);
 			expect(notifier.notifyCalls).toHaveLength(1);
 		});
 
@@ -593,14 +593,14 @@ describe('DistractionState', () => {
 			const { timer, notifier, advance } = await createLoopHarness({ rules: [makeRule()] });
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(1);
 
 			timer.tick(1_500_000);
 			timer.start();
 			timer.tick(300_000);
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 
 			// A new focus block starts with an empty history, so the same rule can fire at once.
 			expect(notifier.notifyCalls).toHaveLength(2);
@@ -613,7 +613,7 @@ describe('DistractionState', () => {
 			});
 
 			timer.start();
-			await advance(9_000);
+			await advance(30_000);
 
 			expect(notifier.notifyCalls).toHaveLength(0);
 		});
@@ -623,7 +623,7 @@ describe('DistractionState', () => {
 				await createLoopHarness({ rules: [makeRule()] });
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 
 			expect(notifier.notifyCalls).toEqual([
 				{
@@ -680,20 +680,20 @@ describe('DistractionState', () => {
 			const { timer, notifier, advance } = await createLoopHarness({ rules: [makeRule()] });
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(1);
 
 			timer.pause();
-			await advance(60_000);
+			await advance(30_000);
 			timer.resume();
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(1);
 
-			// Still inside the interval of the first notice, counted from the block, not the resume.
-			await advance(180_000);
+			// Still inside the 2-minute interval of the first notice, counted from the block, not the resume.
+			await advance(70_000);
 			expect(notifier.notifyCalls).toHaveLength(1);
 
-			await advance(60_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(2);
 		});
 
@@ -701,12 +701,12 @@ describe('DistractionState', () => {
 			const { timer, notifier, advance } = await createLoopHarness({ rules: [makeRule()] });
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 			expect(notifier.notifyCalls).toHaveLength(1);
 
 			timer.reset();
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 
 			expect(notifier.notifyCalls).toHaveLength(2);
 		});
@@ -717,7 +717,7 @@ describe('DistractionState', () => {
 			});
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 
 			expect(audioNotifier.notifyDistractionCalls).toBe(1);
 		});
@@ -729,7 +729,7 @@ describe('DistractionState', () => {
 			});
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 
 			expect(audioNotifier.notifyDistractionCalls).toBe(0);
 		});
@@ -809,7 +809,7 @@ describe('DistractionState', () => {
 			});
 
 			timer.start();
-			await advance(3_000);
+			await advance(10_000);
 
 			expect(notifier.notifyCalls).toHaveLength(2);
 		});
