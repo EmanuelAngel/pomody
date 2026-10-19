@@ -2,8 +2,14 @@ import {
 	DEFAULT_USER_SETTINGS,
 	type ISettingsStorage,
 	type UserSettings,
-	type Theme
+	type Theme,
+	type IllustrationSettings
 } from '../../domain/ports/settings-storage.port';
+import {
+	DEFAULT_ILLUSTRATION_ID,
+	findIllustration,
+	type IllustrationId
+} from '../../domain/illustration/illustration-catalog';
 import { DEFAULT_TIMER_CONFIG, type TimerConfig } from '../../domain/timer/timer-fsm';
 
 export const SETTINGS_STORAGE_KEY = 'pomody:settings';
@@ -24,6 +30,7 @@ export interface StoredSettingsEnvelope {
 	readonly revitalizationEnabled?: boolean;
 	readonly distractionDetectorEnabled?: boolean;
 	readonly theme: Theme;
+	readonly illustration?: IllustrationSettings;
 }
 
 function isValidIntegerInRange(value: unknown, min: number, max: number): value is number {
@@ -129,7 +136,11 @@ export class LocalSettingsStorage implements ISettingsStorage {
 				patch.distractionDetectorEnabled !== undefined
 					? patch.distractionDetectorEnabled
 					: current.distractionDetectorEnabled,
-			theme: patch.theme !== undefined ? patch.theme : current.theme
+			theme: patch.theme !== undefined ? patch.theme : current.theme,
+			illustration: {
+				...current.illustration,
+				...(patch.illustration ?? {})
+			}
 		};
 
 		const validated = this.validateAndSanitize(mergedCandidate);
@@ -140,7 +151,8 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			soundEnabled: validated.soundEnabled,
 			revitalizationEnabled: validated.revitalizationEnabled,
 			distractionDetectorEnabled: validated.distractionDetectorEnabled,
-			theme: validated.theme
+			theme: validated.theme,
+			illustration: validated.illustration
 		};
 
 		try {
@@ -226,6 +238,29 @@ export class LocalSettingsStorage implements ISettingsStorage {
 
 		const theme = isValidTheme(obj.theme) ? obj.theme : DEFAULT_USER_SETTINGS.theme;
 
+		const illustrationObj =
+			typeof obj.illustration === 'object' && obj.illustration !== null
+				? (obj.illustration as Record<string, unknown>)
+				: {};
+
+		const illustrationEnabled = isValidBoolean(illustrationObj.enabled)
+			? illustrationObj.enabled
+			: DEFAULT_USER_SETTINGS.illustration.enabled;
+
+		const illustrationMotionEnabled = isValidBoolean(illustrationObj.motionEnabled)
+			? illustrationObj.motionEnabled
+			: DEFAULT_USER_SETTINGS.illustration.motionEnabled;
+
+		const illustrationHideWhileFocusing = isValidBoolean(illustrationObj.hideWhileFocusing)
+			? illustrationObj.hideWhileFocusing
+			: DEFAULT_USER_SETTINGS.illustration.hideWhileFocusing;
+
+		const illustrationSelectedId: IllustrationId =
+			typeof illustrationObj.selectedId === 'string' &&
+			findIllustration(illustrationObj.selectedId) !== undefined
+				? (illustrationObj.selectedId as IllustrationId)
+				: DEFAULT_ILLUSTRATION_ID;
+
 		return {
 			timer: {
 				focusDurationSeconds,
@@ -236,7 +271,13 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			soundEnabled,
 			revitalizationEnabled,
 			distractionDetectorEnabled,
-			theme
+			theme,
+			illustration: {
+				enabled: illustrationEnabled,
+				motionEnabled: illustrationMotionEnabled,
+				hideWhileFocusing: illustrationHideWhileFocusing,
+				selectedId: illustrationSelectedId
+			}
 		};
 	}
 }
