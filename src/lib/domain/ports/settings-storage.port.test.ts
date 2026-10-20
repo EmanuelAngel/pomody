@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
 import { DEFAULT_TIMER_CONFIG } from '../timer/timer-fsm';
-import { DEFAULT_USER_SETTINGS, THEMES, type ISettingsStorage } from './settings-storage.port';
+import {
+	DEFAULT_ILLUSTRATION_SETTINGS,
+	DEFAULT_USER_SETTINGS,
+	THEMES,
+	type ISettingsStorage
+} from './settings-storage.port';
 
 describe('Settings Storage Port & UserSettings Model', () => {
 	describe('THEMES', () => {
@@ -11,24 +16,36 @@ describe('Settings Storage Port & UserSettings Model', () => {
 	});
 
 	describe('DEFAULT_USER_SETTINGS', () => {
-		it('should match DEFAULT_TIMER_CONFIG, soundEnabled true, revitalizationEnabled true, detector off, and dark theme', () => {
+		it('should match DEFAULT_TIMER_CONFIG, soundEnabled true, revitalizationEnabled true, detector off, illustration off, and dark theme', () => {
 			expect(DEFAULT_USER_SETTINGS).toEqual({
 				timer: DEFAULT_TIMER_CONFIG,
 				soundEnabled: true,
 				revitalizationEnabled: true,
 				distractionDetectorEnabled: false,
-				theme: 'dark'
+				theme: 'dark',
+				illustration: {
+					enabled: false,
+					motionEnabled: true,
+					hideWhileFocusing: false,
+					selectedId: 'forest'
+				}
 			});
 			expect(DEFAULT_USER_SETTINGS.timer).toBe(DEFAULT_TIMER_CONFIG);
 			expect(DEFAULT_USER_SETTINGS.soundEnabled).toBe(true);
 			expect(DEFAULT_USER_SETTINGS.revitalizationEnabled).toBe(true);
 			expect(DEFAULT_USER_SETTINGS.distractionDetectorEnabled).toBe(false);
 			expect(DEFAULT_USER_SETTINGS.theme).toBe('dark');
+			expect(DEFAULT_USER_SETTINGS.illustration).toBe(DEFAULT_ILLUSTRATION_SETTINGS);
+			expect(DEFAULT_USER_SETTINGS.illustration.enabled).toBe(false);
+			expect(DEFAULT_USER_SETTINGS.illustration.motionEnabled).toBe(true);
+			expect(DEFAULT_USER_SETTINGS.illustration.hideWhileFocusing).toBe(false);
+			expect(DEFAULT_USER_SETTINGS.illustration.selectedId).toBe('forest');
 		});
 
 		it('should be frozen to prevent unintended mutations', () => {
 			expect(Object.isFrozen(DEFAULT_USER_SETTINGS)).toBe(true);
 			expect(Object.isFrozen(DEFAULT_USER_SETTINGS.timer)).toBe(true);
+			expect(Object.isFrozen(DEFAULT_USER_SETTINGS.illustration)).toBe(true);
 		});
 	});
 

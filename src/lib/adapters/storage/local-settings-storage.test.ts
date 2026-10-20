@@ -64,7 +64,13 @@ describe('LocalSettingsStorage', () => {
 				soundEnabled: false,
 				revitalizationEnabled: false,
 				distractionDetectorEnabled: true,
-				theme: 'dawn'
+				theme: 'dawn',
+				illustration: {
+					enabled: true,
+					motionEnabled: false,
+					hideWhileFocusing: true,
+					selectedId: 'desert'
+				}
 			};
 
 			storageAdapter.saveSettings(customSettings);
@@ -476,6 +482,92 @@ describe('LocalSettingsStorage', () => {
 
 			const adapter = new LocalSettingsStorage(throwingStorage);
 			expect(() => adapter.resetSettings()).not.toThrow();
+		});
+	});
+
+	describe('Illustration settings', () => {
+		it('defaults the illustration off, motion on, visible while focusing and forest selected', () => {
+			const settings = storageAdapter.loadSettings();
+
+			expect(settings.illustration).toEqual({
+				enabled: false,
+				motionEnabled: true,
+				hideWhileFocusing: false,
+				selectedId: 'forest'
+			});
+		});
+
+		it('roundtrips the illustration settings', () => {
+			storageAdapter.saveSettings({
+				illustration: {
+					enabled: true,
+					motionEnabled: false,
+					hideWhileFocusing: true,
+					selectedId: 'desert'
+				}
+			});
+
+			expect(storageAdapter.loadSettings().illustration).toEqual({
+				enabled: true,
+				motionEnabled: false,
+				hideWhileFocusing: true,
+				selectedId: 'desert'
+			});
+		});
+
+		it('falls back to illustration defaults when the stored envelope predates them', () => {
+			mockStorage.setItem(
+				SETTINGS_STORAGE_KEY,
+				JSON.stringify({
+					version: 1,
+					timer: DEFAULT_TIMER_CONFIG,
+					soundEnabled: true,
+					theme: 'dark'
+				})
+			);
+
+			expect(storageAdapter.loadSettings().illustration).toEqual(
+				DEFAULT_USER_SETTINGS.illustration
+			);
+		});
+
+		it('falls back field by field for invalid illustration values', () => {
+			mockStorage.setItem(
+				SETTINGS_STORAGE_KEY,
+				JSON.stringify({
+					version: 1,
+					timer: DEFAULT_TIMER_CONFIG,
+					soundEnabled: true,
+					theme: 'dark',
+					illustration: {
+						enabled: 'yes',
+						motionEnabled: 1,
+						hideWhileFocusing: null,
+						selectedId: 'unknown-illustration'
+					}
+				})
+			);
+
+			expect(storageAdapter.loadSettings().illustration).toEqual(
+				DEFAULT_USER_SETTINGS.illustration
+			);
+		});
+
+		it('preserves illustration settings when updating unrelated preferences', () => {
+			storageAdapter.saveSettings({
+				illustration: {
+					enabled: true,
+					motionEnabled: true,
+					hideWhileFocusing: false,
+					selectedId: 'desert'
+				}
+			});
+			storageAdapter.saveSettings({ theme: 'oled' });
+
+			const settings = storageAdapter.loadSettings();
+			expect(settings.theme).toBe('oled');
+			expect(settings.illustration.selectedId).toBe('desert');
+			expect(settings.illustration.enabled).toBe(true);
 		});
 	});
 });

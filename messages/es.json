@@ -290,5 +290,19 @@
 	"distraction_notice_body": "Volviste a {window}, que declaraste como distracción.",
 	"distraction_notice_action_ack": "Gracias",
 	"distraction_notice_action_silence_day": "Hoy no",
-	"distraction_notice_action_silence_permanent": "Nunca"
+	"distraction_notice_action_silence_permanent": "Nunca",
+	"settings_section_illustration": "Compañía viva",
+	"settings_section_illustration_description": "Un paisaje pixel art tranquilo que crece con los minutos de foco acumulados hoy.",
+	"settings_illustration_enabled": "Mostrar ilustración",
+	"settings_illustration_enabled_description": "Muestra el paisaje detrás del timer. Apagada por defecto.",
+	"settings_illustration_enabled_aria": "Mostrar la ilustración de compañía viva",
+	"settings_illustration_motion": "Movimiento ambiental",
+	"settings_illustration_motion_description": "Balanceo lento por CSS mientras enfocás. Apagalo para dejar la escena estática.",
+	"settings_illustration_motion_aria": "Activar el movimiento ambiental de la ilustración",
+	"settings_illustration_hide_focus": "Ocultar al enfocar",
+	"settings_illustration_hide_focus_description": "Oculta el paisaje mientras corre un bloque de foco.",
+	"settings_illustration_hide_focus_aria": "Ocultar la ilustración mientras enfocás",
+	"settings_illustration_select_aria": "Seleccionar ilustración",
+	"settings_illustration_forest": "Bosque",
+	"settings_illustration_desert": "Desierto"
 }

@@ -2,6 +2,7 @@
 	import Timer from '$lib/components/timer/timer.svelte';
 	import PlanningView from '$lib/components/planning/planning-view.svelte';
 	import DistractionView from '$lib/components/distraction/distraction-view.svelte';
+	import IllustrationBackground from '$lib/components/illustration/illustration-background.svelte';
 	import { navigationState } from '$lib/state/navigation.svelte';
 	import { timerState } from '$lib/state/timer.svelte';
 
@@ -24,7 +25,13 @@
 	<title>{documentTitle}</title>
 </svelte:head>
 
-<main class="flex min-h-screen w-full flex-col items-center justify-center p-4 pt-16 sm:p-8">
+{#if activeTab === 'timer'}
+	<IllustrationBackground />
+{/if}
+
+<main
+	class="relative z-10 flex min-h-screen w-full flex-col items-center justify-center p-4 pt-16 sm:p-8"
+>
 	<h1 class="sr-only">Pomody — Focus Timer</h1>
 	{#if activeTab === 'timer'}
 		<div role="tabpanel" id="tabpanel-timer" aria-labelledby="tab-timer" class="w-full">
