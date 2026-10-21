@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.14.0...pomody-v0.15.0) (2026-10-21)
+
+
+### Features
+
+* **illustration:** living companion background ([#114](https://github.com/EmanuelAngel/pomody/issues/114)) ([#134](https://github.com/EmanuelAngel/pomody/issues/134)) ([44e13f1](https://github.com/EmanuelAngel/pomody/commit/44e13f181449ab20b52c6f4a44f52693566abd32))
+
 ## [0.14.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.13.0...pomody-v0.14.0) (2026-10-19)
 
 
