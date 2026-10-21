@@ -256,6 +256,38 @@ describe('Phase 2: State Transitions & Invariant Guards', () => {
 		});
 	});
 
+	describe('resetToInitial action', () => {
+		it('should reset timer from shortBreak back to focus mode, round 1, and idle', () => {
+			const fsm = new TimerFSM();
+			fsm.start();
+			fsm.skip(); // advances to shortBreak
+			expect(fsm.mode).toBe('shortBreak');
+
+			fsm.resetToInitial();
+
+			expect(fsm.state).toBe('idle');
+			expect(fsm.mode).toBe('focus');
+			expect(fsm.currentRound).toBe(1);
+			expect(fsm.remainingMs).toBe(1500000);
+			expect(fsm.durationMs).toBe(1500000);
+		});
+
+		it('should reset running timer in break mode back to clean idle focus', () => {
+			const fsm = new TimerFSM();
+			fsm.start();
+			fsm.skip(); // shortBreak
+			fsm.start(); // running shortBreak
+			expect(fsm.state).toBe('running');
+
+			fsm.resetToInitial();
+
+			expect(fsm.state).toBe('idle');
+			expect(fsm.mode).toBe('focus');
+			expect(fsm.currentRound).toBe(1);
+			expect(fsm.remainingMs).toBe(1500000);
+		});
+	});
+
 	describe('skip action (Scenario 8)', () => {
 		it('should skip running focus mode, transition to idle shortBreak, and not increment totalRoundsCompleted', () => {
 			const fsm = new TimerFSM();

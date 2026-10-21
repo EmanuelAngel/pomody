@@ -125,6 +125,24 @@ Para dar soporte a los tres modos requeridos (Dark, Dawn y OLED High-Contrast) s
 - **Tokens CSS centralizados:** Variables CSS (`--bg-surface`, `--text-primary`, `--accent-rose`, etc.) mapeadas bajo el atributo `data-theme`.
 - **Utilidades Tailwind v4:** La UI utiliza clases utilitarias referenciando los tokens semánticos definidos con la directiva `@theme`.
 
+### 4.5. Ownership de Estado: Timer FSM, Sesión y Configuración (#151)
+
+Para garantizar la predictibilidad temporal y evitar acoplamientos reactivos desordenados, se delimitan estrictamente las fronteras de responsabilidad entre el temporizador de ejecución, la planificación y las preferencias del usuario:
+
+1. **Configuración de Usuario (`Settings` / `TimerConfig`)**:
+   - Actúa como catálogo de preferencias persistidas en almacenamiento (`ISettingsStorage`).
+   - Define los valores predeterminados para sesiones futuras o bloques aún no iniciados.
+
+2. **Temporizador de Ejecución (`TimerFSM` / `TimerState`)**:
+   - Administra el estado determinista de ejecución (`state`, `mode`, `remainingMs`, `durationMs`, `progress`).
+   - **`durationMs` anclado**: La duración base del bloque se congela al entrar en `running` o `paused`. Mutaciones en la configuración global no alteran ni recalculan el bloque en curso.
+   - **Reset incondicional**: Mediante `resetToInitial()`, el temporizador garantiza un arranque completamente limpio (modo foco, ronda 1, tiempo total) sin retener residuos de sesiones o pausas previas.
+
+3. **Planificación y Ciclo de Vida (`SessionPlan` / `PlanningState`)**:
+   - Es el dueño de la secuencia proyectada de bloques (`PlanBlock[]`), asignaciones de tareas y avance de hitos.
+   - **Mutabilidad Forward-Only**: Al editar configuraciones durante una sesión activa, el bloque en curso permanece inmutable; las nuevas duraciones aplican exclusivamente a los bloques futuros no iniciados (`index > activeBlockIndex`).
+   - **Semántica de `endSession`**: La finalización de sesión ejecuta un reseteo total del plan activo, vacía el borrador de asignaciones (`_draftTaskAssignments`), desasigna la tarea activa en `TasksState` y resetea el temporizador a su estado inicial. Las tareas en el backlog retienen su estado individual (`todo` / `done`) sin alteraciones.
+
 ---
 
 ## 5. Riesgos Identificados y Mitigaciones

@@ -235,6 +235,14 @@ export class TimerState {
 	}
 
 	/**
+	 * Completely resets the timer to its initial state (idle, focus mode, round 1) and stops ticker.
+	 */
+	public resetToInitial(): void {
+		this.reset();
+		this.fsm.resetToInitial();
+	}
+
+	/**
 	 * Resets all user settings back to defaults and persists them to storage.
 	 */
 	public resetSettings(): void {

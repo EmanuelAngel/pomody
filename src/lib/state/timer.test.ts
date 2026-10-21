@@ -127,6 +127,29 @@ describe('TimerState Composition Root', () => {
 		expect(mockTicker.isRunning).toBe(false);
 	});
 
+	it('should reset timer completely back to initial focus state on resetToInitial()', () => {
+		const timer = createTimerState(
+			{ focusDurationSeconds: 10, shortBreakDurationSeconds: 5 },
+			mockTicker
+		);
+
+		timer.start();
+		timer.skip();
+		expect(timer.mode).toBe('shortBreak');
+
+		timer.start();
+		mockTicker.simulateTick(2000);
+		expect(timer.isRunning).toBe(true);
+
+		timer.resetToInitial();
+		expect(timer.state).toBe('idle');
+		expect(timer.mode).toBe('focus');
+		expect(timer.currentRound).toBe(1);
+		expect(timer.remainingMs).toBe(10000);
+		expect(timer.isRunning).toBe(false);
+		expect(mockTicker.isRunning).toBe(false);
+	});
+
 	it('should advance to next mode on skip()', () => {
 		const timer = createTimerState(
 			{
