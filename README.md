@@ -2,7 +2,7 @@
 
 > El temporizador Pomodoro pensado para el foco real: planificá tus tareas, protegé tu concentración y descansá con propósito, sin bloatware ni suscripciones abusivas.
 
-[![Estado del Proyecto](https://img.shields.io/badge/Estado-v0.1%20Completado%20%2F%20Testing-brightgreen)](docs/roadmap.md)
+[![Estado del Proyecto](https://img.shields.io/badge/Estado-Milestones%201--4%20Completados-brightgreen)](docs/roadmap.md)
 [![Plataformas](https://img.shields.io/badge/Plataformas-Web%20%7C%20Windows-informational)](docs/vision.md#3-plataformas-objetivo)
 [![Licencia](https://img.shields.io/badge/Licencia-MIT-green)](#licencia)
 
@@ -45,6 +45,7 @@ El diseño funcional, técnico y las decisiones de arquitectura están organizad
 - 🏗️ **[Arquitectura y Stack](docs/architecture.md)**: Stack técnico definitivo (SvelteKit + Tauri v2), cobertura de requerimientos y patrones de diseño.
 - 🤝 **[Flujo de Git y Calidad](docs/git-workflow.md)**: Estándares de Git, Conventional Commits y arneses automáticos de calidad (Husky, lint-staged, CI).
 - 🎯 **[Backlog y Hallazgos](https://github.com/EmanuelAngel/pomody/issues)**: Todo hallazgo de revisión, bug, feature request y decisión pendiente vive como issue con labels `area:*` y `size:*`.
+- 🤖 **[Convenciones para Agentes de IA](AGENTS.md)**: Convenciones técnicas, arquitectura hexagonal y comandos de ejecución para desarrollo asistido por agentes.
 
 ---
 
@@ -52,13 +53,15 @@ El diseño funcional, técnico y las decisiones de arquitectura están organizad
 
 Para consultar el checklist completo y criterios de aceptación, visitá [`docs/roadmap.md`](docs/roadmap.md).
 
-| Versión                                                                                            | Enfoque Principal                                                            | Responsable             | Estado                   |
-| :------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------- | :---------------------- | :----------------------- |
-| **[v0.1 — Cimientos](docs/roadmap.md#v01--cimientos-y-mvp-base-completado--testing)**              | Cimientos del sistema, FSM pura, UI minimalista, temas Rosé Pine y Tauri v2. | Vortex (Tech Lead)      | **Completado / Testing** |
-| **[v0.2 — Planificación](docs/roadmap.md#v02--planificación-descansos-y-ux-de-foco-próximo-foco)** | Planificación (Mini To-Do híbrido), pausas guiadas, estética y persistencia. | Vortex & Fede (Trainee) | **Próximo foco**         |
-| **[v0.3 — Desktop Focus](docs/roadmap.md#v03--desktop-power--blindaje-activo-planificado)**        | Modo Compacto flotante (Mini-Player) y detector de dispersión.               | Vortex & Fede           | Planificado              |
-| **[v0.4 — Analítica](docs/roadmap.md#v04--analítica-avanzada--métricas-visuales-roadmap-futuro)**  | Analítica avanzada, métricas visuales y calidad de sesión.                   | Equipo Pomody           | Roadmap futuro           |
-| **[v0.5 — Ecosistema](docs/roadmap.md#v05--ecosistema-y-automatización-externa-roadmap-futuro)**   | Discord Rich Presence y Modo No Molestar del SO.                             | Equipo Pomody           | Roadmap futuro           |
+| Milestone                                                                                               | Enfoque Principal                                                               | Prioridad | Estado           |
+| :------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------ | :-------- | :--------------- |
+| **[Milestone 1](docs/roadmap.md#milestone-1--cimientos-y-mvp-base-completado)**                         | Cimientos del sistema, FSM pura, UI minimalista, temas Rosé Pine y Tauri v2.    | Base      | **Completado**   |
+| **[Milestone 2](docs/roadmap.md#milestone-2--planificación-descansos-y-persistencia-completado)**       | Planificación (Mini To-Do), descansos guiados, persistencia y contador diario.  | Base      | **Completado**   |
+| **[Milestone 3](docs/roadmap.md#milestone-3--i18n--desktop-shell-completado)**                          | Internacionalización (i18n ES/EN) y Desktop Shell (Mini-Player & Tray).         | P0 / P1   | **Completado**   |
+| **[Milestone 4](docs/roadmap.md#milestone-4--recompensa-visual-por-fases-completado)**                  | Recompensa visual (Ilustración por fases — Compañía Viva).                      | P2        | **Completado**   |
+| **[Milestone 5](docs/roadmap.md#milestone-5--hábitos-avanzados--detección-de-dispersión-próximo-foco)** | Hábitos avanzados en timeline y detector de dispersión ligero.                  | P3        | **Próximo foco** |
+| **[Milestone 6](docs/roadmap.md#milestone-6--analítica-avanzada--métricas-visuales-roadmap-futuro)**    | Analítica avanzada, métricas visuales nativas y calidad de sesión.              | P4        | Roadmap futuro   |
+| **[Milestone 7](docs/roadmap.md#milestone-7--blindaje-de-foco--ecosistema-roadmap-futuro)**             | Blindaje de foco (No Molestar del SO) e integración de presencia (Discord RPC). | P5        | Roadmap futuro   |
 
 ---
 
@@ -88,8 +91,8 @@ Para levantar y desarrollar el proyecto localmente:
 | **pnpm**                | `>= 9.0.0` (v10 recomendada)       | **Gestor oficial y mandatorio.** Usar siempre antes y sobre `npm` (`corepack enable`).        |
 | **Node.js**             | `>= 20.18.0 LTS` (v22 recomendada) | Runtime para desarrollo frontend y tooling (Vite, SvelteKit, Vitest).                         |
 | **Playwright Chromium** | `v1.60.0+`                         | Opcional: Solo necesario para correr tests de componentes en navegador (`pnpm test:browser`). |
-| **Rust**                | `Stable` (`>= 1.77.2`)             | Solo necesario para compilar la app de escritorio (Tauri v2).                                 |
-| **C++ Build Tools**     | Visual Studio Build Tools 2022     | Dependencia del toolchain MSVC de Rust en Windows.                                            |
+| **Rust**                | `Stable >= 1.90.0`                 | Solo necesario para compilar la app de escritorio (Tauri v2).                                 |
+| **C++ Build Tools**     | Visual Studio Build Tools 2022     | Dependencia requerida del toolchain MSVC de Rust en Windows.                                  |
 
 > [!IMPORTANT]
 > **Uso estricto de pnpm:** Pomody utiliza `pnpm` de forma exclusiva para garantizar resolución determinista de dependencias mediante `pnpm-lock.yaml`. No ejecutes `npm` ni `yarn`.
@@ -102,6 +105,21 @@ Para levantar y desarrollar el proyecto localmente:
 
 > [!TIP]
 > **Desarrollo ágil de UI y Dominio:** Para trabajar en la lógica pura (`pnpm test:unit`) o levantar el servidor de desarrollo (`pnpm dev`), únicamente se requiere **Node.js** y **pnpm**. No es obligatorio instalar Playwright, Rust ni C++ salvo que se ejecuten pruebas de navegador o empaquetado desktop.
+
+---
+
+## Comandos esenciales
+
+| Tarea                           | Comando                     | Notas                                  |
+| :------------------------------ | :-------------------------- | :------------------------------------- |
+| **Instalar dependencias**       | `pnpm install`              | Instalación determinista               |
+| **Servidor de desarrollo**      | `pnpm dev`                  | Inicia Vite en `http://localhost:5173` |
+| **Pruebas unitarias (Dominio)** | `pnpm test:unit`            | Ejecución en Node (<500ms)             |
+| **Pruebas de componentes (UI)** | `pnpm test:browser`         | Vitest Browser Mode con Chromium       |
+| **Suite completa de pruebas**   | `pnpm test`                 | Ejecuta todos los tests de Vitest      |
+| **Verificación de tipos**       | `pnpm check`                | `svelte-check` en modo estricto        |
+| **Linter y formato**            | `pnpm lint` / `pnpm format` | Prettier y ESLint                      |
+| **Compilar SPA Web**            | `pnpm build`                | Salida estática en `build/`            |
 
 ---
 
