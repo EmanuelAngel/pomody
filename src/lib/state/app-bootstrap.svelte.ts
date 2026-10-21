@@ -3,6 +3,10 @@ import type { ITimerStateRepository } from '../domain/ports/timer-state-reposito
 import { LocalTimerStateRepository } from '../adapters/storage/local-timer-state-repository';
 import { resolveTimerRestore, type ActivePlanView } from '../domain/timer/timer-snapshot.entity';
 import { PlanningState, planningState as defaultPlanningState } from './planning.svelte';
+import {
+	CadencePresetsState,
+	cadencePresetsState as defaultCadencePresetsState
+} from './cadence-presets.svelte';
 import { TimerState, timerState as defaultTimerState } from './timer.svelte';
 import { TasksState, tasksState as defaultTasksState } from './tasks.svelte';
 
@@ -33,6 +37,7 @@ export interface AppBootstrapDependencies {
 	timer?: TimerState;
 	tasks?: TasksState;
 	timerRepository?: ITimerStateRepository;
+	cadencePresets?: CadencePresetsState;
 	now?: () => number;
 }
 
@@ -48,6 +53,7 @@ export class AppBootstrap {
 	private readonly timer: TimerState;
 	private readonly tasks: TasksState;
 	private readonly timerRepository: ITimerStateRepository;
+	private readonly cadencePresets: CadencePresetsState;
 	private readonly now: () => number;
 
 	private _isReady = $state(false);
@@ -57,6 +63,7 @@ export class AppBootstrap {
 		this.timer = deps.timer ?? defaultTimerState;
 		this.tasks = deps.tasks ?? defaultTasksState;
 		this.timerRepository = deps.timerRepository ?? new LocalTimerStateRepository();
+		this.cadencePresets = deps.cadencePresets ?? defaultCadencePresetsState;
 		this.now = deps.now ?? (() => Date.now());
 	}
 
@@ -75,6 +82,7 @@ export class AppBootstrap {
 
 		try {
 			await this.planning.load();
+			await this.cadencePresets.load();
 
 			const plan = this.planning.activePlan;
 			const planView = plan ? toActivePlanView(plan, this.planning.activeBlockIndex) : null;

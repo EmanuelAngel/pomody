@@ -1,87 +1,140 @@
-<script module lang="ts">
-	export interface CadencePreset {
-		id: string;
-		name: string;
-		label: string;
-		focusMinutes: number;
-		shortBreakMinutes: number;
-		longBreakMinutes: number;
-		longBreakInterval: number;
-	}
-
-	export const CADENCE_PRESETS: readonly CadencePreset[] = [
-		{
-			id: 'classic',
-			name: '25/5',
-			label: 'Classic',
-			focusMinutes: 25,
-			shortBreakMinutes: 5,
-			longBreakMinutes: 15,
-			longBreakInterval: 4
-		},
-		{
-			id: 'deep-focus',
-			name: '50/10',
-			label: 'Deep Focus',
-			focusMinutes: 50,
-			shortBreakMinutes: 10,
-			longBreakMinutes: 20,
-			longBreakInterval: 4
-		},
-		{
-			id: 'ultradian',
-			name: '90/20',
-			label: 'Ultradian Rhythm',
-			focusMinutes: 90,
-			shortBreakMinutes: 20,
-			longBreakMinutes: 30,
-			longBreakInterval: 3
-		}
-	];
-</script>
-
 <script lang="ts">
 	import Plus from '@lucide/svelte/icons/plus';
 	import Minus from '@lucide/svelte/icons/minus';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
+	import MoreVertical from '@lucide/svelte/icons/more-vertical';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
+	import * as Popover from '$lib/components/ui/popover';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
 	import { cn } from '$lib/utils';
 	import {
 		planningState as defaultPlanningState,
 		type PlanningState
 	} from '$lib/state/planning.svelte';
+	import {
+		cadencePresetsState as defaultCadencePresetsState,
+		type CadencePresetMutationError,
+		type CadencePresetsState
+	} from '$lib/state/cadence-presets.svelte';
+	import {
+		BUILT_IN_CADENCE_PRESETS,
+		findActiveCadenceId,
+		formatCadenceShort,
+		type BuiltInCadencePreset,
+		type CadenceValues
+	} from '$lib/domain/planning/cadence-preset.entity';
 	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		planningState?: PlanningState;
+		presetsState?: CadencePresetsState;
 		class?: string;
 	}
 
-	let { planningState = defaultPlanningState, class: className = '' }: Props = $props();
+	let {
+		planningState = defaultPlanningState,
+		presetsState = defaultCadencePresetsState,
+		class: className = ''
+	}: Props = $props();
 
 	let isCustomOpen = $state(false);
 
-	function getLocalizedPresetLabel(id: string, fallback: string) {
-		if (id === 'classic') return t.planning_cadence_preset_classic();
-		if (id === 'deep-focus') return t.planning_cadence_preset_deep_focus();
-		if (id === 'ultradian') return t.planning_cadence_preset_ultradian();
-		return fallback;
+	/** Editor popover for a new preset: null when closed. */
+	let isCreateOpen = $state(false);
+	let createName = $state('');
+	let createError = $state<CadencePresetMutationError | null>(null);
+
+	/** Per-chip popover: which preset's menu is open, and whether it is showing the rename form. */
+	let openPresetId = $state<string | null>(null);
+	let isRenameMode = $state(false);
+	let renameName = $state('');
+	let renameError = $state<CadencePresetMutationError | null>(null);
+
+	const currentCadence = $derived.by<CadenceValues>(() => ({
+		focusMinutes: planningState.focusMinutes,
+		shortBreakMinutes: planningState.shortBreakMinutes,
+		longBreakMinutes: planningState.longBreakMinutes,
+		longBreakInterval: planningState.longBreakInterval
+	}));
+
+	const activePresetId = $derived.by<string | null>(() =>
+		findActiveCadenceId(currentCadence, presetsState.presets)
+	);
+
+	function getBuiltInLabel(preset: BuiltInCadencePreset): string {
+		switch (preset.labelKey) {
+			case 'classic':
+				return t.planning_cadence_preset_classic();
+			case 'deep-focus':
+				return t.planning_cadence_preset_deep_focus();
+			case 'ultradian':
+				return t.planning_cadence_preset_ultradian();
+		}
 	}
 
-	const activePresetId = $derived.by<string | null>(() => {
-		const match = CADENCE_PRESETS.find(
-			(p) =>
-				p.focusMinutes === planningState.focusMinutes &&
-				p.shortBreakMinutes === planningState.shortBreakMinutes
-		);
-		return match ? match.id : null;
-	});
+	function getBuiltInShortName(preset: BuiltInCadencePreset): string {
+		return `${preset.focusMinutes}/${preset.shortBreakMinutes}`;
+	}
 
-	function applyPreset(preset: CadencePreset) {
-		planningState.setFocusMinutes(preset.focusMinutes);
-		planningState.setShortBreakMinutes(preset.shortBreakMinutes);
-		planningState.setLongBreakMinutes(preset.longBreakMinutes);
-		planningState.setLongBreakInterval(preset.longBreakInterval);
+	function getErrorMessage(reason: CadencePresetMutationError): string {
+		switch (reason) {
+			case 'empty_name':
+				return t.planning_cadence_preset_error_empty();
+			case 'name_too_long':
+				return t.planning_cadence_preset_error_too_long();
+			case 'duplicate_name':
+				return t.planning_cadence_preset_error_duplicate_name();
+			case 'duplicate_values':
+				return t.planning_cadence_preset_error_duplicate_values();
+			case 'limit_reached':
+				return t.planning_cadence_preset_error_limit();
+			case 'out_of_range':
+			case 'unknown_preset':
+				return t.planning_cadence_preset_error_generic();
+		}
+	}
+
+	function applyPreset(preset: CadenceValues): void {
+		planningState.applyCadence(preset);
+	}
+
+	function openCreateEditor(): void {
+		createName = '';
+		createError = null;
+	}
+
+	async function savePreset(): Promise<void> {
+		const result = await presetsState.savePreset(currentCadence, createName);
+		if (!result.ok) {
+			createError = result.reason;
+			return;
+		}
+
+		createError = null;
+		isCreateOpen = false;
+	}
+
+	function openPresetMenu(name: string): void {
+		isRenameMode = false;
+		renameName = name;
+		renameError = null;
+	}
+
+	async function renamePreset(presetId: string): Promise<void> {
+		const result = await presetsState.renamePreset(presetId, renameName);
+		if (!result.ok) {
+			renameError = result.reason;
+			return;
+		}
+
+		renameError = null;
+		openPresetId = null;
+	}
+
+	async function deletePreset(presetId: string): Promise<void> {
+		await presetsState.deletePreset(presetId);
+		openPresetId = null;
 	}
 </script>
 
@@ -104,14 +157,14 @@
 				role="group"
 				aria-label={t.planning_cadence_presets_aria()}
 			>
-				{#each CADENCE_PRESETS as preset (preset.id)}
+				{#each BUILT_IN_CADENCE_PRESETS as preset (preset.id)}
 					{@const isSelected = activePresetId === preset.id}
 					<button
 						type="button"
 						aria-pressed={isSelected}
 						aria-label={t.planning_cadence_select_preset_aria({
-							name: preset.name,
-							label: getLocalizedPresetLabel(preset.id, preset.label)
+							name: getBuiltInShortName(preset),
+							label: getBuiltInLabel(preset)
 						})}
 						onclick={() => applyPreset(preset)}
 						class={cn(
@@ -121,12 +174,183 @@
 								: 'border-border/60 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground'
 						)}
 					>
-						<span class="font-semibold">{preset.name}</span>
-						<span class="text-[10px] opacity-80"
-							>{getLocalizedPresetLabel(preset.id, preset.label)}</span
-						>
+						<span class="font-semibold">{getBuiltInShortName(preset)}</span>
+						<span class="text-[10px] opacity-80">{getBuiltInLabel(preset)}</span>
 					</button>
 				{/each}
+
+				{#each presetsState.presets as preset (preset.id)}
+					{@const isSelected = activePresetId === preset.id}
+					<div
+						class={cn(
+							'flex items-center rounded-lg border text-xs font-medium transition-colors',
+							isSelected
+								? 'border-primary/50 bg-primary/10 text-primary shadow-xs'
+								: 'border-border/60 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+						)}
+					>
+						<button
+							type="button"
+							aria-pressed={isSelected}
+							aria-label={t.planning_cadence_select_preset_aria({
+								name: preset.name,
+								label: formatCadenceShort(preset)
+							})}
+							onclick={() => applyPreset(preset)}
+							class="flex cursor-pointer items-center gap-1.5 rounded-l-lg py-1.5 pr-1.5 pl-2.5"
+						>
+							<span class="font-semibold">{preset.name}</span>
+							<span class="text-[10px] opacity-80">{formatCadenceShort(preset)}</span>
+						</button>
+
+						<Popover.Root
+							open={openPresetId === preset.id}
+							onOpenChange={(open) => {
+								if (open) {
+									openPresetId = preset.id;
+									openPresetMenu(preset.name);
+								} else if (openPresetId === preset.id) {
+									openPresetId = null;
+								}
+							}}
+						>
+							<Popover.Trigger
+								aria-label={t.planning_cadence_preset_menu_aria({ name: preset.name })}
+								class="flex cursor-pointer items-center rounded-r-lg border-l border-current/20 py-1.5 pr-1.5 pl-1.5 opacity-70 transition-opacity hover:opacity-100"
+							>
+								<MoreVertical class="size-3" />
+							</Popover.Trigger>
+							<Popover.Content
+								side="bottom"
+								sideOffset={6}
+								align="start"
+								class="z-50 w-56 rounded-xl border border-border/60 bg-popover/95 p-2 text-popover-foreground shadow-lg backdrop-blur-md"
+							>
+								{#if isRenameMode}
+									<form
+										class="flex flex-col gap-2"
+										onsubmit={(event) => {
+											event.preventDefault();
+											void renamePreset(preset.id);
+										}}
+									>
+										<label
+											class="text-[11px] font-medium text-muted-foreground"
+											for={`cadence-preset-rename-${preset.id}`}
+										>
+											{t.planning_cadence_preset_name_label()}
+										</label>
+										<Input
+											id={`cadence-preset-rename-${preset.id}`}
+											bind:value={renameName}
+											placeholder={t.planning_cadence_preset_name_placeholder()}
+											aria-invalid={renameError !== null}
+											class="h-8 text-xs"
+										/>
+										{#if renameError !== null}
+											<p role="alert" class="text-[11px] text-destructive">
+												{getErrorMessage(renameError)}
+											</p>
+										{/if}
+										<Button type="submit" size="sm" class="h-8 text-xs">
+											{t.planning_cadence_preset_rename_button()}
+										</Button>
+									</form>
+								{:else}
+									<div class="flex flex-col gap-0.5">
+										<Button
+											variant="ghost"
+											size="sm"
+											class="justify-start text-xs"
+											onclick={() => {
+												isRenameMode = true;
+												renameError = null;
+											}}
+										>
+											{t.planning_cadence_preset_rename_button()}
+										</Button>
+										<Button
+											variant="ghost"
+											size="sm"
+											class="justify-start text-xs text-destructive"
+											onclick={() => void deletePreset(preset.id)}
+										>
+											{t.planning_cadence_preset_delete_button()}
+										</Button>
+									</div>
+								{/if}
+							</Popover.Content>
+						</Popover.Root>
+					</div>
+				{/each}
+
+				<Popover.Root
+					open={isCreateOpen}
+					onOpenChange={(open) => {
+						isCreateOpen = open;
+						if (open) {
+							openCreateEditor();
+						}
+					}}
+				>
+					<Popover.Trigger disabled={!presetsState.canSaveMore}>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								disabled={!presetsState.canSaveMore}
+								title={!presetsState.canSaveMore
+									? t.planning_cadence_preset_error_limit()
+									: undefined}
+								aria-label={t.planning_cadence_preset_save_aria()}
+								class="flex cursor-pointer items-center rounded-lg border border-dashed border-border/60 bg-background px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+							>
+								<Plus class="size-3" />
+							</button>
+						{/snippet}
+					</Popover.Trigger>
+					<Popover.Content
+						side="bottom"
+						sideOffset={6}
+						align="start"
+						class="z-50 w-56 rounded-xl border border-border/60 bg-popover/95 p-2 text-popover-foreground shadow-lg backdrop-blur-md"
+					>
+						<form
+							class="flex flex-col gap-2"
+							onsubmit={(event) => {
+								event.preventDefault();
+								void savePreset();
+							}}
+						>
+							<span class="text-[11px] font-semibold text-foreground">
+								{t.planning_cadence_preset_save_title()}
+							</span>
+							<span class="text-[11px] text-muted-foreground">
+								{formatCadenceShort(currentCadence)}
+							</span>
+							<label
+								class="text-[11px] font-medium text-muted-foreground"
+								for="cadence-preset-name"
+							>
+								{t.planning_cadence_preset_name_label()}
+							</label>
+							<Input
+								id="cadence-preset-name"
+								bind:value={createName}
+								placeholder={t.planning_cadence_preset_name_placeholder()}
+								aria-invalid={createError !== null}
+								class="h-8 text-xs"
+							/>
+							{#if createError !== null}
+								<p role="alert" class="text-[11px] text-destructive">
+									{getErrorMessage(createError)}
+								</p>
+							{/if}
+							<Button type="submit" size="sm" class="h-8 text-xs">
+								{t.planning_cadence_preset_save_button()}
+							</Button>
+						</form>
+					</Popover.Content>
+				</Popover.Root>
 			</div>
 		</div>
 

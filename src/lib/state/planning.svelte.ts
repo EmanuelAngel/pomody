@@ -14,6 +14,11 @@ import {
 } from '../domain/planning/session-plan.entity';
 import type { DomainEvent, TimerConfig, TimerMode } from '../domain/timer/timer-fsm';
 import { validateTimerConfig } from '../domain/timer/timer-fsm';
+import {
+	clampCadence,
+	isCadenceWithinLimits,
+	type CadenceValues
+} from '../domain/planning/cadence-preset.entity';
 import type { ISessionPlanRepository } from '../domain/ports/session-plan-repository.port';
 import { LocalStoragePlanRepository } from '../adapters/storage/local-session-plan-repository';
 import { TimerState, timerState as defaultTimerState } from './timer.svelte';
@@ -498,69 +503,87 @@ export class PlanningState {
 
 	public setFocusMinutes(minutes: number): void {
 		if (typeof minutes === 'number' && Number.isFinite(minutes)) {
-			const valid = Math.max(1, Math.min(120, Math.round(minutes)));
-			if (this.isSessionActive && this._activePlan) {
-				void this.updateUpcomingPlanForwardOnly({ focusDurationSeconds: valid * 60 });
-			} else {
-				this._focusMinutes = valid;
-				if (this.timerState) {
-					const seconds = valid * 60;
-					if (this.timerState.config.focusDurationSeconds !== seconds) {
-						this.timerState.updateConfig({ focusDurationSeconds: seconds });
-					}
-				}
-			}
+			this.applyCadence(clampCadence({ ...this.currentCadence, focusMinutes: minutes }));
 		}
 	}
 
 	public setShortBreakMinutes(minutes: number): void {
 		if (typeof minutes === 'number' && Number.isFinite(minutes)) {
-			const valid = Math.max(1, Math.min(60, Math.round(minutes)));
-			if (this.isSessionActive && this._activePlan) {
-				void this.updateUpcomingPlanForwardOnly({ shortBreakDurationSeconds: valid * 60 });
-			} else {
-				this._shortBreakMinutes = valid;
-				if (this.timerState) {
-					const seconds = valid * 60;
-					if (this.timerState.config.shortBreakDurationSeconds !== seconds) {
-						this.timerState.updateConfig({ shortBreakDurationSeconds: seconds });
-					}
-				}
-			}
+			this.applyCadence(clampCadence({ ...this.currentCadence, shortBreakMinutes: minutes }));
 		}
 	}
 
 	public setLongBreakMinutes(minutes: number): void {
 		if (typeof minutes === 'number' && Number.isFinite(minutes)) {
-			const valid = Math.max(1, Math.min(90, Math.round(minutes)));
-			if (this.isSessionActive && this._activePlan) {
-				void this.updateUpcomingPlanForwardOnly({ longBreakDurationSeconds: valid * 60 });
-			} else {
-				this._longBreakMinutes = valid;
-				if (this.timerState) {
-					const seconds = valid * 60;
-					if (this.timerState.config.longBreakDurationSeconds !== seconds) {
-						this.timerState.updateConfig({ longBreakDurationSeconds: seconds });
-					}
-				}
-			}
+			this.applyCadence(clampCadence({ ...this.currentCadence, longBreakMinutes: minutes }));
 		}
 	}
 
 	public setLongBreakInterval(interval: number): void {
 		if (typeof interval === 'number' && Number.isFinite(interval)) {
-			const valid = Math.max(1, Math.min(12, Math.round(interval)));
-			if (this.isSessionActive && this._activePlan) {
-				void this.updateUpcomingPlanForwardOnly({ roundsBeforeLongBreak: valid });
-			} else {
-				this._longBreakInterval = valid;
-				if (this.timerState) {
-					if (this.timerState.config.roundsBeforeLongBreak !== valid) {
-						this.timerState.updateConfig({ roundsBeforeLongBreak: valid });
-					}
-				}
+			this.applyCadence(clampCadence({ ...this.currentCadence, longBreakInterval: interval }));
+		}
+	}
+
+	/**
+	 * The four cadence values currently configured, in the shape the cadence helpers consume.
+	 */
+	public get currentCadence(): CadenceValues {
+		return {
+			focusMinutes: this._focusMinutes,
+			shortBreakMinutes: this._shortBreakMinutes,
+			longBreakMinutes: this._longBreakMinutes,
+			longBreakInterval: this._longBreakInterval
+		};
+	}
+
+	/**
+	 * Applies a complete cadence atomically: every value is clamped into its declared range, then
+	 * the whole config is written at once.
+	 *
+	 * In an active session the update is forward-only — the running and past blocks keep their
+	 * durations — and the plan is persisted exactly once. In draft mode the four values and the
+	 * timer config are updated together, and the timer is only written when something differs.
+	 *
+	 * Returns false, mutating nothing, when the incoming values fall outside the supported ranges.
+	 */
+	public applyCadence(cadence: CadenceValues): boolean {
+		if (!isCadenceWithinLimits(cadence)) {
+			return false;
+		}
+
+		const config: TimerConfig = {
+			focusDurationSeconds: cadence.focusMinutes * 60,
+			shortBreakDurationSeconds: cadence.shortBreakMinutes * 60,
+			longBreakDurationSeconds: cadence.longBreakMinutes * 60,
+			roundsBeforeLongBreak: cadence.longBreakInterval
+		};
+
+		if (this.isSessionActive && this._activePlan) {
+			void this.updateUpcomingPlanForwardOnly(config);
+			return true;
+		}
+
+		this._focusMinutes = cadence.focusMinutes;
+		this._shortBreakMinutes = cadence.shortBreakMinutes;
+		this._longBreakMinutes = cadence.longBreakMinutes;
+		this._longBreakInterval = cadence.longBreakInterval;
+
+		const timer = this.timerState;
+		if (timer) {
+			const current = timer.config;
+			const hasDifference =
+				current.focusDurationSeconds !== config.focusDurationSeconds ||
+				current.shortBreakDurationSeconds !== config.shortBreakDurationSeconds ||
+				current.longBreakDurationSeconds !== config.longBreakDurationSeconds ||
+				current.roundsBeforeLongBreak !== config.roundsBeforeLongBreak;
+
+			if (hasDifference) {
+				timer.updateConfig(config);
 			}
 		}
+
+		return true;
 	}
 
 	public setTargetEndTime(timeStr: string): void {
