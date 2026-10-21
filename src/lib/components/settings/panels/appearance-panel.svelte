@@ -25,14 +25,7 @@
 </script>
 
 <div class="flex flex-col gap-3">
-	<div>
-		<h3 class="text-sm font-semibold tracking-wide text-foreground">
-			{t.settings_section_theme()}
-		</h3>
-		<p class="mt-0.5 text-xs text-muted-foreground">
-			{t.settings_section_theme_description()}
-		</p>
-	</div>
+	<p class="text-xs text-muted-foreground">{t.settings_section_theme_description()}</p>
 
 	<ToggleGroup.Root
 		type="single"
@@ -41,7 +34,7 @@
 		variant="outline"
 		spacing={2}
 		aria-label={t.settings_theme_aria()}
-		class="grid grid-cols-3 gap-2"
+		class="grid w-full grid-cols-3 gap-2"
 	>
 		<ToggleGroup.Item
 			value="dark"

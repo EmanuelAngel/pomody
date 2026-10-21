@@ -1,187 +1,277 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
-test.describe('Settings Drawer Integration', () => {
-	test('updates timer focus duration and counts down from new configuration', async ({ page }) => {
-		// 1. Navigate to Pomody root
+async function openSettings(page: Page) {
+	await page.getByRole('button', { name: 'Open settings' }).click();
+	// Not scoped by accessible name: the name itself changes when the locale does.
+	const dialog = page.getByRole('dialog');
+	await expect(dialog).toBeVisible();
+	return dialog;
+}
+
+async function openGroup(dialog: ReturnType<Page['getByRole']>, name: string) {
+	await dialog.getByRole('tab', { name }).click();
+	await expect(dialog.getByRole('tab', { name })).toHaveAttribute('aria-selected', 'true');
+}
+
+test.describe('Settings dialog', () => {
+	test('opens on the intervals group and closes with Escape', async ({ page }) => {
 		await page.goto('/');
 
-		// 2. Initial state: timer shows 25:00 focus time
 		const timerDisplay = page.getByRole('timer');
-		await expect(timerDisplay).toBeVisible();
 		await expect(timerDisplay).toHaveText('25:00');
 
-		// 3. Open settings drawer
-		const openSettingsButton = page.getByRole('button', { name: 'Open settings' });
-		await expect(openSettingsButton).toBeVisible();
-		await openSettingsButton.click();
+		const dialog = await openSettings(page);
 
-		// 4. Drawer content is visible
-		const settingsHeading = page.getByRole('heading', { name: 'Settings' });
-		await expect(settingsHeading).toBeVisible();
+		await expect(dialog.getByRole('heading', { name: 'Settings' })).toBeVisible();
 
-		// 5. Locate Focus duration slider and adjust: 25 min -> 24 min
-		const focusSlider = page.getByLabel('Focus duration').getByRole('slider');
+		// Every group is reachable from the rail, and intervals wins the first visit.
+		await expect(dialog.getByRole('tab')).toHaveCount(5);
+		await expect(dialog.getByRole('tab', { name: 'Intervals' })).toHaveAttribute(
+			'aria-selected',
+			'true'
+		);
+		await expect(dialog.getByLabel('Focus duration').getByRole('slider')).toHaveAttribute(
+			'aria-valuenow',
+			'25'
+		);
+
+		// Inactive groups are not mounted, so the dialog never carries all seven sections at once.
+		await expect(dialog.getByRole('radio', { name: 'Dawn theme' })).toHaveCount(0);
+
+		await page.keyboard.press('Escape');
+		await expect(dialog).not.toBeVisible();
+	});
+
+	test('walks the rail with the keyboard and swaps the mounted group', async ({ page }) => {
+		await page.goto('/');
+		const dialog = await openSettings(page);
+
+		const intervalsTab = dialog.getByRole('tab', { name: 'Intervals' });
+		await intervalsTab.focus();
+
+		await page.keyboard.press('ArrowDown');
+		const appearanceTab = dialog.getByRole('tab', { name: 'Appearance' });
+		await expect(appearanceTab).toHaveAttribute('aria-selected', 'true');
+		await expect(dialog.getByRole('radio', { name: 'Dawn theme' })).toBeVisible();
+
+		await page.keyboard.press('ArrowDown');
+		await expect(dialog.getByRole('tab', { name: 'Companion' })).toHaveAttribute(
+			'aria-selected',
+			'true'
+		);
+		await expect(
+			dialog.getByRole('switch', { name: 'Show the living companion illustration' })
+		).toBeVisible();
+
+		await page.keyboard.press('ArrowDown');
+		await expect(dialog.getByRole('tab', { name: 'Behavior' })).toHaveAttribute(
+			'aria-selected',
+			'true'
+		);
+		await expect(dialog.getByRole('switch', { name: 'Sound alerts' })).toBeVisible();
+
+		await page.keyboard.press('ArrowDown');
+		await expect(dialog.getByRole('tab', { name: 'Application' })).toHaveAttribute(
+			'aria-selected',
+			'true'
+		);
+		await expect(dialog.getByRole('radio', { name: 'Spanish language' })).toBeVisible();
+
+		await page.keyboard.press('ArrowUp');
+		await expect(dialog.getByRole('tab', { name: 'Behavior' })).toHaveAttribute(
+			'aria-selected',
+			'true'
+		);
+	});
+
+	test('updates the focus duration and counts down from the new configuration', async ({
+		page
+	}) => {
+		await page.goto('/');
+		const timerDisplay = page.getByRole('timer');
+		await expect(timerDisplay).toHaveText('25:00');
+
+		const dialog = await openSettings(page);
+		const focusSlider = dialog.getByLabel('Focus duration').getByRole('slider');
 		await expect(focusSlider).toHaveAttribute('aria-valuenow', '25');
 
 		await focusSlider.focus();
 		await page.keyboard.press('ArrowLeft');
 
 		await expect(focusSlider).toHaveAttribute('aria-valuenow', '24');
-		await expect(page.getByText('24 min', { exact: true })).toBeVisible();
+		await expect(dialog.getByText('24 min', { exact: true })).toBeVisible();
 
-		// 6. Close drawer via close button
-		const closeButton = page.getByRole('button', { name: 'Close' });
-		await closeButton.click();
-		await expect(settingsHeading).not.toBeVisible();
-
-		// 7. Verify main timer screen updated to 24:00
+		await dialog.getByRole('button', { name: 'Close' }).click();
+		await expect(dialog).not.toBeVisible();
 		await expect(timerDisplay).toHaveText('24:00');
 
-		// 8. Start timer
-		const startButton = page.getByRole('button', { name: 'Start timer' });
-		await expect(startButton).toBeVisible();
-		await startButton.click();
-
-		// 9. Controls switch to Pause state and countdown decrements
+		await page.getByRole('button', { name: 'Start timer' }).click();
 		await expect(page.getByRole('button', { name: 'Pause timer' })).toBeVisible();
 		await expect(timerDisplay).toHaveText('23:59');
 	});
 
-	test('persists timer intervals, theme, and sound settings across page reloads', async ({
-		page
-	}) => {
-		// 1. Visit /
+	test('persists each group across reloads and scopes the reset to intervals', async ({ page }) => {
 		await page.goto('/');
+		let dialog = await openSettings(page);
 
-		// 2. Open settings
-		const openSettingsButton = page.getByRole('button', { name: 'Open settings' });
-		await expect(openSettingsButton).toBeVisible();
-		await openSettingsButton.click();
-
-		const settingsHeading = page.getByRole('heading', { name: 'Settings' });
-		await expect(settingsHeading).toBeVisible();
-
-		// 3. Adjust focus: 25 min -> 24 min
-		const focusSlider = page.getByLabel('Focus duration').getByRole('slider');
-		await expect(focusSlider).toHaveAttribute('aria-valuenow', '25');
+		// Intervals
+		const focusSlider = dialog.getByLabel('Focus duration').getByRole('slider');
 		await focusSlider.focus();
 		await page.keyboard.press('ArrowLeft');
 		await expect(focusSlider).toHaveAttribute('aria-valuenow', '24');
-		await expect(page.getByText('24 min', { exact: true })).toBeVisible();
 
-		// 4. Select Dawn theme
-		const dawnRadio = page.getByRole('radio', { name: 'Dawn theme' });
+		// Appearance
+		await openGroup(dialog, 'Appearance');
+		const dawnRadio = dialog.getByRole('radio', { name: 'Dawn theme' });
 		await dawnRadio.click();
 		await expect(dawnRadio).toHaveAttribute('data-state', 'on');
 
-		// 5. Toggle sound alerts switch to off
-		const soundSwitch = page.getByRole('switch', { name: 'Sound alerts' });
+		// Behavior
+		await openGroup(dialog, 'Behavior');
+		const soundSwitch = dialog.getByRole('switch', { name: 'Sound alerts' });
 		await expect(soundSwitch).toBeChecked();
 		await soundSwitch.click();
 		await expect(soundSwitch).not.toBeChecked();
 
-		// 6. Close drawer, verify main timer displays 24:00, document.documentElement.dataset.theme === 'dawn'
-		const closeButton = page.getByRole('button', { name: 'Close' });
-		await closeButton.click();
-		await expect(settingsHeading).not.toBeVisible();
+		await dialog.getByRole('button', { name: 'Close' }).click();
+		await expect(dialog).not.toBeVisible();
 
 		const timerDisplay = page.getByRole('timer');
 		await expect(timerDisplay).toHaveText('24:00');
 		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dawn');
 
-		// 7. Reload page
 		await page.reload();
-
-		// 8. Verify main timer still displays 24:00, document data-theme is still 'dawn'
 		await expect(timerDisplay).toHaveText('24:00');
 		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dawn');
 
-		// 9. Open settings drawer, verify focus slider is 24, dawn radio is selected, sound alerts switch is unchecked
-		await openSettingsButton.click();
-		await expect(settingsHeading).toBeVisible();
+		dialog = await openSettings(page);
+		await expect(dialog.getByLabel('Focus duration').getByRole('slider')).toHaveAttribute(
+			'aria-valuenow',
+			'24'
+		);
 
-		const reloadedFocusSlider = page.getByLabel('Focus duration').getByRole('slider');
-		await expect(reloadedFocusSlider).toHaveAttribute('aria-valuenow', '24');
+		await openGroup(dialog, 'Appearance');
+		await expect(dialog.getByRole('radio', { name: 'Dawn theme' })).toHaveAttribute(
+			'data-state',
+			'on'
+		);
 
-		const reloadedDawnRadio = page.getByRole('radio', { name: 'Dawn theme' });
-		await expect(reloadedDawnRadio).toHaveAttribute('data-state', 'on');
+		await openGroup(dialog, 'Behavior');
+		await expect(dialog.getByRole('switch', { name: 'Sound alerts' })).not.toBeChecked();
 
-		const reloadedSoundSwitch = page.getByRole('switch', { name: 'Sound alerts' });
-		await expect(reloadedSoundSwitch).not.toBeChecked();
+		// Resetting intervals must not reach into another group's switches.
+		await openGroup(dialog, 'Intervals');
+		await dialog.getByRole('button', { name: /Reset to defaults/i }).click();
+		await expect(dialog.getByLabel('Focus duration').getByRole('slider')).toHaveAttribute(
+			'aria-valuenow',
+			'25'
+		);
 
-		// 10. Click Reset to defaults button, verify timer resets to 25:00, sound switch is checked, but theme remains 'dawn'
-		const resetButton = page.getByRole('button', { name: /Reset to defaults/i });
-		await resetButton.click();
+		await openGroup(dialog, 'Behavior');
+		await expect(dialog.getByRole('switch', { name: 'Sound alerts' })).not.toBeChecked();
 
-		await expect(reloadedFocusSlider).toHaveAttribute('aria-valuenow', '25');
-		await expect(reloadedSoundSwitch).toBeChecked();
-		await expect(reloadedDawnRadio).toHaveAttribute('data-state', 'on');
+		await openGroup(dialog, 'Appearance');
+		await expect(dialog.getByRole('radio', { name: 'Dawn theme' })).toHaveAttribute(
+			'data-state',
+			'on'
+		);
 		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dawn');
 
-		await closeButton.click();
-		await expect(settingsHeading).not.toBeVisible();
+		await dialog.getByRole('button', { name: 'Close' }).click();
 		await expect(timerDisplay).toHaveText('25:00');
 
-		// 11. Reload page, verify timer remains 25:00 and theme remains 'dawn'
 		await page.reload();
 		await expect(timerDisplay).toHaveText('25:00');
 		await expect(page.locator('html')).toHaveAttribute('data-theme', 'dawn');
 	});
 
-	test('preserves ultradian 90/20 cadence configured in planning across settings drawer, timer view, and reload', async ({
+	test('keeps the ultradian 90/20 cadence across the dialog, the timer, and reloads', async ({
 		page
 	}) => {
-		// 1. Visit Pomody root
 		await page.goto('/');
 		const timerDisplay = page.getByRole('timer');
 		await expect(timerDisplay).toHaveText('25:00');
 
-		// 2. Navigate to Planning view
-		const planningTab = page.getByRole('tab', { name: 'Planning' });
-		await planningTab.click();
+		await page.getByRole('tab', { name: 'Planning' }).click();
 		await expect(page.getByRole('heading', { name: 'Planning' })).toBeVisible();
+		await page.getByRole('button', { name: /90\/20/i }).click();
 
-		// 3. Select 90/20 Ultradian Rhythm preset chip
-		const ultradianChip = page.getByRole('button', { name: /90\/20/i });
-		await expect(ultradianChip).toBeVisible();
-		await ultradianChip.click();
+		const dialog = await openSettings(page);
+		await expect(dialog.getByLabel('Focus duration').getByRole('slider')).toHaveAttribute(
+			'aria-valuenow',
+			'90'
+		);
+		await expect(dialog.getByText('90 min', { exact: true })).toBeVisible();
+		await expect(dialog.getByLabel('Short break duration').getByRole('slider')).toHaveAttribute(
+			'aria-valuenow',
+			'20'
+		);
 
-		// 4. Open Settings drawer from header
-		const openSettingsButton = page.getByRole('button', { name: 'Open settings' });
-		await expect(openSettingsButton).toBeVisible();
-		await openSettingsButton.click();
+		await dialog.getByRole('button', { name: 'Close' }).click();
+		await expect(dialog).not.toBeVisible();
 
-		const settingsHeading = page.getByRole('heading', { name: 'Settings' });
-		await expect(settingsHeading).toBeVisible();
-
-		// 5. Verify Focus slider shows 90 min and is not clamped to 60
-		const focusSlider = page.getByLabel('Focus duration').getByRole('slider');
-		await expect(focusSlider).toHaveAttribute('aria-valuenow', '90');
-		await expect(page.getByText('90 min', { exact: true })).toBeVisible();
-
-		// 6. Verify Short Break slider shows 20 min
-		const shortBreakSlider = page.getByLabel('Short break duration').getByRole('slider');
-		await expect(shortBreakSlider).toHaveAttribute('aria-valuenow', '20');
-		await expect(page.getByText('20 min', { exact: true })).toBeVisible();
-
-		// 7. Close settings drawer
-		const closeButton = page.getByRole('button', { name: 'Close' });
-		await closeButton.click();
-		await expect(settingsHeading).not.toBeVisible();
-
-		// 8. Navigate back to Timer view and verify timer reflects 90:00
-		const timerTab = page.getByRole('tab', { name: 'Timer' });
-		await timerTab.click();
+		await page.getByRole('tab', { name: 'Timer' }).click();
 		await expect(timerDisplay).toHaveText('90:00');
 
-		// 9. Reload page and verify that interval values above old bounds persist
 		await page.reload();
 		await expect(timerDisplay).toHaveText('90:00');
 
-		// 10. Re-open settings drawer and verify sliders retain 90 min and 20 min
-		await openSettingsButton.click();
-		await expect(settingsHeading).toBeVisible();
-		await expect(focusSlider).toHaveAttribute('aria-valuenow', '90');
-		await expect(shortBreakSlider).toHaveAttribute('aria-valuenow', '20');
+		const reopened = await openSettings(page);
+		await expect(reopened.getByLabel('Focus duration').getByRole('slider')).toHaveAttribute(
+			'aria-valuenow',
+			'90'
+		);
+		await expect(reopened.getByLabel('Short break duration').getByRole('slider')).toHaveAttribute(
+			'aria-valuenow',
+			'20'
+		);
+	});
+
+	test('disables the companion sub-options while the companion is off', async ({ page }) => {
+		await page.goto('/');
+		const dialog = await openSettings(page);
+		await openGroup(dialog, 'Companion');
+
+		const masterSwitch = dialog.getByRole('switch', {
+			name: 'Show the living companion illustration'
+		});
+		const motionSwitch = dialog.getByRole('switch', {
+			name: 'Enable ambient illustration motion'
+		});
+		const hideSwitch = dialog.getByRole('switch', {
+			name: 'Hide the illustration while focusing'
+		});
+
+		await expect(masterSwitch).not.toBeChecked();
+		await expect(motionSwitch).toBeDisabled();
+		await expect(hideSwitch).toBeDisabled();
+		await expect(dialog.getByRole('radio', { name: 'Desert' })).toBeDisabled();
+
+		await masterSwitch.click();
+		await expect(masterSwitch).toBeChecked();
+		await expect(motionSwitch).toBeEnabled();
+		await expect(dialog.getByRole('radio', { name: 'Desert' })).toBeEnabled();
+
+		await dialog.getByRole('radio', { name: 'Desert' }).click();
+		await expect(dialog.getByRole('radio', { name: 'Desert' })).toHaveAttribute('data-state', 'on');
+
+		await masterSwitch.click();
+		await expect(motionSwitch).toBeDisabled();
+		await expect(dialog.getByRole('radio', { name: 'Desert' })).toHaveAttribute('data-state', 'on');
+	});
+
+	test('switches the interface language from the application group', async ({ page }) => {
+		await page.goto('/');
+		const dialog = await openSettings(page);
+
+		await openGroup(dialog, 'Application');
+		await dialog.getByRole('radio', { name: 'Spanish language' }).click();
+
+		await expect(dialog.getByRole('tab', { name: 'Compañía' })).toBeVisible();
+		await expect(dialog.getByRole('tab', { name: 'Apariencia' })).toBeVisible();
+
+		await openGroup(dialog, 'Aplicación');
+		await dialog.getByRole('radio', { name: /inglés|English/i }).click();
+		await expect(dialog.getByRole('tab', { name: 'Companion' })).toBeVisible();
 	});
 });

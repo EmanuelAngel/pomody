@@ -22,7 +22,7 @@
 	width="100%"
 	height="100%"
 	preserveAspectRatio="xMidYMax slice"
-	class="block h-full w-full"
+	class="block size-full"
 	class:animated
 	data-illustration="desert"
 	data-phase={currentPhase}
