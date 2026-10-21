@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.17.0...pomody-v0.18.0) (2026-10-21)
+
+
+### Features
+
+* **notifications:** add the block-end notifier port and adapters ([ce1d622](https://github.com/EmanuelAngel/pomody/commit/ce1d6223d64eaef90d39786b78716ca5c123f874))
+* **planning:** save and reuse custom cadence presets ([#190](https://github.com/EmanuelAngel/pomody/issues/190)) ([7ca83ba](https://github.com/EmanuelAngel/pomody/commit/7ca83ba88494a1d2861e1f080cf2428eb219939c))
+* **settings:** expose block-end notifications in the behavior tab ([5060cf2](https://github.com/EmanuelAngel/pomody/commit/5060cf21e39812942b5f6ab47d3cc910f47c9062))
+* **settings:** persist the block-end notification switch ([93ec393](https://github.com/EmanuelAngel/pomody/commit/93ec393314045e7a57260411622e0dde684ba4a1))
+* **state:** announce completed blocks when the window is unattended ([009ab93](https://github.com/EmanuelAngel/pomody/commit/009ab934ebbf7bf45281c7f31f6e37b168c5099e))
+* **timer:** show a persistent in-app notice when a block ends ([#192](https://github.com/EmanuelAngel/pomody/issues/192)) ([fb70cde](https://github.com/EmanuelAngel/pomody/commit/fb70cde0a5ad15815c5e3b0903da37f44546b55e))
+
+
+### Bug Fixes
+
+* **planning:** drop the misleading preset name placeholder ([#194](https://github.com/EmanuelAngel/pomody/issues/194)) ([f011ae2](https://github.com/EmanuelAngel/pomody/commit/f011ae210def023852108667200e4cbbf8499b0e))
+* **settings:** close the dialog when the timer starts ([#157](https://github.com/EmanuelAngel/pomody/issues/157)) ([#183](https://github.com/EmanuelAngel/pomody/issues/183)) ([3f5fd3a](https://github.com/EmanuelAngel/pomody/commit/3f5fd3a0dcab4a3faf442bd716c15659868216b2))
+
 ## [0.17.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.16.0...pomody-v0.17.0) (2026-10-21)
 
 
