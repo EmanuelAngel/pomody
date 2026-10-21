@@ -3,7 +3,7 @@
 	import * as Tabs from '$lib/components/ui/tabs';
 	import Timer from '@lucide/svelte/icons/timer';
 	import Palette from '@lucide/svelte/icons/palette';
-	import Sparkles from '@lucide/svelte/icons/sparkles';
+	import Wallpaper from '@lucide/svelte/icons/wallpaper';
 	import Bell from '@lucide/svelte/icons/bell';
 	import Globe from '@lucide/svelte/icons/globe';
 
@@ -58,14 +58,16 @@
 	const tabs = $derived([
 		{ value: 'intervals', label: t.settings_tab_intervals, icon: Timer },
 		{ value: 'appearance', label: t.settings_tab_appearance, icon: Palette },
-		{ value: 'companion', label: t.settings_tab_companion, icon: Sparkles },
+		{ value: 'companion', label: t.settings_tab_companion, icon: Wallpaper },
 		{ value: 'behavior', label: t.settings_tab_behavior, icon: Bell },
 		{ value: 'application', label: t.settings_tab_application, icon: Globe }
 	]);
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Content class="flex max-h-[85dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+	<Dialog.Content
+		class="flex h-[85dvh] flex-col gap-0 overflow-hidden p-0 sm:h-[32rem] sm:max-h-[calc(100dvh-2rem)] sm:max-w-2xl"
+	>
 		<Dialog.Header class="border-b border-border/40 py-4 pr-12 pl-6">
 			<Dialog.Title class="text-base font-semibold tracking-tight text-foreground"
 				>{t.settings_title()}</Dialog.Title
@@ -82,12 +84,12 @@
 		>
 			<Tabs.List
 				aria-label={t.settings_tabs_aria()}
-				class="w-full shrink-0 flex-col border-b border-border/40 bg-muted/40 p-2 sm:h-full sm:w-44 sm:border-r sm:border-b-0 sm:p-3"
+				class="w-full shrink-0 flex-col items-stretch justify-start gap-1 border-b border-border/40 bg-muted/40 p-4 sm:h-full sm:w-48 sm:border-r sm:border-b-0"
 			>
 				{#each tabs as tab (tab.value)}
 					<Tabs.Trigger
 						value={tab.value}
-						class="h-8 flex-none justify-start gap-2 px-2.5 text-xs font-medium sm:w-full"
+						class="h-8 flex-none justify-start gap-2 px-3 text-xs font-medium sm:w-full"
 					>
 						<tab.icon data-icon="inline-start" />
 						{tab.label()}
