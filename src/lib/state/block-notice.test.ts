@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TimerFSM } from '$lib/domain/timer/timer-fsm';
 import * as m from '$lib/paraglide/messages';
 import { FakeBlockNotifier } from '$tests/fakes/platform/fake-block-notifier';
+import { FakeBlockToast } from '$tests/fakes/platform/fake-block-toast';
 import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
 import { createBlockNoticeState } from './block-notice.svelte';
 
@@ -24,16 +25,18 @@ function createHarness(
 		blockNotificationsEnabled: options.enabled ?? true
 	});
 	const notifier = options.notifier ?? new FakeBlockNotifier();
+	const toast = new FakeBlockToast();
 	const timer = new TimerFSM({ roundsBeforeLongBreak: options.roundsBeforeLongBreak ?? 4 });
 	const state = createBlockNoticeState({
 		settingsStorage,
 		notifier,
+		toast,
 		timer,
 		isWindowUnattended: () => options.unattended ?? true,
 		isAlwaysOnTop: () => options.alwaysOnTop ?? false
 	});
 
-	return { state, notifier, settingsStorage, timer };
+	return { state, notifier, toast, settingsStorage, timer };
 }
 
 /** Runs one block of the timer to its natural end, which is what emits `block-completed`. */
@@ -122,6 +125,89 @@ describe('BlockNoticeState', () => {
 			expect(state.enabled).toBe(false);
 			expect(state.permissionDenied).toBe(false);
 			expect(settingsStorage.loadSettings().blockNotificationsEnabled).toBe(false);
+		});
+	});
+
+	describe('in-app toast', () => {
+		it('should show the same notice in the toast as on the OS channel', async () => {
+			const { notifier, toast, timer } = createHarness();
+
+			completeBlock(timer);
+			await flush();
+
+			expect(toast.shown).toEqual(notifier.notifyCalls);
+		});
+
+		it('should dismiss the toast when the next block starts', async () => {
+			const { toast, timer } = createHarness();
+			completeBlock(timer);
+
+			timer.start();
+
+			expect(toast.dismissed).toEqual([1]);
+		});
+
+		it('should dismiss the toast when the timer resets', async () => {
+			const { toast, timer } = createHarness();
+			completeBlock(timer);
+
+			timer.reset();
+
+			expect(toast.dismissed).toEqual([1]);
+		});
+
+		it('should dismiss the toast when the completed block is skipped', async () => {
+			const { toast, timer } = createHarness();
+			completeBlock(timer);
+
+			timer.skip();
+
+			expect(toast.dismissed).toEqual([1]);
+		});
+
+		it('should not stack notices: a new one replaces the previous toast', async () => {
+			const { toast, timer } = createHarness();
+			completeBlock(timer);
+			timer.start();
+
+			completeBlock(timer);
+
+			expect(toast.shown).toHaveLength(2);
+			expect(toast.dismissed).toEqual([1]);
+		});
+
+		it('should say nothing while the window is in front', async () => {
+			const { toast, timer } = createHarness({ unattended: false });
+
+			completeBlock(timer);
+
+			expect(toast.shown).toEqual([]);
+		});
+
+		it('should say nothing while an always-on-top window shows the phase change', async () => {
+			const { toast, timer } = createHarness({ alwaysOnTop: true });
+
+			completeBlock(timer);
+
+			expect(toast.shown).toEqual([]);
+		});
+
+		it('should say nothing while the switch is off', async () => {
+			const { toast, timer } = createHarness({ enabled: false });
+
+			completeBlock(timer);
+
+			expect(toast.shown).toEqual([]);
+		});
+
+		it('should survive a failing toast without touching the timer', async () => {
+			const { toast, timer } = createHarness();
+			toast.show = () => {
+				throw new Error('toast host exploded');
+			};
+
+			expect(() => completeBlock(timer)).not.toThrow();
+			expect(timer.state).toBe('completed');
 		});
 	});
 

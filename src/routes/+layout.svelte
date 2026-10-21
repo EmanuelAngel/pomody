@@ -6,8 +6,11 @@
 	import DailyCounter from '$lib/components/layout/daily-counter.svelte';
 	import SettingsDialog from '$lib/components/settings/settings-dialog.svelte';
 	import MiniPlayer from '$lib/components/timer/mini-player.svelte';
+	import { Toaster } from '$lib/components/ui/sonner';
 	import { appBootstrap } from '$lib/state/app-bootstrap.svelte';
 	import { windowState } from '$lib/state/windowState.svelte';
+	import { themeState } from '$lib/state/theme.svelte';
+	import { t } from '$lib/state/locale.svelte';
 
 	let { children } = $props();
 	let settingsOpen = $state(false);
@@ -62,4 +65,14 @@
 	{@render children()}
 
 	<DailyCounter />
+
+	<!--
+		The toast host lives in the main shell and not in the Mini-Player branch: a compact
+		window that always stays on top already shows the phase change, and the block-end
+		state suppresses its notices there.
+	-->
+	<Toaster
+		theme={themeState.current === 'dawn' ? 'light' : 'dark'}
+		toastOptions={{ closeButtonAriaLabel: t.block_notice_dismiss_aria() }}
+	/>
 {/if}

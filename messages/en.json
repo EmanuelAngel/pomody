@@ -321,6 +321,7 @@
 	"block_notice_body_short_break": "Take a short break.",
 	"block_notice_body_long_break": "Take a long break.",
 	"block_notice_body_focus": "Back to focus.",
+	"block_notice_dismiss_aria": "Dismiss block-end notice",
 	"settings_section_illustration_description": "A calm pixel-art landscape that grows with the focus minutes accumulated today.",
 	"settings_illustration_enabled": "Show illustration",
 	"settings_illustration_enabled_description": "Displays the landscape behind the timer. Off by default.",
