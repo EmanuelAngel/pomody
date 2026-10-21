@@ -1,14 +1,33 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import PlanningCadenceConfig, { CADENCE_PRESETS } from './planning-cadence-config.svelte';
+import PlanningCadenceConfig from './planning-cadence-config.svelte';
 import { createPlanningState } from '$lib/state/planning.svelte';
+import { createCadencePresetsState } from '$lib/state/cadence-presets.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
 import { createTasksState } from '$lib/state/tasks.svelte';
 import { localeState } from '$lib/state/locale.svelte';
+import { FakeCadencePresetRepository } from '$tests/fakes/repositories/fake-cadence-preset-repository';
+import {
+	MAX_CUSTOM_CADENCE_PRESETS,
+	cadencePresetId,
+	type CadencePreset,
+	type CadenceValues
+} from '$lib/domain/planning/cadence-preset.entity';
 import type { ISessionPlanRepository } from '$lib/domain/ports/session-plan-repository.port';
 import type { ITaskRepository } from '$lib/domain/ports/task-repository.port';
 import type { SessionPlan } from '$lib/domain/planning/session-plan.entity';
 import type { FocusTask } from '$lib/domain/tasks/task.entity';
+
+const DEEP_WORK: CadenceValues = {
+	focusMinutes: 45,
+	shortBreakMinutes: 15,
+	longBreakMinutes: 30,
+	longBreakInterval: 3
+};
+
+function createPreset(name: string, values: CadenceValues = DEEP_WORK): CadencePreset {
+	return { id: cadencePresetId(values), name, ...values };
+}
 
 class MockSessionPlanRepository implements ISessionPlanRepository {
 	private plan: SessionPlan | null = null;
@@ -46,30 +65,12 @@ function setupPlanningState() {
 }
 
 describe('PlanningCadenceConfig (Client Browser)', () => {
-	it('exports the standard cadence presets', () => {
-		expect(CADENCE_PRESETS).toHaveLength(3);
-		expect(CADENCE_PRESETS[0]).toMatchObject({
-			id: 'classic',
-			name: '25/5',
-			label: 'Classic',
-			focusMinutes: 25,
-			shortBreakMinutes: 5
-		});
-		expect(CADENCE_PRESETS[1]).toMatchObject({
-			id: 'deep-focus',
-			name: '50/10',
-			label: 'Deep Focus',
-			focusMinutes: 50,
-			shortBreakMinutes: 10
-		});
-		expect(CADENCE_PRESETS[2]).toMatchObject({
-			id: 'ultradian',
-			name: '90/20',
-			label: 'Ultradian Rhythm',
-			focusMinutes: 90,
-			shortBreakMinutes: 20
-		});
-	});
+	async function setupScreen(presets: readonly CadencePreset[] = []) {
+		const planningState = setupPlanningState();
+		const presetsState = createCadencePresetsState(new FakeCadencePresetRepository(presets));
+		await presetsState.load();
+		return { planningState, presetsState };
+	}
 
 	it('renders preset chips and highlights active 25/5 preset by default', async () => {
 		const planningState = setupPlanningState();
@@ -217,5 +218,148 @@ describe('PlanningCadenceConfig (Client Browser)', () => {
 		await expect.element(screen.getByLabelText('Hora de finalización objetivo')).toBeVisible();
 		await expect.element(screen.getByLabelText('Hora de inicio programada')).toBeVisible();
 		await expect.element(screen.getByRole('button', { name: 'Ahora' })).toBeVisible();
+	});
+
+	describe('custom presets', () => {
+		it('applies a saved custom preset restoring all four values', async () => {
+			const { planningState, presetsState } = await setupScreen([createPreset('Deep work')]);
+			const screen = await render(PlanningCadenceConfig, { planningState, presetsState });
+
+			const chip = screen.getByRole('button', {
+				name: 'Select Deep work 45/15/30/3 cadence preset'
+			});
+			await expect.element(chip).toBeVisible();
+			await chip.click();
+
+			expect(planningState.focusMinutes).toBe(45);
+			expect(planningState.shortBreakMinutes).toBe(15);
+			expect(planningState.longBreakMinutes).toBe(30);
+			expect(planningState.longBreakInterval).toBe(3);
+
+			await expect.element(chip).toHaveAttribute('aria-pressed', 'true');
+		});
+
+		it('does not highlight a built-in cadence when only focus and short break match', async () => {
+			const { planningState, presetsState } = await setupScreen();
+			const screen = await render(PlanningCadenceConfig, { planningState, presetsState });
+
+			const classicBtn = screen.getByRole('button', { name: /25\/5 Classic/i });
+			await expect.element(classicBtn).toHaveAttribute('aria-pressed', 'true');
+
+			planningState.setLongBreakMinutes(30);
+
+			await expect.element(classicBtn).toHaveAttribute('aria-pressed', 'false');
+			await expect.element(screen.getByText('Custom', { exact: true })).toBeVisible();
+		});
+
+		it('saves the current cadence as a named preset from the row', async () => {
+			const { planningState, presetsState } = await setupScreen();
+			planningState.applyCadence(DEEP_WORK);
+			const screen = await render(PlanningCadenceConfig, { planningState, presetsState });
+
+			await screen.getByRole('button', { name: 'Save current cadence as preset' }).click();
+			await expect.element(screen.getByText('Save preset')).toBeVisible();
+			await expect.element(screen.getByText('45/15/30/3')).toBeVisible();
+
+			await screen.getByLabelText('Name').fill('Deep work');
+			await screen.getByRole('button', { name: 'Save', exact: true }).click();
+
+			const chip = screen.getByRole('button', {
+				name: 'Select Deep work 45/15/30/3 cadence preset'
+			});
+			await expect.element(chip).toBeVisible();
+			await expect.element(chip).toHaveAttribute('aria-pressed', 'true');
+			expect(presetsState.presets).toEqual([createPreset('Deep work')]);
+		});
+
+		it('rejects a cadence that is already saved and keeps the row unchanged', async () => {
+			const { planningState, presetsState } = await setupScreen([createPreset('Deep work')]);
+			planningState.applyCadence(DEEP_WORK);
+			const screen = await render(PlanningCadenceConfig, { planningState, presetsState });
+
+			await screen.getByRole('button', { name: 'Save current cadence as preset' }).click();
+			await screen.getByLabelText('Name').fill('Other name');
+			await screen.getByRole('button', { name: 'Save', exact: true }).click();
+
+			await expect
+				.element(screen.getByText('You already have a preset with that cadence.'))
+				.toBeVisible();
+			expect(presetsState.presets).toEqual([createPreset('Deep work')]);
+		});
+
+		it('rejects an empty name', async () => {
+			const { planningState, presetsState } = await setupScreen();
+			const screen = await render(PlanningCadenceConfig, { planningState, presetsState });
+
+			await screen.getByRole('button', { name: 'Save current cadence as preset' }).click();
+			await screen.getByLabelText('Name').fill('   ');
+			await screen.getByRole('button', { name: 'Save', exact: true }).click();
+
+			await expect.element(screen.getByText('Enter a name.')).toBeVisible();
+			expect(presetsState.presets).toEqual([]);
+		});
+
+		it('renames a saved preset keeping its values', async () => {
+			const { planningState, presetsState } = await setupScreen([createPreset('Deep work')]);
+			const screen = await render(PlanningCadenceConfig, { planningState, presetsState });
+
+			await screen.getByRole('button', { name: 'Preset actions: Deep work' }).click();
+			await screen.getByRole('button', { name: 'Rename', exact: true }).click();
+			await screen.getByLabelText('Name').fill('Focus 45');
+			await screen.getByRole('button', { name: 'Rename', exact: true }).click();
+
+			const renamed = screen.getByRole('button', {
+				name: 'Select Focus 45 45/15/30/3 cadence preset'
+			});
+			await expect.element(renamed).toBeVisible();
+			expect(presetsState.presets).toEqual([createPreset('Focus 45')]);
+		});
+
+		it('deletes a saved preset without changing the current cadence', async () => {
+			const { planningState, presetsState } = await setupScreen([createPreset('Deep work')]);
+			const screen = await render(PlanningCadenceConfig, { planningState, presetsState });
+
+			await screen
+				.getByRole('button', { name: 'Select Deep work 45/15/30/3 cadence preset' })
+				.click();
+			await screen.getByRole('button', { name: 'Preset actions: Deep work' }).click();
+			await screen.getByRole('button', { name: 'Delete', exact: true }).click();
+
+			await expect
+				.element(screen.getByRole('button', { name: 'Preset actions: Deep work' }))
+				.not.toBeInTheDocument();
+			expect(presetsState.presets).toEqual([]);
+			expect(planningState.focusMinutes).toBe(45);
+			expect(planningState.shortBreakMinutes).toBe(15);
+			expect(planningState.longBreakMinutes).toBe(30);
+			expect(planningState.longBreakInterval).toBe(3);
+		});
+
+		it('disables the save chip once the custom limit is reached', async () => {
+			const presets = Array.from({ length: MAX_CUSTOM_CADENCE_PRESETS }, (_, index) =>
+				createPreset(`Preset ${index}`, { ...DEEP_WORK, focusMinutes: 10 + index })
+			);
+			const { planningState, presetsState } = await setupScreen(presets);
+			const screen = await render(PlanningCadenceConfig, { planningState, presetsState });
+
+			await expect
+				.element(screen.getByRole('button', { name: 'Save current cadence as preset' }))
+				.toBeDisabled();
+		});
+
+		it('renders the custom preset copy in Spanish', async () => {
+			localeState.setLocale('es');
+
+			const { planningState, presetsState } = await setupScreen([createPreset('Foco 45')]);
+			const screen = await render(PlanningCadenceConfig, { planningState, presetsState });
+
+			await screen.getByRole('button', { name: 'Guardar la cadencia actual como preset' }).click();
+			await expect.element(screen.getByText('Guardar preset')).toBeVisible();
+
+			await screen.getByLabelText('Nombre').fill('Foco 45');
+			await screen.getByRole('button', { name: 'Guardar', exact: true }).click();
+
+			await expect.element(screen.getByText('Ya tenés un preset con ese nombre.')).toBeVisible();
+		});
 	});
 });

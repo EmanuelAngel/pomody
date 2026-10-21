@@ -48,10 +48,10 @@ S26 — `CADENCE_LIMITS` en el dominio es la única fuente de los rangos (foco 1
 | --- | -------------------------- | -------------------- | ------- | ---------------------------------------------------------- |
 | T1  | S6, S14-S16, S20, S21, S26 | inline               | done    | `7343cf5` — 34 tests de entidad                            |
 | T2  | S3, S21                    | inline               | done    | `7343cf5` — 18 tests de adapter + contrato del puerto      |
-| T3  | S8, S13, S25               | inline               | done    | `cd2f81b` — 80 tests de planning + 41 client sin regresión |
-| T4  | S1, S4, S17, S22, S23      | inline               | pending | —                                                          |
-| T5  | S9, S24                    | inline               | pending | —                                                          |
-| T6  | S2, S5, S7, S18, S19       | inline               | pending | —                                                          |
+| T3  | S8, S13, S25               | inline               | done    | `b412b9e` — 80 tests de planning + 41 client sin regresión |
+| T4  | S1, S4, S17, S22, S23      | inline               | done    | `074573e` — 19 tests de estado + hidratación en bootstrap  |
+| T5  | S9, S24                    | inline               | done    | copy ES/EN en `messages/*.json` + compilación paraglide    |
+| T6  | S2, S5, S7, S18, S19       | inline               | done    | 15 tests de componente + `pnpm check` 0 errores 0 warnings |
 | T7  | S10, S11                   | delegated (verifier) | pending | —                                                          |
 
 Work units previstas: C1 = T1+T2 (dominio, puerto, adapter); C2 = T3 (applyCadence atómico); C3 = T4 (estado + bootstrap); C4 = T5+T6 (copy + UI); T7 cierra la feature.
@@ -75,3 +75,7 @@ L7 (2026-10-21) — C1 (`7343cf5`): entidad `cadence-preset.entity.ts` (límites
 L8 (2026-10-21) — C2 (`cd2f81b`): `PlanningState.applyCadence()` atómico + los cuatro setters delegan vía `clampCadence`. Dos ajustes honestos durante la implementación: (a) el id derivado usa separador `:` (`custom:45:15:30:3`), no `/`, como fija S15; (b) los setters normalizan toda la cadencia con `clampCadence` en vez de sólo el campo editado, para que un plan restaurado con valores corruptos no convierta el click en un no-op silencioso.
 
 L9 (2026-10-21) — Cambio en aserciones existentes (declarado, no silencioso): 4 tests de "Active session duration setters (forward-only)" afirmaban la forma del argumento parcial de `updateUpcomingPlanForwardOnly` (`{ focusDurationSeconds: 2700 }`). Con la escritura atómica el argumento es el config completo. Se reescribieron esas 4 aserciones al config completo, que es un pin más fuerte; todas las demás aserciones de esos mismos tests (estado, `timer.config`, duraciones y modos de bloques futuros, bloques pasados y activos intactos, stats derivadas) siguen intactas y pasan sin cambios. Verificación diferencial del refactor: 80 tests de `planning.test.ts` + 41 tests de componente del área planning en verde.
+
+L10 (2026-10-21) — C4: copy nuevo en `messages/es.json` y `messages/en.json` (15 claves, una más que la tabla aprobada: `planning_cadence_preset_error_generic`, necesaria para que el switch de motivos de error sea exhaustivo en los dos casos que la UI no puede provocar: `out_of_range` y `unknown_preset`). `src/lib/paraglide/messages/*` es generado e ignorado por git; se regeneró con `pnpm exec paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide`. UI: fila = integrados → personalizados → `+`; chip personalizado con nombre + `45/15/30/3` + kebab siempre visible; popover de alta y popover por chip con menú (Renombrar / Eliminar) que cambia a formulario en modo renombrar; eliminar es inmediato. `applyCadence` reemplaza los cuatro setters al aplicar un preset.
+
+L11 (2026-10-21) — Dos defectos encontrados y corregidos durante los tests de componente: (a) `Popover.Trigger` de bits-ui consume `disabled` sin reenviarlo al `<button>`, así que el chip `+` deshabilitado al llegar al tope se renderiza con el patrón `child` y un botón propio; (b) los matchers de rol por nombre son substring case-insensitive, así que 'Save' chocaba con 'Save current cadence as preset' y hubo que fijarlos con `exact: true`. El test del componente que afirmaba la forma exportada de `CADENCE_PRESETS` se eliminó: su intención (ids y valores de los tres integrados) ahora vive en `cadence-preset.entity.test.ts`.
