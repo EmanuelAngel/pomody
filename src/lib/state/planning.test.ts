@@ -970,7 +970,12 @@ describe('PlanningState', () => {
 
 			state.setFocusMinutes(45);
 
-			expect(updateSpy).toHaveBeenCalledWith({ focusDurationSeconds: 45 * 60 });
+			expect(updateSpy).toHaveBeenCalledWith({
+				focusDurationSeconds: 45 * 60,
+				shortBreakDurationSeconds: 5 * 60,
+				longBreakDurationSeconds: 15 * 60,
+				roundsBeforeLongBreak: 4
+			});
 			expect(state.focusMinutes).toBe(45);
 			expect(timer.config.focusDurationSeconds).toBe(45 * 60);
 
@@ -997,7 +1002,12 @@ describe('PlanningState', () => {
 
 			state.setShortBreakMinutes(10);
 
-			expect(updateSpy).toHaveBeenCalledWith({ shortBreakDurationSeconds: 10 * 60 });
+			expect(updateSpy).toHaveBeenCalledWith({
+				focusDurationSeconds: 25 * 60,
+				shortBreakDurationSeconds: 10 * 60,
+				longBreakDurationSeconds: 15 * 60,
+				roundsBeforeLongBreak: 4
+			});
 			expect(state.shortBreakMinutes).toBe(10);
 			expect(timer.config.shortBreakDurationSeconds).toBe(10 * 60);
 
@@ -1020,7 +1030,12 @@ describe('PlanningState', () => {
 
 			state.setLongBreakMinutes(30);
 
-			expect(updateSpy).toHaveBeenCalledWith({ longBreakDurationSeconds: 30 * 60 });
+			expect(updateSpy).toHaveBeenCalledWith({
+				focusDurationSeconds: 25 * 60,
+				shortBreakDurationSeconds: 5 * 60,
+				longBreakDurationSeconds: 30 * 60,
+				roundsBeforeLongBreak: 2
+			});
 			expect(state.longBreakMinutes).toBe(30);
 			expect(timer.config.longBreakDurationSeconds).toBe(30 * 60);
 
@@ -1039,7 +1054,12 @@ describe('PlanningState', () => {
 
 			state.setLongBreakInterval(2);
 
-			expect(updateSpy).toHaveBeenCalledWith({ roundsBeforeLongBreak: 2 });
+			expect(updateSpy).toHaveBeenCalledWith({
+				focusDurationSeconds: 25 * 60,
+				shortBreakDurationSeconds: 5 * 60,
+				longBreakDurationSeconds: 15 * 60,
+				roundsBeforeLongBreak: 2
+			});
 			expect(state.longBreakInterval).toBe(2);
 			expect(timer.config.roundsBeforeLongBreak).toBe(2);
 
@@ -1245,5 +1265,153 @@ describe('PlanningState timer persistence wiring', () => {
 		freshTimer.start();
 
 		expect(timerRepo.peek()).toMatchObject({ planId: savedPlan.id, blockIndex: 1 });
+	});
+
+	describe('applyCadence', () => {
+		const DEEP_WORK_CADENCE = {
+			focusMinutes: 45,
+			shortBreakMinutes: 15,
+			longBreakMinutes: 30,
+			longBreakInterval: 3
+		};
+
+		it('should apply all four values to the state and the timer in a single update', () => {
+			const updateSpy = vi.spyOn(timer, 'updateConfig');
+
+			const applied = state.applyCadence(DEEP_WORK_CADENCE);
+
+			expect(applied).toBe(true);
+			expect(state.focusMinutes).toBe(45);
+			expect(state.shortBreakMinutes).toBe(15);
+			expect(state.longBreakMinutes).toBe(30);
+			expect(state.longBreakInterval).toBe(3);
+			expect(timer.config).toEqual({
+				focusDurationSeconds: 2700,
+				shortBreakDurationSeconds: 900,
+				longBreakDurationSeconds: 1800,
+				roundsBeforeLongBreak: 3
+			});
+			expect(updateSpy).toHaveBeenCalledTimes(1);
+			expect(repo.saveActivePlanCallCount).toBe(0);
+		});
+
+		it('should not touch the timer when the cadence is already applied', () => {
+			state.applyCadence(DEEP_WORK_CADENCE);
+			const updateSpy = vi.spyOn(timer, 'updateConfig');
+
+			const applied = state.applyCadence(DEEP_WORK_CADENCE);
+
+			expect(applied).toBe(true);
+			expect(updateSpy).not.toHaveBeenCalled();
+		});
+
+		it('should reject a cadence outside the supported ranges without touching anything', () => {
+			const updateSpy = vi.spyOn(timer, 'updateConfig');
+
+			expect(state.applyCadence({ ...DEEP_WORK_CADENCE, focusMinutes: 0 })).toBe(false);
+			expect(state.applyCadence({ ...DEEP_WORK_CADENCE, focusMinutes: 45.5 })).toBe(false);
+			expect(state.applyCadence({ ...DEEP_WORK_CADENCE, shortBreakMinutes: 61 })).toBe(false);
+			expect(state.applyCadence({ ...DEEP_WORK_CADENCE, longBreakMinutes: 91 })).toBe(false);
+			expect(state.applyCadence({ ...DEEP_WORK_CADENCE, longBreakInterval: 13 })).toBe(false);
+
+			expect(state.focusMinutes).toBe(25);
+			expect(state.shortBreakMinutes).toBe(5);
+			expect(state.longBreakMinutes).toBe(15);
+			expect(state.longBreakInterval).toBe(4);
+			expect(updateSpy).not.toHaveBeenCalled();
+		});
+
+		it('should update only upcoming blocks when a session is active', async () => {
+			state.setBlockCount(4);
+			await state.startSession();
+			const saveCallsBefore = repo.saveActivePlanCallCount;
+
+			const applied = state.applyCadence(DEEP_WORK_CADENCE);
+
+			expect(applied).toBe(true);
+
+			const blocks = state.activePlan?.blocks ?? [];
+			expect(blocks).toHaveLength(7);
+
+			// The running block is never mutated.
+			expect(blocks[0]).toMatchObject({
+				index: 0,
+				mode: 'focus',
+				durationSeconds: 1500,
+				status: 'in_progress'
+			});
+
+			// Upcoming blocks take the new durations and the new break rhythm.
+			expect(blocks[1]).toMatchObject({ mode: 'shortBreak', durationSeconds: 900 });
+			expect(blocks[2]).toMatchObject({ mode: 'focus', durationSeconds: 2700 });
+			expect(blocks[3]).toMatchObject({ mode: 'shortBreak', durationSeconds: 900 });
+			expect(blocks[4]).toMatchObject({ mode: 'focus', durationSeconds: 2700 });
+			expect(blocks[5]).toMatchObject({ mode: 'longBreak', durationSeconds: 1800 });
+			expect(blocks[6]).toMatchObject({ mode: 'focus', durationSeconds: 2700 });
+
+			expect(state.focusMinutes).toBe(45);
+			expect(state.longBreakInterval).toBe(3);
+			expect(timer.config.roundsBeforeLongBreak).toBe(3);
+			expect(repo.saveActivePlanCallCount).toBe(saveCallsBefore + 1);
+		});
+
+		it('should leave past and active blocks untouched while a session advances', async () => {
+			state.setBlockCount(4);
+			await state.startSession();
+			timer.skip();
+
+			const applied = state.applyCadence(DEEP_WORK_CADENCE);
+
+			expect(applied).toBe(true);
+
+			const blocks = state.activePlan?.blocks ?? [];
+			expect(blocks[0]).toMatchObject({ durationSeconds: 1500, status: 'skipped' });
+			expect(blocks[1]).toMatchObject({ durationSeconds: 300, status: 'in_progress' });
+			expect(blocks[2]).toMatchObject({ mode: 'focus', durationSeconds: 2700 });
+		});
+
+		it('should keep a single setter from disturbing the other three values', () => {
+			state.setFocusMinutes(45);
+
+			expect(state.focusMinutes).toBe(45);
+			expect(state.shortBreakMinutes).toBe(5);
+			expect(state.longBreakMinutes).toBe(15);
+			expect(state.longBreakInterval).toBe(4);
+			expect(timer.config).toEqual({
+				focusDurationSeconds: 2700,
+				shortBreakDurationSeconds: 300,
+				longBreakDurationSeconds: 900,
+				roundsBeforeLongBreak: 4
+			});
+		});
+
+		it('should ignore non-finite setter input', () => {
+			state.setFocusMinutes(Number.NaN);
+			state.setShortBreakMinutes(Number.POSITIVE_INFINITY);
+			state.setLongBreakMinutes(Number.NEGATIVE_INFINITY);
+			state.setLongBreakInterval(Number.NaN);
+
+			expect(state.focusMinutes).toBe(25);
+			expect(state.shortBreakMinutes).toBe(5);
+			expect(state.longBreakMinutes).toBe(15);
+			expect(state.longBreakInterval).toBe(4);
+		});
+
+		it('should keep each setter clamping to its own range', () => {
+			state.setFocusMinutes(24.6);
+			expect(state.focusMinutes).toBe(25);
+
+			state.setFocusMinutes(200);
+			expect(state.focusMinutes).toBe(120);
+
+			state.setShortBreakMinutes(0.4);
+			expect(state.shortBreakMinutes).toBe(1);
+
+			state.setLongBreakMinutes(120);
+			expect(state.longBreakMinutes).toBe(90);
+
+			state.setLongBreakInterval(20);
+			expect(state.longBreakInterval).toBe(12);
+		});
 	});
 });

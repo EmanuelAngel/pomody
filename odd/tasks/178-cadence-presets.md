@@ -44,15 +44,15 @@ S26 — `CADENCE_LIMITS` en el dominio es la única fuente de los rangos (foco 1
 
 ## Tasks
 
-| ID  | Specs                      | Route                | Estado  | Evidencia |
-| --- | -------------------------- | -------------------- | ------- | --------- |
-| T1  | S6, S14-S16, S20, S21, S26 | inline               | pending | —         |
-| T2  | S3, S21                    | inline               | pending | —         |
-| T3  | S8, S13, S25               | inline               | pending | —         |
-| T4  | S1, S4, S17, S22, S23      | inline               | pending | —         |
-| T5  | S9, S24                    | inline               | pending | —         |
-| T6  | S2, S5, S7, S18, S19       | inline               | pending | —         |
-| T7  | S10, S11                   | delegated (verifier) | pending | —         |
+| ID  | Specs                      | Route                | Estado  | Evidencia                                                  |
+| --- | -------------------------- | -------------------- | ------- | ---------------------------------------------------------- |
+| T1  | S6, S14-S16, S20, S21, S26 | inline               | done    | `7343cf5` — 34 tests de entidad                            |
+| T2  | S3, S21                    | inline               | done    | `7343cf5` — 18 tests de adapter + contrato del puerto      |
+| T3  | S8, S13, S25               | inline               | done    | `cd2f81b` — 80 tests de planning + 41 client sin regresión |
+| T4  | S1, S4, S17, S22, S23      | inline               | pending | —                                                          |
+| T5  | S9, S24                    | inline               | pending | —                                                          |
+| T6  | S2, S5, S7, S18, S19       | inline               | pending | —                                                          |
+| T7  | S10, S11                   | delegated (verifier) | pending | —                                                          |
 
 Work units previstas: C1 = T1+T2 (dominio, puerto, adapter); C2 = T3 (applyCadence atómico); C3 = T4 (estado + bootstrap); C4 = T5+T6 (copy + UI); T7 cierra la feature.
 
@@ -69,3 +69,9 @@ L4 (2026-10-21) — Riesgo declarado: `Risk: item 3` — el diff toca los cuatro
 L5 (2026-10-21) — Worktree creado: `git worktree add -b feat/178-cadence-presets ../pomody-worktrees/issue-178 main`. Sesión movida a ese directorio. `pnpm install --frozen-lockfile` lanzado.
 
 L6 (2026-10-21) — Próximo paso: T1 (entidad de dominio) con RED primero.
+
+L7 (2026-10-21) — C1 (`7343cf5`): entidad `cadence-preset.entity.ts` (límites como autoridad única, id derivado, validación con motivos tipados, saneo por entrada, matching de 4 valores con desempate al personalizado), puerto `ICadencePresetRepository`, adapter `local-cadence-preset-repository.ts` (clave `pomody:cadence-presets`, envelope v1, descarte de entradas inválidas, dedupe por id derivado, tope 10, fallback `InMemoryStorage`, aborto ante versión mayor) y `FakeCadencePresetRepository`. RED observado antes de cada implementación: módulo faltante y `clampCadence is not a function`. 34 + 18 + 1 tests verdes.
+
+L8 (2026-10-21) — C2 (`cd2f81b`): `PlanningState.applyCadence()` atómico + los cuatro setters delegan vía `clampCadence`. Dos ajustes honestos durante la implementación: (a) el id derivado usa separador `:` (`custom:45:15:30:3`), no `/`, como fija S15; (b) los setters normalizan toda la cadencia con `clampCadence` en vez de sólo el campo editado, para que un plan restaurado con valores corruptos no convierta el click en un no-op silencioso.
+
+L9 (2026-10-21) — Cambio en aserciones existentes (declarado, no silencioso): 4 tests de "Active session duration setters (forward-only)" afirmaban la forma del argumento parcial de `updateUpcomingPlanForwardOnly` (`{ focusDurationSeconds: 2700 }`). Con la escritura atómica el argumento es el config completo. Se reescribieron esas 4 aserciones al config completo, que es un pin más fuerte; todas las demás aserciones de esos mismos tests (estado, `timer.config`, duraciones y modos de bloques futuros, bloques pasados y activos intactos, stats derivadas) siguen intactas y pasan sin cambios. Verificación diferencial del refactor: 80 tests de `planning.test.ts` + 41 tests de componente del área planning en verde.

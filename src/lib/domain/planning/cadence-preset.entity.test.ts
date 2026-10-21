@@ -6,6 +6,7 @@ import {
 	PRESET_NAME_MAX_LENGTH,
 	cadenceEquals,
 	cadencePresetId,
+	clampCadence,
 	clampCadenceField,
 	findActiveCadenceId,
 	formatCadenceShort,
@@ -69,6 +70,28 @@ describe('clampCadenceField', () => {
 	it('clamps the long break interval into 1-12', () => {
 		expect(clampCadenceField('longBreakInterval', 20)).toBe(12);
 		expect(clampCadenceField('longBreakInterval', 0)).toBe(1);
+	});
+});
+
+describe('clampCadence', () => {
+	it('clamps every field into its range', () => {
+		expect(
+			clampCadence({
+				focusMinutes: 300,
+				shortBreakMinutes: 90,
+				longBreakMinutes: 0,
+				longBreakInterval: 20
+			})
+		).toEqual({
+			focusMinutes: 120,
+			shortBreakMinutes: 60,
+			longBreakMinutes: 1,
+			longBreakInterval: 12
+		});
+	});
+
+	it('is the identity for values already inside their range', () => {
+		expect(clampCadence(USER_CADENCE)).toEqual(USER_CADENCE);
 	});
 });
 

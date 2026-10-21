@@ -90,6 +90,19 @@ export function clampCadenceField(field: CadenceField, value: number): number {
 }
 
 /**
+ * Clamps every field of a cadence into its declared range. Used by the planning setters so a
+ * single-field edit can never carry an out-of-range value from a corrupt restored plan.
+ */
+export function clampCadence(values: CadenceValues): CadenceValues {
+	return {
+		focusMinutes: clampCadenceField('focusMinutes', values.focusMinutes),
+		shortBreakMinutes: clampCadenceField('shortBreakMinutes', values.shortBreakMinutes),
+		longBreakMinutes: clampCadenceField('longBreakMinutes', values.longBreakMinutes),
+		longBreakInterval: clampCadenceField('longBreakInterval', values.longBreakInterval)
+	};
+}
+
+/**
  * Derives the stable id of a user preset from its four values. Values are immutable and
  * duplicates by value are rejected, so the tuple is the identity: `custom:45:15:30:3`.
  */
@@ -128,8 +141,12 @@ export function normalizePresetName(raw: string): string {
 	return raw.trim().replace(/\s+/g, ' ');
 }
 
-/** True when every field is an integer inside its declared range. */
-function isWithinCadenceLimits(values: CadenceValues): boolean {
+/**
+ * True when every field is an integer inside its declared range.
+ * This is the authority the planning setters, the preset validator and the persistence
+ * sanitizer all share; it is a strict subset of `validateTimerConfig`'s rules.
+ */
+export function isCadenceWithinLimits(values: CadenceValues): boolean {
 	return (Object.keys(CADENCE_LIMITS) as CadenceField[]).every((field) => {
 		const value = values[field];
 		const { min, max } = CADENCE_LIMITS[field];
@@ -189,7 +206,7 @@ export function validateCadencePreset(
 		return { ok: false, reason: 'duplicate_name' };
 	}
 
-	if (!isWithinCadenceLimits(input.values)) {
+	if (!isCadenceWithinLimits(input.values)) {
 		return { ok: false, reason: 'out_of_range' };
 	}
 
@@ -239,7 +256,7 @@ export function sanitizeCadencePreset(raw: unknown): CadencePreset | null {
 		longBreakInterval: candidate.longBreakInterval as number
 	};
 
-	if (!isWithinCadenceLimits(values)) {
+	if (!isCadenceWithinLimits(values)) {
 		return null;
 	}
 
