@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.15.0...pomody-v0.16.0) (2026-10-21)
+
+
+### Features
+
+* **timer:** add execution snapshot contract and storage adapter ([#155](https://github.com/EmanuelAngel/pomody/issues/155)) ([#170](https://github.com/EmanuelAngel/pomody/issues/170)) ([d05ddfd](https://github.com/EmanuelAngel/pomody/commit/d05ddfdd654d76e6e178966e300c59827de42b89))
+* **timer:** restore the previous session before the shell renders ([#155](https://github.com/EmanuelAngel/pomody/issues/155)) ([#171](https://github.com/EmanuelAngel/pomody/issues/171)) ([76dd1b1](https://github.com/EmanuelAngel/pomody/commit/76dd1b112870e41bf5d83234e563430bc1f889ac))
+
 ## [0.15.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.14.0...pomody-v0.15.0) (2026-10-21)
 
 
