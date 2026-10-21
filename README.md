@@ -86,22 +86,25 @@ Pomody se desarrolla mediante pair programming y mentoría técnica continua:
 
 Para levantar y desarrollar el proyecto localmente:
 
-| Herramienta             | Versión requerida                  | Rol / Notas                                                                                   |
-| :---------------------- | :--------------------------------- | :-------------------------------------------------------------------------------------------- |
-| **pnpm**                | `>= 9.0.0` (v10 recomendada)       | **Gestor oficial y mandatorio.** Usar siempre antes y sobre `npm` (`corepack enable`).        |
-| **Node.js**             | `>= 20.18.0 LTS` (v22 recomendada) | Runtime para desarrollo frontend y tooling (Vite, SvelteKit, Vitest).                         |
-| **Playwright Chromium** | `v1.60.0+`                         | Opcional: Solo necesario para correr tests de componentes en navegador (`pnpm test:browser`). |
-| **Rust**                | `Stable >= 1.90.0`                 | Solo necesario para compilar la app de escritorio (Tauri v2).                                 |
-| **C++ Build Tools**     | Visual Studio Build Tools 2022     | Dependencia requerida del toolchain MSVC de Rust en Windows.                                  |
+| Herramienta             | Versión requerida                  | Rol / Notas                                                                                       |
+| :---------------------- | :--------------------------------- | :------------------------------------------------------------------------------------------------ |
+| **pnpm**                | `>= 9.0.0` (v10 recomendada)       | **Gestor oficial y mandatorio.** Usar siempre antes y sobre `npm` (`corepack enable`).            |
+| **Node.js**             | `>= 20.18.0 LTS` (v22 recomendada) | Runtime para desarrollo frontend y tooling (Vite, SvelteKit, Vitest).                             |
+| **Playwright Chromium** | `v1.60.0+`                         | Opcional en local: la suite usa Microsoft Edge por defecto. CI instala el Chromium de Playwright. |
+| **Rust**                | `Stable >= 1.90.0`                 | Solo necesario para compilar la app de escritorio (Tauri v2).                                     |
+| **C++ Build Tools**     | Visual Studio Build Tools 2022     | Dependencia requerida del toolchain MSVC de Rust en Windows.                                      |
 
 > [!IMPORTANT]
 > **Uso estricto de pnpm:** Pomody utiliza `pnpm` de forma exclusiva para garantizar resolución determinista de dependencias mediante `pnpm-lock.yaml`. No ejecutes `npm` ni `yarn`.
 >
-> Para instalar el navegador de pruebas de componentes cuando sea requerido:
+> Para instalar el navegador de pruebas cuando sea requerido (CI lo hace solo en cada corrida):
 >
 > ```bash
 > pnpm exec playwright install chromium
 > ```
+
+> [!NOTE]
+> **Navegador local:** la suite usa **Microsoft Edge** por defecto fuera de CI. `PLAYWRIGHT_CHANNEL` permite forzar otro canal (`chrome`, `bundled`, ...). El puerto del preview de E2E se deriva de la ruta del worktree, así que dos worktrees no comparten servidor; `POMODY_E2E_PORT` lo fija a mano.
 
 > [!TIP]
 > **Desarrollo ágil de UI y Dominio:** Para trabajar en la lógica pura (`pnpm test:unit`) o levantar el servidor de desarrollo (`pnpm dev`), únicamente se requiere **Node.js** y **pnpm**. No es obligatorio instalar Playwright, Rust ni C++ salvo que se ejecuten pruebas de navegador o empaquetado desktop.

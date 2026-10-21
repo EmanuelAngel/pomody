@@ -67,7 +67,7 @@ Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`.
 ### 3. Pull Request Guidelines
 
 1. **Keep diffs focused**: Keep PRs under ~400 lines of change to protect review focus. If a feature exceeds this size, consider breaking it into smaller chained PRs.
-2. **Ensure CI passes**: Pull requests trigger automated checks (`pnpm lint`, `pnpm check`, `pnpm test:unit`, `pnpm build`). Green CI is required before review.
+2. **Ensure CI passes**: Pull requests trigger automated checks (`pnpm lint`, `pnpm check`, `pnpm test:unit`, `pnpm test:browser`, `pnpm test:e2e`, `pnpm build`). Green CI is required before review.
 3. **Describe intent & testing**: State clearly what problem is solved and list reproduction/testing steps.
 
 ---

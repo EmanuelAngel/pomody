@@ -121,7 +121,7 @@ Cuando Fede instruya a su agente de IA (vía `gentle-ai`, Cursor, Claude o simil
 [Desarrollo] ──> [PR Abierto] ──> [CI en Verde] ──> [Review de Vortex] ──> [Merge a main] ──> [Testing de Fede]
 ```
 
-1. **Barrera Automática (CI)**: GitHub Actions corre `lint`, `check`, `test:unit` y `build`. Si CI falla, el PR no se revisa hasta que esté verde.
+1. **Barrera Automática (CI)**: GitHub Actions corre `lint`, `check`, `test:unit`, `test:browser`, `test:e2e` y `build`. Si CI falla, el PR no se revisa hasta que esté verde.
 2. **Code Review Formativo (Vortex)**:
    - No solo busca bugs: explica el _por qué_ detrás de correcciones de diseño o tipado.
    - Garantiza que la arquitectura modular y el rendimiento (<30 MB RAM) se mantengan intactos.
