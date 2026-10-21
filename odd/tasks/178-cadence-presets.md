@@ -44,17 +44,17 @@ S26 — `CADENCE_LIMITS` en el dominio es la única fuente de los rangos (foco 1
 
 ## Tasks
 
-| ID  | Specs                      | Route                | Estado  | Evidencia                                                  |
-| --- | -------------------------- | -------------------- | ------- | ---------------------------------------------------------- |
-| T1  | S6, S14-S16, S20, S21, S26 | inline               | done    | `7343cf5` — 34 tests de entidad                            |
-| T2  | S3, S21                    | inline               | done    | `7343cf5` — 18 tests de adapter + contrato del puerto      |
-| T3  | S8, S13, S25               | inline               | done    | `b412b9e` — 80 tests de planning + 41 client sin regresión |
-| T4  | S1, S4, S17, S22, S23      | inline               | done    | `074573e` — 19 tests de estado + hidratación en bootstrap  |
-| T5  | S9, S24                    | inline               | done    | copy ES/EN en `messages/*.json` + compilación paraglide    |
-| T6  | S2, S5, S7, S18, S19       | inline               | done    | 15 tests de componente + `pnpm check` 0 errores 0 warnings |
-| T7  | S10, S11                   | delegated (verifier) | pending | —                                                          |
+| ID  | Specs                      | Route                | Estado | Evidencia                                                  |
+| --- | -------------------------- | -------------------- | ------ | ---------------------------------------------------------- |
+| T1  | S6, S14-S16, S20, S21, S26 | inline               | done   | `7343cf5` — 34 tests de entidad                            |
+| T2  | S3, S21                    | inline               | done   | `7343cf5` — 18 tests de adapter + contrato del puerto      |
+| T3  | S8, S13, S25               | inline               | done   | `b412b9e` — 80 tests de planning + 41 client sin regresión |
+| T4  | S1, S4, S17, S22, S23      | inline               | done   | `074573e` — 19 tests de estado + hidratación en bootstrap  |
+| T5  | S9, S24                    | inline               | done   | copy ES/EN en `messages/*.json` + compilación paraglide    |
+| T6  | S2, S5, S7, S18, S19       | inline               | done   | 15 tests de componente + `pnpm check` 0 errores 0 warnings |
+| T7  | S10, S11                   | delegated (verifier) | done   | 26/26 specs met, 0 blockers, 4 advisories (verificador)    |
 
-Work units previstas: C1 = T1+T2 (dominio, puerto, adapter); C2 = T3 (applyCadence atómico); C3 = T4 (estado + bootstrap); C4 = T5+T6 (copy + UI); T7 cierra la feature.
+Work units: C1 = T1+T2 (`7343cf5`); C2 = T3 (`b412b9e`); C3 = T4 (`074573e`); C4 = T5+T6 (`87e86c1`); C5 = probe de paridad del verificador (este commit); T7 cierra la feature.
 
 ## Log
 
@@ -79,3 +79,11 @@ L9 (2026-10-21) — Cambio en aserciones existentes (declarado, no silencioso): 
 L10 (2026-10-21) — C4: copy nuevo en `messages/es.json` y `messages/en.json` (15 claves, una más que la tabla aprobada: `planning_cadence_preset_error_generic`, necesaria para que el switch de motivos de error sea exhaustivo en los dos casos que la UI no puede provocar: `out_of_range` y `unknown_preset`). `src/lib/paraglide/messages/*` es generado e ignorado por git; se regeneró con `pnpm exec paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide`. UI: fila = integrados → personalizados → `+`; chip personalizado con nombre + `45/15/30/3` + kebab siempre visible; popover de alta y popover por chip con menú (Renombrar / Eliminar) que cambia a formulario en modo renombrar; eliminar es inmediato. `applyCadence` reemplaza los cuatro setters al aplicar un preset.
 
 L11 (2026-10-21) — Dos defectos encontrados y corregidos durante los tests de componente: (a) `Popover.Trigger` de bits-ui consume `disabled` sin reenviarlo al `<button>`, así que el chip `+` deshabilitado al llegar al tope se renderiza con el patrón `child` y un botón propio; (b) los matchers de rol por nombre son substring case-insensitive, así que 'Save' chocaba con 'Save current cadence as preset' y hubo que fijarlos con `exact: true`. El test del componente que afirmaba la forma exportada de `CADENCE_PRESETS` se eliminó: su intención (ids y valores de los tres integrados) ahora vive en `cadence-preset.entity.test.ts`.
+
+L12 (2026-10-21) — Gate de cierre del árbol previo a la verificación: `pnpm lint` OK; `pnpm check` 0 errores 0 warnings; `pnpm test:unit` 68 archivos / 1183 tests; `pnpm test:browser` 25 archivos / 234 tests; `pnpm test:e2e` 12 passed. `gentle-ai review mode status` = off (decidido por global): por contrato no se inicia ningún ciclo de review nativo. `gentle-ai review assess --base-ref 874fb86 --committed-only` = `risk: medium`, `review_due: false` (`under_budget`, 18 paths, 2496 líneas).
+
+L13 (2026-10-21) — T7 (verificador independiente, `gentle-ai-verify`): **26/26 specs `met`, cero blockers**. Probes en copias scratch de `87e86c1` y `874fb86`; `git status --porcelain` del worktree vacío antes y después. Diferencial del ítem 3 (código compartido): el mismo probe corrió 5/5 en candidato y 5/5 en baseline con stdout idéntico (clamps/redondeo, NaN/±Infinity, draft + `timer.config`, forward-only con sesión y encadenado, una persistencia por llamada, recálculo del ritmo). Evidencia por spec en el informe del verificador.
+
+L14 (2026-10-21) — Advisories del verificador, todos aceptados como deuda declarada y ninguno bloqueante: (1) `applyCadence` valida con `isCadenceWithinLimits` en vez de `validateTimerConfig`, que es subconjunto estricto y sigue corriendo en el camino forward-only (`planning.svelte.ts:910`); (2) los guards `disabled` de los steppers conservan los literales 120/60/90/12 — duplicación preexistente en `874fb86`, fuera del alcance de S26, que habla de los setters; (3) los setters ahora normalizan los cuatro campos (declarado en L8, no reproducible con input realista porque el plan se sanea al cargar); (4) una escritura posterior a un downgrade se descarta en silencio con `console.warn`, igual que el repositorio del plan existente, que es el mecanismo que pide S3. Los cuatro son candidatos a issue de seguimiento, no a cambio dentro de este issue.
+
+L15 (2026-10-21) — C5: se commitea `src/lib/state/cadence-setter-parity.test.ts`, el probe de paridad que produjo el verificador, reescrito sin `any` y con tipos del dominio. Es el pin del contrato de los cuatro setters (ítem 3) y corre verde en el candidato (5/5) y en el baseline (5/5, stdout idéntico). Los otros probes del verificador (`feature.test.ts` 9 tests, `ui.test.ts` 6 tests) no se copiaron: duplican aserciones ya cubiertas por los tests commiteados de entidad, repositorio, estado, planning y componente. Los scratch del verificador se removieron del árbol de temporales al cerrar.
