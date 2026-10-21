@@ -52,6 +52,25 @@
 	});
 
 	/**
+	 * A running session is Zen mode, so settings must never float over it. The timer
+	 * can start without this dialog — a background restore or an OS shortcut — which
+	 * is why the reaction lives here instead of in the header trigger that owns the
+	 * click. Only the transition to running closes it, so `null` means "not observed
+	 * yet" and a panel opened on an already running timer stays open.
+	 */
+	let wasRunning: boolean | null = null;
+
+	$effect(() => {
+		const isRunning = timerState.isRunning;
+
+		if (wasRunning !== null && isRunning && !wasRunning && open) {
+			open = false;
+		}
+
+		wasRunning = isRunning;
+	});
+
+	/**
 	 * `$derived` is load-bearing: `t` tracks the locale on property access, so a
 	 * captured label function would freeze the rail in its first language.
 	 */
