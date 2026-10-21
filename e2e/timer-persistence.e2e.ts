@@ -102,6 +102,13 @@ test.describe('Timer persistence across reloads', () => {
 		await startSessionWithTask(page, 'End session journey');
 		await page.getByRole('button', { name: 'Pause timer' }).click();
 
+		const persisted = await page.evaluate(() => ({
+			plan: window.localStorage.getItem('pomody:session-plan'),
+			timer: window.localStorage.getItem('pomody:timer-state')
+		}));
+		expect(persisted.plan).not.toBeNull();
+		expect(persisted.timer).not.toBeNull();
+
 		await page.getByRole('tab', { name: 'Planning' }).click();
 		await page.getByRole('button', { name: 'End Session Plan' }).click();
 		await page.getByRole('button', { name: 'End Session', exact: true }).click();
