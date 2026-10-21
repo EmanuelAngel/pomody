@@ -52,6 +52,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-playwright-
+
+      # `pnpm install` does not download browsers (pnpm 10 blocks dependency build
+      # scripts), so CI must install the same Chromium the suite launches.
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Verify code style & linting
         run: pnpm lint
 
@@ -61,5 +73,11 @@ jobs:
       - name: Run domain unit tests
         run: pnpm test:unit
 
+      - name: Run UI component tests
+        run: pnpm test:browser
+
       - name: Build static SPA
         run: pnpm build
+
+      - name: Run E2E tests
+        run: pnpm test:e2e

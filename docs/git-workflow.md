@@ -9,11 +9,11 @@
 
 Pomody cuenta con herramientas que verifican la calidad en dos niveles:
 
-| Nivel               | Herramienta                 | Momento                           | Qué hace                                                                                                   |
-| :------------------ | :-------------------------- | :-------------------------------- | :--------------------------------------------------------------------------------------------------------- |
-| **Local (rápido)**  | **Husky** + **lint-staged** | Al hacer `git commit`             | Formatea automáticamente con **Prettier** y repara problemas con **ESLint** sobre los archivos preparados. |
-| **Local (mensaje)** | **Husky** + **commitlint**  | Al confirmar el commit            | Valida que el mensaje de commit siga el estándar de Conventional Commits.                                  |
-| **Remoto (CI)**     | **GitHub Actions**          | Al abrir un PR o mergear a `main` | Ejecuta `pnpm lint`, `pnpm check` (tipado estricto), `pnpm test:unit` y `pnpm build`.                      |
+| Nivel               | Herramienta                 | Momento                           | Qué hace                                                                                                                                             |
+| :------------------ | :-------------------------- | :-------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Local (rápido)**  | **Husky** + **lint-staged** | Al hacer `git commit`             | Formatea automáticamente con **Prettier** y repara problemas con **ESLint** sobre los archivos preparados.                                           |
+| **Local (mensaje)** | **Husky** + **commitlint**  | Al confirmar el commit            | Valida que el mensaje de commit siga el estándar de Conventional Commits.                                                                            |
+| **Remoto (CI)**     | **GitHub Actions**          | Al abrir un PR o mergear a `main` | Ejecuta `pnpm lint`, `pnpm check` (tipado estricto), `pnpm test:unit`, `pnpm test:browser` (Chromium de Playwright), `pnpm test:e2e` y `pnpm build`. |
 
 ---
 

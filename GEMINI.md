@@ -47,17 +47,17 @@ To maintain sub-second feedback during development without sacrificing regressio
   - Run the full suite to guarantee zero regressions before submitting work:
     - Type check: `pnpm check`
     - Lint & style: `pnpm lint`
-    - Full test suite: `pnpm test` (or `pnpm test:unit` and `pnpm test:browser`)
+    - Full test suite: `pnpm test` (or `pnpm test:unit` and `pnpm test:browser`) and E2E: `pnpm test:e2e`
 
 ## Environment & Minimum Versions
 
-| Tool                    | Minimum Version     | Recommended        | Notes                                                  |
-| :---------------------- | :------------------ | :----------------- | :----------------------------------------------------- |
-| **Node.js**             | `>= 20.18.0 LTS`    | `v22 LTS` or `v24` | JavaScript runtime for Vite, SvelteKit, and Vitest     |
-| **pnpm**                | `>= 9.0.0`          | `v10.x`            | Mandatory package manager (`corepack enable`)          |
-| **Playwright Chromium** | `v1.60.0+`          | Latest             | Optional for domain; required for `test:browser` / E2E |
-| **Rust & Cargo**        | `Stable >= 1.90.0`  | Latest stable      | Only required when compiling desktop app (Tauri v2)    |
-| **C++ Build Tools**     | VS Build Tools 2022 | Latest             | Required MSVC toolchain dependency for Rust on Windows |
+| Tool                    | Minimum Version     | Recommended        | Notes                                                                         |
+| :---------------------- | :------------------ | :----------------- | :---------------------------------------------------------------------------- |
+| **Node.js**             | `>= 20.18.0 LTS`    | `v22 LTS` or `v24` | JavaScript runtime for Vite, SvelteKit, and Vitest                            |
+| **pnpm**                | `>= 9.0.0`          | `v10.x`            | Mandatory package manager (`corepack enable`)                                 |
+| **Playwright Chromium** | `v1.60.0+`          | Latest             | Required for `test:browser` / E2E; CI installs it, local uses Edge by default |
+| **Rust & Cargo**        | `Stable >= 1.90.0`  | Latest stable      | Only required when compiling desktop app (Tauri v2)                           |
+| **C++ Build Tools**     | VS Build Tools 2022 | Latest             | Required MSVC toolchain dependency for Rust on Windows                        |
 
 ## Architecture & Code Boundaries
 

@@ -6,6 +6,8 @@ import { paraglideVitePlugin } from '@inlang/paraglide-js';
 
 import { fileURLToPath } from 'node:url';
 
+import { resolveBrowserChannel } from './src/testing/browser-channel.ts';
+
 export default defineConfig({
 	resolve: {
 		alias: {
@@ -28,10 +30,14 @@ export default defineConfig({
 				extends: './vite.config.ts',
 				test: {
 					name: 'client',
+					// A cold run re-optimizes newly imported modules and can report import
+					// failures that are not regressions (docs/learnings/004). CI is always cold,
+					// so a single bounded retry separates the false red from a real one.
+					retry: process.env.CI ? 1 : 0,
 					browser: {
 						enabled: true,
 						provider: playwright({
-							launchOptions: { channel: 'msedge' }
+							launchOptions: { channel: resolveBrowserChannel() }
 						}),
 						instances: [{ browser: 'chromium', headless: true }]
 					},
