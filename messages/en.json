@@ -99,7 +99,6 @@
 	"planning_cadence_preset_save_title": "Save preset",
 	"planning_cadence_preset_rename_title": "Rename preset",
 	"planning_cadence_preset_name_label": "Name",
-	"planning_cadence_preset_name_placeholder": "e.g. 45/15/30/3",
 	"planning_cadence_preset_save_button": "Save",
 	"planning_cadence_preset_rename_button": "Rename",
 	"planning_cadence_preset_delete_button": "Delete",

@@ -287,6 +287,18 @@ describe('PlanningCadenceConfig (Client Browser)', () => {
 			expect(presetsState.presets).toEqual([createPreset('Deep work')]);
 		});
 
+		it('does not suggest cadence values as the preset name', async () => {
+			const { planningState, presetsState } = await setupScreen();
+			planningState.applyCadence(DEEP_WORK);
+			const screen = await render(PlanningCadenceConfig, { planningState, presetsState });
+
+			await screen.getByRole('button', { name: 'Save current cadence as preset' }).click();
+			const nameInput = screen.getByLabelText('Name');
+
+			await expect.element(nameInput).toBeVisible();
+			await expect.element(nameInput).not.toHaveAttribute('placeholder');
+		});
+
 		it('rejects an empty name', async () => {
 			const { planningState, presetsState } = await setupScreen();
 			const screen = await render(PlanningCadenceConfig, { planningState, presetsState });

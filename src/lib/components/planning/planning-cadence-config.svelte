@@ -243,7 +243,6 @@
 										<Input
 											id={`cadence-preset-rename-${preset.id}`}
 											bind:value={renameName}
-											placeholder={t.planning_cadence_preset_name_placeholder()}
 											aria-invalid={renameError !== null}
 											class="h-8 text-xs"
 										/>
@@ -336,7 +335,6 @@
 							<Input
 								id="cadence-preset-name"
 								bind:value={createName}
-								placeholder={t.planning_cadence_preset_name_placeholder()}
 								aria-invalid={createError !== null}
 								class="h-8 text-xs"
 							/>
