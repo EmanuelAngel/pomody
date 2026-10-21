@@ -96,7 +96,7 @@ src/lib/
 └── components/              # UI semántica acorde a SvelteKit y shadcn-svelte
     ├── ui/                  # Primitivas accesibles de shadcn-svelte
     ├── timer/               # Arco circular zen, controles, task pill
-    ├── settings/            # Drawer de configuración, selector de tema
+    ├── settings/            # Diálogo de configuración con tabs, paneles y selector de idioma
     └── layout/              # Shell principal y header
 ```
 
