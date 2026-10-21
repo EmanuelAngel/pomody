@@ -2,7 +2,7 @@
 
 Bitácora permanente de lecciones arquitectónicas, fundamentos técnicos y descubrimientos de plataforma acumulados durante el desarrollo de Pomody.
 
-A diferencia de `docs/review-findings.md` (que es un buffer efímero para bugs y detalles cosméticos que se eliminan al resolverse), este espacio conserva el **conocimiento técnico y las decisiones de fondo**.
+A diferencia de los issues de GitHub (que trackean trabajo pendiente y se cierran al resolverse), este espacio conserva el **conocimiento técnico y las decisiones de fondo**.
 
 ---
 

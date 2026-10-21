@@ -84,7 +84,7 @@ src/lib/
 4. **Strict Ban on Barrel Files (`index.ts`)**: Barrel files are STRICTLY FORBIDDEN everywhere in Pomody (`src/lib/domain/`, `src/lib/state/`, `src/lib/adapters/`, `src/lib/components/` outside `ui/`). The ONLY exception is `src/lib/components/ui/`, where `index.ts` is generated/maintained as vendor code by the `shadcn-svelte` CLI. All imports across the codebase must be direct to the concrete target file (e.g. `import Header from '$lib/components/layout/header.svelte'`, `import { validateSessionPlan } from '$lib/domain/planning/session-plan.entity'`).
 5. **UI Styling**: Tailwind CSS v4 with semantic CSS variables mapped to Rosé Pine tokens (`[data-theme='dark']`, `[data-theme='dawn']`, `[data-theme='oled']`).
 6. **Git Commits**: Use Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`, `docs:`). Never add AI attribution or "Co-Authored-By" trailers.
-7. **Review Findings Buffer**: Non-core, minor UI/cosmetic findings (<1h) are tracked in [`docs/review-findings.md`](docs/review-findings.md) (ephemeral buffer with WIP limit = 20; fix and delete).
+7. **Review Findings Live in Issues**: Every finding from a code review — cosmetic or not — becomes a GitHub issue with the correct labels (`bug`, `chore`, `area:*`, `size:*`). There is no local findings buffer; `docs/review-findings.md` was retired on 2026-10-20. Untriaged captures carry `inbox`; blocked items carry `needs-decision`.
 
 ---
 
