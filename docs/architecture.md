@@ -107,16 +107,17 @@ src/lib/
 
 Los navegadores y webviews reducen drásticamente la frecuencia de ejecución de `setInterval` (hasta 1 ejecución por minuto) al minimizar la ventana o cambiar de pestaña:
 
-- **Cálculo por delta de timestamps:** El temporizador no resta unidades segundo a segundo, sino que calcula:
-  $$\Delta t = \text{targetEndTime} - \text{Date.now()}$$
-- **Soporte de Web Worker:** Un Web Worker mínimo maneja los ticks de temporización en segundo plano para que las transiciones sonoras y el despacho de eventos ocurran con precisión en el segundo exacto.
+- **Cálculo por delta de timestamps:** el worker emite `Δt = now - lastTimestamp` y la FSM resta ese delta. La precisión depende del reloj, no de que lleguen todos los ticks: un `setInterval` degradado alarga el delta y el bloque termina igual en el instante correcto.
+- **Soporte de Web Worker:** un Web Worker mínimo maneja los ticks de temporización en segundo plano para que las transiciones sonoras y el despacho de eventos ocurran con precisión en el segundo exacto.
+- **Ancla persistida (v0.5):** mientras un bloque corre, el snapshot guarda `endsAt = now + remainingMs`. Un reload o un reinicio de la app restauran el remaining como `endsAt - Date.now()`, sin acumular deriva y sin escribir en cada tick. Ver [`features/timer-persistence/spec.md`](./features/timer-persistence/spec.md).
 
 ### 4.3. Persistencia Unificada mediante el Patrón Repositorio
 
 Para evitar mantener bases de datos disjuntas entre Web y Escritorio:
 
-- **Motor unificado:** Se emplea **IndexedDB** (vía Dexie.js o `idb`) tanto en navegadores modernos como en el WebView2 de Tauri.
-- **Aislamiento por Repositorio:** El dominio interactúa exclusivamente a través de interfaces (`ISessionRepository`, `ITaskRepository`), permitiendo en el futuro conectar un backend remoto o sincronización en la nube sin alterar la lógica de negocio ni la UI.
+- **Motor actual:** todas las preferencias y entidades se persisten en **Web Storage** (`localStorage`, claves `pomody:*`) a través de la interfaz `Storage`, con `InMemoryStorage` como fallback en SSR/Node y en tests. Es el mismo motor en el navegador y en el WebView2 de Tauri, así que no hay adaptadores por plataforma.
+- **Evolución prevista:** IndexedDB (vía Dexie.js o `idb`) sigue siendo la alternativa para el historial y las métricas de `v0.2`; entra detrás de los mismos puertos, sin tocar el dominio.
+- **Aislamiento por Repositorio:** el dominio interactúa exclusivamente a través de interfaces (`ISessionRepository`, `ITaskRepository`, `ITimerStateRepository`), permitiendo en el futuro conectar un backend remoto o sincronización en la nube sin alterar la lógica de negocio ni la UI.
 
 ### 4.4. Sistema de Diseño Rosé Pine con Tokens Semánticos
 
@@ -141,7 +142,13 @@ Para garantizar la predictibilidad temporal y evitar acoplamientos reactivos des
 3. **Planificación y Ciclo de Vida (`SessionPlan` / `PlanningState`)**:
    - Es el dueño de la secuencia proyectada de bloques (`PlanBlock[]`), asignaciones de tareas y avance de hitos.
    - **Mutabilidad Forward-Only**: Al editar configuraciones durante una sesión activa, el bloque en curso permanece inmutable; las nuevas duraciones aplican exclusivamente a los bloques futuros no iniciados (`index > activeBlockIndex`).
-   - **Semántica de `endSession`**: La finalización de sesión ejecuta un reseteo total del plan activo, vacía el borrador de asignaciones (`_draftTaskAssignments`), desasigna la tarea activa en `TasksState` y resetea el temporizador a su estado inicial. Las tareas en el backlog retienen su estado individual (`todo` / `done`) sin alteraciones.
+   - **Semántica de `endSession`**: La finalización de sesión resetea el temporizador, vacía el plan activo y el borrador de asignaciones (`_draftTaskAssignments`), desasigna la tarea activa en `TasksState`, suelta el binding del timer y borra el snapshot persistido. Las tareas en el backlog retienen su estado individual (`todo` / `done`) sin alteraciones.
+
+4. **Persistencia de Ejecución (`ITimerStateRepository` / `pomody:timer-state`, v0.5)**:
+   - El snapshot de ejecución tiene clave, envelope y sanitizer propios: nunca comparte documento con el plan, así que un registro corrupto no contamina al otro.
+   - Se escribe **solo en transiciones** (`start`, `pause`, `resume`, `skip`, `reset`, completación, restore) y guarda un ancla absoluta (`endsAt`) mientras el bloque corre.
+   - Al arrancar, el snapshot se valida contra el bloque activo del plan (`completed` contra el bloque anterior). Cualquier divergencia se descarta en silencio y el timer queda `idle` anclado al bloque activo, que conserva su estado `in_progress`.
+   - El restore corre en `AppBootstrap` antes de renderizar el shell: plan, configuración congelada de la sesión, ejecución y tarea activa. Ver [`features/timer-persistence/spec.md`](./features/timer-persistence/spec.md).
 
 ---
 
