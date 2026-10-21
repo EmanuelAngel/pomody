@@ -12,9 +12,26 @@ import {
 import { buildTimerSnapshotRecord } from '$lib/domain/timer/timer-snapshot.entity';
 import { AppBootstrap, toActivePlanView } from './app-bootstrap.svelte';
 import { PlanningState } from './planning.svelte';
+import { CadencePresetsState } from './cadence-presets.svelte';
 import { TimerState } from './timer.svelte';
 import { TasksState } from './tasks.svelte';
 import type { SessionPlan } from '$lib/domain/planning/session-plan.entity';
+import { FakeCadencePresetRepository } from '$tests/fakes/repositories/fake-cadence-preset-repository';
+import { cadencePresetId, type CadencePreset } from '$lib/domain/planning/cadence-preset.entity';
+
+const DEEP_WORK_PRESET: CadencePreset = {
+	id: cadencePresetId({
+		focusMinutes: 45,
+		shortBreakMinutes: 15,
+		longBreakMinutes: 30,
+		longBreakInterval: 3
+	}),
+	name: 'Deep work',
+	focusMinutes: 45,
+	shortBreakMinutes: 15,
+	longBreakMinutes: 30,
+	longBreakInterval: 3
+};
 
 const NOW = 1_700_000_000_000;
 const CONFIG = {
@@ -40,6 +57,8 @@ describe('AppBootstrap', () => {
 	let timer: TimerState;
 	let tasks: TasksState;
 	let planning: PlanningState;
+	let cadencePresets: CadencePresetsState;
+	let cadencePresetRepo: FakeCadencePresetRepository;
 
 	beforeEach(() => {
 		planRepo = new FakeSessionPlanRepository();
@@ -55,6 +74,8 @@ describe('AppBootstrap', () => {
 		);
 		tasks = new TasksState(new FakeTaskRepository());
 		planning = new PlanningState(planRepo, timer, tasks);
+		cadencePresetRepo = new FakeCadencePresetRepository();
+		cadencePresets = new CadencePresetsState(cadencePresetRepo);
 	});
 
 	function createBootstrap() {
@@ -63,7 +84,8 @@ describe('AppBootstrap', () => {
 			timer,
 			tasks,
 			timerRepository: timerRepo,
-			now: () => NOW
+			now: () => NOW,
+			cadencePresets
 		});
 	}
 
@@ -189,6 +211,18 @@ describe('AppBootstrap', () => {
 		await bootstrap.restore();
 
 		expect(planRepo.getActivePlanCallCount).toBe(1);
+	});
+
+	it('hydrates the saved cadence presets before the shell renders', async () => {
+		cadencePresetRepo = new FakeCadencePresetRepository([DEEP_WORK_PRESET]);
+		cadencePresets = new CadencePresetsState(cadencePresetRepo);
+
+		const bootstrap = createBootstrap();
+		await bootstrap.restore();
+
+		expect(cadencePresets.isLoaded).toBe(true);
+		expect(cadencePresets.presets).toEqual([DEEP_WORK_PRESET]);
+		expect(cadencePresetRepo.loadCallCount).toBe(1);
 	});
 });
 
