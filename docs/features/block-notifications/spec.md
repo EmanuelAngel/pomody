@@ -83,6 +83,7 @@ src/lib/
 │   └── sonner-block-toast.ts                    # canal in-app
 ├── state/block-notice.svelte.ts                 # ajuste, permiso, predicado, copy, dismiss
 ├── components/ui/sonner/                        # vendor shadcn-svelte (sin mode-watcher)
+├── components/notification/block-notice-toaster.svelte  # host del toast, X incluida
 ├── components/settings/panels/behavior-panel.svelte   # switch + línea de permiso
 └── testing/fakes/platform/fake-block-notifier.ts + fake-block-toast.ts
 ```
