@@ -47,10 +47,12 @@ El predicado de «no está mirando» es `document.visibilityState === 'hidden' |
 | Canal               | Plataforma | Implementación                                                        |
 | ------------------- | ---------- | --------------------------------------------------------------------- |
 | Notificación del SO | Desktop    | `IBlockNotifier` → `TauriBlockNotifier` (`tauri-plugin-notification`) |
-| Toast in-app        | Todas      | `sonner` de shadcn-svelte, montado en `+layout.svelte` (PR 2)         |
+| Toast in-app        | Todas      | `BlockToast` → `SonnerBlockToast`, montado en `+layout.svelte`        |
 | Web sin SO          | Web        | `NoopBlockNotifier`; el toast es el único canal                       |
 
 El aviso del SO lleva título por fase completada y cuerpo con la fase siguiente. Un click sobre el aviso enfoca la ventana (`onAction`, `actionId === 'tap'` → `getCurrentWindow().setFocus()`).
+
+El toast no se auto-descarta (`duration: Infinity`): nace cuando el usuario no está mirando, así que borrarlo antes de que vuelva eliminaría el registro. Se cierra al iniciar el siguiente bloque, al resetear, al saltar, o cuando el usuario lo cierra con la X. Vive en el shell principal: en Mini-Player no se monta, porque ese modo ya está suprimido por el predicado.
 
 ## 5. Ajuste y permiso
 
@@ -65,7 +67,7 @@ El aviso del SO lleva título por fase completada y cuerpo con la fase siguiente
 Claves nuevas en `messages/en.json` y `messages/es.json`:
 
 - Switch: `settings_section_notifications`, `settings_section_notifications_description`, `settings_block_notifications`, `settings_block_notifications_description`, `settings_block_notifications_aria`, `settings_block_notifications_permission_denied`.
-- Aviso: `block_notice_title_focus`, `block_notice_title_short_break`, `block_notice_title_long_break`, `block_notice_body_short_break`, `block_notice_body_long_break`, `block_notice_body_focus`.
+- Aviso: `block_notice_title_focus`, `block_notice_title_short_break`, `block_notice_title_long_break`, `block_notice_body_short_break`, `block_notice_body_long_break`, `block_notice_body_focus`, `block_notice_dismiss_aria`.
 
 El título nombra lo que terminó; el cuerpo, lo que el timer va a empezar. `calculateNextCycleStep` es la única autoridad sobre la fase siguiente: el aviso no reimplementa el ciclo.
 
@@ -74,12 +76,15 @@ El título nombra lo que terminó; el cuerpo, lo que el timer va a empezar. `cal
 ```text
 src/lib/
 ├── domain/ports/block-notifier.port.ts          # IBlockNotifier + BlockNotice (puro)
+├── domain/ports/block-toast.port.ts             # BlockToast + BlockToastHandle (puro)
 ├── adapters/notification/
 │   ├── tauri-block-notifier.ts                  # plugin del SO, tap → foco
-│   └── noop-block-notifier.ts                   # web
-├── state/block-notice.svelte.ts                 # ajuste, permiso, predicado, copy
+│   ├── noop-block-notifier.ts                   # web
+│   └── sonner-block-toast.ts                    # canal in-app
+├── state/block-notice.svelte.ts                 # ajuste, permiso, predicado, copy, dismiss
+├── components/ui/sonner/                        # vendor shadcn-svelte (sin mode-watcher)
 ├── components/settings/panels/behavior-panel.svelte   # switch + línea de permiso
-└── testing/fakes/platform/fake-block-notifier.ts
+└── testing/fakes/platform/fake-block-notifier.ts + fake-block-toast.ts
 ```
 
 - `BlockNoticeState` se suscribe a `timerState.onEvent` y posee su ajuste con `LocalSettingsStorage`, igual que `DistractionState`. `timer.svelte.ts` no gana lógica de notificación.
@@ -93,6 +98,7 @@ src/lib/
 | Puerto        | `src/lib/domain/ports/block-notifier.port.test.ts`                 | `server`        |
 | Adaptador SO  | `src/lib/adapters/notification/tauri-block-notifier.test.ts`       | `server`        |
 | Adaptador web | `src/lib/adapters/notification/noop-block-notifier.test.ts`        | `server`        |
+| Toast         | `src/lib/adapters/notification/sonner-block-toast.svelte.test.ts`  | `client`        |
 | Estado        | `src/lib/state/block-notice.test.ts`                               | `server`        |
 | Panel         | `src/lib/components/settings/panels/behavior-panel.svelte.test.ts` | `client`        |
 | Ajuste        | `src/lib/adapters/storage/local-settings-storage.test.ts`          | `server`        |
