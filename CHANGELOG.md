@@ -5,6 +5,72 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.15.0...pomody-v0.1.0) (2026-10-21)
+
+
+### Features
+
+* **analytics:** daily focus counter and completed blocks indicator ([#29](https://github.com/EmanuelAngel/pomody/issues/29)) ([#80](https://github.com/EmanuelAngel/pomody/issues/80)) ([113f225](https://github.com/EmanuelAngel/pomody/commit/113f2255162b2e16cd3f353aa4de8acc59e518c4))
+* **audio:** web audio transition alerts and domain event wiring ([#7](https://github.com/EmanuelAngel/pomody/issues/7)) ([#16](https://github.com/EmanuelAngel/pomody/issues/16)) ([aa60c0c](https://github.com/EmanuelAngel/pomody/commit/aa60c0cbf06374c8d71f41c7e4943c385ea59907))
+* **breaks:** break activities catalog and custom management UI ([#36](https://github.com/EmanuelAngel/pomody/issues/36)) ([#78](https://github.com/EmanuelAngel/pomody/issues/78)) ([15a086c](https://github.com/EmanuelAngel/pomody/commit/15a086c9c1fc941818a16bd874ec844d4ea7feda))
+* **ci:** configure cloudflare workers static assets with wrangler ([0edade2](https://github.com/EmanuelAngel/pomody/commit/0edade2bd37a9f2047e60fb50d800a2ce92a3ff0))
+* **desktop:** add the native window bridge for the distraction detector ([#125](https://github.com/EmanuelAngel/pomody/issues/125)) ([#131](https://github.com/EmanuelAngel/pomody/issues/131)) ([f4d4872](https://github.com/EmanuelAngel/pomody/commit/f4d48722204fc1e4717f19eca0ed076cc9d22578))
+* **desktop:** mini-player compact view component with 3-column topology ([#102](https://github.com/EmanuelAngel/pomody/issues/102)) ([#117](https://github.com/EmanuelAngel/pomody/issues/117)) ([f85fb51](https://github.com/EmanuelAngel/pomody/commit/f85fb51ab8552b6bef5f29e4931f4296057c2bd4))
+* **desktop:** mini-player shell integration, header trigger and shortcut ([#103](https://github.com/EmanuelAngel/pomody/issues/103)) ([#118](https://github.com/EmanuelAngel/pomody/issues/118)) ([de01d87](https://github.com/EmanuelAngel/pomody/commit/de01d8764da14cf02b64152a2129776928345035))
+* **desktop:** native window shell port, adapters, and tauri capabilities ([#101](https://github.com/EmanuelAngel/pomody/issues/101)) ([#115](https://github.com/EmanuelAngel/pomody/issues/115)) ([bbb9a28](https://github.com/EmanuelAngel/pomody/commit/bbb9a28b2138d8c5be83506a6aa2de43462ce40c))
+* **desktop:** scaffold Tauri v2 and setup Windows executable CI workflow ([#18](https://github.com/EmanuelAngel/pomody/issues/18)) ([#19](https://github.com/EmanuelAngel/pomody/issues/19)) ([a234c35](https://github.com/EmanuelAngel/pomody/commit/a234c35cf3b17792690077a4cfa9a0efb2c62909))
+* **desktop:** system tray integration with Open/Exit menu ([#120](https://github.com/EmanuelAngel/pomody/issues/120)) ([62674a7](https://github.com/EmanuelAngel/pomody/commit/62674a7918eb591ed5ed34d3a982a9f5cd873420))
+* **distraction:** add pure domain and ports for the detector ([#128](https://github.com/EmanuelAngel/pomody/issues/128)) ([f150fa2](https://github.com/EmanuelAngel/pomody/commit/f150fa215bd42f2ae0d70a9a40dcd7fdb938602b))
+* **distraction:** OS notice, poll loop and toast actions ([#127](https://github.com/EmanuelAngel/pomody/issues/127)) ([#133](https://github.com/EmanuelAngel/pomody/issues/133)) ([6232c9f](https://github.com/EmanuelAngel/pomody/commit/6232c9f1882959234c01f552a6441a8eaed39cbb))
+* **distraction:** persist rules, daily silences and the detector switch ([#124](https://github.com/EmanuelAngel/pomody/issues/124)) ([#130](https://github.com/EmanuelAngel/pomody/issues/130)) ([e6b378c](https://github.com/EmanuelAngel/pomody/commit/e6b378c59ee825bb418265f97a38bfa5a7f7a6fc))
+* **domain:** implement timer finite state machine and transitions ([#2](https://github.com/EmanuelAngel/pomody/issues/2)) ([7a99b38](https://github.com/EmanuelAngel/pomody/commit/7a99b389f5ed978c1229f6ebc55ca26eb3a76d93)), closes [#1](https://github.com/EmanuelAngel/pomody/issues/1)
+* **domain:** task entities, repository port and local storage persistence adapter ([#22](https://github.com/EmanuelAngel/pomody/issues/22)) ([#26](https://github.com/EmanuelAngel/pomody/issues/26)) ([7d8fab6](https://github.com/EmanuelAngel/pomody/commit/7d8fab6878dabacf7d22e513c0d46b070963c664))
+* **i18n:** break activities and task dialogs localization (Slice 2.4) ([#110](https://github.com/EmanuelAngel/pomody/issues/110)) ([981e85a](https://github.com/EmanuelAngel/pomody/commit/981e85ac2c081fbfe77a1ad7a170037df0f97b19))
+* **i18n:** layout shell localization and settings drawer copy cleanup (Slice 2.5) ([#112](https://github.com/EmanuelAngel/pomody/issues/112)) ([bb4c1bb](https://github.com/EmanuelAngel/pomody/commit/bb4c1bb2e5e4b10d8c5ca06506593e02c438fb99))
+* **i18n:** planning view and session budget localization (Slice 2.3) ([#109](https://github.com/EmanuelAngel/pomody/issues/109)) ([35d6471](https://github.com/EmanuelAngel/pomody/commit/35d64718e4815146624f2c63fa09184eafecb41a))
+* **i18n:** runtime setup and test isolation harness (Slice 2.0) ([#105](https://github.com/EmanuelAngel/pomody/issues/105)) ([1d2b304](https://github.com/EmanuelAngel/pomody/commit/1d2b304f70f198b459c618b348bbb5e4e6f07c8d))
+* **i18n:** settings drawer and accessible language selector (Slice 2.2) ([#108](https://github.com/EmanuelAngel/pomody/issues/108)) ([d35102f](https://github.com/EmanuelAngel/pomody/commit/d35102f5cfe5e636e52ae4df9ad89a69849150a3))
+* **i18n:** timer view and controls localization (Slice 2.1) ([#107](https://github.com/EmanuelAngel/pomody/issues/107)) ([882f771](https://github.com/EmanuelAngel/pomody/commit/882f77193c8a5817d69267c94431f4b6cd470107))
+* **illustration:** living companion background ([#114](https://github.com/EmanuelAngel/pomody/issues/114)) ([#134](https://github.com/EmanuelAngel/pomody/issues/134)) ([44e13f1](https://github.com/EmanuelAngel/pomody/commit/44e13f181449ab20b52c6f4a44f52693566abd32))
+* **planning:** cadence presets, progressive disclosure, and settings bounds ([#59](https://github.com/EmanuelAngel/pomody/issues/59)) ([#68](https://github.com/EmanuelAngel/pomody/issues/68)) ([168e6fe](https://github.com/EmanuelAngel/pomody/commit/168e6fe75281d8ffb3cc80925bedaffa8306f52d))
+* **planning:** improve semantic markup, accessibility and live block progress ([#76](https://github.com/EmanuelAngel/pomody/issues/76)) ([8342a2e](https://github.com/EmanuelAngel/pomody/commit/8342a2e336560358ee67318a237d0588996ee9f9))
+* **planning:** session budget and timeline projection by blocks or end time ([#28](https://github.com/EmanuelAngel/pomody/issues/28)) ([#37](https://github.com/EmanuelAngel/pomody/issues/37)) ([9a58c58](https://github.com/EmanuelAngel/pomody/commit/9a58c587bb92572d976118dd0dacbc1029331e90))
+* **planning:** synchronize timeline, task assignments and timer settings ([#48](https://github.com/EmanuelAngel/pomody/issues/48)) ([e996915](https://github.com/EmanuelAngel/pomody/commit/e996915a52a5ccff46dde2563289f59ce045058f))
+* **planning:** task assignment quick creation and timeline drag-and-drop ([#63](https://github.com/EmanuelAngel/pomody/issues/63)) ([#77](https://github.com/EmanuelAngel/pomody/issues/77)) ([9458b53](https://github.com/EmanuelAngel/pomody/commit/9458b5385f60a8d3f1fed5d657d0653fadb3eb64))
+* **state:** reactive timer composition root and web worker ticker adapter ([#8](https://github.com/EmanuelAngel/pomody/issues/8)) ([a9d1e36](https://github.com/EmanuelAngel/pomody/commit/a9d1e36cdde379a8d3320291c60b5a40397b1b49))
+* **storage:** persist timer settings and theme preference to local storage ([#15](https://github.com/EmanuelAngel/pomody/issues/15)) ([#17](https://github.com/EmanuelAngel/pomody/issues/17)) ([47a32b9](https://github.com/EmanuelAngel/pomody/commit/47a32b9a804b26c8ee5fe819ab7f7dea3b41baef))
+* **ui:** add the distraction view with the window picker ([#126](https://github.com/EmanuelAngel/pomody/issues/126)) ([#132](https://github.com/EmanuelAngel/pomody/issues/132)) ([5fa91fa](https://github.com/EmanuelAngel/pomody/commit/5fa91fa62a35762d1df0c7e451d9590472f63423))
+* **ui:** adopt architectural minimalist navigation bar ([dd47766](https://github.com/EmanuelAngel/pomody/commit/dd47766e35b7ae1fc91f38a8e0a28104a5f80c95))
+* **ui:** automatic mindful break revitalization suggestions ([#25](https://github.com/EmanuelAngel/pomody/issues/25)) ([#34](https://github.com/EmanuelAngel/pomody/issues/34)) ([178bfe8](https://github.com/EmanuelAngel/pomody/commit/178bfe849d807ab76d2df840161fea589bd89039))
+* **ui:** interactive task pill and planning view tab ([#23](https://github.com/EmanuelAngel/pomody/issues/23)) ([#32](https://github.com/EmanuelAngel/pomody/issues/32)) ([2dab044](https://github.com/EmanuelAngel/pomody/commit/2dab04457e90b6d1b80974e12de0f54a17e5fef3))
+* **ui:** layout shell and top navigation tabs ([#14](https://github.com/EmanuelAngel/pomody/issues/14)) ([f3092a6](https://github.com/EmanuelAngel/pomody/commit/f3092a6e06fe79be5009cabb15df0ef547249d2d))
+* **ui:** minimalist timer view and zen mode controls ([#4](https://github.com/EmanuelAngel/pomody/issues/4)) ([#9](https://github.com/EmanuelAngel/pomody/issues/9)) ([0a0ffc7](https://github.com/EmanuelAngel/pomody/commit/0a0ffc7d24757b05070204c53867a102e6630906))
+* **ui:** settings drawer for interval durations and theme selector ([#5](https://github.com/EmanuelAngel/pomody/issues/5)) ([#10](https://github.com/EmanuelAngel/pomody/issues/10)) ([77efed8](https://github.com/EmanuelAngel/pomody/commit/77efed877fcdef429420619eb4aab9dd1718dc1b))
+
+
+### Bug Fixes
+
+* **ci:** declare workspace packages and add spa redirects for cloudflare ([fe967c3](https://github.com/EmanuelAngel/pomody/commit/fe967c31ef9938728fca562945f68a05b6020dee))
+* **ci:** ignore CHANGELOG.md in prettier and bind tauri version to package.json ([a5198a1](https://github.com/EmanuelAngel/pomody/commit/a5198a1152f9d37f1c8b98c7d6729c6566efbc9a))
+* **ci:** remove redundant _redirects for workers static assets ([4bee0a5](https://github.com/EmanuelAngel/pomody/commit/4bee0a5c76762b45cb5a968934b3f6a01880fdf8))
+* **ci:** set release please manifest baseline to 0.0.0 for initial v0.1.0 release ([1377207](https://github.com/EmanuelAngel/pomody/commit/1377207245fef6510b14cabd755164177454365e))
+* **planning:** confirmation guard for end session and quick error recovery (UX-01, UX-02) ([#64](https://github.com/EmanuelAngel/pomody/issues/64)) ([4486759](https://github.com/EmanuelAngel/pomody/commit/4486759aa274da8f7e3ed107b82bd1a95bb8a554))
+* **settings:** persist interval values up to the new slider limits ([#71](https://github.com/EmanuelAngel/pomody/issues/71)) ([#72](https://github.com/EmanuelAngel/pomody/issues/72)) ([a027180](https://github.com/EmanuelAngel/pomody/commit/a027180f022dfc67210270d43417cc76b1a37f36))
+* **ui:** eliminate font blur and improve timer clarity on desktop ([7a4c4b5](https://github.com/EmanuelAngel/pomody/commit/7a4c4b539ab61fc5e7303032bd91a4c4e468aa84))
+* **ui:** eliminate layout shift when transitioning between timer pills ([#46](https://github.com/EmanuelAngel/pomody/issues/46)) ([3ed2e69](https://github.com/EmanuelAngel/pomody/commit/3ed2e697f6f74f1e348c34c65694f4e0f6e8459f))
+* **ui:** improve mode badge contrast and dynamic document title (JD-05, JD-15) ([#55](https://github.com/EmanuelAngel/pomody/issues/55)) ([1a2003a](https://github.com/EmanuelAngel/pomody/commit/1a2003af9f643d9ed6c90c2e0d65e4d0f1484d11)), closes [#21](https://github.com/EmanuelAngel/pomody/issues/21)
+* **ui:** prevent task title truncation in planning view and add tooltip in task pill ([#40](https://github.com/EmanuelAngel/pomody/issues/40)) ([2de8395](https://github.com/EmanuelAngel/pomody/commit/2de8395ea030899ba832748c731c056161a1f2a4))
+
+
+### Performance Improvements
+
+* **tooling:** add persistent cache to lint and format scripts ([e8c1fb0](https://github.com/EmanuelAngel/pomody/commit/e8c1fb05f884d52cc771f0456491423307411307))
+
+
+### Miscellaneous Chores
+
+* release 0.1.0 ([01440a0](https://github.com/EmanuelAngel/pomody/commit/01440a04a1e4ae46c2ee6075a49de50e9c93c035))
+
 ## [0.15.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.14.0...pomody-v0.15.0) (2026-10-21)
 
 
