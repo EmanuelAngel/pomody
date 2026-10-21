@@ -64,6 +64,7 @@ describe('LocalSettingsStorage', () => {
 				soundEnabled: false,
 				revitalizationEnabled: false,
 				distractionDetectorEnabled: true,
+				blockNotificationsEnabled: false,
 				theme: 'dawn',
 				illustration: {
 					enabled: true,
@@ -84,6 +85,7 @@ describe('LocalSettingsStorage', () => {
 			expect(envelope.soundEnabled).toBe(false);
 			expect(envelope.revitalizationEnabled).toBe(false);
 			expect(envelope.distractionDetectorEnabled).toBe(true);
+			expect(envelope.blockNotificationsEnabled).toBe(false);
 			expect(envelope.theme).toBe('dawn');
 
 			const loaded = storageAdapter.loadSettings();
@@ -416,6 +418,53 @@ describe('LocalSettingsStorage', () => {
 
 			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({}));
 			expect(storageAdapter.loadSettings().distractionDetectorEnabled).toBe(false);
+		});
+
+		it('defaults block notifications to on', () => {
+			expect(storageAdapter.loadSettings().blockNotificationsEnabled).toBe(true);
+		});
+
+		it('preserves blockNotificationsEnabled when updating other settings', () => {
+			storageAdapter.saveSettings({ blockNotificationsEnabled: false });
+			expect(storageAdapter.loadSettings().blockNotificationsEnabled).toBe(false);
+
+			storageAdapter.saveSettings({ theme: 'oled' });
+			expect(storageAdapter.loadSettings().blockNotificationsEnabled).toBe(false);
+			expect(storageAdapter.loadSettings().theme).toBe('oled');
+		});
+
+		it('validates blockNotificationsEnabled boolean type and falls back to the default on', () => {
+			mockStorage.setItem(
+				SETTINGS_STORAGE_KEY,
+				JSON.stringify({ blockNotificationsEnabled: false })
+			);
+			expect(storageAdapter.loadSettings().blockNotificationsEnabled).toBe(false);
+
+			mockStorage.setItem(
+				SETTINGS_STORAGE_KEY,
+				JSON.stringify({ blockNotificationsEnabled: 'false' })
+			);
+			expect(storageAdapter.loadSettings().blockNotificationsEnabled).toBe(true);
+
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ blockNotificationsEnabled: 0 }));
+			expect(storageAdapter.loadSettings().blockNotificationsEnabled).toBe(true);
+
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({}));
+			expect(storageAdapter.loadSettings().blockNotificationsEnabled).toBe(true);
+		});
+
+		it('defaults block notifications to on when the stored envelope predates them', () => {
+			mockStorage.setItem(
+				SETTINGS_STORAGE_KEY,
+				JSON.stringify({
+					version: 1,
+					timer: DEFAULT_TIMER_CONFIG,
+					soundEnabled: true,
+					theme: 'dark'
+				})
+			);
+
+			expect(storageAdapter.loadSettings().blockNotificationsEnabled).toBe(true);
 		});
 
 		it('validates theme type and falls back invalid themes to default dark', () => {

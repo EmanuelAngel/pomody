@@ -29,6 +29,7 @@ export interface StoredSettingsEnvelope {
 	readonly soundEnabled: boolean;
 	readonly revitalizationEnabled?: boolean;
 	readonly distractionDetectorEnabled?: boolean;
+	readonly blockNotificationsEnabled?: boolean;
 	readonly theme: Theme;
 	readonly illustration?: IllustrationSettings;
 }
@@ -136,6 +137,10 @@ export class LocalSettingsStorage implements ISettingsStorage {
 				patch.distractionDetectorEnabled !== undefined
 					? patch.distractionDetectorEnabled
 					: current.distractionDetectorEnabled,
+			blockNotificationsEnabled:
+				patch.blockNotificationsEnabled !== undefined
+					? patch.blockNotificationsEnabled
+					: current.blockNotificationsEnabled,
 			theme: patch.theme !== undefined ? patch.theme : current.theme,
 			illustration: {
 				...current.illustration,
@@ -151,6 +156,7 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			soundEnabled: validated.soundEnabled,
 			revitalizationEnabled: validated.revitalizationEnabled,
 			distractionDetectorEnabled: validated.distractionDetectorEnabled,
+			blockNotificationsEnabled: validated.blockNotificationsEnabled,
 			theme: validated.theme,
 			illustration: validated.illustration
 		};
@@ -236,6 +242,10 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			? obj.distractionDetectorEnabled
 			: DEFAULT_USER_SETTINGS.distractionDetectorEnabled;
 
+		const blockNotificationsEnabled = isValidBoolean(obj.blockNotificationsEnabled)
+			? obj.blockNotificationsEnabled
+			: DEFAULT_USER_SETTINGS.blockNotificationsEnabled;
+
 		const theme = isValidTheme(obj.theme) ? obj.theme : DEFAULT_USER_SETTINGS.theme;
 
 		const illustrationObj =
@@ -271,6 +281,7 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			soundEnabled,
 			revitalizationEnabled,
 			distractionDetectorEnabled,
+			blockNotificationsEnabled,
 			theme,
 			illustration: {
 				enabled: illustrationEnabled,

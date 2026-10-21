@@ -34,6 +34,11 @@ export interface UserSettings {
 	readonly revitalizationEnabled: boolean;
 	/** Global switch of the distraction detector. Off by default: the user opts in. */
 	readonly distractionDetectorEnabled: boolean;
+	/**
+	 * Whether a finished block announces itself while the user is elsewhere. On by default:
+	 * the audio chime alone is lost when Pomody is behind another window.
+	 */
+	readonly blockNotificationsEnabled: boolean;
 	readonly theme: Theme;
 	readonly illustration: IllustrationSettings;
 }
@@ -46,6 +51,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = Object.freeze({
 	soundEnabled: true,
 	revitalizationEnabled: true,
 	distractionDetectorEnabled: false,
+	blockNotificationsEnabled: true,
 	theme: 'dark',
 	illustration: DEFAULT_ILLUSTRATION_SETTINGS
 });

@@ -22,6 +22,7 @@ describe('Settings Storage Port & UserSettings Model', () => {
 				soundEnabled: true,
 				revitalizationEnabled: true,
 				distractionDetectorEnabled: false,
+				blockNotificationsEnabled: true,
 				theme: 'dark',
 				illustration: {
 					enabled: false,
@@ -34,6 +35,7 @@ describe('Settings Storage Port & UserSettings Model', () => {
 			expect(DEFAULT_USER_SETTINGS.soundEnabled).toBe(true);
 			expect(DEFAULT_USER_SETTINGS.revitalizationEnabled).toBe(true);
 			expect(DEFAULT_USER_SETTINGS.distractionDetectorEnabled).toBe(false);
+			expect(DEFAULT_USER_SETTINGS.blockNotificationsEnabled).toBe(true);
 			expect(DEFAULT_USER_SETTINGS.theme).toBe('dark');
 			expect(DEFAULT_USER_SETTINGS.illustration).toBe(DEFAULT_ILLUSTRATION_SETTINGS);
 			expect(DEFAULT_USER_SETTINGS.illustration.enabled).toBe(false);
