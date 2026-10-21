@@ -7,15 +7,23 @@
 		distractionState as defaultDistractionState,
 		type DistractionState
 	} from '$lib/state/distractionState.svelte';
+	import {
+		blockNoticeState as defaultBlockNoticeState,
+		type BlockNoticeState
+	} from '$lib/state/block-notice.svelte';
 	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		timerState?: TimerState;
 		distractionState?: DistractionState;
+		blockNoticeState?: BlockNoticeState;
 	}
 
-	let { timerState = defaultTimerState, distractionState = defaultDistractionState }: Props =
-		$props();
+	let {
+		timerState = defaultTimerState,
+		distractionState = defaultDistractionState,
+		blockNoticeState = defaultBlockNoticeState
+	}: Props = $props();
 
 	/** No detector surface on a platform that cannot read other windows (spec §1). */
 	const distractionDetectorSupported = $derived(distractionState.isSupported);
@@ -44,6 +52,40 @@
 				aria-label={t.settings_sound_alerts_aria()}
 			/>
 		</div>
+	</div>
+
+	<Separator />
+
+	<!-- Block-End Notifications -->
+	<div class="flex flex-col gap-3">
+		<div>
+			<h3 class="text-sm font-semibold tracking-wide text-foreground">
+				{t.settings_section_notifications()}
+			</h3>
+			<p class="mt-0.5 text-xs text-muted-foreground">
+				{t.settings_section_notifications_description()}
+			</p>
+		</div>
+
+		<div class="flex items-center justify-between rounded-lg border border-border p-3.5 shadow-xs">
+			<div class="flex flex-col gap-0.5">
+				<span class="text-xs font-medium text-foreground">{t.settings_block_notifications()}</span>
+				<span class="text-xs text-muted-foreground"
+					>{t.settings_block_notifications_description()}</span
+				>
+			</div>
+			<Switch
+				checked={blockNoticeState.enabled}
+				onCheckedChange={(checked) => blockNoticeState.setEnabled(checked)}
+				aria-label={t.settings_block_notifications_aria()}
+			/>
+		</div>
+
+		{#if blockNoticeState.permissionDenied}
+			<p class="text-xs text-destructive" role="status">
+				{t.settings_block_notifications_permission_denied()}
+			</p>
+		{/if}
 	</div>
 
 	<Separator />
