@@ -268,6 +268,18 @@ export class TimerFSM {
 		this.notify();
 	}
 
+	/**
+	 * Completely resets the timer to its initial state: idle, focus mode, round 1, full duration.
+	 */
+	public resetToInitial(): void {
+		this._state = 'idle';
+		this._mode = 'focus';
+		this._currentRound = 1;
+		this._durationMs = this.getModeDurationMs(this._mode);
+		this._remainingMs = this._durationMs;
+		this.notify();
+	}
+
 	public skip(): void {
 		const mode = this._mode;
 		const round = this._currentRound;

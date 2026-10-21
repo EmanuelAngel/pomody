@@ -723,6 +723,7 @@ export class PlanningState {
 		}
 
 		if (timer) {
+			timer.resetToInitial();
 			timer.updateConfig(plan.sessionConfig);
 			timer.start();
 		}
@@ -737,10 +738,16 @@ export class PlanningState {
 		await this.repository.clearActivePlan();
 		this._activePlan = null;
 		this._activeBlockIndex = 0;
+		this._draftTaskAssignments.clear();
+
+		const tasks = this.tasksState;
+		if (tasks) {
+			tasks.setActiveTask(null);
+		}
 
 		const timer = customTimerState ?? this.timerState;
 		if (timer) {
-			timer.reset();
+			timer.resetToInitial();
 		}
 	}
 

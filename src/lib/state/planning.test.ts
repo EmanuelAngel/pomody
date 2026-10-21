@@ -15,11 +15,13 @@ describe('PlanningState', () => {
 	let repo: FakeSessionPlanRepository;
 	let state: PlanningState;
 	let timer: TimerState;
+	let ticker: FakeTicker;
 	let tasks: TasksState;
 
 	beforeEach(() => {
 		repo = new FakeSessionPlanRepository();
-		timer = new TimerState(undefined, new FakeTicker(), new FakeAudioNotifier());
+		ticker = new FakeTicker();
+		timer = new TimerState(undefined, ticker, new FakeAudioNotifier());
 		tasks = new TasksState(new FakeTaskRepository());
 		state = createPlanningState(repo, timer, tasks);
 	});
@@ -241,6 +243,23 @@ describe('PlanningState', () => {
 			expect(customTimerSpy).toHaveBeenCalled();
 			expect(customTasksSpy).toHaveBeenCalledWith(customTaskId);
 		});
+
+		it('should unconditionally reset a running or dirty timer when starting a new session (#153)', async () => {
+			timer.start();
+			timer.skip();
+			timer.start();
+			ticker.simulateTick(1000);
+			expect(timer.mode).toBe('shortBreak');
+			expect(timer.remainingMs).toBeLessThan(timer.durationMs);
+
+			await state.startSession();
+
+			expect(timer.state).toBe('running');
+			expect(timer.mode).toBe('focus');
+			expect(timer.currentRound).toBe(1);
+			expect(timer.remainingMs).toBe(state.activePlan!.blocks[0].durationSeconds * 1000);
+			expect(timer.durationMs).toBe(state.activePlan!.blocks[0].durationSeconds * 1000);
+		});
 	});
 
 	describe('onTimerBlockCompleted', () => {
@@ -306,6 +325,33 @@ describe('PlanningState', () => {
 			expect(state.isSessionActive).toBe(false);
 			expect(repo.clearActivePlanCallCount).toBe(1);
 			expect(resetSpy).toHaveBeenCalled();
+		});
+
+		it('should reset the whole session including assigned tasks and draft assignments (#154)', async () => {
+			await tasks.createTask('Task 1');
+			await tasks.createTask('Task 2');
+			const task1 = tasks.pendingTasks[0];
+			const task2 = tasks.pendingTasks[1];
+
+			state.assignTaskToBlock(0, task1.id);
+			state.assignTaskToBlock(2, task2.id);
+			expect(state.draftTaskAssignments.size).toBe(2);
+
+			await state.startSession();
+			expect(tasks.activeTaskId).toBe(task1.id);
+			expect(state.isSessionActive).toBe(true);
+
+			await state.endSession();
+
+			expect(state.isSessionActive).toBe(false);
+			expect(state.activePlan).toBeNull();
+			expect(state.activeBlockIndex).toBe(0);
+			expect(state.draftTaskAssignments.size).toBe(0);
+			expect(tasks.activeTaskId).toBeNull();
+
+			expect(tasks.tasks.length).toBe(2);
+			expect(tasks.tasks[0].id).toBe(task1.id);
+			expect(tasks.tasks[1].id).toBe(task2.id);
 		});
 	});
 
