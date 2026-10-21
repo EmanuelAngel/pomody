@@ -17,14 +17,14 @@
 
 ## Tasks
 
-| ID  | Spec           | Route  | Status  | Commit      |
-| --- | -------------- | ------ | ------- | ----------- |
-| T1  | S6, S7         | inline | done    | 5ecee71     |
-| T2  | S4             | inline | done    | 03ef2c9     |
-| T3  | S1, S2, S5, S7 | inline | done    | 0993bc2     |
-| T4  | S4, S5         | inline | done    | fab0346     |
-| T5  | S8             | inline | done    | this commit |
-| T6  | S3 (toast)     | inline | pending | —           |
+| ID  | Spec           | Route  | Status | Commit      |
+| --- | -------------- | ------ | ------ | ----------- |
+| T1  | S6, S7         | inline | done   | 5ecee71     |
+| T2  | S4             | inline | done   | 03ef2c9     |
+| T3  | S1, S2, S5, S7 | inline | done   | 0993bc2     |
+| T4  | S4, S5         | inline | done   | fab0346     |
+| T5  | S8             | inline | done   | this commit |
+| T6  | S3 (toast)     | inline | done   | aa41d51     |
 
 - **T1** Port + `TauriBlockNotifier` + `NoopBlockNotifier` + tests.
 - **T2** `blockNotificationsEnabled` in the settings port, envelope, sanitizer, fake and tests.
@@ -43,3 +43,5 @@
 - **L6 (decision).** Facts verified before designing: no toast infrastructure exists; `tauri-plugin-notification ~2.6.0` and `notification:default` are already wired for the distraction detector; completion today only plays audio (`timer.svelte.ts:198-202`); `PlanningState` does not advance the next block on its own; `onAction` documents `tap` on desktop; `svelte-sonner` is absent.
 - **L7 (evidence, T1–T4).** 25 port/adapter tests, 46 settings tests, 16 state tests and 3 panel tests green. Full suite 94 files / 1376 tests, `pnpm check` 0 errors, `pnpm lint` clean, E2E 12/12. Differential check of `LocalSettingsStorage` against `874fb86` over seven pre-existing patches: same envelope plus `blockNotificationsEnabled: true`, same load result, 14/14.
 - **L8 (decision, during T3).** `setEnabled` is synchronous and optimistic: it flips the preference first and reverts on a denied permission. Binding a local mirror with `bind:checked` left the thumb on after the denial because the prop never changed value; the optimistic flip both fixes the UI and matches the "the switch never lies" rule.
+- **L9 (evidence, T6).** `svelte-sonner` installed through the shadcn-svelte CLI; its generated component imported `mode-watcher`, removed from `package.json` and the lockfile because the app owns three Rosé Pine themes and the layout supplies sonner's light/dark hint. State suite 25 tests, sonner browser test 1, full suite 95 files / 1386 tests, `pnpm check` 0 errors, `pnpm lint` clean, E2E 12/12.
+- **L10 (independent verification).** The verifier confirmed S1, S2, S4-S8 plus invariants 1-6 with its own probes and a baseline serialization differential, and found one blocker: `svelte-sonner` defaults `closeButton` to false, so the persistent toast had no dismiss control and `block_notice_dismiss_aria` was dead config. Correction batch: `b6b031e` (new `block-notice-toaster.svelte` host with `closeButton` and the i18n label, layout renders it, regression test that crosses the 4500 ms lifetime boundary and asserts the X removes the notice), `63024bb` and `28e2e94` (restore the baseline `@lucide/svelte` range and resolution that the registry CLI had bumped). Limited recheck: S3 met, advisory resolved. Gate after the fix: `pnpm check` 0 errors, `pnpm lint` clean, `pnpm test` 96 files / 1387 tests, E2E 12/12.

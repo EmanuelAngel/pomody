@@ -1,14 +1,17 @@
 import { NoopBlockNotifier } from '../adapters/notification/noop-block-notifier';
+import { SonnerBlockToast } from '../adapters/notification/sonner-block-toast';
 import { TauriBlockNotifier } from '../adapters/notification/tauri-block-notifier';
 import { LocalSettingsStorage } from '../adapters/storage/local-settings-storage';
 import { isTauriRuntimeAvailable } from '../adapters/window/tauri-window-shell';
 import type { BlockNotice, IBlockNotifier } from '../domain/ports/block-notifier.port';
+import type { BlockToast, BlockToastHandle } from '../domain/ports/block-toast.port';
 import type { ISettingsStorage } from '../domain/ports/settings-storage.port';
 import {
 	calculateNextCycleStep,
 	type DomainEvent,
 	type TimerConfig,
 	type TimerMode,
+	type TimerSnapshot,
 	type Unsubscribe
 } from '../domain/timer/timer-fsm';
 import { t } from '$lib/state/locale.svelte';
@@ -16,11 +19,14 @@ import { windowState } from './windowState.svelte';
 import { timerState } from './timer.svelte';
 
 /**
- * The slice of the timer this state needs: when a block completed, and how long the cycle
- * is. Both `TimerFSM` and `TimerState` satisfy it, so tests drive a real FSM.
+ * The slice of the timer this state needs: when a block completed, how long the cycle is,
+ * and when the timer leaves the completed state. Both `TimerFSM` and `TimerState` satisfy
+ * it, so tests drive a real FSM.
  */
 export interface BlockNoticeTimerSource {
 	readonly config: Pick<TimerConfig, 'roundsBeforeLongBreak'>;
+	readonly snapshot: TimerSnapshot;
+	subscribe(subscriber: (snapshot: TimerSnapshot) => void): Unsubscribe;
 	onEvent(subscriber: (event: DomainEvent) => void): Unsubscribe;
 }
 
@@ -29,6 +35,7 @@ export interface BlockNoticeStateOptions {
 	readonly timer: BlockNoticeTimerSource;
 	readonly settingsStorage?: ISettingsStorage;
 	readonly notifier?: IBlockNotifier;
+	readonly toast?: BlockToast;
 	/** True while the window is hidden or unfocused. Injected so Node tests never touch the DOM. */
 	readonly isWindowUnattended?: () => boolean;
 	/** True while the window stays on top (Mini-Player), where the phase change is already visible. */
@@ -53,23 +60,30 @@ function isWindowUnattended(): boolean {
  * natural completion notifies only while the user cannot see the window, and never while
  * an always-on-top window is already showing the phase change.
  *
- * The in-app toast of PR 2 joins this same state, so both channels share the switch and the
- * predicate instead of duplicating them.
+ * The in-app toast joins this same state, so both channels share the switch and the
+ * predicate instead of duplicating them, and the toast is the one that survives until the
+ * user comes back: it is dismissed when the timer leaves `completed`.
  */
 export class BlockNoticeState {
 	private readonly settingsStorage: ISettingsStorage;
 	private readonly notifier: IBlockNotifier;
+	private readonly toast: BlockToast;
 	private readonly timer: BlockNoticeTimerSource;
 	private readonly isWindowUnattended: () => boolean;
 	private readonly isAlwaysOnTop: () => boolean;
 	private readonly unsubscribe: Unsubscribe;
+	private readonly unsubscribeSnapshot: Unsubscribe;
 
 	private _enabled = $state<boolean>(false);
 	private _permissionDenied = $state<boolean>(false);
 
+	/** Handle of the toast on screen, so the next transition can take it back. */
+	private liveToast: BlockToastHandle | null = null;
+
 	constructor(options: BlockNoticeStateOptions) {
 		this.settingsStorage = options.settingsStorage ?? new LocalSettingsStorage();
 		this.notifier = options.notifier ?? createDefaultBlockNotifier();
+		this.toast = options.toast ?? new SonnerBlockToast();
 		this.timer = options.timer;
 		this.isWindowUnattended = options.isWindowUnattended ?? isWindowUnattended;
 		this.isAlwaysOnTop = options.isAlwaysOnTop ?? (() => windowState.isAlwaysOnTop);
@@ -79,6 +93,7 @@ export class BlockNoticeState {
 		this._enabled = this.settingsStorage.loadSettings().blockNotificationsEnabled;
 
 		this.unsubscribe = this.timer.onEvent((event) => this.handleEvent(event));
+		this.unsubscribeSnapshot = this.timer.subscribe((snapshot) => this.handleSnapshot(snapshot));
 	}
 
 	public get enabled(): boolean {
@@ -93,6 +108,8 @@ export class BlockNoticeState {
 	/** Unsubscribes from the timer. The app has no use for it; tests keep them isolated. */
 	public dispose(): void {
 		this.unsubscribe();
+		this.unsubscribeSnapshot();
+		this.dismissToast();
 	}
 
 	/**
@@ -168,12 +185,53 @@ export class BlockNoticeState {
 		);
 		const notice = buildNotice(event.mode, step.nextMode);
 
+		this.showToast(notice);
+
 		try {
 			void Promise.resolve(this.notifier.notify(notice)).catch(() => {
 				// A lost notice must never break the end of a block (spec S3).
 			});
 		} catch {
 			// A backend that throws synchronously is just as lost, and even less loud.
+		}
+	}
+
+	/**
+	 * Takes the toast back as soon as the timer leaves `completed`.
+	 *
+	 * That single condition covers the three ways out: starting the next block, resetting
+	 * the current one, and skipping it. Subscribing to the snapshot (and not to the events)
+	 * is what makes `start` and `reset` dismiss a notice the events never announce.
+	 */
+	private handleSnapshot(snapshot: TimerSnapshot): void {
+		if (this.liveToast !== null && snapshot.state !== 'completed') {
+			this.dismissToast();
+		}
+	}
+
+	private showToast(notice: BlockNotice): void {
+		this.dismissToast();
+
+		try {
+			this.liveToast = this.toast.show(notice);
+		} catch {
+			// A toast that cannot be drawn is a lost toast, never a broken block.
+			this.liveToast = null;
+		}
+	}
+
+	private dismissToast(): void {
+		const handle = this.liveToast;
+		if (handle === null) {
+			return;
+		}
+
+		this.liveToast = null;
+
+		try {
+			this.toast.dismiss(handle);
+		} catch {
+			// A stale handle is a no-op by contract; nothing to do if a backend disagrees.
 		}
 	}
 }

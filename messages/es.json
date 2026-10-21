@@ -321,6 +321,7 @@
 	"block_notice_body_short_break": "Tomate un descanso corto.",
 	"block_notice_body_long_break": "Tomate un descanso largo.",
 	"block_notice_body_focus": "Volvé al foco.",
+	"block_notice_dismiss_aria": "Descartar aviso de fin de bloque",
 	"settings_section_illustration_description": "Un paisaje pixel art tranquilo que crece con los minutos de foco acumulados hoy.",
 	"settings_illustration_enabled": "Mostrar ilustración",
 	"settings_illustration_enabled_description": "Muestra el paisaje detrás del timer. Apagada por defecto.",

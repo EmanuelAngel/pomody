@@ -6,6 +6,7 @@
 	import DailyCounter from '$lib/components/layout/daily-counter.svelte';
 	import SettingsDialog from '$lib/components/settings/settings-dialog.svelte';
 	import MiniPlayer from '$lib/components/timer/mini-player.svelte';
+	import BlockNoticeToaster from '$lib/components/notification/block-notice-toaster.svelte';
 	import { appBootstrap } from '$lib/state/app-bootstrap.svelte';
 	import { windowState } from '$lib/state/windowState.svelte';
 
@@ -62,4 +63,11 @@
 	{@render children()}
 
 	<DailyCounter />
+
+	<!--
+		The toast host lives in the main shell and not in the Mini-Player branch: a compact
+		window that always stays on top already shows the phase change, and the block-end
+		state suppresses its notices there.
+	-->
+	<BlockNoticeToaster />
 {/if}
