@@ -35,6 +35,8 @@ export interface ActivePlanBlockView {
 export interface ActivePlanView {
 	readonly id: string;
 	readonly activeBlockIndex: number;
+	/** True when every plan block is completed or skipped: there is no block to execute. */
+	readonly completed: boolean;
 	readonly blocks: readonly ActivePlanBlockView[];
 }
 
@@ -277,6 +279,13 @@ export function resolveTimerRestore({
 		return plan ? anchorToActiveBlock(plan, 'missing-snapshot') : { kind: 'fresh' };
 	}
 
+	if (plan?.completed) {
+		if (persisted.planId === plan.id && persisted.state === 'completed') {
+			return adoptRecord(persisted, 0);
+		}
+		return { kind: 'fresh', reason: 'plan-mismatch' };
+	}
+
 	if (persisted.planId === null) {
 		if (plan) {
 			return anchorToActiveBlock(plan, 'unbound-with-active-plan');
@@ -333,9 +342,9 @@ export function resolveTimerRestore({
 }
 
 /**
- * Builds the record to persist from an FSM snapshot and its plan binding.
- * `blockIndex` follows the FSM, not the plan: a completed FSM still belongs to the
- * block the plan already advanced past.
+ * Builds the record to persist from an FSM snapshot and the plan block it belongs to.
+ * The caller supplies `blockIndex`: a completed FSM still belongs to the block the plan
+ * already advanced past, so the index cannot be derived from the active block alone.
  */
 export interface BuildTimerSnapshotParams {
 	readonly state: TimerState;
@@ -345,7 +354,7 @@ export interface BuildTimerSnapshotParams {
 	readonly currentRound: number;
 	readonly totalRoundsCompleted: number;
 	readonly planId: string | null;
-	readonly activeBlockIndex: number | null;
+	readonly blockIndex: number | null;
 	readonly now: number;
 }
 
@@ -357,16 +366,10 @@ export function buildTimerSnapshotRecord({
 	currentRound,
 	totalRoundsCompleted,
 	planId,
-	activeBlockIndex,
+	blockIndex,
 	now
 }: BuildTimerSnapshotParams): TimerSnapshotRecord {
-	const bound = planId !== null && activeBlockIndex !== null;
-	const blockIndex = bound
-		? state === 'completed'
-			? activeBlockIndex - 1
-			: activeBlockIndex
-		: null;
-
+	const bound = planId !== null && blockIndex !== null;
 	const base = {
 		planId: bound ? planId : null,
 		blockIndex: bound ? blockIndex : null,

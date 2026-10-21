@@ -3,6 +3,7 @@ import { FakeSessionPlanRepository } from '$tests/fakes/repositories/fake-sessio
 import { FakeTicker } from '$tests/fakes/engine/fake-ticker';
 import { FakeAudioNotifier } from '$tests/fakes/engine/fake-audio-notifier';
 import { FakeTaskRepository } from '$tests/fakes/repositories/fake-task-repository';
+import { FakeTimerStateRepository } from '$tests/fakes/repositories/fake-timer-state-repository';
 import { PlanningState, createPlanningState, planningState } from './planning.svelte';
 import {
 	calculateSessionBudgetByBlocks,
@@ -1113,5 +1114,136 @@ describe('PlanningState', () => {
 			expect(state.targetEndTime).toBe('14:45');
 			expect(state.projectedPlan.blocks.length).toBe(1);
 		});
+	});
+});
+
+describe('PlanningState timer persistence wiring', () => {
+	const NOW = 1_700_000_000_000;
+	let repo: FakeSessionPlanRepository;
+	let timerRepo: FakeTimerStateRepository;
+	let ticker: FakeTicker;
+	let timer: TimerState;
+	let tasks: TasksState;
+	let state: PlanningState;
+	let writeLog: string[];
+
+	beforeEach(() => {
+		repo = new FakeSessionPlanRepository();
+		timerRepo = new FakeTimerStateRepository();
+		ticker = new FakeTicker();
+		timer = new TimerState(
+			undefined,
+			ticker,
+			new FakeAudioNotifier(),
+			undefined,
+			timerRepo,
+			() => NOW
+		);
+		tasks = new TasksState(new FakeTaskRepository());
+		state = createPlanningState(repo, timer, tasks);
+
+		writeLog = [];
+		const savePlan = repo.saveActivePlan.bind(repo);
+		vi.spyOn(repo, 'saveActivePlan').mockImplementation(async (plan) => {
+			writeLog.push('plan');
+			await savePlan(plan);
+		});
+		const saveSnapshot = timerRepo.save.bind(timerRepo);
+		vi.spyOn(timerRepo, 'save').mockImplementation(async (snapshot) => {
+			writeLog.push('timer');
+			await saveSnapshot(snapshot);
+		});
+	});
+
+	it('binds the timer to the new session and persists a running snapshot', async () => {
+		await state.startSession();
+
+		expect(timerRepo.peek()).toMatchObject({
+			state: 'running',
+			planId: state.activePlan?.id,
+			blockIndex: 0
+		});
+	});
+
+	it('writes the plan before the timer snapshot when a block completes', async () => {
+		await state.startSession();
+		writeLog.length = 0;
+
+		ticker.tick(1_500_000);
+		await vi.waitFor(() => expect(writeLog).toEqual(['plan', 'timer']));
+
+		expect(state.activeBlockIndex).toBe(1);
+		expect(timerRepo.peek()).toMatchObject({ blockIndex: 0, planId: state.activePlan?.id });
+	});
+
+	it('binds the next block once the timer advances to it', async () => {
+		await state.startSession();
+		ticker.tick(1_500_000);
+		await vi.waitFor(() => expect(state.activeBlockIndex).toBe(1));
+
+		timer.start();
+
+		expect(timerRepo.peek()).toMatchObject({ blockIndex: 1 });
+	});
+
+	it('persists the completed block index, not the next one', async () => {
+		await state.startSession();
+		ticker.tick(1_500_000);
+		await vi.waitFor(() => expect(timerRepo.peek()?.state).toBe('completed'));
+
+		expect(timer.state).toBe('completed');
+		expect(timerRepo.peek()).toMatchObject({ state: 'completed', blockIndex: 0 });
+	});
+
+	it('clears the timer snapshot when the session ends', async () => {
+		await state.startSession();
+
+		await state.endSession();
+
+		expect(await timerRepo.load()).toBeNull();
+		expect(timerRepo.clearCallCount).toBe(1);
+	});
+
+	it('unbinds the timer when the session ends', async () => {
+		await state.startSession();
+		await state.endSession();
+
+		timer.start();
+
+		expect(timerRepo.peek()).toMatchObject({ planId: null, blockIndex: null });
+	});
+
+	it('loads the persisted plan only once', async () => {
+		await state.load();
+		await state.load();
+
+		expect(repo.getActivePlanCallCount).toBe(1);
+	});
+
+	it('binds the timer after loading an active plan', async () => {
+		const savedPlan = calculateSessionBudgetByBlocks({
+			blockCount: 3,
+			sessionConfig: {
+				focusDurationSeconds: 1500,
+				shortBreakDurationSeconds: 300,
+				longBreakDurationSeconds: 900,
+				roundsBeforeLongBreak: 4
+			}
+		});
+		await repo.saveActivePlan(updateBlockStatus(savedPlan, 1, 'in_progress'));
+
+		const freshTimer = new TimerState(
+			undefined,
+			ticker,
+			new FakeAudioNotifier(),
+			undefined,
+			timerRepo,
+			() => NOW
+		);
+		const freshState = createPlanningState(repo, freshTimer, tasks);
+		await freshState.load();
+		freshTimer.start();
+
+		expect(timerRepo.peek()).toMatchObject({ planId: savedPlan.id, blockIndex: 1 });
 	});
 });

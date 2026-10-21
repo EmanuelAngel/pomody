@@ -17,7 +17,7 @@ describe('ITimerStateRepository port contract', () => {
 			currentRound: 2,
 			totalRoundsCompleted: 1,
 			planId: 'plan-1',
-			activeBlockIndex: 3,
+			blockIndex: 3,
 			now: 1_700_000_000_000
 		});
 

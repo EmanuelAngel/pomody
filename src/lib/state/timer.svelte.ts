@@ -3,11 +3,17 @@ import {
 	TimerFSM,
 	type DomainEvent,
 	type TimerConfig,
+	type TimerExecutionAdoption,
 	type TimerMode,
 	type TimerSnapshot,
 	type TimerState as TimerFsmState,
 	type Unsubscribe
 } from '../domain/timer/timer-fsm';
+import {
+	buildTimerSnapshotRecord,
+	type TimerRestoreDecision
+} from '../domain/timer/timer-snapshot.entity';
+import type { ITimerStateRepository } from '../domain/ports/timer-state-repository.port';
 import { WebWorkerTimerTicker } from '../adapters/worker/timer-worker';
 import type { ITimerTicker } from '../domain/ports/timer-ticker.port';
 import type { IAudioNotifier } from '../domain/ports/IAudioNotifier';
@@ -17,7 +23,15 @@ import {
 	type ISettingsStorage
 } from '../domain/ports/settings-storage.port';
 import { LocalSettingsStorage } from '../adapters/storage/local-settings-storage';
+import { LocalTimerStateRepository } from '../adapters/storage/local-timer-state-repository';
 import { SvelteSet } from 'svelte/reactivity';
+
+/** Plan block the FSM belongs to. A completed FSM still belongs to the block it finished. */
+export interface TimerPlanBinding {
+	readonly planId: string;
+	readonly activeBlockIndex: number;
+	readonly completedBlockIndex: number | null;
+}
 
 /**
  * Formats a duration in milliseconds to MM:SS string representation.
@@ -40,8 +54,11 @@ export class TimerState {
 	private readonly ticker: ITimerTicker;
 	private readonly audioNotifier: IAudioNotifier;
 	private readonly storage?: ISettingsStorage;
+	private readonly timerRepository?: ITimerStateRepository;
+	private readonly now: () => number;
 	private readonly unsubscribe: Unsubscribe;
 	private readonly unsubscribeEvents: Unsubscribe;
+	private _planBinding: TimerPlanBinding | null = null;
 
 	private _soundEnabled = $state<boolean>(true);
 	private _revitalizationEnabled = $state<boolean>(true);
@@ -140,9 +157,13 @@ export class TimerState {
 		config?: Partial<TimerConfig>,
 		ticker?: ITimerTicker,
 		audioNotifier?: IAudioNotifier,
-		storage?: ISettingsStorage
+		storage?: ISettingsStorage,
+		timerRepository?: ITimerStateRepository,
+		now?: () => number
 	) {
 		this.storage = storage;
+		this.timerRepository = timerRepository;
+		this.now = now ?? (() => Date.now());
 		const storedSettings = this.storage?.loadSettings();
 		const initialConfig = storedSettings ? { ...storedSettings.timer, ...config } : config;
 
@@ -158,10 +179,19 @@ export class TimerState {
 		this._config = this.fsm.config;
 
 		this.unsubscribe = this.fsm.subscribe((newSnapshot) => {
+			const previousState = this._snapshot.state;
 			this._snapshot = newSnapshot;
 			this._config = this.fsm.config;
 			if (newSnapshot.state !== 'running') {
 				this.ticker.stop();
+			}
+			if (
+				newSnapshot.state === 'completed' &&
+				previousState !== 'completed' &&
+				this._planBinding === null
+			) {
+				// Bound completions are persisted by PlanningState after the plan settles.
+				this.persistNow();
 			}
 		});
 
@@ -178,11 +208,8 @@ export class TimerState {
 	public start(): void {
 		void this.audioNotifier.unlock();
 		this.fsm.start();
-		if (this.fsm.state === 'running' && !this.ticker.isRunning) {
-			this.ticker.start((deltaMs) => {
-				this.fsm.tick(deltaMs);
-			});
-		}
+		this.ensureTicker();
+		this.persistNow();
 	}
 
 	/**
@@ -191,6 +218,7 @@ export class TimerState {
 	public pause(): void {
 		this.fsm.pause();
 		this.ticker.stop();
+		this.persistNow();
 	}
 
 	/**
@@ -199,11 +227,8 @@ export class TimerState {
 	public resume(): void {
 		void this.audioNotifier.unlock();
 		this.fsm.resume();
-		if (this.fsm.state === 'running' && !this.ticker.isRunning) {
-			this.ticker.start((deltaMs) => {
-				this.fsm.tick(deltaMs);
-			});
-		}
+		this.ensureTicker();
+		this.persistNow();
 	}
 
 	/**
@@ -212,6 +237,7 @@ export class TimerState {
 	public skip(): void {
 		this.ticker.stop();
 		this.fsm.skip();
+		this.persistNow();
 	}
 
 	/**
@@ -224,6 +250,7 @@ export class TimerState {
 		for (const subscriber of this._configSubscribers) {
 			subscriber(this._config);
 		}
+		this.persistNow();
 	}
 
 	/**
@@ -232,6 +259,7 @@ export class TimerState {
 	public reset(): void {
 		this.ticker.stop();
 		this.fsm.reset();
+		this.persistNow();
 	}
 
 	/**
@@ -240,6 +268,7 @@ export class TimerState {
 	public resetToInitial(): void {
 		this.reset();
 		this.fsm.resetToInitial();
+		this.persistNow();
 	}
 
 	/**
@@ -257,6 +286,136 @@ export class TimerState {
 		this._config = this.fsm.config;
 		for (const subscriber of this._configSubscribers) {
 			subscriber(this._config);
+		}
+		this.persistNow();
+	}
+
+	/**
+	 * Binds the timer to the plan block it belongs to, or unbinds it for a free-running block.
+	 */
+	public setPlanBinding(binding: TimerPlanBinding | null): void {
+		this._planBinding = binding;
+	}
+
+	/**
+	 * Writes the current execution snapshot to the timer repository.
+	 * Called on transitions only; ticks never persist.
+	 */
+	public persistNow(): void {
+		if (!this.timerRepository) {
+			return;
+		}
+
+		const snapshot = this.fsm.snapshot;
+		const binding = this._planBinding;
+		const blockIndex = binding
+			? snapshot.state === 'completed'
+				? (binding.completedBlockIndex ?? binding.activeBlockIndex)
+				: binding.activeBlockIndex
+			: null;
+
+		const record = buildTimerSnapshotRecord({
+			state: snapshot.state,
+			mode: snapshot.mode,
+			durationMs: snapshot.durationMs,
+			remainingMs: snapshot.remainingMs,
+			currentRound: snapshot.currentRound,
+			totalRoundsCompleted: snapshot.totalRoundsCompleted,
+			planId: binding?.planId ?? null,
+			blockIndex,
+			now: this.now()
+		});
+
+		void this.timerRepository.save(record);
+	}
+
+	/**
+	 * Removes the persisted snapshot (session ended or restore discarded).
+	 */
+	public async clearPersistedState(): Promise<void> {
+		await this.timerRepository?.clear();
+	}
+
+	/**
+	 * Applies a restore decision produced by `resolveTimerRestore`.
+	 *
+	 * `config` is the plan's frozen session config. It is adopted into the FSM without
+	 * writing user settings, so a reload never reverts preferences changed mid-session.
+	 */
+	public applyRestoreDecision(decision: TimerRestoreDecision, config?: Partial<TimerConfig>): void {
+		if (decision.kind === 'adopt') {
+			this.applyAdoption(
+				{
+					state: decision.state,
+					mode: decision.mode,
+					durationMs: decision.durationMs,
+					remainingMs: decision.remainingMs,
+					currentRound: decision.currentRound,
+					totalRoundsCompleted: decision.totalRoundsCompleted
+				},
+				config
+			);
+			return;
+		}
+
+		if (decision.kind === 'anchor') {
+			this.applyAdoption(
+				{
+					state: 'idle',
+					mode: decision.mode,
+					durationMs: decision.durationMs,
+					remainingMs: decision.durationMs,
+					currentRound: decision.currentRound,
+					totalRoundsCompleted: decision.totalRoundsCompleted
+				},
+				config
+			);
+			return;
+		}
+
+		const focusDurationMs =
+			(config?.focusDurationSeconds ?? this.fsm.config.focusDurationSeconds) * 1000;
+		this.applyAdoption(
+			{
+				state: 'idle',
+				mode: 'focus',
+				durationMs: focusDurationMs,
+				remainingMs: focusDurationMs,
+				currentRound: 1,
+				totalRoundsCompleted: 0
+			},
+			config
+		);
+	}
+
+	private applyAdoption(adoption: TimerExecutionAdoption, config?: Partial<TimerConfig>): void {
+		try {
+			this.fsm.adopt(adoption, config);
+		} catch (error) {
+			console.error('Failed to adopt the persisted timer state; falling back to idle.', error);
+			this.fsm.adopt({
+				state: 'idle',
+				mode: 'focus',
+				durationMs: adoption.durationMs,
+				remainingMs: adoption.durationMs,
+				currentRound: 1,
+				totalRoundsCompleted: 0
+			});
+		}
+
+		this._snapshot = this.fsm.snapshot;
+		this._config = this.fsm.config;
+		for (const subscriber of this._configSubscribers) {
+			subscriber(this._config);
+		}
+		this.ensureTicker();
+	}
+
+	private ensureTicker(): void {
+		if (this.fsm.state === 'running' && !this.ticker.isRunning) {
+			this.ticker.start((deltaMs) => {
+				this.fsm.tick(deltaMs);
+			});
 		}
 	}
 
@@ -307,9 +466,11 @@ export function createTimerState(
 	config?: Partial<TimerConfig>,
 	ticker?: ITimerTicker,
 	audioNotifier?: IAudioNotifier,
-	storage?: ISettingsStorage
+	storage?: ISettingsStorage,
+	timerRepository?: ITimerStateRepository,
+	now?: () => number
 ): TimerState {
-	return new TimerState(config, ticker, audioNotifier, storage);
+	return new TimerState(config, ticker, audioNotifier, storage, timerRepository, now);
 }
 
 /**
@@ -319,5 +480,6 @@ export const timerState = new TimerState(
 	undefined,
 	undefined,
 	undefined,
-	new LocalSettingsStorage()
+	new LocalSettingsStorage(),
+	new LocalTimerStateRepository()
 );

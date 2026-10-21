@@ -105,6 +105,8 @@ type RestoreDecision =
 | `planId = null`                                      | sin plan activo                                    | `adopt` tal cual (reloj libre)                                  |
 | `planId = null`                                      | con plan activo                                    | descarte → `anchor` al bloque activo                            |
 | `planId` con plan ausente                            | sin plan activo                                    | `fresh`                                                         |
+| snapshot `completed` del mismo plan                  | plan activo **completo**                           | `adopt completed`                                               |
+| cualquier otro snapshot                              | plan activo **completo**                           | `fresh`                                                         |
 
 ### 3.2 Descarte silencioso
 
@@ -161,17 +163,19 @@ Así un reintento corre la duración de la sesión y no la de settings.
 
 **Orden de settle**: cuando una completación o un skip mueven el plan, `PlanningState` guarda el plan y recién después persiste el snapshot. Sin ese orden, `blockIndex` podría apuntar al bloque siguiente mientras el FSM todavía pertenece al anterior.
 
+`blockIndex` lo aporta el dueño del plan, no el FSM: `completedBlockIndex` cuando el FSM está `completed`, `activeBlockIndex` en cualquier otro estado. Un FSM `completed` sigue perteneciendo al bloque que acaba de cerrar, incluso si el plan ya avanzó; en el último bloque de la sesión el plan no avanza y ambos índices coinciden.
+
 ---
 
 ## 6. Ciclo de Vida
 
-| Acción                   | Efecto sobre la persistencia                                       |
-| :----------------------- | :----------------------------------------------------------------- |
-| `startSession`           | binding al plan nuevo, snapshot `running`                          |
-| `advanceActiveBlock`     | plan guardado, binding actualizado, snapshot del bloque cerrado    |
-| `endSession`             | plan borrado, binding a `null`, clave del timer borrada, FSM reset |
-| Reloj libre (sin sesión) | `planId = null`, se restaura sin validar contra el plan            |
-| Cierre de app / pestaña  | no requiere hook: `endsAt` ya está persistido                      |
+| Acción                   | Efecto sobre la persistencia                                        |
+| :----------------------- | :------------------------------------------------------------------ |
+| `startSession`           | binding al plan nuevo, snapshot `running`                           |
+| `advanceActiveBlock`     | plan guardado, binding actualizado, snapshot del bloque cerrado     |
+| `endSession`             | FSM reset, plan borrado, binding a `null` y clave del timer borrada |
+| Reloj libre (sin sesión) | `planId = null`, se restaura sin validar contra el plan             |
+| Cierre de app / pestaña  | no requiere hook: `endsAt` ya está persistido                       |
 
 ---
 
