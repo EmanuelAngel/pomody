@@ -18,6 +18,10 @@
 		illustrationState as defaultIllustrationState,
 		type IllustrationState
 	} from '$lib/state/illustration.svelte';
+	import {
+		blockNoticeState as defaultBlockNoticeState,
+		type BlockNoticeState
+	} from '$lib/state/block-notice.svelte';
 	import LanguageSelector from './language-selector.svelte';
 	import IntervalsPanel from './panels/intervals-panel.svelte';
 	import AppearancePanel from './panels/appearance-panel.svelte';
@@ -31,6 +35,7 @@
 		localeState?: LocaleState;
 		distractionState?: DistractionState;
 		illustrationState?: IllustrationState;
+		blockNoticeState?: BlockNoticeState;
 	}
 
 	let {
@@ -39,7 +44,8 @@
 		themeState = defaultThemeState,
 		localeState = defaultLocaleState,
 		distractionState = defaultDistractionState,
-		illustrationState = defaultIllustrationState
+		illustrationState = defaultIllustrationState,
+		blockNoticeState = defaultBlockNoticeState
 	}: Props = $props();
 
 	/** The rail always opens on the group the request started with: intervals. */
@@ -130,7 +136,7 @@
 				</Tabs.Content>
 
 				<Tabs.Content value="behavior" class="flex-1 p-6">
-					<BehaviorPanel {timerState} {distractionState} />
+					<BehaviorPanel {timerState} {distractionState} {blockNoticeState} />
 				</Tabs.Content>
 
 				<Tabs.Content value="application" class="flex-1 p-6">
