@@ -35,6 +35,23 @@ export class InvalidTimerConfigError extends Error {
 	}
 }
 
+export class InvalidTimerSnapshotError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'InvalidTimerSnapshotError';
+	}
+}
+
+/** Execution state restored from persistence. */
+export interface TimerExecutionAdoption {
+	readonly state: TimerState;
+	readonly mode: TimerMode;
+	readonly durationMs: number;
+	readonly remainingMs: number;
+	readonly currentRound: number;
+	readonly totalRoundsCompleted: number;
+}
+
 export const DEFAULT_TIMER_CONFIG: TimerConfig = Object.freeze({
 	focusDurationSeconds: 1500,
 	shortBreakDurationSeconds: 300,
@@ -277,6 +294,88 @@ export class TimerFSM {
 		this._currentRound = 1;
 		this._durationMs = this.getModeDurationMs(this._mode);
 		this._remainingMs = this._durationMs;
+		this.notify();
+	}
+
+	/**
+	 * Adopts a persisted execution snapshot, restoring the exact state of a block.
+	 *
+	 * Used by the restore path only: the anchored `durationMs` is adopted verbatim, so a
+	 * block frozen at session start keeps its duration even if settings changed afterwards.
+	 * An optional config overrides the FSM configuration without persisting user settings.
+	 * Throws InvalidTimerSnapshotError when the snapshot violates an invariant.
+	 */
+	public adopt(adoption: TimerExecutionAdoption, config?: Partial<TimerConfig>): void {
+		const { state, mode, durationMs, remainingMs, currentRound, totalRoundsCompleted } = adoption;
+
+		const validStates: TimerState[] = ['idle', 'running', 'paused', 'completed'];
+		if (!validStates.includes(state)) {
+			throw new InvalidTimerSnapshotError(`Invalid timer state: ${String(state)}`);
+		}
+
+		const validModes: TimerMode[] = ['focus', 'shortBreak', 'longBreak'];
+		if (!validModes.includes(mode)) {
+			throw new InvalidTimerSnapshotError(`Invalid timer mode: ${String(mode)}`);
+		}
+
+		if (
+			typeof durationMs !== 'number' ||
+			!Number.isFinite(durationMs) ||
+			!Number.isInteger(durationMs) ||
+			durationMs <= 0
+		) {
+			throw new InvalidTimerSnapshotError(
+				`Invalid durationMs: expected a positive integer, got ${String(durationMs)}`
+			);
+		}
+
+		if (
+			typeof remainingMs !== 'number' ||
+			!Number.isFinite(remainingMs) ||
+			remainingMs < 0 ||
+			remainingMs > durationMs
+		) {
+			throw new InvalidTimerSnapshotError(
+				`Invalid remainingMs: expected a value between 0 and ${durationMs}, got ${String(remainingMs)}`
+			);
+		}
+
+		if (state === 'running' && remainingMs <= 0) {
+			throw new InvalidTimerSnapshotError('A running timer requires remainingMs > 0');
+		}
+
+		if (state === 'completed' && remainingMs !== 0) {
+			throw new InvalidTimerSnapshotError('A completed timer requires remainingMs = 0');
+		}
+
+		if (typeof currentRound !== 'number' || !Number.isInteger(currentRound) || currentRound < 1) {
+			throw new InvalidTimerSnapshotError(
+				`Invalid currentRound: expected an integer >= 1, got ${String(currentRound)}`
+			);
+		}
+
+		if (
+			typeof totalRoundsCompleted !== 'number' ||
+			!Number.isInteger(totalRoundsCompleted) ||
+			totalRoundsCompleted < 0
+		) {
+			throw new InvalidTimerSnapshotError(
+				`Invalid totalRoundsCompleted: expected an integer >= 0, got ${String(totalRoundsCompleted)}`
+			);
+		}
+
+		if (config !== undefined) {
+			const merged: TimerConfig = { ...this._config, ...config };
+			validateTimerConfig(merged);
+			this._config = Object.freeze(merged);
+		}
+
+		this._state = state;
+		this._mode = mode;
+		this._durationMs = durationMs;
+		this._remainingMs = remainingMs;
+		this._currentRound = currentRound;
+		this._totalRoundsCompleted = totalRoundsCompleted;
 		this.notify();
 	}
 

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FakeTicker } from '$tests/fakes/engine/fake-ticker';
 import { FakeAudioNotifier } from '$tests/fakes/engine/fake-audio-notifier';
 import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
+import { FakeTimerStateRepository } from '$tests/fakes/repositories/fake-timer-state-repository';
 import { TimerState, createTimerState, formatTime, timerState } from './timer.svelte';
 import { DEFAULT_TIMER_CONFIG, TimerFSM } from '../domain/timer/timer-fsm';
 
@@ -754,5 +755,200 @@ describe('TimerState Composition Root', () => {
 
 			timer.destroy();
 		});
+	});
+});
+
+describe('TimerState persistence', () => {
+	const NOW = 1_700_000_000_000;
+	let ticker: FakeTicker;
+	let repository: FakeTimerStateRepository;
+	let storage: FakeSettingsStorage;
+
+	beforeEach(() => {
+		ticker = new FakeTicker();
+		repository = new FakeTimerStateRepository();
+		storage = new FakeSettingsStorage();
+	});
+
+	function createState() {
+		return new TimerState(
+			undefined,
+			ticker,
+			new FakeAudioNotifier(),
+			storage,
+			repository,
+			() => NOW
+		);
+	}
+
+	it('persists a running block with an absolute endsAt', () => {
+		const state = createState();
+		state.start();
+
+		const snapshot = repository.peek();
+		expect(snapshot).toMatchObject({ state: 'running', endsAt: NOW + 1_500_000 });
+		expect(snapshot?.remainingMs).toBeUndefined();
+	});
+
+	it('never persists on ticks', () => {
+		const state = createState();
+		state.start();
+		const writesAfterStart = repository.saveCallCount;
+
+		ticker.step(20, 250);
+
+		expect(repository.saveCallCount).toBe(writesAfterStart);
+	});
+
+	it('persists a paused block with its frozen remaining time', () => {
+		const state = createState();
+		state.start();
+		ticker.tick(60_000);
+		state.pause();
+
+		const snapshot = repository.peek();
+		expect(snapshot?.state).toBe('paused');
+		expect(snapshot?.remainingMs).toBe(1_440_000);
+		expect(snapshot?.endsAt).toBeUndefined();
+	});
+
+	it('persists a free-running completion', () => {
+		const state = createState();
+		state.start();
+		ticker.tick(1_500_000);
+
+		expect(repository.peek()).toMatchObject({
+			state: 'completed',
+			remainingMs: 0,
+			planId: null,
+			blockIndex: null
+		});
+	});
+
+	it('defers a bound completion to the session owner', () => {
+		const state = createState();
+		state.setPlanBinding({ planId: 'plan-1', activeBlockIndex: 0, completedBlockIndex: null });
+		state.start();
+		const writesBeforeCompletion = repository.saveCallCount;
+
+		ticker.tick(1_500_000);
+
+		expect(repository.saveCallCount).toBe(writesBeforeCompletion);
+	});
+
+	it('persists the plan binding on transitions', () => {
+		const state = createState();
+		state.setPlanBinding({ planId: 'plan-1', activeBlockIndex: 2, completedBlockIndex: null });
+		state.start();
+
+		expect(repository.peek()).toMatchObject({ planId: 'plan-1', blockIndex: 2 });
+	});
+
+	it('maps a completed bound block to the block that finished', () => {
+		const state = createState();
+		state.setPlanBinding({ planId: 'plan-1', activeBlockIndex: 2, completedBlockIndex: 1 });
+		state.start();
+		ticker.tick(1_500_000);
+		state.persistNow();
+
+		expect(repository.peek()).toMatchObject({
+			state: 'completed',
+			planId: 'plan-1',
+			blockIndex: 1
+		});
+	});
+
+	it('clears the persisted snapshot on demand', async () => {
+		const state = createState();
+		state.start();
+
+		await state.clearPersistedState();
+
+		expect(repository.peek()).toBeNull();
+	});
+
+	it('applies a running restore decision and resumes the ticker', () => {
+		const state = createState();
+
+		state.applyRestoreDecision(
+			{
+				kind: 'adopt',
+				planId: 'plan-1',
+				blockIndex: 2,
+				state: 'running',
+				mode: 'focus',
+				durationMs: 1_500_000,
+				remainingMs: 600_000,
+				currentRound: 3,
+				totalRoundsCompleted: 2
+			},
+			{ focusDurationSeconds: 1500 }
+		);
+
+		expect(state.state).toBe('running');
+		expect(state.remainingMs).toBe(600_000);
+		expect(state.currentRound).toBe(3);
+		expect(ticker.isRunning).toBe(true);
+	});
+
+	it('anchors an idle block to the active plan block', () => {
+		const state = createState();
+
+		state.applyRestoreDecision(
+			{
+				kind: 'anchor',
+				planId: 'plan-1',
+				blockIndex: 4,
+				mode: 'longBreak',
+				durationMs: 900_000,
+				currentRound: 4,
+				totalRoundsCompleted: 3,
+				reason: 'expired'
+			},
+			{ longBreakDurationSeconds: 900 }
+		);
+
+		expect(state.state).toBe('idle');
+		expect(state.mode).toBe('longBreak');
+		expect(state.remainingMs).toBe(900_000);
+		expect(state.currentRound).toBe(4);
+	});
+
+	it('falls back to a fresh idle focus block', () => {
+		const state = createState();
+
+		state.applyRestoreDecision({ kind: 'fresh' });
+
+		expect(state.state).toBe('idle');
+		expect(state.mode).toBe('focus');
+		expect(state.remainingMs).toBe(1_500_000);
+	});
+
+	it('does not write user settings when adopting the session config', () => {
+		const state = createState();
+		const writesBefore = storage.saveSettingsCalls.length;
+
+		state.applyRestoreDecision(
+			{
+				kind: 'anchor',
+				planId: 'plan-1',
+				blockIndex: 0,
+				mode: 'focus',
+				durationMs: 600_000,
+				currentRound: 1,
+				totalRoundsCompleted: 0,
+				reason: 'missing-snapshot'
+			},
+			{ focusDurationSeconds: 600 }
+		);
+
+		expect(storage.saveSettingsCalls.length).toBe(writesBefore);
+		expect(state.config.focusDurationSeconds).toBe(600);
+	});
+
+	it('persists without a repository configured', () => {
+		const state = new TimerState(undefined, ticker, new FakeAudioNotifier(), storage);
+
+		expect(() => state.persistNow()).not.toThrow();
 	});
 });

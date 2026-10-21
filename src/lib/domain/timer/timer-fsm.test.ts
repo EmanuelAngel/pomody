@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import {
 	DEFAULT_TIMER_CONFIG,
 	InvalidTimerConfigError,
+	InvalidTimerSnapshotError,
 	TimerFSM,
 	type BlockCompletedEvent,
 	type BlockSkippedEvent,
@@ -1141,5 +1142,139 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 		fsm.tick(1500000);
 
 		expect(executionOrder).toEqual(['domain-event', 'snapshot-subscriber']);
+	});
+});
+
+describe('TimerFSM.adopt', () => {
+	it('restores a running block with its anchored duration', () => {
+		const fsm = new TimerFSM();
+
+		fsm.adopt({
+			state: 'running',
+			mode: 'shortBreak',
+			durationMs: 300000,
+			remainingMs: 120000,
+			currentRound: 3,
+			totalRoundsCompleted: 2
+		});
+
+		expect(fsm.state).toBe('running');
+		expect(fsm.mode).toBe('shortBreak');
+		expect(fsm.durationMs).toBe(300000);
+		expect(fsm.remainingMs).toBe(120000);
+		expect(fsm.currentRound).toBe(3);
+		expect(fsm.totalRoundsCompleted).toBe(2);
+		expect(fsm.progress).toBeCloseTo(0.6);
+	});
+
+	it('restores a paused block without moving it', () => {
+		const fsm = new TimerFSM();
+
+		fsm.adopt({
+			state: 'paused',
+			mode: 'focus',
+			durationMs: 1500000,
+			remainingMs: 900000,
+			currentRound: 1,
+			totalRoundsCompleted: 0
+		});
+
+		expect(fsm.state).toBe('paused');
+		expect(fsm.remainingMs).toBe(900000);
+	});
+
+	it('restores a completed block with zero remaining', () => {
+		const fsm = new TimerFSM();
+
+		fsm.adopt({
+			state: 'completed',
+			mode: 'focus',
+			durationMs: 1500000,
+			remainingMs: 0,
+			currentRound: 2,
+			totalRoundsCompleted: 2
+		});
+
+		expect(fsm.state).toBe('completed');
+		expect(fsm.progress).toBe(1);
+	});
+
+	it('overrides the FSM config without touching storage', () => {
+		const fsm = new TimerFSM();
+
+		fsm.adopt(
+			{
+				state: 'idle',
+				mode: 'focus',
+				durationMs: 600000,
+				remainingMs: 600000,
+				currentRound: 1,
+				totalRoundsCompleted: 0
+			},
+			{ focusDurationSeconds: 600 }
+		);
+
+		expect(fsm.config.focusDurationSeconds).toBe(600);
+		expect(fsm.durationMs).toBe(600000);
+	});
+
+	it('notifies subscribers once with the adopted snapshot', () => {
+		const fsm = new TimerFSM();
+		const snapshots: string[] = [];
+		fsm.subscribe((snapshot) => snapshots.push(snapshot.state));
+
+		fsm.adopt({
+			state: 'idle',
+			mode: 'longBreak',
+			durationMs: 900000,
+			remainingMs: 900000,
+			currentRound: 4,
+			totalRoundsCompleted: 3
+		});
+
+		expect(snapshots).toEqual(['idle']);
+	});
+
+	it.each([
+		['a running block with zero remaining', { state: 'running', remainingMs: 0 }],
+		['a completed block with remaining time', { state: 'completed', remainingMs: 1 }],
+		['a negative duration', { durationMs: -1 }],
+		['a remaining time above the duration', { remainingMs: 1500001 }],
+		['a zero round', { currentRound: 0 }],
+		['negative completed rounds', { totalRoundsCompleted: -1 }],
+		['an unknown state', { state: 'stopped' }],
+		['an unknown mode', { mode: 'nap' }]
+	])('rejects %s', (_label, patch) => {
+		const fsm = new TimerFSM();
+		const adoption = {
+			state: 'idle',
+			mode: 'focus',
+			durationMs: 1500000,
+			remainingMs: 1500000,
+			currentRound: 1,
+			totalRoundsCompleted: 0,
+			...patch
+		} as unknown as Parameters<typeof fsm.adopt>[0];
+
+		expect(() => fsm.adopt(adoption)).toThrow(InvalidTimerSnapshotError);
+	});
+
+	it('leaves the timer untouched when adoption is rejected', () => {
+		const fsm = new TimerFSM();
+		fsm.start();
+
+		expect(() =>
+			fsm.adopt({
+				state: 'completed',
+				mode: 'focus',
+				durationMs: 1500000,
+				remainingMs: 10,
+				currentRound: 1,
+				totalRoundsCompleted: 0
+			})
+		).toThrow();
+
+		expect(fsm.state).toBe('running');
+		expect(fsm.remainingMs).toBe(1500000);
 	});
 });

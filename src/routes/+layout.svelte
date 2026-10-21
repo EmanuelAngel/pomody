@@ -1,16 +1,26 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import Header from '$lib/components/layout/header.svelte';
 	import DailyCounter from '$lib/components/layout/daily-counter.svelte';
 	import SettingsDialog from '$lib/components/settings/settings-dialog.svelte';
 	import MiniPlayer from '$lib/components/timer/mini-player.svelte';
+	import { appBootstrap } from '$lib/state/app-bootstrap.svelte';
 	import { windowState } from '$lib/state/windowState.svelte';
 
 	let { children } = $props();
 	let settingsOpen = $state(false);
 
 	const isMiniPlayer = $derived(windowState.isMiniPlayer);
+
+	/**
+	 * The previous session must be restored before the shell paints: rendering first
+	 * would flash an idle 25:00 and then jump to the restored remaining time.
+	 */
+	onMount(() => {
+		void appBootstrap.restore();
+	});
 
 	/**
 	 * `Escape` is a window-level concern, so it lives here rather than inside
@@ -37,7 +47,13 @@
 	a 280x64 window cannot afford a header, a settings drawer or the daily counter.
 	Branching here rather than in +page.svelte keeps it a single conditional.
 -->
-{#if isMiniPlayer}
+{#if !appBootstrap.isReady}
+	<!--
+		Restore placeholder: same background, no timer chrome. Rendering the shell here
+		would show the idle default and then jump once the snapshot is adopted.
+	-->
+	<main class="min-h-screen w-full" aria-busy="true"></main>
+{:else if isMiniPlayer}
 	<MiniPlayer />
 {:else}
 	<Header bind:settingsOpen />
