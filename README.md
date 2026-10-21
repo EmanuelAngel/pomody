@@ -2,7 +2,7 @@
 
 > El temporizador Pomodoro pensado para el foco real: planificá tus tareas, protegé tu concentración y descansá con propósito, sin bloatware ni suscripciones abusivas.
 
-[![Estado del Proyecto](https://img.shields.io/badge/Estado-Milestones%201--3%20Completados-brightgreen)](docs/roadmap.md)
+[![Estado del Proyecto](https://img.shields.io/badge/Estado-Milestones%201--4%20Completados-brightgreen)](docs/roadmap.md)
 [![Plataformas](https://img.shields.io/badge/Plataformas-Web%20%7C%20Windows-informational)](docs/vision.md#3-plataformas-objetivo)
 [![Licencia](https://img.shields.io/badge/Licencia-MIT-green)](#licencia)
 
@@ -53,15 +53,15 @@ El diseño funcional, técnico y las decisiones de arquitectura están organizad
 
 Para consultar el checklist completo y criterios de aceptación, visitá [`docs/roadmap.md`](docs/roadmap.md).
 
-| Milestone                                                                                                 | Enfoque Principal                                                               | Prioridad | Estado           |
-| :-------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------ | :-------- | :--------------- |
-| **[Milestone 1](docs/roadmap.md#milestone-1--cimientos-y-mvp-base-completado)**                           | Cimientos del sistema, FSM pura, UI minimalista, temas Rosé Pine y Tauri v2.    | Base      | **Completado**   |
-| **[Milestone 2](docs/roadmap.md#milestone-2--planificación-descansos-y-persistencia-completado)**         | Planificación (Mini To-Do), descansos guiados, persistencia y contador diario.  | Base      | **Completado**   |
-| **[Milestone 3](docs/roadmap.md#milestone-3--i18n--desktop-shell-completado)**                            | Internacionalización (i18n ES/EN) y Desktop Shell (Mini-Player & Tray).         | P0 / P1   | **Completado**   |
-| **[Milestone 4](docs/roadmap.md#milestone-4--recompensa-visual-por-fases-planificado)**                   | Recompensa visual (Ilustración SVG por fases).                                  | P2        | **Próximo foco** |
-| **[Milestone 5](docs/roadmap.md#milestone-5--hábitos-avanzados--detección-de-dispersión-roadmap-futuro)** | Hábitos avanzados en timeline y detector de dispersión ligero.                  | P3        | Roadmap futuro   |
-| **[Milestone 6](docs/roadmap.md#milestone-6--analítica-avanzada--métricas-visuales-roadmap-futuro)**      | Analítica avanzada, métricas visuales nativas y calidad de sesión.              | P4        | Roadmap futuro   |
-| **[Milestone 7](docs/roadmap.md#milestone-7--blindaje-de-foco--ecosistema-roadmap-futuro)**               | Blindaje de foco (No Molestar del SO) e integración de presencia (Discord RPC). | P5        | Roadmap futuro   |
+| Milestone                                                                                               | Enfoque Principal                                                               | Prioridad | Estado           |
+| :------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------ | :-------- | :--------------- |
+| **[Milestone 1](docs/roadmap.md#milestone-1--cimientos-y-mvp-base-completado)**                         | Cimientos del sistema, FSM pura, UI minimalista, temas Rosé Pine y Tauri v2.    | Base      | **Completado**   |
+| **[Milestone 2](docs/roadmap.md#milestone-2--planificación-descansos-y-persistencia-completado)**       | Planificación (Mini To-Do), descansos guiados, persistencia y contador diario.  | Base      | **Completado**   |
+| **[Milestone 3](docs/roadmap.md#milestone-3--i18n--desktop-shell-completado)**                          | Internacionalización (i18n ES/EN) y Desktop Shell (Mini-Player & Tray).         | P0 / P1   | **Completado**   |
+| **[Milestone 4](docs/roadmap.md#milestone-4--recompensa-visual-por-fases-completado)**                  | Recompensa visual (Ilustración por fases — Compañía Viva).                      | P2        | **Completado**   |
+| **[Milestone 5](docs/roadmap.md#milestone-5--hábitos-avanzados--detección-de-dispersión-próximo-foco)** | Hábitos avanzados en timeline y detector de dispersión ligero.                  | P3        | **Próximo foco** |
+| **[Milestone 6](docs/roadmap.md#milestone-6--analítica-avanzada--métricas-visuales-roadmap-futuro)**    | Analítica avanzada, métricas visuales nativas y calidad de sesión.              | P4        | Roadmap futuro   |
+| **[Milestone 7](docs/roadmap.md#milestone-7--blindaje-de-foco--ecosistema-roadmap-futuro)**             | Blindaje de foco (No Molestar del SO) e integración de presencia (Discord RPC). | P5        | Roadmap futuro   |
 
 ---
 

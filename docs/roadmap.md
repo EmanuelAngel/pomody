@@ -13,8 +13,8 @@ El proyecto organiza sus objetivos en **Milestones temáticos** orientados a val
 | **Milestone 1** | Cimientos del sistema, FSM pura, UI minimalista, temas Rosé Pine y Tauri v2    | Base      | **Completado**   |
 | **Milestone 2** | Planificación (Mini To-Do), descansos guiados, persistencia y contador diario  | Base      | **Completado**   |
 | **Milestone 3** | Internacionalización (i18n ES/EN) y Desktop Shell (Mini-Player & Tray)         | P0 / P1   | **Completado**   |
-| **Milestone 4** | Recompensa visual (Ilustración SVG por fases)                                  | P2        | **Próximo foco** |
-| **Milestone 5** | Hábitos avanzados en timeline y Detector de dispersión ligero                  | P3        | Roadmap futuro   |
+| **Milestone 4** | Recompensa visual (Ilustración por fases — Compañía Viva)                      | P2        | **Completado**   |
+| **Milestone 5** | Hábitos avanzados en timeline y Detector de dispersión ligero                  | P3        | **Próximo foco** |
 | **Milestone 6** | Analítica avanzada, métricas visuales nativas y calidad de sesión              | P4        | Roadmap futuro   |
 | **Milestone 7** | Blindaje de foco (No Molestar del SO) e Integración de presencia (Discord RPC) | P5        | Roadmap futuro   |
 
@@ -76,23 +76,23 @@ _Objetivo: Eliminar barreras de idioma en el equipo/usuarios y potenciar la expe
 
 ---
 
-### Milestone 4 — Recompensa Visual por Fases (Planificado)
+### Milestone 4 — Recompensa Visual por Fases (Completado)
 
 _Objetivo: Ofrecer feedback visual liviano sobre el progreso del ciclo sin generar distracciones periféricas ni consumo excesivo de recursos._
 
-- [ ] **P2 — Ilustración progresiva por fases (SVG)**:
-  - Revisión y alineación técnica con Fede.
-  - Componente vectorial minimalista en SVG que progresa en 4 o 5 fases discretas por bloque completado (ej. semilla -> brote -> planta -> flor -> árbol).
-  - Restricción estricta de rendimiento: sin bucles de animación continuos a 60 FPS (cero Canvas, cero drenaje de batería o GPU).
-  - Ubicación en laterales (_flank_) con toggle global en ajustes y soporte para ocultar en modo Zen.
+- [x] **P2 — Ilustración progresiva por fases (Compañía Viva)** ([spec](./features/compania-viva/spec.md) · [decisiones](./features/compania-viva/decisiones.md)):
+  - Paisaje pixel art de fondo full-screen en pestaña Timer derivado de minutos de foco acumulados (`dailyStats`).
+  - Ilustraciones minimalistas: Bosque (5 fases) y Desierto (3 fases con día/atardecer/noche) adaptadas a la paleta Rosé Pine.
+  - Escalado entero en modo cover con `ResizeObserver` y sin bucles continuos de animación (cero Canvas, cero drenaje de batería).
+  - Configuración reactiva en Settings (toggle on/off, movimiento estático/animado, ocultar durante bloque de foco) y selector con miniaturas.
 
 ---
 
-### Milestone 5 — Hábitos Avanzados & Detección de Dispersión (Roadmap futuro)
+### Milestone 5 — Hábitos Avanzados & Detección de Dispersión (Próximo foco)
 
 _Objetivo: Vincular la planificación con los descansos y ofrecer contención activa ante distracciones en Windows._
 
-- [ ] **P3 — Detector de dispersión ligero** ([spec](./features/distraction-detector/spec.md) · [decisiones](./features/distraction-detector/decisions.md)):
+- [x] **P3 — Detector de dispersión ligero** ([spec](./features/distraction-detector/spec.md) · [decisiones](./features/distraction-detector/decisions.md)):
   - Sondeo no invasivo de metadatos de la ventana activa en Windows (`IDistractionMonitor` vía Rust/Win32), armado **sólo mientras corre un bloque de foco**.
   - Detección **por declaración, sin inferencia**: la app no juzga sola. El usuario marca qué le distrae (ejecutable + patrón de título opcional) desde la vista _Distracciones_, con un picker de ventanas abiertas y campos manuales como escape. **Sin semilla pre-cargada.**
   - Aviso: notificación del SO con tres acciones — _"Gracias por recordarme"_ (no cambia nada), _"Esto no es una distracción por hoy"_ y _"Esto nunca es una distracción"_ — con guarda de inactividad y re-disparo parametrizable.
@@ -155,6 +155,7 @@ _Ítems retirados del roadmap activo, con la precondición explícita para reabr
 - Especificación técnica de Tareas, Revitalización y Planning: [`features/tasks-and-planning.md`](./features/tasks-and-planning.md)
 - Especificación técnica de Internacionalización (i18n): [`features/i18n.md`](./features/i18n.md)
 - Especificación técnica de Modo Compacto / Mini-Player: [`features/mini-player/spec.md`](./features/mini-player/spec.md)
+- Especificación técnica de Compañía Viva (Recompensa Visual): [`features/compania-viva/spec.md`](./features/compania-viva/spec.md) y sus [decisiones de diseño](./features/compania-viva/decisions.md)
 - Especificación técnica del Detector de Dispersión: [`features/distraction-detector/spec.md`](./features/distraction-detector/spec.md) y sus [decisiones de diseño](./features/distraction-detector/decisions.md)
 - Análisis y resoluciones de las propuestas de Fede: [`proposals/fede-ideas.md`](./proposals/fede-ideas.md)
 - Análisis y resoluciones de las propuestas de Vortex: [`proposals/vortex-ideas.md`](./proposals/vortex-ideas.md)
