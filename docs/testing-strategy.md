@@ -121,6 +121,7 @@ flowchart TD
 - **Componentes**: `SettingsDrawer`, paneles de intervalos, toggles de sonido y nuevo `LanguageSelector` (Selector accesible de idioma con opciones English / Español).
 - **Traducción**: Textos de configuración, descripciones de opciones y tooltips.
 - **Tests**: Actualizar `settings.svelte.test.ts` y verificar que conmutar el idioma actualiza la UI en caliente sin recargar la página ni alterar rutas.
+- **Estado actual**: `SettingsDrawer` y `settings.svelte.test.ts` ya no existen. La superficie es el diálogo con tabs (`settings-dialog.svelte` + `panels/`) y su cobertura principal es `e2e/settings.e2e.ts` (PRs #174, #175). Esta sección queda como registro del plan original.
 
 ### PR 2.3: Slice Vertical 3 — Planning
 
