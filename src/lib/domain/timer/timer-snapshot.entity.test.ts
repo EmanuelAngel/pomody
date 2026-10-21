@@ -46,7 +46,7 @@ function makePlan(
 		{ index: 4, mode: 'focus' as const, durationSeconds: 1500, status: statuses[4] ?? 'pending' }
 	];
 
-	return { id: 'plan-1', activeBlockIndex, blocks };
+	return { id: 'plan-1', activeBlockIndex, completed: false, blocks };
 }
 
 describe('sanitizeTimerSnapshot', () => {
@@ -334,7 +334,7 @@ describe('buildTimerSnapshotRecord', () => {
 		currentRound: 1,
 		totalRoundsCompleted: 0,
 		planId: 'plan-1',
-		activeBlockIndex: 0,
+		blockIndex: 0,
 		now: NOW
 	};
 
@@ -346,12 +346,12 @@ describe('buildTimerSnapshotRecord', () => {
 		expect(record.blockIndex).toBe(0);
 	});
 
-	it('maps a completed block to the index before the active one', () => {
+	it('keeps the supplied block index for a completed block', () => {
 		const record = buildTimerSnapshotRecord({
 			...base,
 			state: 'completed',
 			remainingMs: 0,
-			activeBlockIndex: 2
+			blockIndex: 1
 		});
 
 		expect(record.blockIndex).toBe(1);
@@ -366,7 +366,7 @@ describe('buildTimerSnapshotRecord', () => {
 	});
 
 	it('clears the binding for a free-running block', () => {
-		const record = buildTimerSnapshotRecord({ ...base, planId: null, activeBlockIndex: null });
+		const record = buildTimerSnapshotRecord({ ...base, planId: null, blockIndex: null });
 
 		expect(record.planId).toBeNull();
 		expect(record.blockIndex).toBeNull();
@@ -374,5 +374,42 @@ describe('buildTimerSnapshotRecord', () => {
 
 	it('produces a record the sanitizer accepts', () => {
 		expect(sanitizeTimerSnapshot(buildTimerSnapshotRecord(base))).not.toBeNull();
+	});
+});
+
+describe('resolveTimerRestore with a completed plan', () => {
+	const completedPlan: ActivePlanView = {
+		id: 'plan-1',
+		activeBlockIndex: 0,
+		completed: true,
+		blocks: [
+			{ index: 0, mode: 'focus', durationSeconds: 1500, status: 'completed' },
+			{ index: 1, mode: 'shortBreak', durationSeconds: 300, status: 'completed' },
+			{ index: 2, mode: 'focus', durationSeconds: 1500, status: 'completed' }
+		]
+	};
+
+	it('adopts the completed block of a finished session', () => {
+		const decision = resolveTimerRestore({
+			persisted: makeSnapshot({
+				state: 'completed',
+				blockIndex: 2,
+				remainingMs: 0
+			}),
+			plan: completedPlan,
+			now: NOW
+		});
+
+		expect(decision).toMatchObject({ kind: 'adopt', state: 'completed' });
+	});
+
+	it('starts fresh when the finished session has a different snapshot', () => {
+		const decision = resolveTimerRestore({
+			persisted: makeSnapshot({ planId: 'plan-old' }),
+			plan: completedPlan,
+			now: NOW
+		});
+
+		expect(decision).toEqual({ kind: 'fresh', reason: 'plan-mismatch' });
 	});
 });

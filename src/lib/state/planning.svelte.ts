@@ -78,6 +78,7 @@ export class PlanningState {
 	private _isLoading = $state<boolean>(false);
 	private _isLoaded = $state<boolean>(false);
 	private _activeBlockIndex = $state<number>(0);
+	private _completedBlockIndex: number | null = null;
 
 	public readonly targetMode = $derived.by<PlanTargetMode>(() => this._targetMode);
 	public readonly blockCount = $derived.by<number>(() => this._blockCount);
@@ -219,6 +220,7 @@ export class PlanningState {
 	public connectTimer(timer: TimerState): () => void {
 		this._timerUnsubscribe?.();
 		this.timerState = timer;
+		this.syncTimerBinding();
 		const unsubEvents = timer.onEvent((event) => {
 			void this.handleTimerDomainEvent(event);
 		});
@@ -417,8 +419,12 @@ export class PlanningState {
 
 	/**
 	 * Loads activePlan from repository and restores planning state if present.
+	 * Idempotent: bootstrap owns the first load; opening Planning never re-reads it.
 	 */
 	public async load(): Promise<void> {
+		if (this._isLoaded) {
+			return;
+		}
 		this._isLoading = true;
 		try {
 			const plan = await this.repository.getActivePlan();
@@ -453,10 +459,29 @@ export class PlanningState {
 					await this.handleTimerConfigChange(this.timerState.config);
 				}
 			}
+			this._completedBlockIndex = null;
+			this.syncTimerBinding();
 			this._isLoaded = true;
 		} finally {
 			this._isLoading = false;
 		}
+	}
+
+	/**
+	 * Mirrors the plan position into the timer binding so persisted snapshots can be
+	 * validated against the block the FSM actually executes.
+	 */
+	private syncTimerBinding(): void {
+		const plan = this._activePlan;
+		this.timerState?.setPlanBinding(
+			plan
+				? {
+						planId: plan.id,
+						activeBlockIndex: this._activeBlockIndex,
+						completedBlockIndex: this._completedBlockIndex
+					}
+				: null
+		);
 	}
 
 	public setTargetMode(mode: PlanTargetMode): void {
@@ -708,6 +733,8 @@ export class PlanningState {
 
 		this._activePlan = plan;
 		this._activeBlockIndex = 0;
+		this._completedBlockIndex = null;
+		this.syncTimerBinding();
 
 		await this.repository.saveActivePlan(this._activePlan);
 
@@ -732,12 +759,17 @@ export class PlanningState {
 	}
 
 	/**
-	 * Ends the active session, clears activePlan from repository, and resets active index.
+	 * Ends the active session: resets the timer, clears the active plan, drops the timer
+	 * binding and removes the persisted timer snapshot so a reload starts clean.
 	 */
 	public async endSession(customTimerState?: TimerState): Promise<void> {
+		const timer = customTimerState ?? this.timerState;
+		timer?.resetToInitial();
+
 		await this.repository.clearActivePlan();
 		this._activePlan = null;
 		this._activeBlockIndex = 0;
+		this._completedBlockIndex = null;
 		this._draftTaskAssignments.clear();
 
 		const tasks = this.tasksState;
@@ -745,10 +777,8 @@ export class PlanningState {
 			tasks.setActiveTask(null);
 		}
 
-		const timer = customTimerState ?? this.timerState;
-		if (timer) {
-			timer.resetToInitial();
-		}
+		this.syncTimerBinding();
+		await timer?.clearPersistedState();
 	}
 
 	/**
@@ -779,6 +809,8 @@ export class PlanningState {
 		let updatedPlan = updateBlockStatus(this._activePlan, this._activeBlockIndex, targetStatus);
 		const timer = customTimerState ?? this.timerState;
 		const tasks = customTasksState ?? this.tasksState;
+		const completedIndex = this._activeBlockIndex;
+		let isLastBlock = false;
 
 		if (this._activeBlockIndex + 1 < updatedPlan.blocks.length) {
 			this._activeBlockIndex++;
@@ -793,13 +825,22 @@ export class PlanningState {
 				}
 			}
 		} else {
-			if (timer) {
-				timer.pause();
-			}
+			isLastBlock = true;
 		}
 
 		this._activePlan = updatedPlan;
+		this._completedBlockIndex = completedIndex;
+		this.syncTimerBinding();
+
+		if (isLastBlock && timer) {
+			timer.pause();
+		}
+
+		// The plan settles before the timer snapshot, so a persisted `completed` snapshot
+		// points at the block that just finished, not at the one the plan advanced to.
 		await this.repository.saveActivePlan(this._activePlan);
+
+		timer?.persistNow();
 	}
 
 	/**

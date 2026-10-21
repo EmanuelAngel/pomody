@@ -18,7 +18,7 @@ function makeRecord() {
 		currentRound: 1,
 		totalRoundsCompleted: 0,
 		planId: 'plan-1',
-		activeBlockIndex: 0,
+		blockIndex: 0,
 		now: NOW
 	});
 }

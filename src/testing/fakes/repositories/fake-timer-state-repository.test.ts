@@ -11,7 +11,7 @@ describe('FakeTimerStateRepository', () => {
 		currentRound: 1,
 		totalRoundsCompleted: 0,
 		planId: null,
-		activeBlockIndex: null,
+		blockIndex: null,
 		now: 1_700_000_000_000
 	});
 
