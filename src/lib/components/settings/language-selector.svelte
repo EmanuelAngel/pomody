@@ -39,7 +39,7 @@
 		variant="outline"
 		spacing={2}
 		aria-label={localeState.current ? t.settings_language_aria() : ''}
-		class="grid grid-cols-2 gap-2"
+		class="grid w-full grid-cols-2 gap-2"
 	>
 		<ToggleGroup.Item
 			value="en"

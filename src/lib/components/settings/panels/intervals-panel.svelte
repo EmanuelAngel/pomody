@@ -110,20 +110,11 @@
 			longBreakDurationSeconds: DEFAULT_TIMER_CONFIG.longBreakDurationSeconds,
 			roundsBeforeLongBreak: DEFAULT_TIMER_CONFIG.roundsBeforeLongBreak
 		});
-		timerState.setSoundEnabled(true);
-		timerState.setRevitalizationEnabled(true);
 	}
 </script>
 
 <div class="flex flex-col gap-4">
-	<div>
-		<h3 class="text-sm font-semibold tracking-wide text-foreground">
-			{t.settings_section_intervals()}
-		</h3>
-		<p class="mt-0.5 text-xs text-muted-foreground">
-			{t.settings_section_intervals_description()}
-		</p>
-	</div>
+	<p class="text-xs text-muted-foreground">{t.settings_section_intervals_description()}</p>
 
 	<Field.Group class="flex flex-col gap-5">
 		<!-- Focus Duration -->

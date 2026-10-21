@@ -3,7 +3,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import Header from '$lib/components/layout/header.svelte';
 	import DailyCounter from '$lib/components/layout/daily-counter.svelte';
-	import SettingsDrawer from '$lib/components/settings/settings-drawer.svelte';
+	import SettingsDialog from '$lib/components/settings/settings-dialog.svelte';
 	import MiniPlayer from '$lib/components/timer/mini-player.svelte';
 	import { windowState } from '$lib/state/windowState.svelte';
 
@@ -41,7 +41,7 @@
 	<MiniPlayer />
 {:else}
 	<Header bind:settingsOpen />
-	<SettingsDrawer bind:open={settingsOpen} />
+	<SettingsDialog bind:open={settingsOpen} />
 
 	{@render children()}
 
