@@ -1,0 +1,261 @@
+/*
+ * Forest illustration palette: the one place to retune the colours of all five phases.
+ * Dawn mixes Rosé Pine tokens (so it follows the theme); Dark and OLED are hand-picked night
+ * colours. Phases paint with fill="var(--forest-<name>)".
+ *
+ * s0-s6 sky       far1-4, w1-3 distant haze   m1-m6 hills   lh, lm, ll, ld, o1, o2, lt, vine leaves
+ * d1-d7 soil      gr1-gr5 grass               t1-t3, bk bark   r1, r2 rocks   br brambles
+ * fR, fP, fY, fV, fW, fO, fB flowers and fruit   ms mushroom stem
+ */
+[data-illustration='forest'] {
+	--forest-s0: color-mix(in srgb, var(--accent-foam) 18%, var(--bg-base));
+	--forest-s1: color-mix(in srgb, var(--accent-foam) 13%, var(--bg-base));
+	--forest-s2: color-mix(in srgb, var(--accent-foam) 8%, var(--bg-base));
+	--forest-s3: color-mix(in srgb, var(--accent-gold) 5%, var(--bg-base));
+	--forest-s4: color-mix(in srgb, var(--accent-gold) 8%, var(--bg-base));
+	--forest-s5: color-mix(in srgb, var(--accent-gold) 11%, var(--bg-base));
+	--forest-s6: color-mix(in srgb, var(--accent-gold) 20%, var(--bg-base));
+	--forest-far1: color-mix(in srgb, var(--accent-foam) 24%, var(--bg-base));
+	--forest-far2: color-mix(in srgb, var(--accent-iris) 20%, var(--bg-base));
+	--forest-far3: color-mix(in srgb, var(--accent-iris) 26%, var(--bg-base));
+	--forest-far4: color-mix(in srgb, var(--accent-iris) 15%, var(--bg-base));
+	--forest-w1: color-mix(in srgb, var(--accent-gold) 22%, var(--bg-base));
+	--forest-w2: color-mix(in srgb, var(--accent-gold) 28%, var(--bg-base));
+	--forest-w3: color-mix(in srgb, var(--accent-foam) 30%, var(--bg-base));
+	--forest-m1: color-mix(in srgb, var(--accent-foam) 36%, var(--bg-base));
+	--forest-m2: color-mix(in srgb, var(--accent-foam) 44%, var(--bg-base));
+	--forest-m3: color-mix(in srgb, var(--accent-foam) 52%, var(--bg-base));
+	--forest-m4: color-mix(in srgb, var(--accent-pine) 42%, var(--bg-base));
+	--forest-m5: color-mix(in srgb, var(--accent-pine) 54%, var(--bg-base));
+	--forest-m6: color-mix(in srgb, var(--accent-pine) 68%, var(--bg-base));
+	--forest-lh: var(--accent-foam);
+	--forest-lm: color-mix(in srgb, var(--accent-foam) 60%, var(--accent-pine));
+	--forest-ll: color-mix(in srgb, var(--accent-foam) 30%, var(--accent-pine));
+	--forest-ld: var(--accent-pine);
+	--forest-ld2: var(--accent-pine);
+	--forest-o1: color-mix(in srgb, var(--accent-foam) 75%, var(--bg-base));
+	--forest-o2: color-mix(in srgb, var(--accent-pine) 75%, var(--bg-base));
+	--forest-d1: color-mix(in srgb, var(--accent-gold) 45%, var(--bg-base));
+	--forest-d2: color-mix(
+		in srgb,
+		var(--accent-gold) 35%,
+		color-mix(in srgb, var(--accent-rose) 23%, var(--bg-base))
+	);
+	--forest-d3: color-mix(
+		in srgb,
+		var(--accent-rose) 35%,
+		color-mix(in srgb, var(--accent-gold) 23%, var(--bg-base))
+	);
+	--forest-d4: color-mix(
+		in srgb,
+		var(--accent-rose) 30%,
+		color-mix(in srgb, var(--accent-pine) 21%, var(--bg-base))
+	);
+	--forest-d5: color-mix(
+		in srgb,
+		var(--accent-rose) 25%,
+		color-mix(in srgb, var(--accent-pine) 40%, var(--bg-base))
+	);
+	--forest-d6: color-mix(
+		in srgb,
+		var(--accent-pine) 40%,
+		color-mix(in srgb, var(--accent-rose) 25%, var(--bg-base))
+	);
+	--forest-d7: color-mix(in srgb, var(--accent-pine) 50%, var(--bg-base));
+	--forest-t1: color-mix(
+		in srgb,
+		var(--accent-rose) 40%,
+		color-mix(in srgb, var(--accent-iris) 33%, var(--bg-base))
+	);
+	--forest-t2: color-mix(
+		in srgb,
+		var(--accent-iris) 45%,
+		color-mix(in srgb, var(--accent-pine) 45%, var(--bg-base))
+	);
+	--forest-t3: color-mix(
+		in srgb,
+		var(--accent-iris) 20%,
+		color-mix(in srgb, var(--accent-pine) 75%, var(--bg-base))
+	);
+	--forest-br: var(--accent-pine);
+	--forest-r1: color-mix(in srgb, var(--accent-iris) 55%, var(--bg-base));
+	--forest-r2: color-mix(
+		in srgb,
+		var(--accent-iris) 30%,
+		color-mix(in srgb, var(--accent-pine) 71%, var(--bg-base))
+	);
+	--forest-gr1: color-mix(
+		in srgb,
+		var(--accent-foam) 35%,
+		color-mix(in srgb, var(--accent-gold) 69%, var(--bg-base))
+	);
+	--forest-gr2: color-mix(
+		in srgb,
+		var(--accent-foam) 40%,
+		color-mix(
+			in srgb,
+			var(--accent-gold) 50%,
+			color-mix(in srgb, var(--accent-pine) 33%, var(--bg-base))
+		)
+	);
+	--forest-gr3: color-mix(
+		in srgb,
+		var(--accent-pine) 30%,
+		color-mix(
+			in srgb,
+			var(--accent-gold) 36%,
+			color-mix(in srgb, var(--accent-foam) 44%, var(--bg-base))
+		)
+	);
+	--forest-gr4: color-mix(
+		in srgb,
+		var(--accent-pine) 50%,
+		color-mix(in srgb, var(--accent-gold) 30%, var(--bg-base))
+	);
+	--forest-gr5: color-mix(
+		in srgb,
+		var(--accent-pine) 70%,
+		color-mix(in srgb, var(--accent-gold) 33%, var(--bg-base))
+	);
+	--forest-lt: color-mix(
+		in srgb,
+		var(--accent-foam) 45%,
+		color-mix(in srgb, var(--accent-gold) 64%, var(--bg-base))
+	);
+	--forest-bk: color-mix(
+		in srgb,
+		var(--accent-pine) 85%,
+		color-mix(in srgb, var(--accent-iris) 80%, var(--bg-base))
+	);
+	--forest-vine: color-mix(
+		in srgb,
+		var(--accent-pine) 60%,
+		color-mix(in srgb, var(--accent-foam) 75%, var(--bg-base))
+	);
+	--forest-fR: var(--accent-love);
+	--forest-fP: color-mix(in srgb, var(--accent-rose) 90%, var(--bg-base));
+	--forest-fY: var(--accent-gold);
+	--forest-fV: var(--accent-iris);
+	--forest-fW: var(--bg-surface);
+	--forest-fO: color-mix(in srgb, var(--accent-gold) 60%, var(--accent-love));
+	--forest-fB: color-mix(in srgb, var(--accent-iris) 52%, var(--accent-pine));
+	--forest-ms: var(--bg-surface);
+}
+
+[data-theme='dark'] [data-illustration='forest'] {
+	--forest-s0: #1b2236;
+	--forest-s1: #202a3d;
+	--forest-s2: #28334a;
+	--forest-s3: #3a3549;
+	--forest-s4: #4f4251;
+	--forest-s5: #6b505a;
+	--forest-s6: #8a6560;
+	--forest-far1: #2a3a4e;
+	--forest-far2: #32304a;
+	--forest-far3: #3a3556;
+	--forest-far4: #2b2a45;
+	--forest-w1: #5a4a56;
+	--forest-w2: #6e5662;
+	--forest-w3: #34495a;
+	--forest-m1: #2c4553;
+	--forest-m2: #263f4c;
+	--forest-m3: #213843;
+	--forest-m4: #1c3139;
+	--forest-m5: #172a31;
+	--forest-m6: #122329;
+	--forest-lh: #8fd3bb;
+	--forest-lm: #58ab97;
+	--forest-ll: #3a8178;
+	--forest-ld: #26605f;
+	--forest-ld2: #1b4a53;
+	--forest-o1: #a9e2cd;
+	--forest-o2: #153f48;
+	--forest-d1: #7c6449;
+	--forest-d2: #6b5541;
+	--forest-d3: #5b4739;
+	--forest-d4: #4b3b35;
+	--forest-d5: #3d3131;
+	--forest-d6: #2f2731;
+	--forest-d7: #241f2c;
+	--forest-t1: #a58aa0;
+	--forest-t2: #6e5d82;
+	--forest-t3: #493f5f;
+	--forest-br: #21505a;
+	--forest-r1: #6f6b8c;
+	--forest-r2: #444160;
+	--forest-gr1: #79c08a;
+	--forest-gr2: #559f82;
+	--forest-gr3: #3b7e6c;
+	--forest-gr4: #296357;
+	--forest-gr5: #1c4a47;
+	--forest-lt: #b9e6a6;
+	--forest-bk: #3a2f46;
+	--forest-vine: #42906e;
+	--forest-fR: #eb6f92;
+	--forest-fP: #e8a3b9;
+	--forest-fY: #f6c177;
+	--forest-fV: #c4a7e7;
+	--forest-fW: #e0def4;
+	--forest-fO: #f0966e;
+	--forest-fB: #6e9bd8;
+	--forest-ms: #cfc7dd;
+}
+
+[data-theme='oled'] [data-illustration='forest'] {
+	--forest-s0: #05070d;
+	--forest-s1: #0a0e18;
+	--forest-s2: #101726;
+	--forest-s3: #1d1a27;
+	--forest-s4: #2d2331;
+	--forest-s5: #46313b;
+	--forest-s6: #6a4646;
+	--forest-far1: #131d2b;
+	--forest-far2: #1a1830;
+	--forest-far3: #211d39;
+	--forest-far4: #14132b;
+	--forest-w1: #3b2d37;
+	--forest-w2: #4e3b45;
+	--forest-w3: #1a2a38;
+	--forest-m1: #1a2a36;
+	--forest-m2: #162531;
+	--forest-m3: #12202a;
+	--forest-m4: #0e1b23;
+	--forest-m5: #0b161c;
+	--forest-m6: #081117;
+	--forest-lh: #8fd3bb;
+	--forest-lm: #58ab97;
+	--forest-ll: #3a8178;
+	--forest-ld: #26605f;
+	--forest-ld2: #1b4a53;
+	--forest-o1: #a9e2cd;
+	--forest-o2: #0f333c;
+	--forest-d1: #5f4b39;
+	--forest-d2: #513f33;
+	--forest-d3: #44352d;
+	--forest-d4: #372b29;
+	--forest-d5: #2b2225;
+	--forest-d6: #201920;
+	--forest-d7: #15111b;
+	--forest-t1: #a58aa0;
+	--forest-t2: #6e5d82;
+	--forest-t3: #493f5f;
+	--forest-br: #173f47;
+	--forest-r1: #58557a;
+	--forest-r2: #35334f;
+	--forest-gr1: #79c08a;
+	--forest-gr2: #559f82;
+	--forest-gr3: #3b7e6c;
+	--forest-gr4: #245a50;
+	--forest-gr5: #133b3b;
+	--forest-lt: #b9e6a6;
+	--forest-bk: #2b2336;
+	--forest-vine: #42906e;
+	--forest-fR: #eb6f92;
+	--forest-fP: #e8a3b9;
+	--forest-fY: #f6c177;
+	--forest-fV: #c4a7e7;
+	--forest-fW: #e0def4;
+	--forest-fO: #f0966e;
+	--forest-fB: #6e9bd8;
+	--forest-ms: #cfc7dd;
+}
