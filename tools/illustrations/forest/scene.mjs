@@ -24,6 +24,46 @@ const BARK = ['b1', 'b2', 'b3', 'b4', 'b5'];
 const SOIL = ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7'];
 const GRASS = ['g1', 'g2', 'g3', 'g4', 'g5', 'g6'];
 
+// Tone ramps, light -> dark. Vignette, fog and ground relief move a pixel along its own ramp, so
+// they recolour any material the same way in every theme.
+const RAMPS = [
+	['s4', 's3', 's2', 's1', 's0'],
+	['f1', 'f2', 'f3', 'h1', 'h2', 'h3', 'h4'],
+	SOIL,
+	GRASS,
+	LEAF,
+	BARK,
+	['r1', 'r2', 'r3']
+];
+const PLACE = new Map(RAMPS.flatMap((ramp) => ramp.map((n, i) => [id[n], [ramp, i]])));
+const shift = (c, steps) => {
+	const at = PLACE.get(c);
+	if (!at || !steps) return c;
+	const [ramp, i] = at;
+	return id[ramp[Math.max(0, Math.min(ramp.length - 1, i + steps))]];
+};
+/** Darkens (steps > 0) or lightens a pixel in place, and what rests under it if it is alive. */
+function tone(cv, x, y, steps) {
+	x = Math.round(x);
+	y = Math.round(y);
+	if (x < 0 || y < 0 || x >= W || y >= H) return;
+	const i = y * W + x;
+	cv.c[i] = shift(cv.c[i], steps);
+	if (cv.g[i]) cv.u[i] = shift(cv.u[i], steps);
+}
+
+/**
+ * Draws one standing element leaning outward, more the closer its base is to an edge: the slight
+ * wide-lens bend of the reference. The whole element shears as one piece, so it never tears.
+ */
+function lean(cv, baseX, draw) {
+	cv.shear = shearFor(baseX);
+	cv.shearBase = GROUND;
+	draw();
+	cv.shear = 0;
+}
+const shearFor = (baseX) => Math.sign(baseX - 160) * 0.065 * (Math.abs(baseX - 160) / 160) ** 1.6;
+
 export function build(P) {
 	const cv = new Canvas();
 
@@ -31,21 +71,75 @@ export function build(P) {
 	farForest(cv, P >= 3);
 	hills(cv);
 	valley(cv);
+	fog(cv);
 	mist(cv);
 	ground(cv, P);
+	relief(cv);
 
 	giants(cv, P);
-	hero(cv, P);
-	rightTrees(cv, P);
-	leftSapling(cv, P);
+	lean(cv, 93, () => hero(cv, P));
+	lean(cv, 244, () => rightTrees(cv, P));
+	lean(cv, 48, () => leftSapling(cv, P));
 	cornerBushes(cv, P);
 	centreBushes(cv, P);
 
 	groundCover(cv, P);
 	foreground(cv, P);
 	fauna(cv, P);
+	vignette(cv);
 	stars(cv);
 	return cv;
+}
+
+/** Edges and bottom corners one or two tones deeper, the frame of the reference art. */
+function vignette(cv) {
+	for (let y = 0; y < H; y++)
+		for (let x = 0; x < W; x++) {
+			const e =
+				((x - 160) / 170) ** 2 * 1.1 +
+				((y - 70) / 125) ** 2 +
+				(y > GROUND ? ((y - GROUND) / 37) ** 2 * 0.25 : 0);
+			const v = e + vnoise2(x / 5, y / 3, 33) * 0.18;
+			tone(cv, x, y, v > 1.35 ? 2 : v > 0.95 ? 1 : 0);
+		}
+}
+
+/** A thin veil of fog over the far forest and the hills, densest low down, drifting in bands. */
+function fog(cv) {
+	for (let y = 30; y < GROUND; y++)
+		for (let x = 0; x < W; x++) {
+			const at = PLACE.get(cv.get(x, y));
+			if (!at || at[0] !== RAMPS[1]) continue;
+			const band = Math.max(0, 1 - Math.abs(y - 114) / 42);
+			const m = band * 1.3 + vnoise2(x / 26, y / 7, 31) * 0.5 + vnoise2(x / 4, y / 3, 32) * 0.12;
+			tone(cv, x, y, m > 1.15 ? -2 : m > 0.65 ? -1 : 0);
+		}
+}
+
+/**
+ * Bumps and hollows in the clearing, wider the nearer they are: a lit crest and a shadow at the
+ * foot for a bump, a shaded far rim and a lit near rim for a hollow.
+ */
+function relief(cv) {
+	const R = rng(270);
+	for (let k = 0; k < 30; k++) {
+		const my = GROUND + 3 + R() ** 1.2 * 34;
+		const t = (my - GROUND) / 37;
+		const w = 8 + t * 28 + R() * 8;
+		const h = 1.2 + t * 3.5;
+		const mx = R() * W;
+		const hollow = R() < 0.35;
+		for (let y = Math.floor(my - h); y <= my + 1; y++)
+			for (let x = Math.floor(mx - w / 2); x <= mx + w / 2; x++) {
+				const u = (x - mx) / (w / 2);
+				const top = my - h * Math.sqrt(Math.max(0, 1 - u * u)) + vnoise(x, 5, 271 + k) * 0.8;
+				if (y < top) continue;
+				const crest = y <= top + 1;
+				const foot = y >= my;
+				if (hollow) tone(cv, x, y, crest ? 2 : foot ? -1 : 1);
+				else tone(cv, x, y, crest ? (u < 0.3 ? -2 : -1) : foot ? 2 : 0);
+			}
+	}
 }
 
 /**
@@ -111,10 +205,12 @@ function farForest(cv, leafy) {
 		FAR.filter((t) => t[3] === layer).forEach(([x, top, w], k) => {
 			const c = id[['f1', 'f2', 'f3'][layer - 1]];
 			const R = rng(500 + x);
-			const lean = (R() - 0.5) * 6;
+			const tilt = (R() - 0.5) * 4;
+			cv.shear = shearFor(x);
+			cv.shearBase = GROUND;
 			const centre = [
 				[x, GROUND],
-				[x + lean, top]
+				[x + tilt, top]
 			];
 			cv.trunk(
 				centre,
@@ -129,7 +225,7 @@ function farForest(cv, leafy) {
 			const forks = 2 + Math.floor(R() * 3);
 			for (let f = 0; f < forks; f++) {
 				const by = top + 8 + R() * 40;
-				const bx = x + lean * (1 - (by - top) / (GROUND - top));
+				const bx = x + tilt * (1 - (by - top) / (GROUND - top));
 				const side = (f + k) % 2 ? 1 : -1;
 				const len = 7 + R() * 10;
 				cv.path(
@@ -145,11 +241,12 @@ function farForest(cv, leafy) {
 				const cc = id[['f2', 'f3', 'h2'][layer - 1]];
 				const n = 3 + Math.floor(R() * 3);
 				for (let b = 0; b < n; b++) {
-					const bx = x + lean + (R() - 0.5) * 18;
+					const bx = x + tilt + (R() - 0.5) * 18;
 					const by = top + 4 + R() * 26;
 					blob(cv, bx, by, 5 + R() * 5, 4 + R() * 3, cc, 700 + x + b);
 				}
 			}
+			cv.shear = 0;
 		});
 }
 
@@ -232,8 +329,7 @@ function hills(cv) {
 			}
 			depth++;
 			if (depth <= 1) cv.set(x, y, id.h2);
-			else if (depth > 7 && vnoise2(x / 9, y / 4, 14) + dither(x, y) * 0.5 > 0.05)
-				cv.set(x, y, id.h4);
+			else if (depth > 7 && vnoise2(x / 9, y / 4, 14) > 0.05) cv.set(x, y, id.h4);
 		}
 	}
 }
@@ -310,7 +406,7 @@ function mist(cv) {
 // Ground: soil in phase 1, grass spreading over it from phase 2
 // ---------------------------------------------------------------------------------------------
 function ground(cv, P) {
-	const cover = [0, -1, 0.15, 0.75, 0.8, 0.85][P];
+	const cover = [0, -1, 0.45, 0.8, 0.85, 0.9][P];
 	for (let y = GROUND; y < H; y++)
 		for (let x = 0; x < W; x++) {
 			const t = (y - GROUND) / (H - GROUND);
@@ -318,7 +414,9 @@ function ground(cv, P) {
 			// long horizontal streaks, the way soil reads in perspective
 			const n = vnoise2(x / 20, y / 1.6, 21) * 1.3 + vnoise2(x / 6, y / 1.2, 23) * 0.6;
 			const tone = 1.6 + t ** 1.1 * 4.2 + n * 1.25 + corner + dither(x, y) * 0.35;
-			const grass = vnoise2(x / 11, y / 3, 22) + cover - t * 0.3 > 0.2;
+			// grass spreads in long patches; their edges break up into single blades
+			const grass =
+				vnoise2(x / 24, y / 2.5, 22) + vnoise2(x / 4, y / 1.5, 24) * 0.15 + cover - t * 0.2 > 0.2;
 			cv.set(x, y, grass ? pick(GRASS, tone * 0.85) : pick(SOIL, tone));
 		}
 	// horizon: the lit edge of the clearing
@@ -332,18 +430,34 @@ function ground(cv, P) {
 // ---------------------------------------------------------------------------------------------
 // Foliage
 // ---------------------------------------------------------------------------------------------
-const STAMPS = [
-	['.##', '##.'],
-	['##.', '.##'],
-	['.#.', '###'],
-	['###', '.#.'],
-	['##', '##'],
-	['.#.', '###', '.#.']
-];
+/**
+ * One pointed leaf, `len` px from its root along `ang`, up to 3 px wide. It is shaded on its own
+ * outline (lit where it faces the upper left, darker where it faces the lower right), so a leaf
+ * drawn over another stays readable as a separate leaf. `tone` indexes LEAF (1 lit .. 4 deep).
+ */
+function leafShape(cv, x0, y0, ang, len, tone) {
+	const dx = Math.cos(ang);
+	const dy = Math.sin(ang);
+	const cells = new Set();
+	for (let s = 0; s <= len; s += 0.5) {
+		const half = 1.6 * Math.sin((Math.PI * (s + 0.6)) / (len + 1.2));
+		for (let t = -half; t <= half; t += 0.5)
+			cells.add(`${Math.round(x0 + dx * s - dy * t)},${Math.round(y0 + dy * s + dx * t)}`);
+	}
+	const has = (x, y) => cells.has(`${x},${y}`);
+	for (const key of cells) {
+		const [x, y] = key.split(',').map(Number);
+		let t = tone;
+		if (!has(x, y + 1) || !has(x + 1, y)) t = Math.min(5, tone + 1);
+		if (!has(x, y - 1) && !has(x - 1, y)) t = Math.max(0, tone - 1);
+		cv.set(x, y, id[LEAF[t]]);
+	}
+}
 
 /**
- * A crown of leaf clumps lit from the upper left: a dark mass, then leaf stamps from the shade up
- * to the highlights, so the edge reads as single leaves and every clump has light and shadow.
+ * A crown of leaf clumps lit from the upper left. Each clump is a dark mass covered, top row first,
+ * by fans of pointed leaves: every leaf has a lit upper edge and a shaded lower edge and overlaps
+ * the ones above it. Fans on the rim point outward, so the outline breaks into single leaves.
  * `shade` darkens the whole crown (0 lit .. 1 deep), for trees further back or under a canopy.
  */
 function canopy(cv, clumps, seed, { shade = 0, fruit = null } = {}) {
@@ -352,34 +466,43 @@ function canopy(cv, clumps, seed, { shade = 0, fruit = null } = {}) {
 	for (const { x: cx, y: cy, r } of clumps)
 		for (let y = Math.floor(cy - r - 1); y <= cy + r + 1; y++)
 			for (let x = Math.floor(cx - r - 1); x <= cx + r + 1; x++) {
-				const d = Math.hypot(x - cx, (y - cy) * 1.15) / r;
-				if (d < 0.92 + 0.18 * vnoise2(x / 2, y / 2, seed)) {
-					const light = (-(x - cx) * 0.55 - (y - cy) * 0.85) / r;
-					cv.set(x, y, id[light < -0.45 ? 'l6' : 'l5']);
-				}
+				const d = Math.hypot(x - cx, (y - cy) * 1.2) / r;
+				if (d < 0.68 + 0.16 * vnoise2(x / 2.5, y / 2.5, seed))
+					cv.set(x, y, id[(y - cy) / r > 0.25 ? 'l6' : 'l5']);
 			}
-	const stamps = [];
-	for (const { x: cx, y: cy, r } of clumps) {
-		const n = Math.round(r * r * 1.1);
+	// the crown as a whole is lit from above too: its lower clumps sit in its own shadow
+	const top = Math.min(...clumps.map((c) => c.y - c.r));
+	const bottom = Math.max(...clumps.map((c) => c.y + c.r));
+	const depth = (y) => ((y - top) / (bottom - top || 1)) * 0.9 - 0.3;
+	const clusters = [];
+	for (const { x: cx, y: cy, r } of clumps)
+		for (let row = 0, gy = -r; gy <= r; row++, gy += 3.6)
+			for (let gx = -r; gx <= r; gx += 4.4) {
+				const x = cx + gx + (R() - 0.5) * 2.4 + (row % 2 ? 2.2 : 0);
+				const y = cy + gy + (R() - 0.5) * 1.8;
+				const d = Math.hypot(x - cx, (y - cy) * 1.2) / r;
+				if (d > 0.95 || R() < 0.08) continue;
+				const light =
+					((-(x - cx) * 0.5 - (y - cy) * 0.9) / r) * 0.8 -
+					depth(y) +
+					(R() - 0.5) * 0.35 -
+					shade * 1.1;
+				clusters.push({ x, y, light, cx, cy, r, rr: d > 0.8 ? 1.6 + R() * 0.6 : 1.9 + R() * 0.8 });
+			}
+	clusters.sort((a, b) => a.y - b.y);
+	for (const { x, y, light, rr, cx, cy, r } of clusters) {
+		const tone = light > 0.5 ? 1 : light > 0.12 ? 2 : light > -0.3 ? 3 : 4;
+		if (tone === 4 && light < -0.75) continue;
+		// a fan of pointed leaves: outward on the rim, up and out inside the crown
+		const rim = Math.hypot(x - cx, (y - cy) * 1.2) / r > 0.7;
+		const out = Math.atan2(y - cy, x - cx);
+		const ang = rim ? out : -Math.PI / 2 + ((x - cx) / r) * 0.9 + (R() - 0.5) * 0.6;
+		const n = rr > 2 ? 3 : 2;
 		for (let k = 0; k < n; k++) {
-			const a = R() * Math.PI * 2;
-			const d = Math.sqrt(R()) * r * 1.02;
-			const x = cx + Math.cos(a) * d;
-			const y = cy + Math.sin(a) * d * 0.87;
-			const light = (-(x - cx) * 0.55 - (y - cy) * 0.85) / r + (R() - 0.5) * 0.45 - shade * 1.1;
-			if (light < -0.75) continue;
-			stamps.push({ x, y, light, s: STAMPS[Math.floor(R() * STAMPS.length)] });
+			const a = ang + (k - (n - 1) / 2) * 0.8 + (R() - 0.5) * 0.3;
+			const t = Math.max(1, Math.min(4, tone + (R() < 0.2 ? 1 : 0)));
+			leafShape(cv, x - Math.cos(ang), y - Math.sin(ang), a, rim ? 5 + R() * 2 : 4 + R() * 2, t);
 		}
-	}
-	stamps.sort((a, b) => a.light - b.light);
-	for (const { x, y, light, s } of stamps) {
-		const c =
-			light > 0.62 ? 'l1' : light > 0.2 ? 'l2' : light > -0.2 ? 'l3' : light > -0.5 ? 'l4' : 'l5';
-		const ox = Math.round(x - 1);
-		const oy = Math.round(y - 1);
-		s.forEach((row, yy) =>
-			[...row].forEach((ch, xx) => ch === '#' && cv.set(ox + xx, oy + yy, id[c]))
-		);
 	}
 	cv.group = 0;
 	if (fruit) {
@@ -392,6 +515,27 @@ function canopy(cv, clumps, seed, { shade = 0, fruit = null } = {}) {
 					drawFruit(cv, cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.8, fruit.kind(F));
 				}
 	}
+}
+
+/**
+ * Clumps packed into one crown: an ellipse centred on (cx, cy) filled on a staggered grid, with a
+ * few rim clumps left out so the outline breaks into lobes instead of reading as a ball.
+ */
+function crown(cx, cy, rx, ry, seed, r = 8) {
+	const R = rng(seed);
+	const clumps = [];
+	const step = r * 1.15;
+	for (let row = 0, y = cy - ry; y <= cy + ry; row++, y += step * 0.8)
+		for (let x = cx - rx + (row % 2) * step * 0.5; x <= cx + rx; x += step) {
+			const d = Math.hypot((x - cx) / rx, (y - cy) / ry);
+			if (d > 1 || (d > 0.6 && R() < 0.3)) continue;
+			clumps.push({
+				x: x + (R() - 0.5) * r * 0.5,
+				y: y + (R() - 0.5) * r * 0.4,
+				r: r * (0.85 + R() * 0.3) * (d > 0.75 ? 0.85 : 1)
+			});
+		}
+	return clumps;
 }
 
 /** Round 3x3 fruit with a highlight: 'aR' apple or 'aO' orange. */
@@ -454,10 +598,11 @@ function sprig(cv, x, y, dir, len, leaves, seed) {
 	const ey = y - len * 0.7;
 	cv.line(x, y, ex, ey, id.b3);
 	cv.group = 1;
-	if (len > 6) cv.leaf((x + ex) / 2, (y + ey) / 2, Math.PI / 2 + dir * 0.9, 3, id.l3, id.l2);
+	// the same pointed leaf as the crowns (leafShape takes screen angles: y grows downward)
+	if (len > 6) leafShape(cv, (x + ex) / 2, (y + ey) / 2, -Math.PI / 2 - dir * 0.9, 3.5, 2);
 	for (let k = 0; k < leaves; k++) {
 		const ang = Math.PI / 2 - dir * (0.3 + k * 0.55) + (R() - 0.5) * 0.3;
-		cv.leaf(ex, ey, ang, 4, id[k % 2 ? 'l3' : 'l2'], id.l1);
+		leafShape(cv, ex, ey, -ang, 4.5, k % 2 ? 2 : 1);
 	}
 	cv.group = 0;
 }
@@ -471,13 +616,15 @@ function giants(cv, P) {
 	for (const side of [-1, 1]) {
 		const bx = side < 0 ? 24 : 296; // fixed spot of each giant
 		const sx = (x) => (side < 0 ? x : 320 - x); // mirror helper: x measured from the edge
+		cv.shear = shearFor(bx);
+		cv.shearBase = GROUND;
 		if (!big) {
 			slimTrunk(
 				cv,
 				[
 					[bx, GROUND + 2],
-					[sx(18), 70],
-					[sx(14), 10]
+					[sx(22), 70],
+					[sx(20), 10]
 				],
 				[
 					[10, 3],
@@ -488,51 +635,22 @@ function giants(cv, P) {
 			limb(
 				cv,
 				[
-					[sx(17), 52],
+					[sx(21), 52],
 					[sx(32), 34],
 					[sx(42), 26]
 				],
 				3,
 				1
 			);
-			canopy(
-				cv,
-				[
-					{ x: sx(10), y: 6, r: 11 },
-					{ x: sx(30), y: 12, r: 10 },
-					{ x: sx(44), y: 24, r: 8 },
-					{ x: sx(6), y: 26, r: 8 },
-					{ x: sx(24), y: 34, r: 7 }
-				],
-				80 + side
-			);
+			canopy(cv, crown(sx(22), 10, 26, 24, 80 + side, 8), 80 + side);
 			continue;
 		}
 		giantTrunk(cv, bx, side, sx, P);
-		const clumps =
-			side < 0
-				? [
-						{ x: 8, y: 4, r: 14 },
-						{ x: 34, y: 0, r: 13 },
-						{ x: 60, y: 6, r: 13 },
-						{ x: 86, y: 4, r: 12 },
-						{ x: 104, y: 14, r: 10 },
-						{ x: 20, y: 26, r: 11 },
-						{ x: 72, y: 28, r: 11 },
-						{ x: 50, y: 36, r: 9 },
-						{ x: 96, y: 34, r: 8 }
-					]
-				: [
-						{ x: 312, y: 4, r: 14 },
-						{ x: 286, y: 0, r: 13 },
-						{ x: 260, y: 6, r: 13 },
-						{ x: 236, y: 2, r: 11 },
-						{ x: 300, y: 28, r: 11 },
-						{ x: 250, y: 26, r: 10 },
-						{ x: 274, y: 36, r: 9 },
-						{ x: 222, y: 46, r: 9 },
-						{ x: 234, y: 56, r: 7 }
-					];
+		// the crown runs off the top edge, so the giants never look cut
+		const clumps = [
+			...crown(sx(56), 10, 60, 32, 92 + side, 11),
+			...crown(sx(94), 40, 14, 10, 94 + side, 8)
+		];
 		canopy(cv, clumps, 90 + side, {
 			fruit:
 				P >= 5
@@ -540,6 +658,7 @@ function giants(cv, P) {
 					: null
 		});
 	}
+	cv.shear = 0;
 }
 
 function giantTrunk(cv, bx, side, sx, P) {
@@ -709,9 +828,9 @@ function hero(cv, P) {
 	limb(
 		cv,
 		[
-			[x0 + 2, 64],
-			[x0 - 6, 52],
-			[x0 - 12, 44]
+			[x0 + 1, 76],
+			[x0 - 5, 64],
+			[x0 - 11, 54]
 		],
 		2,
 		1
@@ -719,27 +838,24 @@ function hero(cv, P) {
 	limb(
 		cv,
 		[
-			[x0 + 2, 56],
-			[x0 + 10, 46],
-			[x0 + 15, 38]
+			[x0 + 1, 82],
+			[x0 + 7, 72],
+			[x0 + 12, 62]
 		],
 		2,
 		1
 	);
-	const g = P >= 3 ? 1 : 0;
+	// two tiers with a gap where the limbs show; a little fuller once the forest is grown
+	const g = P >= 3 ? 2 : 0;
 	canopy(
 		cv,
 		[
-			{ x: x0 + 2, y: 20, r: 8 + g },
-			{ x: x0 - 11, y: 30, r: 8 + g },
-			{ x: x0 + 14, y: 32, r: 8 },
-			{ x: x0 - 6, y: 46, r: 8 + g },
-			{ x: x0 + 12, y: 52, r: 7 },
-			{ x: x0 - 10, y: 64, r: 6 + g },
-			{ x: x0 + 9, y: 70, r: 6 }
+			...crown(x0 + 1, 26, 18 + g, 16 + g, 31, 7),
+			...crown(x0 - 11, 52, 9 + g, 8, 32, 6),
+			...crown(x0 + 10, 60, 8, 7 + g / 2, 33, 6)
 		],
 		30,
-		{ fruit: P >= 5 ? { share: 0.9, per: 3, kind: () => 'aO' } : null }
+		{ fruit: P >= 5 ? { share: 0.6, per: 2, kind: () => 'aO' } : null }
 	);
 	if (P >= 4) {
 		// a flowering climber on the trunk
@@ -796,16 +912,13 @@ function rightTrees(cv, P) {
 			],
 			13
 		);
+		const g = P >= 3 ? 2 : 0;
 		canopy(
 			cv,
 			[
-				{ x: a, y: 24, r: 8 },
-				{ x: a - 12, y: 36, r: 7 },
-				{ x: a + 12, y: 38, r: 8 },
-				{ x: a - 6, y: 52, r: 8 },
-				{ x: a + 10, y: 58, r: 7 },
-				{ x: a - 2, y: 74, r: 6 + (P >= 3 ? 1 : 0) },
-				{ x: a + 8, y: 86, r: 5 }
+				...crown(a, 34, 16 + g, 16, 51, 7),
+				...crown(a + 11, 62, 9 + g, 8, 52, 6),
+				...crown(a - 10, 72, 8, 7 + g, 53, 6)
 			],
 			50,
 			{ shade: P >= 3 ? 0.25 : 0, fruit: P >= 5 ? { share: 0.7, per: 2, kind: () => 'aO' } : null }
@@ -843,18 +956,10 @@ function rightTrees(cv, P) {
 				: [])
 		].forEach(([x, y, dir, len, n], k) => sprig(cv, x, y, dir, len, n, 60 + k));
 	} else {
-		const g = P >= 4 ? 1 : 0;
-		canopy(
-			cv,
-			[
-				{ x: b, y: 92, r: 5 + g },
-				{ x: b - 7, y: 101, r: 5 + g },
-				{ x: b + 7, y: 103, r: 5 + g },
-				{ x: b - 1, y: 112, r: 4 + g }
-			],
-			70,
-			{ fruit: P >= 5 ? { share: 0.6, per: 1, kind: () => 'aR' } : null }
-		);
+		const g = P >= 4 ? 2 : 0;
+		canopy(cv, crown(b, 102, 9 + g, 12 + g, 71, 5), 70, {
+			fruit: P >= 5 ? { share: 0.6, per: 1, kind: () => 'aR' } : null
+		});
 	}
 }
 
@@ -905,7 +1010,7 @@ function twigShrub(cv, x, base, h, seed, leaves) {
 			const lx = x + dx * (0.3 + t * 0.7);
 			const ly = base - (base - top) * t;
 			cv.group = 1;
-			cv.leaf(lx, ly, Math.PI / 2 + (R() - 0.5) * 2.2, 3, id[R() < 0.5 ? 'l3' : 'l4'], id.l2);
+			leafShape(cv, lx, ly, -Math.PI / 2 + (R() - 0.5) * 2.4, 3, R() < 0.5 ? 2 : 3);
 			cv.group = 0;
 		}
 	}
@@ -930,35 +1035,39 @@ function bush(cv, clumps, seed, dots) {
 
 function cornerBushes(cv, P) {
 	if (P <= 2) {
-		twigShrub(cv, 18, GROUND + 2, 38, 100, P === 1 ? 6 : 8);
-		twigShrub(cv, 304, GROUND + 2, 40, 101, P === 1 ? 6 : 8);
+		lean(cv, 18, () => twigShrub(cv, 18, GROUND + 2, 38, 100, P === 1 ? 4 : 5));
+		lean(cv, 304, () => twigShrub(cv, 304, GROUND + 2, 40, 101, P === 1 ? 4 : 5));
 		return;
 	}
 	const dots =
 		P >= 5
 			? { per: 5, cols: ['fB', 'aR', 'fB'], berry: true }
 			: { per: P >= 4 ? 6 : 4, cols: P >= 4 ? ['fW', 'fP', 'fW'] : ['fW'] };
-	bush(
-		cv,
-		[
-			{ x: 8, y: 116, r: 10 },
-			{ x: 22, y: 124, r: 9 },
-			{ x: 6, y: 134, r: 9 },
-			{ x: 30, y: 136, r: 7 }
-		],
-		110,
-		dots
+	lean(cv, 18, () =>
+		bush(
+			cv,
+			[
+				{ x: 8, y: 116, r: 10 },
+				{ x: 22, y: 124, r: 9 },
+				{ x: 6, y: 134, r: 9 },
+				{ x: 30, y: 136, r: 7 }
+			],
+			110,
+			dots
+		)
 	);
-	bush(
-		cv,
-		[
-			{ x: 312, y: 114, r: 10 },
-			{ x: 298, y: 124, r: 9 },
-			{ x: 314, y: 132, r: 9 },
-			{ x: 290, y: 136, r: 7 }
-		],
-		111,
-		dots
+	lean(cv, 302, () =>
+		bush(
+			cv,
+			[
+				{ x: 312, y: 114, r: 10 },
+				{ x: 298, y: 124, r: 9 },
+				{ x: 314, y: 132, r: 9 },
+				{ x: 290, y: 136, r: 7 }
+			],
+			111,
+			dots
+		)
 	);
 }
 
@@ -966,9 +1075,9 @@ function cornerBushes(cv, P) {
 function centreBushes(cv, P) {
 	if (P < 2) return;
 	if (P === 2) {
-		twigShrub(cv, 128, GROUND + 1, 22, 120, 7);
-		twigShrub(cv, 142, GROUND + 1, 18, 121, 6);
-		twigShrub(cv, 196, GROUND + 1, 20, 122, 6);
+		twigShrub(cv, 128, GROUND + 1, 22, 120, 4);
+		twigShrub(cv, 142, GROUND + 1, 18, 121, 4);
+		twigShrub(cv, 196, GROUND + 1, 20, 122, 4);
 		return;
 	}
 	const dots = { per: P >= 4 ? 5 : 3, cols: P >= 4 ? ['fY', 'fW', 'fV', 'fP'] : ['fW', 'fY'] };

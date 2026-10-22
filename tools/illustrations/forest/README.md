@@ -24,7 +24,9 @@ Las 5 fases son el mismo lugar visto cinco veces mientras revive. `scene.mjs` ti
 - **Nada retrocede.** Cada fase conserva lo de la anterior y le agrega o hace crecer algo (`if (P >= 3) …`).
 - **Lugares fijos.** Cada árbol tiene una `x` fija en todas las fases: el retoño principal en 93, los de la derecha en 229 y 258, el chico de la izquierda en 48, y los gigantes en 24 y 296 (aparecen en la fase 2).
 - **Una semilla por elemento** (`rng(<semilla>)` local). Agregar o quitar un elemento no mueve el azar de los demás, así el fondo es idéntico píxel a píxel entre fases.
-- **Una receta por forma.** Las copas salen todas de `canopy` y los troncos de `slimTrunk` / `giantTrunk`; no dibujes follaje ni corteza por otro camino o el estilo vuelve a divergir.
+- **Una receta por forma.** Toda hoja sale de `leafShape` (copas con `canopy` y `crown`, retoños con `sprig`, arbustos con `twigShrub`) y los troncos de `slimTrunk` / `giantTrunk`; no dibujes follaje ni corteza por otro camino o el estilo vuelve a divergir.
+- **Pasadas de luz.** `fog` (velo sobre el bosque lejano y las colinas), `relief` (montículos y pozos del suelo) y `vignette` (bordes y esquinas más oscuros) no pintan colores nuevos: mueven cada píxel por su rampa de tonos (`RAMPS`), así funcionan igual en los tres temas.
+- **Inclinación.** Todo lo que está de pie se dibuja dentro de `lean(cv, xBase, …)`: se inclina hacia afuera según qué tan lejos del centro está su base, como un gran angular. Se corre la fila entera (`cv.shear` en `lib.mjs`), así el elemento nunca se rompe.
 
 El cielo, las colinas, el valle y la bruma no dependen de `P`. El bosque lejano pasa de árboles muertos (fases 1-2) a siluetas con hojas (fase 3 en adelante).
 
@@ -63,7 +65,7 @@ Coordenadas enteras en una grilla de 320×180 (`x` hacia la derecha, `y` hacia a
 | `sprite(x, y, filas, mapa)`                       | Sprite chico desde filas de caracteres (`.` es transparente).                     |
 | `rng(semilla)`, `vnoise`, `vnoise2`, `interp`     | Azar con semilla, ruido 1D/2D e interpolación por tramos.                         |
 
-Ayudas de `scene.mjs`: `canopy(cv, clumps, seed, { shade, fruit })` copa de racimos de hojas con luz arriba a la izquierda, `slimTrunk` y `giantTrunk` troncos, `limb(cv, pts, w0, w1)` rama con borde iluminado, `sprig` ramita con hojas de los retoños, `twigShrub` y `bush` arbustos (este con flores o bayas), `tuft` pasto, `sprout` brote, `moss`, `rock`, `flower`, `mushroom`, `drawFruit`, `blob` siluetas de bruma y follaje lejano, y `crest` arbustos sobre la línea de una colina.
+Ayudas de `scene.mjs`: `leafShape(cv, x, y, ángulo, largo, tono)` hoja con punta sombreada sobre su propio borde, `crown(cx, cy, rx, ry, semilla, r)` reparte racimos en una copa con lóbulos, `canopy(cv, clumps, seed, { shade, fruit })` cubre esos racimos con abanicos de hojas con luz arriba a la izquierda, `slimTrunk` y `giantTrunk` troncos, `limb(cv, pts, w0, w1)` rama con borde iluminado, `sprig` ramita con hojas de los retoños, `twigShrub` y `bush` arbustos (este con flores o bayas), `tuft` pasto, `sprout` brote, `moss`, `rock`, `flower`, `mushroom`, `drawFruit`, `blob` siluetas de bruma y follaje lejano, y `crest` arbustos sobre la línea de una colina.
 
 ## Colores
 
