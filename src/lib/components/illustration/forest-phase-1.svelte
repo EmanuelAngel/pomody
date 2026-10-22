@@ -9,9 +9,11 @@
 	charred ground and the first green shoots. Drawn pixel by pixel on the 320x180 art grid;
 	every pixel is a 1x1 rect merged into runs, so the grid stays crisp at any integer scale.
 
-	Colours are theme recipes, not hex: each class mixes the Rosé Pine tokens with color-mix().
-	Dawn is the base (a misty morning); dark and oled re-tint the same scene at dusk and night
-	so sky > hills > trees > ground keeps its order and the centre digits stay legible.
+	Colours are Rosé Pine tokens only, no hex: each class is one or two accent tokens mixed into
+	--bg-base with color-mix() (the same result as the token at that opacity over the page, but
+	opaque, so moving foliage never uncovers a hole). Nothing is remapped per theme: the tokens
+	change with the theme. foam/pine are the vegetation, gold the glow and the light soil, iris
+	the far trees, rose/love the warm accents.
 
 	Motion is two groups that hop one art pixel in discrete steps (no interpolation):
 	.leaf (tree and shrub foliage) and .sprout (seedlings and grass blades).
@@ -131,7 +133,7 @@
 	/>
 	<path
 		class="c34"
-		d="M298 145h1v3h-1zM20 146h1v2h-1zM18 147h1v1h-1zM16 148h2v1h-2zM19 148h2v1h-2zM24 148h2v1h-2zM295 148h2v1h-2zM299 148h1v1h-1zM302 148h2v1h-2zM14 149h2v1h-2zM20 149h4v1h-4zM26 149h2v1h-2zM292 149h3v1h-3zM297 149h5v1h-5zM304 149h3v1h-3zM21 150h1v2h-1zM61 150h2v2h-2zM264 150h1v1h-1zM299 150h1v5h-1zM264 151h3v1h-3zM9 152h13v1h-13zM60 152h3v1h-3zM221 152h5v1h-5zM264 152h1v1h-1zM267 152h3v1h-3zM313 152h1v2h-1zM21 153h1v2h-1zM60 153h2v1h-2zM263 153h2v1h-2zM31 154h1v4h-1zM59 154h3v1h-3zM110 154h4v1h-4zM158 154h6v1h-6zM263 154h1v4h-1zM312 154h1v3h-1zM5 155h1v1h-1zM20 155h1v2h-1zM25 155h1v1h-1zM59 155h2v1h-2zM292 155h3v1h-3zM298 155h1v2h-1zM308 155h1v1h-1zM0 156h18v1h-18zM23 156h2v1h-2zM26 156h1v1h-1zM58 156h3v1h-3zM180 156h12v1h-12zM289 156h3v1h-3zM295 156h2v1h-2zM306 156h2v1h-2zM309 156h1v1h-1zM4 157h3v1h-3zM20 157h3v1h-3zM27 157h2v1h-2zM58 157h2v1h-2zM259 157h2v1h-2zM297 157h2v1h-2zM304 157h2v1h-2zM310 157h2v1h-2zM1 158h3v1h-3zM6 158h1v1h-1zM20 158h1v3h-1zM29 158h2v1h-2zM33 158h2v1h-2zM57 158h3v1h-3zM161 158h11v1h-11zM256 158h3v1h-3zM261 158h2v1h-2zM264 158h1v1h-1zM298 158h1v5h-1zM311 158h1v3h-1zM317 158h1v2h-1zM6 159h2v1h-2zM30 159h3v1h-3zM35 159h2v1h-2zM57 159h2v1h-2zM257 159h1v2h-1zM263 159h2v1h-2zM7 160h1v1h-1zM30 160h1v1h-1zM47 160h7v1h-7zM56 160h3v1h-3zM68 160h7v1h-7zM264 160h1v1h-1zM280 160h1v1h-1zM316 160h4v1h-4zM8 161h1v2h-1zM19 161h1v4h-1zM29 161h1v2h-1zM55 161h3v1h-3zM64 161h18v1h-18zM258 161h1v1h-1zM262 161h4v1h-4zM279 161h1v2h-1zM310 161h1v3h-1zM317 161h1v2h-1zM54 162h3v1h-3zM60 162h9v1h-9zM74 162h12v1h-12zM259 162h1v2h-1zM261 162h1v2h-1zM265 162h1v2h-1zM294 162h1v1h-1zM9 163h1v1h-1zM28 163h1v1h-1zM54 163h2v1h-2zM58 163h7v1h-7zM81 163h5v1h-5zM271 163h4v1h-4zM278 163h1v1h-1zM295 163h5v1h-5zM303 163h3v1h-3zM312 163h1v1h-1zM316 163h1v2h-1zM10 164h1v2h-1zM14 164h2v1h-2zM22 164h2v1h-2zM27 164h1v2h-1zM53 164h3v1h-3zM58 164h3v1h-3zM260 164h1v1h-1zM266 164h1v2h-1zM269 164h2v1h-2zM273 164h3v1h-3zM277 164h1v2h-1zM297 164h1v1h-1zM299 164h1v1h-1zM301 164h2v1h-2zM306 164h3v1h-3zM310 164h5v1h-5zM12 165h2v1h-2zM16 165h3v1h-3zM20 165h2v1h-2zM24 165h2v1h-2zM52 165h3v1h-3zM130 165h8v1h-8zM261 165h1v1h-1zM268 165h1v1h-1zM275 165h1v1h-1zM298 165h3v1h-3zM309 165h3v1h-3zM314 165h3v1h-3zM10 166h2v1h-2zM18 166h1v9h-1zM26 166h1v1h-1zM51 166h3v1h-3zM262 166h1v1h-1zM267 166h1v4h-1zM276 166h1v1h-1zM299 166h2v1h-2zM309 166h1v5h-1zM316 166h1v5h-1zM11 167h1v1h-1zM25 167h1v2h-1zM50 167h3v1h-3zM88 167h8v1h-8zM216 167h14v1h-14zM263 167h1v1h-1zM275 167h1v1h-1zM299 167h1v4h-1zM301 167h1v2h-1zM12 168h1v2h-1zM50 168h2v1h-2zM264 168h1v1h-1zM274 168h1v1h-1zM24 169h1v1h-1zM28 169h9v1h-9zM49 169h3v1h-3zM265 169h1v1h-1zM273 169h1v1h-1zM302 169h1v1h-1zM13 170h1v2h-1zM23 170h1v2h-1zM48 170h3v1h-3zM266 170h2v1h-2zM272 170h1v1h-1zM303 170h1v2h-1zM47 171h3v1h-3zM91 171h11v1h-11zM268 171h1v4h-1zM271 171h1v1h-1zM300 171h1v4h-1zM308 171h1v2h-1zM315 171h1v4h-1zM14 172h1v1h-1zM22 172h1v1h-1zM46 172h3v1h-3zM157 172h10v1h-10zM270 172h1v1h-1zM304 172h1v1h-1zM46 173h2v1h-2zM153 173h13v1h-13zM181 173h18v1h-18zM205 173h4v1h-4zM291 173h6v1h-6zM303 173h10v1h-10zM24 174h12v1h-12zM45 174h3v1h-3zM156 174h11v1h-11zM308 174h1v1h-1zM14 175h22v1h-22zM44 175h3v1h-3zM72 175h15v1h-15zM265 175h17v1h-17zM4 176h33v1h-33zM43 176h3v1h-3zM11 177h21v1h-21zM42 177h3v1h-3zM42 178h2v1h-2zM41 179h3v1h-3zM141 179h4v1h-4z"
+		d="M9 152h12v1h-12zM221 152h5v1h-5zM110 154h4v1h-4zM158 154h6v1h-6zM0 156h5v1h-5zM6 156h12v1h-12zM180 156h12v1h-12zM161 158h11v1h-11zM47 160h7v1h-7zM316 160h1v1h-1zM318 160h2v1h-2zM130 165h8v1h-8zM88 167h8v1h-8zM216 167h14v1h-14zM28 169h9v1h-9zM91 171h11v1h-11zM157 172h10v1h-10zM153 173h13v1h-13zM181 173h18v1h-18zM205 173h4v1h-4zM291 173h6v1h-6zM303 173h5v1h-5zM309 173h4v1h-4zM24 174h12v1h-12zM156 174h11v1h-11zM14 175h22v1h-22zM72 175h15v1h-15zM265 175h17v1h-17zM4 176h33v1h-33zM11 177h21v1h-21zM141 179h4v1h-4z"
 	/>
 	<path
 		class="c35"
@@ -147,10 +149,14 @@
 	/>
 	<path
 		class="c38"
-		d="M197 144h2v1h-2zM196 145h1v1h-1zM199 145h1v1h-1zM179 152h2v1h-2zM178 153h1v1h-1zM181 153h1v1h-1zM177 154h1v1h-1zM182 154h1v1h-1zM44 160h3v1h-3zM43 161h1v1h-1zM47 161h1v1h-1zM42 162h1v1h-1zM48 162h1v1h-1zM276 165h1v1h-1zM278 165h4v1h-4zM275 166h1v1h-1zM282 166h1v1h-1zM274 167h1v1h-1zM283 167h1v1h-1zM207 168h3v1h-3zM206 169h1v1h-1zM210 169h1v1h-1zM205 170h1v1h-1zM211 170h1v1h-1z"
+		d="M298 145h1v3h-1zM20 146h1v2h-1zM18 147h1v1h-1zM16 148h2v1h-2zM19 148h2v1h-2zM24 148h2v1h-2zM295 148h2v1h-2zM299 148h1v1h-1zM302 148h2v1h-2zM14 149h2v1h-2zM20 149h4v1h-4zM26 149h2v1h-2zM292 149h3v1h-3zM297 149h5v1h-5zM304 149h3v1h-3zM21 150h1v5h-1zM61 150h2v2h-2zM264 150h1v1h-1zM299 150h1v5h-1zM264 151h3v1h-3zM60 152h3v1h-3zM264 152h1v1h-1zM267 152h3v1h-3zM313 152h1v2h-1zM60 153h2v1h-2zM263 153h2v1h-2zM31 154h1v4h-1zM59 154h3v1h-3zM263 154h1v4h-1zM312 154h1v3h-1zM5 155h1v2h-1zM20 155h1v2h-1zM25 155h1v1h-1zM59 155h2v1h-2zM292 155h3v1h-3zM298 155h1v2h-1zM308 155h1v1h-1zM23 156h2v1h-2zM26 156h1v1h-1zM58 156h3v1h-3zM289 156h3v1h-3zM295 156h2v1h-2zM306 156h2v1h-2zM309 156h1v1h-1zM4 157h3v1h-3zM20 157h3v1h-3zM27 157h2v1h-2zM58 157h2v1h-2zM259 157h2v1h-2zM297 157h2v1h-2zM304 157h2v1h-2zM310 157h2v1h-2zM1 158h3v1h-3zM6 158h1v1h-1zM20 158h1v3h-1zM29 158h2v1h-2zM33 158h2v1h-2zM57 158h3v1h-3zM256 158h3v1h-3zM261 158h2v1h-2zM264 158h1v1h-1zM298 158h1v5h-1zM311 158h1v3h-1zM317 158h1v5h-1zM6 159h2v1h-2zM30 159h3v1h-3zM35 159h2v1h-2zM57 159h2v1h-2zM257 159h1v2h-1zM263 159h2v1h-2zM7 160h1v1h-1zM30 160h1v1h-1zM56 160h3v1h-3zM68 160h7v1h-7zM264 160h1v1h-1zM280 160h1v1h-1zM8 161h1v2h-1zM19 161h1v4h-1zM29 161h1v2h-1zM55 161h3v1h-3zM64 161h18v1h-18zM258 161h1v1h-1zM262 161h4v1h-4zM279 161h1v2h-1zM310 161h1v3h-1zM54 162h3v1h-3zM60 162h9v1h-9zM74 162h12v1h-12zM259 162h1v2h-1zM261 162h1v2h-1zM265 162h1v2h-1zM294 162h1v1h-1zM9 163h1v1h-1zM28 163h1v1h-1zM54 163h2v1h-2zM58 163h7v1h-7zM81 163h5v1h-5zM271 163h4v1h-4zM278 163h1v1h-1zM295 163h5v1h-5zM303 163h3v1h-3zM312 163h1v1h-1zM316 163h1v2h-1zM10 164h1v2h-1zM14 164h2v1h-2zM22 164h2v1h-2zM27 164h1v2h-1zM53 164h3v1h-3zM58 164h3v1h-3zM260 164h1v1h-1zM266 164h1v2h-1zM269 164h2v1h-2zM273 164h3v1h-3zM277 164h1v2h-1zM297 164h1v1h-1zM299 164h1v1h-1zM301 164h2v1h-2zM306 164h3v1h-3zM310 164h5v1h-5zM12 165h2v1h-2zM16 165h3v1h-3zM20 165h2v1h-2zM24 165h2v1h-2zM52 165h3v1h-3zM261 165h1v1h-1zM268 165h1v1h-1zM275 165h1v1h-1zM298 165h3v1h-3zM309 165h3v1h-3zM314 165h3v1h-3zM10 166h2v1h-2zM18 166h1v9h-1zM26 166h1v1h-1zM51 166h3v1h-3zM262 166h1v1h-1zM267 166h1v4h-1zM276 166h1v1h-1zM299 166h2v1h-2zM309 166h1v5h-1zM316 166h1v5h-1zM11 167h1v1h-1zM25 167h1v2h-1zM50 167h3v1h-3zM263 167h1v1h-1zM275 167h1v1h-1zM299 167h1v4h-1zM301 167h1v2h-1zM12 168h1v2h-1zM50 168h2v1h-2zM264 168h1v1h-1zM274 168h1v1h-1zM24 169h1v1h-1zM49 169h3v1h-3zM265 169h1v1h-1zM273 169h1v1h-1zM302 169h1v1h-1zM13 170h1v2h-1zM23 170h1v2h-1zM48 170h3v1h-3zM266 170h2v1h-2zM272 170h1v1h-1zM303 170h1v2h-1zM47 171h3v1h-3zM268 171h1v4h-1zM271 171h1v1h-1zM300 171h1v4h-1zM308 171h1v4h-1zM315 171h1v4h-1zM14 172h1v1h-1zM22 172h1v1h-1zM46 172h3v1h-3zM270 172h1v1h-1zM304 172h1v1h-1zM46 173h2v1h-2zM45 174h3v1h-3zM44 175h3v1h-3zM43 176h3v1h-3zM42 177h3v1h-3zM42 178h2v1h-2zM41 179h3v1h-3z"
 	/>
 	<path
 		class="c39"
+		d="M197 144h2v1h-2zM196 145h1v1h-1zM199 145h1v1h-1zM179 152h2v1h-2zM178 153h1v1h-1zM181 153h1v1h-1zM177 154h1v1h-1zM182 154h1v1h-1zM44 160h3v1h-3zM43 161h1v1h-1zM47 161h1v1h-1zM42 162h1v1h-1zM48 162h1v1h-1zM276 165h1v1h-1zM278 165h4v1h-4zM275 166h1v1h-1zM282 166h1v1h-1zM274 167h1v1h-1zM283 167h1v1h-1zM207 168h3v1h-3zM206 169h1v1h-1zM210 169h1v1h-1zM205 170h1v1h-1zM211 170h1v1h-1z"
+	/>
+	<path
+		class="c40"
 		d="M197 145h2v1h-2zM179 153h2v1h-2zM178 154h4v1h-4zM44 161h3v1h-3zM43 162h5v1h-5zM277 166h5v1h-5zM276 167h7v1h-7zM207 169h3v1h-3zM206 170h5v1h-5z"
 	/>
 	<g class="leaf">
@@ -202,790 +208,157 @@
 
 <style>
 	.c1 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 50%, var(--accent-foam)) 24%,
-			var(--bg-surface)
-		);
-	}
-	:global([data-theme='dark']) .c1 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 40%,
-			var(--bg-surface)
-		);
-	}
-	:global([data-theme='oled']) .c1 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 32%,
-			var(--bg-surface)
-		);
+		fill: color-mix(in srgb, var(--accent-foam) 18%, var(--bg-base));
 	}
 	.c2 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 50%, var(--accent-foam)) 20%,
-			var(--bg-surface)
-		);
-	}
-	:global([data-theme='dark']) .c2 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 42%,
-			var(--bg-base)
-		);
-	}
-	:global([data-theme='oled']) .c2 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 34%,
-			var(--bg-surface)
-		);
+		fill: color-mix(in srgb, var(--accent-foam) 13%, var(--bg-base));
 	}
 	.c3 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 18%,
-			var(--bg-surface)
-		);
-	}
-	:global([data-theme='dark']) .c3 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 38%,
-			var(--bg-base)
-		);
-	}
-	:global([data-theme='oled']) .c3 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 32%,
-			var(--bg-surface)
-		);
+		fill: color-mix(in srgb, var(--accent-foam) 8%, var(--bg-base));
 	}
 	.c4 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 16%,
-			var(--bg-surface)
-		);
-	}
-	:global([data-theme='dark']) .c4 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 38%,
-			var(--bg-base)
-		);
-	}
-	:global([data-theme='oled']) .c4 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 32%,
-			var(--bg-surface)
-		);
+		fill: color-mix(in srgb, var(--accent-gold) 5%, var(--bg-base));
 	}
 	.c5 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 14%,
-			var(--bg-surface)
-		);
-	}
-	:global([data-theme='dark']) .c5 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 38%,
-			var(--bg-base)
-		);
-	}
-	:global([data-theme='oled']) .c5 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 32%,
-			var(--bg-surface)
-		);
+		fill: color-mix(in srgb, var(--accent-gold) 8%, var(--bg-base));
 	}
 	.c6 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 10%,
-			var(--bg-surface)
-		);
-	}
-	:global([data-theme='dark']) .c6 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 80%, var(--accent-pine)) 40%,
-			var(--bg-surface)
-		);
-	}
-	:global([data-theme='oled']) .c6 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 80%, var(--accent-pine)) 34%,
-			var(--bg-surface)
-		);
+		fill: color-mix(in srgb, var(--accent-gold) 11%, var(--bg-base));
 	}
 	.c7 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 28%,
-			var(--bg-surface)
-		);
-	}
-	:global([data-theme='dark']) .c7 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 80%, var(--accent-pine)) 38%,
-			var(--bg-base)
-		);
-	}
-	:global([data-theme='oled']) .c7 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 80%, var(--accent-pine)) 32%,
-			var(--bg-surface)
-		);
+		fill: color-mix(in srgb, var(--accent-gold) 20%, var(--bg-base));
 	}
 	.c8 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 34%,
-			var(--bg-surface)
-		);
-	}
-	:global([data-theme='dark']) .c8 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 34%,
-			var(--bg-base)
-		);
-	}
-	:global([data-theme='oled']) .c8 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 32%,
-			var(--bg-surface)
-		);
+		fill: color-mix(in srgb, var(--accent-foam) 24%, var(--bg-base));
 	}
 	.c10 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-pine)) 40%,
-			var(--bg-base)
-		);
-	}
-	:global([data-theme='dark']) .c10 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 36%,
-			var(--bg-base)
-		);
-	}
-	:global([data-theme='oled']) .c10 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 28%,
-			var(--bg-surface)
-		);
+		fill: color-mix(in srgb, var(--accent-iris) 26%, var(--bg-base));
 	}
 	.c11 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 34%,
-			var(--bg-surface)
-		);
-	}
-	:global([data-theme='dark']) .c11 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 34%,
-			var(--bg-base)
-		);
-	}
-	:global([data-theme='oled']) .c11 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 28%,
-			var(--bg-surface)
-		);
+		fill: color-mix(in srgb, var(--accent-iris) 15%, var(--bg-base));
 	}
 	.c12 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 42%,
-			var(--bg-base)
-		);
-	}
-	:global([data-theme='dark']) .c12 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 40%,
-			color-mix(in oklab, black 45%, var(--bg-base))
-		);
-	}
-	:global([data-theme='oled']) .c12 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 40%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-gold) 22%, var(--bg-base));
 	}
 	.c13 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 46%,
-			var(--bg-base)
-		);
-	}
-	:global([data-theme='dark']) .c13 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 40%,
-			color-mix(in oklab, black 50%, var(--bg-base))
-		);
-	}
-	:global([data-theme='oled']) .c13 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 40%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-gold) 28%, var(--bg-base));
 	}
 	.c14 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 38%,
-			color-mix(in oklab, black 10%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c14 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 38%,
-			color-mix(in oklab, black 50%, var(--bg-surface))
-		);
-	}
-	:global([data-theme='oled']) .c14 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-foam)) 38%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-foam) 30%, var(--bg-base));
 	}
 	.c15 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-pine)) 38%,
-			color-mix(in oklab, black 10%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c15 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 38%,
-			color-mix(in oklab, black 25%, var(--bg-base))
-		);
-	}
-	:global([data-theme='oled']) .c15 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 38%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-foam) 36%, var(--bg-base));
 	}
 	.c16 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-pine)) 46%,
-			color-mix(in oklab, black 10%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c16 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 44%,
-			black
-		);
-	}
-	:global([data-theme='oled']) .c16 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 36%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-foam) 44%, var(--bg-base));
 	}
 	.c17 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 50%, var(--accent-pine)) 44%,
-			color-mix(in oklab, black 10%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c17 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 50%, var(--accent-foam)) 44%,
-			black
-		);
-	}
-	:global([data-theme='oled']) .c17 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 50%, var(--accent-foam)) 36%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-foam) 52%, var(--bg-base));
 	}
 	.c18 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-pine)) 36%,
-			color-mix(in oklab, black 25%, var(--bg-surface))
-		);
-	}
-	:global([data-theme='dark']) .c18 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 42%,
-			black
-		);
-	}
-	:global([data-theme='oled']) .c18 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 34%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-pine) 42%, var(--bg-base));
 	}
 	.c19 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 50%, var(--accent-foam)) 40%,
-			color-mix(in oklab, black 35%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c19 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 32%,
-			color-mix(in oklab, black 55%, var(--bg-base))
-		);
-	}
-	:global([data-theme='oled']) .c19 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 32%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-pine) 54%, var(--bg-base));
 	}
 	.c20 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 50%, var(--accent-foam)) 54%,
-			color-mix(in oklab, black 50%, var(--bg-surface))
-		);
-	}
-	:global([data-theme='dark']) .c20 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 50%, var(--accent-foam)) 38%,
-			black
-		);
-	}
-	:global([data-theme='oled']) .c20 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-pine)) 34%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-pine) 68%, var(--bg-base));
 	}
 	.c21 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 84%,
-			var(--bg-surface)
-		);
-	}
-	:global([data-theme='dark']) .c21 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 52%,
-			black
-		);
-	}
-	:global([data-theme='oled']) .c21 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 42%,
-			var(--bg-base)
-		);
+		fill: var(--accent-foam);
 	}
 	.c22 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 96%,
-			black
-		);
-	}
-	:global([data-theme='dark']) .c22 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 42%,
-			black
-		);
-	}
-	:global([data-theme='oled']) .c22 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 34%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-foam) 60%, var(--accent-pine));
 	}
 	.c23 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-pine)) 86%,
-			black
-		);
-	}
-	:global([data-theme='dark']) .c23 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-pine)) 44%,
-			black
-		);
-	}
-	:global([data-theme='oled']) .c23 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-pine)) 32%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-foam) 30%, var(--accent-pine));
 	}
 	.c24 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 50%, var(--accent-foam)) 66%,
-			black
-		);
-	}
-	:global([data-theme='dark']) .c24 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-pine)) 36%,
-			black
-		);
-	}
-	:global([data-theme='oled']) .c24 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-pine)) 28%,
-			var(--bg-base)
-		);
+		fill: var(--accent-pine);
 	}
 	.c25 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 50%, var(--accent-pine)) 44%,
-			color-mix(in oklab, black 80%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c25 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 50%, var(--accent-pine)) 34%,
-			black
-		);
-	}
-	:global([data-theme='oled']) .c25 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 50%, var(--accent-pine)) 24%,
-			var(--bg-base)
-		);
+		fill: var(--accent-pine);
 	}
 	.c26 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 80%,
-			color-mix(in oklab, black 30%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c26 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 48%,
-			black
-		);
-	}
-	:global([data-theme='oled']) .c26 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 38%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-foam) 75%, var(--bg-base));
 	}
 	.c27 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 52%,
-			color-mix(in oklab, black 50%, var(--bg-surface))
-		);
-	}
-	:global([data-theme='dark']) .c27 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-pine)) 42%,
-			black
-		);
-	}
-	:global([data-theme='oled']) .c27 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-foam)) 30%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-pine) 75%, var(--bg-base));
 	}
 	.c28 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 80%, var(--accent-foam)) 38%,
-			color-mix(in oklab, black 50%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c28 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 80%, var(--accent-foam)) 36%,
-			black
-		);
-	}
-	:global([data-theme='oled']) .c28 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 90%, var(--accent-pine)) 30%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-gold) 45%, var(--bg-base));
 	}
 	.c29 {
 		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 80%, var(--accent-foam)) 32%,
-			color-mix(in oklab, black 60%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c29 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 90%, var(--accent-pine)) 34%,
-			black
-		);
-	}
-	:global([data-theme='oled']) .c29 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 90%, var(--accent-foam)) 26%,
-			var(--bg-base)
+			in srgb,
+			var(--accent-gold) 35%,
+			color-mix(in srgb, var(--accent-rose) 23%, var(--bg-base))
 		);
 	}
 	.c30 {
 		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 80%, var(--accent-foam)) 30%,
-			color-mix(in oklab, black 65%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c30 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 80%, var(--accent-foam)) 24%,
-			color-mix(in oklab, black 60%, var(--bg-base))
-		);
-	}
-	:global([data-theme='oled']) .c30 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 90%, var(--accent-pine)) 24%,
-			var(--bg-base)
+			in srgb,
+			var(--accent-rose) 35%,
+			color-mix(in srgb, var(--accent-gold) 23%, var(--bg-base))
 		);
 	}
 	.c31 {
 		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 80%, var(--accent-pine)) 18%,
-			color-mix(in oklab, black 65%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c31 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 80%, var(--accent-foam)) 22%,
-			color-mix(in oklab, black 65%, var(--bg-base))
-		);
-	}
-	:global([data-theme='oled']) .c31 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 90%, var(--accent-pine)) 22%,
-			var(--bg-base)
+			in srgb,
+			var(--accent-rose) 30%,
+			color-mix(in srgb, var(--accent-pine) 21%, var(--bg-base))
 		);
 	}
 	.c32 {
 		fill: color-mix(
-			in oklab,
-			var(--accent-pine) 2%,
-			color-mix(in oklab, black 65%, var(--bg-base))
+			in srgb,
+			var(--accent-rose) 25%,
+			color-mix(in srgb, var(--accent-pine) 40%, var(--bg-base))
 		);
-	}
-	:global([data-theme='dark']) .c32 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 80%, var(--accent-foam)) 16%,
-			color-mix(in oklab, black 50%, var(--bg-base))
-		);
-	}
-	:global([data-theme='oled']) .c32 {
-		fill: color-mix(in oklab, var(--accent-gold) 20%, var(--bg-base));
 	}
 	.c33 {
 		fill: color-mix(
-			in oklab,
-			var(--accent-foam) 2%,
-			color-mix(in oklab, black 70%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c33 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 80%, var(--accent-pine)) 18%,
-			color-mix(in oklab, black 65%, var(--bg-base))
-		);
-	}
-	:global([data-theme='oled']) .c33 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 80%, var(--accent-foam)) 18%,
-			var(--bg-base)
+			in srgb,
+			var(--accent-pine) 40%,
+			color-mix(in srgb, var(--accent-rose) 25%, var(--bg-base))
 		);
 	}
 	.c34 {
-		fill: color-mix(
-			in oklab,
-			var(--accent-iris) 4%,
-			color-mix(in oklab, black 80%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c34 {
-		fill: color-mix(in oklab, var(--accent-rose) 20%, black);
-	}
-	:global([data-theme='oled']) .c34 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-foam) 30%, var(--accent-rose)) 14%,
-			var(--bg-base)
-		);
+		fill: color-mix(in srgb, var(--accent-pine) 50%, var(--bg-base));
 	}
 	.c35 {
 		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 90%, var(--accent-love)) 26%,
-			color-mix(in oklab, black 60%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c35 {
-		fill: color-mix(
-			in oklab,
-			var(--accent-gold) 24%,
-			color-mix(in oklab, black 55%, var(--bg-base))
-		);
-	}
-	:global([data-theme='oled']) .c35 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 70%, var(--accent-rose)) 26%,
-			var(--bg-base)
+			in srgb,
+			var(--accent-rose) 40%,
+			color-mix(in srgb, var(--accent-iris) 33%, var(--bg-base))
 		);
 	}
 	.c36 {
 		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-rose)) 16%,
-			color-mix(in oklab, black 65%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c36 {
-		fill: color-mix(
-			in oklab,
-			var(--accent-gold) 18%,
-			color-mix(in oklab, black 50%, var(--bg-base))
-		);
-	}
-	:global([data-theme='oled']) .c36 {
-		fill: color-mix(
-			in oklab,
-			var(--accent-gold) 14%,
-			color-mix(in oklab, black 50%, var(--bg-surface))
+			in srgb,
+			var(--accent-iris) 45%,
+			color-mix(in srgb, var(--accent-pine) 45%, var(--bg-base))
 		);
 	}
 	.c37 {
 		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 50%, var(--accent-rose)) 18%,
-			color-mix(in oklab, black 75%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c37 {
-		fill: color-mix(
-			in oklab,
-			var(--accent-gold) 16%,
-			color-mix(in oklab, black 55%, var(--bg-base))
-		);
-	}
-	:global([data-theme='oled']) .c37 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 40%, var(--accent-rose)) 18%,
-			var(--bg-base)
+			in srgb,
+			var(--accent-iris) 20%,
+			color-mix(in srgb, var(--accent-pine) 75%, var(--bg-base))
 		);
 	}
 	.c38 {
-		fill: color-mix(
-			in oklab,
-			var(--accent-foam) 16%,
-			color-mix(in oklab, black 40%, var(--bg-base))
-		);
-	}
-	:global([data-theme='dark']) .c38 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 60%, var(--accent-pine)) 24%,
-			color-mix(in oklab, black 15%, var(--bg-base))
-		);
-	}
-	:global([data-theme='oled']) .c38 {
-		fill: color-mix(
-			in oklab,
-			color-mix(in oklch, var(--accent-gold) 30%, var(--accent-foam)) 30%,
-			var(--bg-base)
-		);
+		fill: var(--accent-pine);
 	}
 	.c39 {
-		fill: color-mix(
-			in oklab,
-			var(--accent-pine) 28%,
-			color-mix(in oklab, black 50%, var(--bg-base))
-		);
+		fill: color-mix(in srgb, var(--accent-iris) 55%, var(--bg-base));
 	}
-	:global([data-theme='dark']) .c39 {
+	.c40 {
 		fill: color-mix(
-			in oklab,
-			var(--accent-foam) 28%,
-			color-mix(in oklab, black 75%, var(--bg-base))
+			in srgb,
+			var(--accent-iris) 30%,
+			color-mix(in srgb, var(--accent-pine) 71%, var(--bg-base))
 		);
-	}
-	:global([data-theme='oled']) .c39 {
-		fill: color-mix(in oklab, var(--accent-foam) 26%, var(--bg-base));
 	}
 
 	.leaf {
