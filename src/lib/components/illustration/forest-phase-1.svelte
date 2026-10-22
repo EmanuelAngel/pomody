@@ -9,9 +9,9 @@
 	charred ground and the first green shoots. Drawn pixel by pixel on the 320x180 art grid;
 	every pixel is a 1x1 rect merged into runs, so the grid stays crisp at any integer scale.
 
-	Colours are Rosé Pine tokens only, no hex: each class is one or two accent tokens mixed into
-	--bg-base with color-mix() (the same result as the token at that opacity over the page, but
-	opaque). Nothing is remapped per theme: the tokens change with the theme.
+	Dawn is Rosé Pine tokens only: each class is one or two accent tokens mixed into --bg-base
+	with color-mix() (opaque, so nothing shows through). Dark and OLED use the forest's own hand-
+	picked night palette (indigo-teal sky, ember glow, mossy greens), tuned to sit beside Rosé Pine.
 
 	The scene never moves as a whole. Instead a scattering of edge pixels of the foliage and the
 	seedlings come alive: each one hops to a free neighbour cell and back (.from is where it
@@ -612,6 +612,319 @@
 			var(--accent-iris) 30%,
 			color-mix(in srgb, var(--accent-pine) 71%, var(--bg-base))
 		);
+	}
+
+	/* Forest's own night palettes: Dark and OLED hand-picked, Dawn stays on the tokens above. */
+	:global([data-theme='dark']) .c1 {
+		fill: #1b2236;
+	}
+
+	:global([data-theme='dark']) .c2 {
+		fill: #202a3d;
+	}
+
+	:global([data-theme='dark']) .c3 {
+		fill: #28334a;
+	}
+
+	:global([data-theme='dark']) .c4 {
+		fill: #3a3549;
+	}
+
+	:global([data-theme='dark']) .c5 {
+		fill: #4f4251;
+	}
+
+	:global([data-theme='dark']) .c6 {
+		fill: #6b505a;
+	}
+
+	:global([data-theme='dark']) .c7 {
+		fill: #8a6560;
+	}
+
+	:global([data-theme='dark']) .c8 {
+		fill: #2a3a4e;
+	}
+
+	:global([data-theme='dark']) .c10 {
+		fill: #3a3556;
+	}
+
+	:global([data-theme='dark']) .c11 {
+		fill: #2b2a45;
+	}
+
+	:global([data-theme='dark']) .c12 {
+		fill: #5a4a56;
+	}
+
+	:global([data-theme='dark']) .c13 {
+		fill: #6e5662;
+	}
+
+	:global([data-theme='dark']) .c14 {
+		fill: #34495a;
+	}
+
+	:global([data-theme='dark']) .c15 {
+		fill: #2c4553;
+	}
+
+	:global([data-theme='dark']) .c16 {
+		fill: #263f4c;
+	}
+
+	:global([data-theme='dark']) .c17 {
+		fill: #213843;
+	}
+
+	:global([data-theme='dark']) .c18 {
+		fill: #1c3139;
+	}
+
+	:global([data-theme='dark']) .c19 {
+		fill: #172a31;
+	}
+
+	:global([data-theme='dark']) .c20 {
+		fill: #122329;
+	}
+
+	:global([data-theme='dark']) .c21 {
+		fill: #8fd3bb;
+	}
+
+	:global([data-theme='dark']) .c22 {
+		fill: #58ab97;
+	}
+
+	:global([data-theme='dark']) .c23 {
+		fill: #3a8178;
+	}
+
+	:global([data-theme='dark']) .c24 {
+		fill: #26605f;
+	}
+
+	:global([data-theme='dark']) .c25 {
+		fill: #1b4a53;
+	}
+
+	:global([data-theme='dark']) .c26 {
+		fill: #a9e2cd;
+	}
+
+	:global([data-theme='dark']) .c27 {
+		fill: #153f48;
+	}
+
+	:global([data-theme='dark']) .c28 {
+		fill: #7c6449;
+	}
+
+	:global([data-theme='dark']) .c29 {
+		fill: #6b5541;
+	}
+
+	:global([data-theme='dark']) .c30 {
+		fill: #5b4739;
+	}
+
+	:global([data-theme='dark']) .c31 {
+		fill: #4b3b35;
+	}
+
+	:global([data-theme='dark']) .c32 {
+		fill: #3d3131;
+	}
+
+	:global([data-theme='dark']) .c33 {
+		fill: #2f2731;
+	}
+
+	:global([data-theme='dark']) .c34 {
+		fill: #241f2c;
+	}
+
+	:global([data-theme='dark']) .c35 {
+		fill: #a58aa0;
+	}
+
+	:global([data-theme='dark']) .c36 {
+		fill: #6e5d82;
+	}
+
+	:global([data-theme='dark']) .c37 {
+		fill: #493f5f;
+	}
+
+	:global([data-theme='dark']) .c38 {
+		fill: #21505a;
+	}
+
+	:global([data-theme='dark']) .c39 {
+		fill: #6f6b8c;
+	}
+
+	:global([data-theme='dark']) .c40 {
+		fill: #444160;
+	}
+
+	:global([data-theme='oled']) .c1 {
+		fill: #05070d;
+	}
+
+	:global([data-theme='oled']) .c2 {
+		fill: #0a0e18;
+	}
+
+	:global([data-theme='oled']) .c3 {
+		fill: #101726;
+	}
+
+	:global([data-theme='oled']) .c4 {
+		fill: #1d1a27;
+	}
+
+	:global([data-theme='oled']) .c5 {
+		fill: #2d2331;
+	}
+
+	:global([data-theme='oled']) .c6 {
+		fill: #46313b;
+	}
+
+	:global([data-theme='oled']) .c7 {
+		fill: #6a4646;
+	}
+
+	:global([data-theme='oled']) .c8 {
+		fill: #131d2b;
+	}
+
+	:global([data-theme='oled']) .c10 {
+		fill: #211d39;
+	}
+
+	:global([data-theme='oled']) .c11 {
+		fill: #14132b;
+	}
+
+	:global([data-theme='oled']) .c12 {
+		fill: #3b2d37;
+	}
+
+	:global([data-theme='oled']) .c13 {
+		fill: #4e3b45;
+	}
+
+	:global([data-theme='oled']) .c14 {
+		fill: #1a2a38;
+	}
+
+	:global([data-theme='oled']) .c15 {
+		fill: #1a2a36;
+	}
+
+	:global([data-theme='oled']) .c16 {
+		fill: #162531;
+	}
+
+	:global([data-theme='oled']) .c17 {
+		fill: #12202a;
+	}
+
+	:global([data-theme='oled']) .c18 {
+		fill: #0e1b23;
+	}
+
+	:global([data-theme='oled']) .c19 {
+		fill: #0b161c;
+	}
+
+	:global([data-theme='oled']) .c20 {
+		fill: #081117;
+	}
+
+	:global([data-theme='oled']) .c21 {
+		fill: #8fd3bb;
+	}
+
+	:global([data-theme='oled']) .c22 {
+		fill: #58ab97;
+	}
+
+	:global([data-theme='oled']) .c23 {
+		fill: #3a8178;
+	}
+
+	:global([data-theme='oled']) .c24 {
+		fill: #26605f;
+	}
+
+	:global([data-theme='oled']) .c25 {
+		fill: #1b4a53;
+	}
+
+	:global([data-theme='oled']) .c26 {
+		fill: #a9e2cd;
+	}
+
+	:global([data-theme='oled']) .c27 {
+		fill: #0f333c;
+	}
+
+	:global([data-theme='oled']) .c28 {
+		fill: #5f4b39;
+	}
+
+	:global([data-theme='oled']) .c29 {
+		fill: #513f33;
+	}
+
+	:global([data-theme='oled']) .c30 {
+		fill: #44352d;
+	}
+
+	:global([data-theme='oled']) .c31 {
+		fill: #372b29;
+	}
+
+	:global([data-theme='oled']) .c32 {
+		fill: #2b2225;
+	}
+
+	:global([data-theme='oled']) .c33 {
+		fill: #201920;
+	}
+
+	:global([data-theme='oled']) .c34 {
+		fill: #15111b;
+	}
+
+	:global([data-theme='oled']) .c35 {
+		fill: #a58aa0;
+	}
+
+	:global([data-theme='oled']) .c36 {
+		fill: #6e5d82;
+	}
+
+	:global([data-theme='oled']) .c37 {
+		fill: #493f5f;
+	}
+
+	:global([data-theme='oled']) .c38 {
+		fill: #173f47;
+	}
+
+	:global([data-theme='oled']) .c39 {
+		fill: #58557a;
+	}
+
+	:global([data-theme='oled']) .c40 {
+		fill: #35334f;
 	}
 
 	/* Living pixels: the resting pixel vanishes while its twin appears one cell away. */
