@@ -89,10 +89,29 @@ Un renderer es un componente Svelte con:
 
 No hace falta escribir tests nuevos. El test parametrizado del catálogo monta todas las fases de la entrada nueva y el test de contrato valida el clamp y la clase `animated`.
 
+## Ilustraciones generadas (forest)
+
+`forest` no está escrita a mano: cada fase (`forest-phase-N.svelte`) es salida de un generador en `tools/illustrations/forest/`. Dibuja formas con código (troncos, copas, colinas, suelo), ruido con semilla y una paleta compartida, y emite un `<path>` por color. Es una herramienta de desarrollo: no entra al bundle de la app y no tiene dependencias, solo Node.
+
+```bash
+pnpm illustrations:forest        # todas las fases + forest-palette.css
+pnpm illustrations:forest 3      # solo la fase 3
+```
+
+| Quiero cambiar…              | Dónde                                                                                   |
+| ---------------------------- | --------------------------------------------------------------------------------------- |
+| Un color (cualquier tema)    | `forest-palette.css` a mano, o `fpal.mjs` y regenerar. Es lo único que se edita directo |
+| Un árbol, la copa, el suelo  | `scene.mjs` (fase 1) o `scene2.mjs` (fases 2-5), y regenerar                            |
+| El movimiento de los píxeles | `live.mjs` (qué píxeles saltan) y `build-phase.mjs` (tiempos y keyframes)               |
+
+- Los `forest-phase-N.svelte` son **salida**: no se editan a mano, se regeneran. El ruido usa semilla, así que regenerar sin tocar el código no cambia el `git diff`. Si tocás una escena, detalles chicos de los elementos posteriores pueden moverse porque comparten la secuencia aleatoria.
+- Una fase intermedia o una ilustración nueva reusa `lib.mjs` (lienzo, trazo, ruido), `live.mjs` y el emisor de `build-phase.mjs`. Una fase nueva suma unos 150-200 KB al bundle: con varias ilustraciones conviene cargar las fases bajo demanda.
+- Cada fase pinta con `fill="var(--forest-<nombre>)"`. Los nombres de color los define `fpal.mjs`.
+
 ## Qué tener en cuenta
 
 - **Centro libre**: entre `x 116..204` y por encima de `y ~120` no va arte alto. Ahí viven los dígitos y los controles. El arte crece hacia los laterales.
-- **Paleta**: solo tokens Rosé Pine (`pine`, `foam`, `gold`, `love`, `rose`, `iris`, `text-*`) con opacidades. Nada de hex sueltos: rompe Dark, Dawn y OLED.
+- **Paleta**: Dawn usa tokens Rosé Pine (`pine`, `foam`, `gold`, `love`, `rose`, `iris`, `text-*`) mezclados con `color-mix`. Una ilustración puede tener su propia paleta para Dark y OLED, pero la define en un único CSS (como `forest-palette.css`) y nunca hex sueltos dentro de los componentes.
 - **Grilla**: 320×180, coordenadas múltiplos de 2 o 4. La capa escala en múltiplos enteros en modo cover y recorta el sobrante.
 - **Sin dependencias nuevas**, sin `<canvas>`, sin WebGL, sin librerías de animación y sin bucles JS.
 - **No tocar** el FSM del timer, los eventos, `daily-stats` ni la fórmula de fase.

@@ -7,20 +7,28 @@
 		formatDailyDuration
 	} from '$lib/state/daily-stats.svelte';
 	import { t } from '$lib/state/locale.svelte';
+	import {
+		illustrationState as defaultIllustrationState,
+		type IllustrationState
+	} from '$lib/state/illustration.svelte';
 
 	interface Props {
 		timerState?: TimerState;
 		dailyStatsState?: DailyStatsState;
+		illustration?: Pick<IllustrationState, 'isVisible'>;
 		class?: string;
 	}
 
 	let {
 		timerState = defaultTimerState,
 		dailyStatsState = defaultDailyStatsState,
+		illustration = defaultIllustrationState,
 		class: className
 	}: Props = $props();
 
 	const isRunning = $derived(timerState.isRunning);
+	// The background art is hidden below md, so the backdrop only applies from md up.
+	const backed = $derived(illustration.isVisible);
 	const summary = $derived.by(() => {
 		const blocks = dailyStatsState.completedBlocks;
 		const duration = formatDailyDuration(dailyStatsState.accumulatedMinutes);
@@ -43,5 +51,13 @@
 		className
 	)}
 >
-	<span class="font-mono text-xs text-muted-foreground/60">{summary}</span>
+	<span
+		class={cn(
+			'font-mono text-xs text-muted-foreground/60',
+			backed &&
+				'md:rounded-full md:bg-bg-surface/80 md:px-3 md:py-1 md:text-muted-foreground md:backdrop-blur-sm'
+		)}
+	>
+		{summary}
+	</span>
 </div>
