@@ -48,19 +48,20 @@
 
 ### Essential Commands
 
-| Task                     | Command                | Notes                                                  |
-| :----------------------- | :--------------------- | :----------------------------------------------------- |
-| **Install dependencies** | `pnpm install`         | Uses frozen lockfile in CI                             |
-| **Start dev server**     | `pnpm dev`             | Starts Vite at `http://localhost:5173`                 |
-| **Unit tests (Domain)**  | `pnpm test:unit`       | Runs pure Node tests in <500ms (`--project server`)    |
-| **Unit tests (Watch)**   | `pnpm test:unit:watch` | Watch mode for domain FSM development                  |
-| **Browser tests (UI)**   | `pnpm test:browser`    | Vitest Browser Mode with Chromium (`--project client`) |
-| **All tests**            | `pnpm test`            | Runs complete Vitest suite                             |
-| **E2E tests**            | `pnpm test:e2e`        | Playwright E2E runner (`playwright test`)              |
-| **Type check**           | `pnpm check`           | Runs `svelte-check` with TS strict mode                |
-| **Lint check**           | `pnpm lint`            | Runs Prettier check and ESLint                         |
-| **Auto-format**          | `pnpm format`          | Runs Prettier write                                    |
-| **Build SPA**            | `pnpm build`           | Static build output to `build/index.html`              |
+| Task                     | Command                     | Notes                                                                                                                           |
+| :----------------------- | :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
+| **Install dependencies** | `pnpm install`              | Uses frozen lockfile in CI                                                                                                      |
+| **Start dev server**     | `pnpm dev`                  | Starts Vite at `http://localhost:5173`                                                                                          |
+| **Unit tests (Domain)**  | `pnpm test:unit`            | Runs pure Node tests in <500ms (`--project server`)                                                                             |
+| **Unit tests (Watch)**   | `pnpm test:unit:watch`      | Watch mode for domain FSM development                                                                                           |
+| **Browser tests (UI)**   | `pnpm test:browser`         | Vitest Browser Mode with Chromium (`--project client`)                                                                          |
+| **All tests**            | `pnpm test`                 | Runs complete Vitest suite                                                                                                      |
+| **E2E tests**            | `pnpm test:e2e`             | Playwright E2E runner (`playwright test`)                                                                                       |
+| **Type check**           | `pnpm check`                | Runs `svelte-check` with TS strict mode                                                                                         |
+| **Lint check**           | `pnpm lint`                 | Runs Prettier check and ESLint                                                                                                  |
+| **Auto-format**          | `pnpm format`               | Runs Prettier write                                                                                                             |
+| **Build SPA**            | `pnpm build`                | Static build output to `build/index.html`                                                                                       |
+| **Forest illustration**  | `pnpm illustrations:forest` | Regenerates the generated pixel-art phases; read `tools/illustrations/forest/README.md` before touching `forest-phase-*.svelte` |
 
 ### Verification & Feedback Strategy
 
