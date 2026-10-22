@@ -1,1401 +1,1275 @@
-// Forest · phase 1 scene, authored layer by layer on the 320x180 art grid.
-import { Canvas, W, H, rng, vnoise, vnoise2, lerp, interp } from './lib.mjs';
+// The forest scene, phases 1-5, as one build: the same place seen five times while it comes back to
+// life. Everything has a fixed spot and its own seed, so a later phase keeps every pixel of the
+// earlier ones that it does not grow over. Nothing ever regresses between phases.
+//
+// Layers, back to front: sky -> far forest -> hills -> valley -> mist -> ground -> giants ->
+// trees -> bushes -> ground cover -> foreground -> fauna.
+import { Canvas, W, H, rng, vnoise, vnoise2 } from './lib.mjs';
+import { id } from './palette.mjs';
 
-// Palette as Rosé Pine token recipes: [[token, share], ...]; whatever is left is --bg-base.
-// Every colour is made only of theme tokens, so each theme restyles the scene by itself.
-// Ladders (light -> dark) are built with different tokens, not with opacity alone, so the order
-// holds in Dawn (tokens darker than the page) and in Dark/OLED (tokens lighter than the page).
-export const RECIPES = {
-	// sky: foam mist at the top, gold glow toward the horizon
-	s0: [['foam', 0.18]],
-	s1: [['foam', 0.13]],
-	s2: [['foam', 0.08]],
-	s3: [['gold', 0.05]],
-	s4: [['gold', 0.08]],
-	s5: [['gold', 0.11]],
-	s6: [['gold', 0.2]],
-	// far silhouettes and haze
-	far1: [['foam', 0.24]],
-	far2: [['iris', 0.2]],
-	far3: [['iris', 0.26]],
-	far4: [['iris', 0.15]],
-	w1: [['gold', 0.22]],
-	w2: [['gold', 0.28]],
-	w3: [['foam', 0.3]],
-	// hills, far -> near
-	m1: [['foam', 0.36]],
-	m2: [['foam', 0.44]],
-	m3: [['foam', 0.52]],
-	m4: [['pine', 0.42]],
-	m5: [['pine', 0.54]],
-	m6: [['pine', 0.68]],
-	// vegetation: foam (light) -> pine (dark)
-	lh: [['foam', 1]],
-	lm: [
-		['foam', 0.6],
-		['pine', 0.4]
-	],
-	ll: [
-		['foam', 0.3],
-		['pine', 0.7]
-	],
-	ld: [['pine', 1]],
-	ld2: [['pine', 1]],
-	o1: [['foam', 0.75]],
-	o2: [['pine', 0.75]],
-	// soil: gold -> rose -> pine (muted; love only in small doses)
-	d1: [['gold', 0.45]],
-	d2: [
-		['gold', 0.35],
-		['rose', 0.15]
-	],
-	d3: [
-		['rose', 0.35],
-		['gold', 0.15]
-	],
-	d4: [
-		['rose', 0.3],
-		['pine', 0.15]
-	],
-	d5: [
-		['rose', 0.25],
-		['pine', 0.3]
-	],
-	d6: [
-		['pine', 0.4],
-		['rose', 0.15]
-	],
-	d7: [['pine', 0.5]],
-	// trunks and brambles: rose -> iris -> pine
-	t1: [
-		['rose', 0.4],
-		['iris', 0.2]
-	],
-	t2: [
-		['iris', 0.45],
-		['pine', 0.25]
-	],
-	t3: [
-		['iris', 0.2],
-		['pine', 0.6]
-	],
-	br: [['pine', 1]],
-	// rocks
-	r1: [['iris', 0.55]],
-	r2: [
-		['iris', 0.3],
-		['pine', 0.5]
-	]
-};
-export const NAMES = Object.keys(RECIPES);
-const id = Object.fromEntries(NAMES.map((n, i) => [n, i + 1]));
+export const GROUND = 143; // horizon of the clearing
 
-const GROUND = 143; // soil horizon
+const BAYER = [
+	[0, 8, 2, 10],
+	[12, 4, 14, 6],
+	[3, 11, 1, 9],
+	[15, 7, 13, 5]
+];
+/** Ordered dither threshold in (-0.5, 0.5) for blending bands pixel by pixel. */
+const dither = (x, y) => (BAYER[y & 3][x & 3] + 0.5) / 16 - 0.5;
+const pick = (cols, v) => id[cols[Math.max(0, Math.min(cols.length - 1, Math.floor(v)))]];
 
-export function build() {
+const LEAF = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6'];
+const BARK = ['b1', 'b2', 'b3', 'b4', 'b5'];
+const SOIL = ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7'];
+const GRASS = ['g1', 'g2', 'g3', 'g4', 'g5', 'g6'];
+
+export function build(P) {
 	const cv = new Canvas();
-	const R = rng(20261022);
-	const pick = (arr) => arr[Math.floor(R() * arr.length)];
-	const rad = (deg) => (deg * Math.PI) / 180;
 
-	// ---- Sky: dithered bands, greener toward the edges -------------------------------------
-	const levels = ['s0', 's1', 's2', 's3', 's4', 's5'];
-	const bounds = [24, 38, 54, 70, 85]; // y where level k+1 starts at the centre
-	const bayer = [
-		[-1.5, 0.5],
-		[1.5, -0.5]
-	];
-	for (let y = 0; y < H; y++)
+	sky(cv);
+	farForest(cv, P >= 3);
+	hills(cv);
+	valley(cv);
+	mist(cv);
+	ground(cv, P);
+
+	giants(cv, P);
+	hero(cv, P);
+	rightTrees(cv, P);
+	leftSapling(cv, P);
+	cornerBushes(cv, P);
+	centreBushes(cv, P);
+
+	groundCover(cv, P);
+	foreground(cv, P);
+	fauna(cv, P);
+	stars(cv);
+	return cv;
+}
+
+/**
+ * Stars, lit only in OLED: in Dawn and Dark their colours equal the top of the sky, so they are
+ * placed last and only on pixels still showing that top band, never over a branch or a leaf.
+ */
+function stars(cv) {
+	const R = rng(600);
+	const free = (x, y) => cv.get(x, y) === id.s0;
+	for (let k = 0; k < 70; k++) {
+		const x = Math.floor(R() * W);
+		const y = Math.floor(2 + R() ** 1.4 * 70);
+		const big = R() < 0.12;
+		if (!free(x, y)) continue;
+		cv.set(x, y, id[big || R() < 0.45 ? 'st' : 'st2']);
+		if (big)
+			for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			])
+				if (free(x + dx, y + dy)) cv.set(x + dx, y + dy, id.st2);
+	}
+}
+
+// ---------------------------------------------------------------------------------------------
+// Backdrop: identical in every phase except the far forest, which leafs out from phase 3
+// ---------------------------------------------------------------------------------------------
+function sky(cv) {
+	for (let y = 0; y < GROUND; y++)
 		for (let x = 0; x < W; x++) {
-			const edge = Math.pow(Math.abs(x - 165) / 165, 2) * 24;
-			const yy = y + bayer[y & 1][x & 1] - edge - 2.5 * vnoise(x, 18, 3);
-			let lv = 0;
-			while (lv < bounds.length && yy >= bounds[lv]) lv++;
-			cv.set(x, y, id[levels[lv]]);
+			const glow = Math.max(0, 1 - Math.hypot((x - 165) / 175, (y - 112) / 100));
+			const v =
+				(y / GROUND) * 2.2 + glow * 2.6 + vnoise2(x / 40, y / 6, 3) * 0.35 + dither(x, y) * 0.18;
+			cv.set(x, y, pick(['s0', 's1', 's2', 's3', 's4'], v));
 		}
+}
 
-	// ---- Far pale hills + warm silhouettes -----------------------------------------------
-	cv.ridge(
-		[
-			[0, 64],
-			[8, 62],
-			[22, 60],
-			[40, 64],
-			[54, 70],
-			[62, 82],
-			[70, 96]
-		],
-		150,
-		id.far1,
-		2.6,
-		3,
-		31
-	);
-	cv.ridge(
-		[
-			[262, 72],
-			[268, 64],
-			[274, 58],
-			[282, 55],
-			[292, 60],
-			[298, 58],
-			[304, 50],
-			[312, 43],
-			[320, 41]
-		],
-		150,
-		id.far1,
-		0
-	);
-	cv.ridge(
-		[
-			[84, 118],
-			[100, 112],
-			[120, 114],
-			[140, 116],
-			[160, 118],
-			[180, 118],
-			[200, 116],
-			[220, 116],
-			[240, 108],
-			[252, 102]
-		],
-		150,
-		id.s6,
-		1.5,
-		5,
-		4
-	);
-	// far tree crowns: ragged blobs on thin trunks, glowing against the haze
-	const crown = (cx, cy, rx, ry, col, seed, trunkTo = 124) => {
-		for (let y = Math.floor(cy - ry - 2); y <= Math.ceil(cy + ry + 2); y++)
-			for (let x = Math.floor(cx - rx - 2); x <= Math.ceil(cx + rx + 2); x++) {
-				const d =
-					((x - cx) / rx) ** 2 +
-					((y - cy) / ry) ** 2 +
-					0.55 * vnoise(x * 1.3 + y * 0.7, 3.2, seed) +
-					(R() < 0.08 ? 0.5 : 0);
-				if (d < 1) cv.set(x, y, id[col]);
-			}
-		cv.rect(
-			Math.round(cx) - 1,
-			Math.round(cy + ry * 0.6),
-			2,
-			trunkTo - Math.round(cy + ry * 0.6),
-			id[col]
-		);
-		for (const s of [-1, 1])
-			cv.path(
+// [x, top, width, layer]: layer 1 is the palest, farthest row; layer 3 stands on the hills
+const FAR = [
+	[42, 40, 3, 1],
+	[84, 30, 3, 1],
+	[106, 58, 2, 1],
+	[214, 52, 2, 1],
+	[232, 26, 3, 1],
+	[290, 36, 3, 1],
+	[3, 12, 5, 2],
+	[28, 22, 4, 2],
+	[55, 18, 4, 2],
+	[246, 20, 4, 2],
+	[275, 14, 5, 2],
+	[304, 8, 5, 2],
+	[10, 36, 6, 3],
+	[36, 54, 4, 3],
+	[64, 62, 3, 3],
+	[268, 50, 4, 3],
+	[300, 30, 6, 3]
+];
+
+function farForest(cv, leafy) {
+	for (const layer of [1, 2, 3])
+		FAR.filter((t) => t[3] === layer).forEach(([x, top, w], k) => {
+			const c = id[['f1', 'f2', 'f3'][layer - 1]];
+			const R = rng(500 + x);
+			const lean = (R() - 0.5) * 6;
+			const centre = [
+				[x, GROUND],
+				[x + lean, top]
+			];
+			cv.trunk(
+				centre,
 				[
-					[cx, cy + ry * 0.5],
-					[cx + s * rx * 0.9, cy - ry * 0.2]
+					[top, 1],
+					[top + 25, w - 1],
+					[GROUND, w + 1]
 				],
-				id[col]
+				[c, c, c]
 			);
-	};
-	crown(178, 105, 8, 9, 's6', 41);
-	crown(205, 102, 11, 9, 's6', 42, 126);
-	crown(135, 110, 6, 5, 's6', 43, 124);
-	crown(152, 112, 5, 4, 's6', 44, 124);
-	crown(236, 100, 7, 7, 's6', 45, 126);
-	crown(162, 108, 4, 6, 's6', 46, 124);
-	cv.ridge(
-		[
-			[84, 122],
-			[100, 113],
-			[115, 116],
-			[128, 118],
-			[140, 116],
-			[150, 121],
-			[160, 124],
-			[172, 124],
-			[185, 121],
-			[200, 118],
-			[212, 113],
-			[226, 112]
-		],
-		150,
-		id.w1,
-		1.6,
-		4,
-		5
-	);
-	cv.ridge(
-		[
-			[80, 128],
-			[100, 126],
-			[120, 128],
-			[140, 131],
-			[160, 133],
-			[180, 132],
-			[200, 129],
-			[215, 124],
-			[225, 118]
-		],
-		150,
-		id.w2,
-		1.4,
-		4,
-		6
-	);
-
-	// ---- Distant dead trees (behind the sage hills where they overlap) -------------------
-	const dead = (centre, widths, col, branches) => {
-		cv.trunk(
-			centre,
-			widths.map(([y, w]) => [y, w * 1.35]),
-			[id[col], id[col], id[col]],
-			{ jit: 0.6 }
-		);
-		for (const b of branches) cv.taper(b, 2, 1, id[col]);
-	};
-	dead(
-		[
-			[1, 34],
-			[2, 60],
-			[2, 95]
-		],
-		[
-			[34, 2],
-			[60, 4],
-			[95, 5]
-		],
-		'm3',
-		[
-			[
-				[3, 60],
-				[5, 52]
-			]
-		]
-	);
-	dead(
-		[
-			[33, 29],
-			[32, 45],
-			[30, 62],
-			[29, 100]
-		],
-		[
-			[29, 1],
-			[45, 2],
-			[62, 3],
-			[100, 4]
-		],
-		'm3',
-		[
-			[
-				[30, 62],
-				[27, 58],
-				[22, 50],
-				[20, 48]
-			],
-			[
-				[32, 50],
-				[36, 42],
-				[39, 38]
-			],
-			[
-				[30, 78],
-				[35, 70],
-				[39, 62]
-			]
-		]
-	);
-	dead(
-		[
-			[43, 21],
-			[44, 40],
-			[44, 60],
-			[45, 100]
-		],
-		[
-			[21, 1],
-			[40, 2],
-			[60, 3],
-			[100, 5]
-		],
-		'm3',
-		[
-			[
-				[44, 42],
-				[47, 36],
-				[49, 30]
-			],
-			[
-				[43, 48],
-				[40, 44],
-				[36, 40]
-			],
-			[
-				[46, 62],
-				[52, 56],
-				[58, 50]
-			],
-			[
-				[43, 68],
-				[40, 72]
-			]
-		]
-	);
-	dead(
-		[
-			[70, 24],
-			[71, 45],
-			[71, 70],
-			[72, 132]
-		],
-		[
-			[24, 1],
-			[45, 2],
-			[70, 3],
-			[132, 4]
-		],
-		'far3',
-		[
-			[
-				[71, 34],
-				[67, 30],
-				[65, 32]
-			],
-			[
-				[72, 40],
-				[76, 34],
-				[78, 32]
-			],
-			[
-				[70, 60],
-				[66, 64],
-				[65, 72]
-			],
-			[
-				[73, 60],
-				[77, 56],
-				[79, 58]
-			]
-		]
-	);
-	dead(
-		[
-			[85, 45],
-			[84, 70],
-			[84, 132]
-		],
-		[
-			[45, 1],
-			[70, 2],
-			[132, 4]
-		],
-		'far4',
-		[
-			[
-				[84, 50],
-				[81, 47]
-			],
-			[
-				[85, 60],
-				[88, 56]
-			],
-			[
-				[84, 78],
-				[82, 82]
-			]
-		]
-	);
-	dead(
-		[
-			[246, 25],
-			[245, 45],
-			[243, 70],
-			[244, 105]
-		],
-		[
-			[25, 1],
-			[45, 2],
-			[105, 4]
-		],
-		'far4',
-		[
-			[
-				[245, 40],
-				[239, 36],
-				[231, 34]
-			],
-			[
-				[243, 50],
-				[239, 56],
-				[238, 62]
-			],
-			[
-				[247, 50],
-				[252, 44],
-				[256, 44]
-			],
-			[
-				[243, 72],
-				[238, 78],
-				[236, 84]
-			]
-		]
-	);
-	dead(
-		[
-			[281, 10],
-			[282, 25],
-			[284, 45],
-			[287, 60],
-			[288, 105]
-		],
-		[
-			[10, 2],
-			[25, 3],
-			[45, 5],
-			[60, 6],
-			[105, 8]
-		],
-		'm3',
-		[
-			[
-				[283, 38],
-				[276, 32],
-				[272, 30]
-			],
-			[
-				[286, 45],
-				[290, 38],
-				[291, 32]
-			],
-			[
-				[286, 54],
-				[292, 48]
-			],
-			[
-				[284, 66],
-				[278, 62],
-				[274, 58]
-			],
-			[
-				[285, 74],
-				[280, 78],
-				[278, 84]
-			]
-		]
-	);
-	dead(
-		[
-			[304, 30],
-			[304, 45],
-			[306, 60],
-			[307, 100]
-		],
-		[
-			[30, 1],
-			[45, 2],
-			[60, 3],
-			[100, 4]
-		],
-		'm3',
-		[
-			[
-				[305, 48],
-				[300, 45],
-				[298, 47]
-			],
-			[
-				[305, 58],
-				[309, 50],
-				[311, 44]
-			],
-			[
-				[306, 66],
-				[311, 64]
-			]
-		]
-	);
-
-	// ---- Sage hills: colour slides from sage at the edges to warm haze at the centre ----------
-	const hill = (pts, cols, xa, xb, fog, amp, scale, seed) => {
-		const x0 = Math.max(0, Math.floor(pts[0][0]));
-		const x1 = Math.min(W - 1, Math.ceil(pts[pts.length - 1][0]));
-		for (let x = x0; x <= x1; x++) {
-			const yTop = Math.round(interp(pts, x) + amp * vnoise(x, scale, seed));
-			const t = Math.max(0, Math.min(1, (x - xa) / (xb - xa)));
-			for (let y = yTop; y < 150; y++) {
-				// fog pools toward the valley floor; Bayer dither blends neighbouring tones
-				const idx =
-					t * (cols.length - 1) +
-					fog * Math.min(1, (y - yTop) / 30) +
-					0.55 * vnoise(x * 0.6 + y * 0.9, 7, seed + 3);
-				cv.set(x, y, id[cols[Math.max(0, Math.min(cols.length - 1, Math.round(idx)))]]);
+			// a few forks reaching up, the dead trunks of the clearing
+			const forks = 2 + Math.floor(R() * 3);
+			for (let f = 0; f < forks; f++) {
+				const by = top + 8 + R() * 40;
+				const bx = x + lean * (1 - (by - top) / (GROUND - top));
+				const side = (f + k) % 2 ? 1 : -1;
+				const len = 7 + R() * 10;
+				cv.path(
+					[
+						[bx, by],
+						[bx + side * len * 0.5, by - len * 0.6],
+						[bx + side * len * 0.7, by - len]
+					],
+					c
+				);
 			}
-		}
-	};
-	const WARM = ['m5', 'm3', 'm2', 'm1', 'w3', 'w2', 'w1'];
-	hill(
-		[
-			[0, 88],
-			[10, 90],
-			[22, 92],
-			[30, 94],
-			[48, 97],
-			[56, 100],
-			[64, 104],
-			[72, 108],
-			[80, 112],
-			[88, 116],
-			[100, 120],
-			[116, 124],
-			[132, 129],
-			[148, 133],
-			[160, 136],
-			[172, 136]
-		],
-		WARM,
-		0,
-		165,
-		0.9,
-		2,
-		3.5,
-		7
-	);
-	hill(
-		[
-			[160, 136],
-			[176, 134],
-			[190, 131],
-			[204, 128],
-			[214, 123],
-			[222, 118],
-			[228, 112],
-			[236, 107],
-			[246, 102],
-			[258, 100],
-			[268, 99],
-			[280, 96],
-			[292, 93],
-			[304, 92],
-			[320, 90]
-		],
-		WARM,
-		320,
-		175,
-		0.9,
-		2,
-		3.5,
-		8
-	);
-	hill(
-		[
-			[0, 108],
-			[14, 108],
-			[26, 114],
-			[34, 118],
-			[44, 122],
-			[56, 126],
-			[68, 132],
-			[78, 138],
-			[86, 143]
-		],
-		['m6', 'm5', 'm4', 'm3'],
-		0,
-		120,
-		0.8,
-		2,
-		3,
-		9
-	);
-	hill(
-		[
-			[262, 130],
-			[276, 124],
-			[284, 118],
-			[292, 112],
-			[300, 108],
-			[310, 106],
-			[320, 106]
-		],
-		['m6', 'm5', 'm4', 'm3'],
-		320,
-		240,
-		0.8,
-		2,
-		3,
-		10
-	);
-	hill(
-		[
-			[0, 126],
-			[20, 124],
-			[40, 130],
-			[60, 136],
-			[80, 140],
-			[100, 141]
-		],
-		['m6', 'm5', 'm4'],
-		0,
-		110,
-		0.6,
-		1.6,
-		3,
-		11
-	);
-	hill(
-		[
-			[286, 134],
-			[300, 128],
-			[320, 126]
-		],
-		['m6', 'm5'],
-		320,
-		260,
-		0.5,
-		1.6,
-		3,
-		12
-	);
-
-	const twiggy = (x, y, col, n = 6) => {
-		for (let i = 0; i < n; i++) {
-			const a = -Math.PI / 2 + (R() - 0.5) * 2.0;
-			const len = 5 + R() * 6;
-			cv.line(x, y, x + Math.cos(a) * len, y + Math.sin(a) * len, id[col]);
-		}
-	};
-	twiggy(60, 134, 'm4', 7);
-	twiggy(123, 140, 'm4', 7);
-	twiggy(247, 130, 'm4', 6);
-	twiggy(218, 140, 'm5', 5);
-
-	// ---- Soil: tone shares per depth band measured on the reference ---------------------------
-	// Patches come from anisotropic 2-D value noise ranked to a uniform field, so each band hits its
-	// measured tone mix while the patches stretch sideways like the reference strata.
-	const groundTop = (x) => {
-		let y = GROUND;
-		if (x < 30) y -= (30 - x) / 6; // rise toward the left
-		y -= 2.4 * Math.exp(-(((x - 84) / 14) ** 2));
-		y -= 3.2 * Math.exp(-(((x - 244) / 16) ** 2));
-		y += 2 * Math.max(0, (x - 280) / 40);
-		return Math.round(y + 0.8 * vnoise(x, 5, 21));
-	};
-	const soil = ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7'];
-	const SOIL_A = [15, 19, 20, 23, 22, 1, 0];
-	const SOIL_B = [20, 15, 27, 18, 14, 3, 2];
-	const SOIL_C = [1, 0, 7, 7, 56, 24, 5];
-	const mixW = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
-	const weightsAt = (y) =>
-		y <= 151
-			? SOIL_A
-			: y <= 162
-				? mixW(SOIL_A, SOIL_B, (y - 151) / 11)
-				: y <= 174
-					? mixW(SOIL_B, SOIL_C, (y - 162) / 12)
-					: SOIL_C;
-	const field = [];
-	for (let y = 0; y < H; y++)
-		for (let x = 0; x < W; x++)
-			field.push({
-				i: y * W + x,
-				v: vnoise2(x / 16, y / 1.9, 51) * 0.78 + vnoise2(x / 7, y / 1.2, 52) * 0.22
-			});
-	const sorted = [...field].sort((a, b) => a.v - b.v);
-	const uni = new Float32Array(W * H);
-	sorted.forEach((f, rank) => (uni[f.i] = rank / (W * H)));
-	for (let y = GROUND - 8; y < H; y++) {
-		const w = weightsAt(y);
-		for (let x = 0; x < W;) {
-			const len = 4 + Math.floor(R() * R() * 20);
-			const cx = Math.min(W - 1, x + (len >> 1));
-			const ww = w.map((v, k) => (k >= 5 && (cx < 40 || cx > 280) ? v * 2.2 : v));
-			const tot = ww.reduce((a, b) => a + b, 0);
-			let u = uni[y * W + cx] * tot;
-			let k = 0;
-			while (k < ww.length - 1 && u > ww[k]) u -= ww[k++];
-			for (let xx = x; xx < Math.min(W, x + len); xx++)
-				if (y >= groundTop(xx)) cv.set(xx, y, id[soil[k]]);
-			x += len;
-		}
-	}
-	for (let x = 0; x < W; x++) {
-		const t = groundTop(x);
-		cv.set(x, t, id.d4);
-		if (R() < 0.6) cv.set(x, t + 1, id.d3);
-	}
-
-	// ---- Helpers -----------------------------------------------------------------------------
-	const grass = (x, base, h, lean, col) => {
-		for (let i = 0; i < h; i++) cv.set(x + Math.round((lean * i) / h), base - i, id[col]);
-	};
-	/** Elongated mossy mound along a slope: lit top, mid body, dark underside. */
-	const moss = (x0, y0, len, thick, slope, seed) => {
-		for (let t = 0; t <= len; t++) {
-			const x = x0 + t;
-			const yb = y0 + slope * t;
-			const th = Math.max(
-				1,
-				Math.round(thick * Math.sin((Math.PI * (t + 0.5)) / (len + 1)) + 0.8 * vnoise(t, 2.5, seed))
-			);
-			for (let k = 0; k < th; k++)
-				cv.set(x, yb - k, id[k >= th - 1 ? 'lh' : k >= th - 2 && th > 2 ? 'lm' : 'll']);
-			cv.set(x, yb + 1, id.d6);
-		}
-	};
-
-	// ---- Moss + logs ---------------------------------------------------------------------
-	moss(58, 150, 16, 3, -0.04, 2);
-	moss(110, 151, 20, 4, 0.18, 3);
-	cv.path(
-		[
-			[118, 156],
-			[128, 157],
-			[138, 156],
-			[144, 155]
-		],
-		id.d6,
-		2
-	);
-	moss(72, 172, 24, 5, 0.1, 4);
-	moss(212, 150, 14, 3, -0.15, 5);
-	moss(228, 155, 16, 4, 0.04, 6);
-	moss(300, 146, 20, 2, 0, 7);
-	moss(2, 146, 16, 2, 0.05, 8);
-
-	// ---- Rocks -----------------------------------------------------------------------------
-	const rock = (x, y, w) => {
-		for (let i = 0; i < w; i++) {
-			const h = i === 0 || i === w - 1 ? 1 : i < 2 || i > w - 3 ? 2 : 3;
-			for (let k = 0; k < h; k++) cv.set(x + i, y - k + 2, k === h - 1 ? id.r1 : id.r2);
-		}
-	};
-	rock(42, 160, 7);
-	rock(177, 152, 6);
-	rock(205, 168, 7);
-	rock(274, 165, 10);
-	rock(196, 143, 4);
-
-	// ---- Trees ---------------------------------------------------------------------------------
-	const lf = (x, y, deg, len, c, hi) => cv.leaf(x, y, rad(deg), len, id[c], id[hi]);
-	const T = [id.t1, id.t2, id.t3];
-	// hero tree
-	cv.trunk(
-		[
-			[103, 33],
-			[102, 45],
-			[100, 55],
-			[98, 65],
-			[97, 75],
-			[95, 85],
-			[93, 95],
-			[91, 105],
-			[91, 115],
-			[90, 125],
-			[90, 135],
-			[91, 143]
-		],
-		[
-			[33, 1],
-			[45, 2],
-			[60, 3],
-			[80, 5],
-			[100, 6],
-			[120, 6],
-			[135, 7],
-			[143, 10]
-		],
-		T,
-		{ jit: 0.8, tex: R }
-	);
-	cv.poly(
-		[
-			[85, 143],
-			[97, 143],
-			[95, 138],
-			[87, 138]
-		],
-		id.t3
-	);
-	for (const p of [
-		[
-			[100, 46],
-			[96, 44]
-		],
-		[
-			[101, 52],
-			[105, 49]
-		],
-		[
-			[97, 54],
-			[94, 52]
-		],
-		[
-			[98, 66],
-			[104, 66],
-			[107, 62]
-		],
-		[
-			[95, 70],
-			[92, 71],
-			[88, 70]
-		],
-		[
-			[96, 82],
-			[101, 82]
-		],
-		[
-			[95, 73],
-			[93, 77]
-		]
-	])
-		cv.path(p, id.t3);
-	cv.group = 1;
-	lf(100, 36, 110, 7, 'lm', 'lh');
-	lf(94, 44, 125, 8, 'lm', 'lh');
-	lf(104, 41, 20, 7, 'lm', 'lh');
-	lf(96, 52, 170, 9, 'lm', 'lh');
-	lf(107, 62, 70, 8, 'lm', 'lh');
-	lf(106, 66, 5, 7, 'll', 'lm');
-	lf(92, 71, 160, 9, 'lm', 'lh');
-	lf(101, 82, 10, 7, 'lm', 'lh');
-	cv.group = 0;
-	// left sapling
-	cv.trunk(
-		[
-			[49, 104],
-			[49, 112],
-			[48, 122],
-			[48, 132],
-			[48, 141]
-		],
-		[
-			[104, 2],
-			[115, 3],
-			[130, 4],
-			[141, 6]
-		],
-		T,
-		{ jit: 0.8, tex: R }
-	);
-	cv.path(
-		[
-			[48, 118],
-			[45, 115],
-			[43, 112]
-		],
-		id.t3
-	);
-	cv.path(
-		[
-			[49, 113],
-			[52, 111],
-			[54, 110]
-		],
-		id.t3
-	);
-	cv.path(
-		[
-			[48, 122],
-			[44, 121]
-		],
-		id.t3
-	);
-	cv.group = 1;
-	lf(48, 106, 115, 8, 'lm', 'lh');
-	lf(50, 105, 60, 8, 'lm', 'lh');
-	lf(44, 112, 150, 8, 'lm', 'lh');
-	lf(52, 112, 25, 8, 'lm', 'lh');
-	lf(44, 121, 195, 8, 'll', 'lm');
-	lf(47, 116, 205, 5, 'll', 'lm');
-	cv.group = 0;
-	// right saplings
-	cv.trunk(
-		[
-			[224, 92],
-			[226, 100],
-			[228, 110],
-			[230, 120],
-			[232, 130],
-			[233, 141]
-		],
-		[
-			[92, 1],
-			[105, 3],
-			[125, 4],
-			[141, 6]
-		],
-		T,
-		{ jit: 0.8, tex: R }
-	);
-	cv.path(
-		[
-			[229, 112],
-			[233, 112]
-		],
-		id.t3
-	);
-	cv.path(
-		[
-			[227, 108],
-			[224, 110]
-		],
-		id.t3
-	);
-	cv.group = 1;
-	lf(223, 93, 100, 8, 'lm', 'lh');
-	lf(226, 96, 40, 8, 'lm', 'lh');
-	lf(222, 100, 160, 8, 'lm', 'lh');
-	lf(233, 111, 25, 8, 'lm', 'lh');
-	lf(224, 110, 165, 5, 'll', 'lm');
-	cv.group = 0;
-	cv.trunk(
-		[
-			[255, 62],
-			[256, 75],
-			[257, 90],
-			[258, 105],
-			[260, 120],
-			[262, 132],
-			[263, 142]
-		],
-		[
-			[62, 1],
-			[75, 2],
-			[95, 4],
-			[125, 5],
-			[142, 7]
-		],
-		T,
-		{ jit: 0.8, tex: R }
-	);
-	cv.path(
-		[
-			[256, 84],
-			[252, 82]
-		],
-		id.t3
-	);
-	cv.path(
-		[
-			[257, 76],
-			[261, 72]
-		],
-		id.t3
-	);
-	cv.group = 1;
-	lf(255, 64, 100, 8, 'lm', 'lh');
-	lf(254, 68, 150, 8, 'lm', 'lh');
-	lf(256, 66, 40, 8, 'lm', 'lh');
-	lf(252, 74, 160, 5, 'll', 'lm');
-	lf(260, 72, 20, 8, 'lm', 'lh');
-	lf(252, 82, 190, 8, 'll', 'lm');
-	lf(258, 90, 30, 5, 'lm', 'lh');
-	cv.group = 0;
-	cv.path(
-		[
-			[225, 141],
-			[225, 132],
-			[223, 129]
-		],
-		id.t2
-	);
-	cv.path(
-		[
-			[225, 134],
-			[228, 131]
-		],
-		id.t2
-	);
-
-	// ---- Airy leafy shrubs: bare skeleton, side twigs ending in small leaf clusters -----------
-	const shrub = (stems, cols, hiCols, dens = 0.8) => {
-		const leafAt = (x, y, ang, len) => {
-			cv.group = 1;
-			cv.leaf(x, y, ang, len, id[pick(cols)], id[pick(hiCols)]);
-			cv.group = 0;
-		};
-		for (const s of stems) {
-			cv.path(s, id.t3, 1);
-			cv.path(s.slice(0, 2), id.t3, 2);
-			for (let i = 1; i < s.length; i++) {
-				const [x0, y0] = s[i - 1];
-				const [x1, y1] = s[i];
-				const base = Math.atan2(-(y1 - y0), x1 - x0);
-				const steps = Math.max(1, Math.round(Math.hypot(x1 - x0, y1 - y0) / 3));
-				for (let k = i === 1 ? 2 : 1; k <= steps; k++) {
-					const px = lerp(x0, x1, k / steps);
-					const py = lerp(y0, y1, k / steps);
-					for (const side of [-1, 1]) {
-						if (R() < dens) {
-							const ang = base + side * rad(40 + R() * 30);
-							const len = 3 + R() * 4;
-							const ex = px + Math.cos(ang) * len;
-							const ey = py - Math.sin(ang) * len;
-							cv.line(px, py, ex, ey, id.t3);
-							leafAt(ex, ey, ang + side * rad(R() * 30), 5 + Math.floor(R() * 3));
-							if (R() < 0.75)
-								leafAt(ex, ey, ang - side * rad(35 + R() * 25), 4 + Math.floor(R() * 3));
-						}
-					}
+			if (leafy) {
+				const cc = id[['f2', 'f3', 'h2'][layer - 1]];
+				const n = 3 + Math.floor(R() * 3);
+				for (let b = 0; b < n; b++) {
+					const bx = x + lean + (R() - 0.5) * 18;
+					const by = top + 4 + R() * 26;
+					blob(cv, bx, by, 5 + R() * 5, 4 + R() * 3, cc, 700 + x + b);
 				}
 			}
-			const [tx, ty] = s[s.length - 1];
-			for (let k = 0; k < 4; k++) leafAt(tx, ty, rad(50 + k * 28 + R() * 20), 7);
-		}
-	};
-	shrub(
-		[
-			[
-				[12, 141],
-				[12, 130],
-				[13, 120],
-				[15, 110],
-				[17, 104]
-			],
-			[
-				[17, 139],
-				[21, 131],
-				[26, 125],
-				[30, 120],
-				[33, 116]
-			],
-			[
-				[12, 128],
-				[8, 122],
-				[4, 116],
-				[2, 110]
-			],
-			[
-				[14, 124],
-				[10, 116],
-				[9, 108]
-			],
-			[
-				[20, 130],
-				[24, 122],
-				[26, 114]
-			],
-			[
-				[15, 118],
-				[21, 112],
-				[25, 106]
-			]
-		],
-		['ld2', 'ld', 'ld', 'll'],
-		['ll', 'lm', 'ld'],
-		0.5
-	);
-	shrub(
-		[
-			[
-				[300, 142],
-				[301, 130],
-				[303, 118],
-				[306, 108],
-				[308, 98],
-				[309, 95]
-			],
-			[
-				[310, 141],
-				[311, 128],
-				[312, 116],
-				[313, 104],
-				[315, 95]
-			],
-			[
-				[301, 126],
-				[296, 122],
-				[291, 118],
-				[289, 114]
-			],
-			[
-				[309, 130],
-				[315, 126],
-				[320, 122]
-			],
-			[
-				[305, 112],
-				[300, 106],
-				[297, 100]
-			],
-			[
-				[312, 110],
-				[317, 106],
-				[320, 100]
-			]
-		],
-		['ld', 'll', 'll', 'ld2', 'lm'],
-		['lm', 'lh', 'll'],
-		0.72
-	);
+		});
+}
 
-	// ---- Tiny charred saplings along the horizon ----------------------------------------------------
-	for (const [x, h] of [
-		[36, 9],
-		[41, 6],
-		[56, 8],
-		[62, 10],
-		[70, 6],
-		[112, 7],
-		[150, 5],
-		[238, 6],
-		[196, 5]
+/** Soft lobed silhouette, for haze and far foliage. */
+function blob(cv, cx, cy, rx, ry, c, seed) {
+	for (let y = Math.floor(cy - ry - 2); y <= cy + ry + 2; y++)
+		for (let x = Math.floor(cx - rx - 2); x <= cx + rx + 2; x++) {
+			const d = Math.hypot((x - cx) / rx, (y - cy) / ry);
+			if (d < 1 + 0.25 * vnoise2(x / 2.5, y / 2.5, seed)) cv.set(x, y, c);
+		}
+}
+
+/** Rounded shrubs along a ridge line, so a slope reads as bushes and not as a smooth curve. */
+function crest(cv, pts, c, seed) {
+	const R = rng(seed);
+	for (let x = pts[0][0]; x <= pts[pts.length - 1][0]; x += 4 + R() * 5) {
+		let k = 1;
+		while (k < pts.length - 1 && pts[k][0] < x) k++;
+		const [x0, y0] = pts[k - 1];
+		const [x1, y1] = pts[k];
+		const y = y0 + ((y1 - y0) * (x - x0)) / (x1 - x0 || 1);
+		const r = 2.5 + R() * 3.5;
+		blob(cv, x, y + r * 0.4, r, r * 0.8, c, seed + Math.round(x));
+	}
+}
+
+function hills(cv) {
+	const back = [
+		[0, 94],
+		[40, 102],
+		[85, 115],
+		[125, 127],
+		[160, 133],
+		[195, 128],
+		[240, 113],
+		[285, 101],
+		[320, 94]
+	];
+	cv.ridge(back, GROUND, id.h1, 2.5, 5, 11);
+	crest(cv, back, id.h1, 1100);
+	// the nearer slopes, darker, with a shrubby crest and a few bare snags
+	const left = [
+		[-4, 108],
+		[35, 113],
+		[70, 121],
+		[110, 133],
+		[140, 140]
+	];
+	const right = [
+		[185, 140],
+		[215, 131],
+		[250, 120],
+		[285, 113],
+		[324, 108]
+	];
+	for (const [x, top] of [
+		[22, 92],
+		[58, 104],
+		[236, 106],
+		[292, 96]
 	]) {
-		cv.path(
-			[
-				[x, 143],
-				[x, 143 - h]
-			],
-			id.t3
+		cv.line(x, top, x, 125, id.h3);
+		cv.line(x, top + 6, x - 4, top + 1, id.h3);
+		cv.line(x, top + 10, x + 3, top + 6, id.h3);
+	}
+	for (const [pts, seed] of [
+		[left, 12],
+		[right, 13]
+	]) {
+		cv.ridge(pts, GROUND, id.h3, 2, 3, seed);
+		crest(cv, pts, id.h3, 1200 + seed);
+	}
+	// light along the crests, deeper at the foot of the slopes
+	for (let x = 0; x < W; x++) {
+		let depth = -1;
+		for (let y = 80; y < GROUND; y++) {
+			if (cv.get(x, y) !== id.h3) {
+				depth = -1;
+				continue;
+			}
+			depth++;
+			if (depth <= 1) cv.set(x, y, id.h2);
+			else if (depth > 7 && vnoise2(x / 9, y / 4, 14) + dither(x, y) * 0.5 > 0.05)
+				cv.set(x, y, id.h4);
+		}
+	}
+}
+
+/** The far trees at the end of the valley: the same in every phase. */
+function valley(cv) {
+	const c = id.f2;
+	cv.trunk(
+		[
+			[172, 128],
+			[171, 98]
+		],
+		[
+			[98, 1],
+			[128, 2]
+		],
+		[c, c, c]
+	);
+	cv.path(
+		[
+			[171, 112],
+			[166, 104],
+			[164, 99]
+		],
+		c
+	);
+	cv.path(
+		[
+			[171, 106],
+			[176, 100],
+			[178, 96]
+		],
+		c
+	);
+	cv.path(
+		[
+			[146, 130],
+			[147, 118],
+			[150, 112]
+		],
+		c
+	);
+	for (const [x, y, r] of [
+		[196, 100, 7],
+		[204, 96, 6],
+		[208, 106, 5]
+	])
+		blob(cv, x, y, r, r * 0.85, c, 900 + x);
+	cv.trunk(
+		[
+			[200, 128],
+			[199, 104]
+		],
+		[
+			[104, 1],
+			[128, 2]
+		],
+		[c, c, c]
+	);
+	blob(cv, 186, 116, 5, 4, id.f1, 931);
+}
+
+/** Mist lifting from the valley floor, thickest at the centre, in soft wisps. */
+function mist(cv) {
+	for (let y = 108; y < GROUND; y++)
+		for (let x = 0; x < W; x++) {
+			const m = ((y - 108) / 35) * (1 - Math.abs(x - 162) / 105) + vnoise2(x / 18, y / 3, 7) * 0.2;
+			if (m > 0.7) cv.set(x, y, id.s4);
+			else if (m > 0.52) cv.set(x, y, id.s3);
+		}
+}
+
+// ---------------------------------------------------------------------------------------------
+// Ground: soil in phase 1, grass spreading over it from phase 2
+// ---------------------------------------------------------------------------------------------
+function ground(cv, P) {
+	const cover = [0, -1, 0.15, 0.75, 0.8, 0.85][P];
+	for (let y = GROUND; y < H; y++)
+		for (let x = 0; x < W; x++) {
+			const t = (y - GROUND) / (H - GROUND);
+			const corner = Math.max(0, Math.abs(x - 160) / 160) ** 2 * t * 2.4;
+			// long horizontal streaks, the way soil reads in perspective
+			const n = vnoise2(x / 20, y / 1.6, 21) * 1.3 + vnoise2(x / 6, y / 1.2, 23) * 0.6;
+			const tone = 1.6 + t ** 1.1 * 4.2 + n * 1.25 + corner + dither(x, y) * 0.35;
+			const grass = vnoise2(x / 11, y / 3, 22) + cover - t * 0.3 > 0.2;
+			cv.set(x, y, grass ? pick(GRASS, tone * 0.85) : pick(SOIL, tone));
+		}
+	// horizon: the lit edge of the clearing
+	for (let x = 0; x < W; x++) {
+		const c = cv.get(x, GROUND);
+		if (c === id.d1 || c === id.d2) cv.set(x, GROUND, id.d1);
+		if (c === id.g1 || c === id.g2 || c === id.g3) cv.set(x, GROUND, id.g1);
+	}
+}
+
+// ---------------------------------------------------------------------------------------------
+// Foliage
+// ---------------------------------------------------------------------------------------------
+const STAMPS = [
+	['.##', '##.'],
+	['##.', '.##'],
+	['.#.', '###'],
+	['###', '.#.'],
+	['##', '##'],
+	['.#.', '###', '.#.']
+];
+
+/**
+ * A crown of leaf clumps lit from the upper left: a dark mass, then leaf stamps from the shade up
+ * to the highlights, so the edge reads as single leaves and every clump has light and shadow.
+ * `shade` darkens the whole crown (0 lit .. 1 deep), for trees further back or under a canopy.
+ */
+function canopy(cv, clumps, seed, { shade = 0, fruit = null } = {}) {
+	const R = rng(seed);
+	cv.group = 1;
+	for (const { x: cx, y: cy, r } of clumps)
+		for (let y = Math.floor(cy - r - 1); y <= cy + r + 1; y++)
+			for (let x = Math.floor(cx - r - 1); x <= cx + r + 1; x++) {
+				const d = Math.hypot(x - cx, (y - cy) * 1.15) / r;
+				if (d < 0.92 + 0.18 * vnoise2(x / 2, y / 2, seed)) {
+					const light = (-(x - cx) * 0.55 - (y - cy) * 0.85) / r;
+					cv.set(x, y, id[light < -0.45 ? 'l6' : 'l5']);
+				}
+			}
+	const stamps = [];
+	for (const { x: cx, y: cy, r } of clumps) {
+		const n = Math.round(r * r * 1.1);
+		for (let k = 0; k < n; k++) {
+			const a = R() * Math.PI * 2;
+			const d = Math.sqrt(R()) * r * 1.02;
+			const x = cx + Math.cos(a) * d;
+			const y = cy + Math.sin(a) * d * 0.87;
+			const light = (-(x - cx) * 0.55 - (y - cy) * 0.85) / r + (R() - 0.5) * 0.45 - shade * 1.1;
+			if (light < -0.75) continue;
+			stamps.push({ x, y, light, s: STAMPS[Math.floor(R() * STAMPS.length)] });
+		}
+	}
+	stamps.sort((a, b) => a.light - b.light);
+	for (const { x, y, light, s } of stamps) {
+		const c =
+			light > 0.62 ? 'l1' : light > 0.2 ? 'l2' : light > -0.2 ? 'l3' : light > -0.5 ? 'l4' : 'l5';
+		const ox = Math.round(x - 1);
+		const oy = Math.round(y - 1);
+		s.forEach((row, yy) =>
+			[...row].forEach((ch, xx) => ch === '#' && cv.set(ox + xx, oy + yy, id[c]))
 		);
-		cv.path(
+	}
+	cv.group = 0;
+	if (fruit) {
+		const F = rng(seed + 77);
+		for (const { x: cx, y: cy, r } of clumps)
+			if (F() < fruit.share)
+				for (let k = 0; k < fruit.per; k++) {
+					const a = F() * Math.PI * 2;
+					const d = (0.3 + F() * 0.6) * r;
+					drawFruit(cv, cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.8, fruit.kind(F));
+				}
+	}
+}
+
+/** Round 3x3 fruit with a highlight: 'aR' apple or 'aO' orange. */
+function drawFruit(cv, x, y, kind) {
+	x = Math.round(x);
+	y = Math.round(y);
+	const [lit, dark] = kind === 'aR' ? ['aR', 'aR2'] : ['aO', 'aO2'];
+	cv.sprite(x - 1, y - 1, ['.ab', 'aab', '.b.'], { a: id[lit], b: id[dark] });
+	cv.set(x - 1, y - 1, id.aH);
+	cv.set(x, y - 2, id.b4);
+}
+
+/** Tapered limb with a lit upper edge. */
+function limb(cv, pts, w0, w1) {
+	cv.taper(pts, w0, w1, id.b3);
+	cv.taper(
+		pts.map(([x, y]) => [x, y - Math.max(1, w0 / 3)]),
+		Math.max(1, w0 / 2.5),
+		1,
+		id.b2
+	);
+}
+
+/**
+ * Slim trunk of a young tree, bark lit on the left. Each edge is rounded on its own, so the outline
+ * steps smoothly as the trunk leans and thins instead of jumping when the width changes.
+ */
+function slimTrunk(cv, centre, widths, seed) {
+	const pts = [...centre].sort((a, b) => a[1] - b[1]);
+	const ws = [...widths].sort((a, b) => a[0] - b[0]);
+	const along = (list, y, k) => {
+		if (y <= list[0][k ? 0 : 1]) return list[0][k];
+		for (let i = 1; i < list.length; i++) {
+			const [a, b] = [list[i - 1], list[i]];
+			const ya = a[k ? 0 : 1];
+			const yb = b[k ? 0 : 1];
+			if (y <= yb) return a[k] + ((b[k] - a[k]) * (y - ya)) / (yb - ya || 1);
+		}
+		return list[list.length - 1][k];
+	};
+	for (let y = Math.round(pts[0][1]); y <= Math.round(pts[pts.length - 1][1]); y++) {
+		const cx = along(pts, y, 0);
+		const w = Math.max(1, along(ws, y, 1));
+		const xl = Math.round(cx - w / 2);
+		const xr = Math.max(xl, Math.round(cx + w / 2) - 1);
+		for (let x = xl; x <= xr; x++) {
+			let c = 'b2';
+			if (xr - xl >= 2 && x === xl) c = 'b1';
+			else if (xr > xl && x === xr) c = 'b4';
+			else if (xr - xl >= 3 && vnoise2(x / 1.5, y / 2.5, seed) > 0.6) c = 'b3';
+			cv.set(x, y, id[c]);
+		}
+	}
+}
+
+/** Twig ending in a little fan of leaves: how the saplings carry their first leaves. */
+function sprig(cv, x, y, dir, len, leaves, seed) {
+	const R = rng(seed);
+	const ex = x + dir * len * 0.8;
+	const ey = y - len * 0.7;
+	cv.line(x, y, ex, ey, id.b3);
+	cv.group = 1;
+	if (len > 6) cv.leaf((x + ex) / 2, (y + ey) / 2, Math.PI / 2 + dir * 0.9, 3, id.l3, id.l2);
+	for (let k = 0; k < leaves; k++) {
+		const ang = Math.PI / 2 - dir * (0.3 + k * 0.55) + (R() - 0.5) * 0.3;
+		cv.leaf(ex, ey, ang, 4, id[k % 2 ? 'l3' : 'l2'], id.l1);
+	}
+	cv.group = 0;
+}
+
+// ---------------------------------------------------------------------------------------------
+// The giants at both edges: slim edge trees in phase 2 that grow into the frame of the clearing
+// ---------------------------------------------------------------------------------------------
+function giants(cv, P) {
+	if (P < 2) return;
+	const big = P >= 3;
+	for (const side of [-1, 1]) {
+		const bx = side < 0 ? 24 : 296; // fixed spot of each giant
+		const sx = (x) => (side < 0 ? x : 320 - x); // mirror helper: x measured from the edge
+		if (!big) {
+			slimTrunk(
+				cv,
+				[
+					[bx, GROUND + 2],
+					[sx(18), 70],
+					[sx(14), 10]
+				],
+				[
+					[10, 3],
+					[GROUND, 6]
+				],
+				60 + side
+			);
+			limb(
+				cv,
+				[
+					[sx(17), 52],
+					[sx(32), 34],
+					[sx(42), 26]
+				],
+				3,
+				1
+			);
+			canopy(
+				cv,
+				[
+					{ x: sx(10), y: 6, r: 11 },
+					{ x: sx(30), y: 12, r: 10 },
+					{ x: sx(44), y: 24, r: 8 },
+					{ x: sx(6), y: 26, r: 8 },
+					{ x: sx(24), y: 34, r: 7 }
+				],
+				80 + side
+			);
+			continue;
+		}
+		giantTrunk(cv, bx, side, sx, P);
+		const clumps =
+			side < 0
+				? [
+						{ x: 8, y: 4, r: 14 },
+						{ x: 34, y: 0, r: 13 },
+						{ x: 60, y: 6, r: 13 },
+						{ x: 86, y: 4, r: 12 },
+						{ x: 104, y: 14, r: 10 },
+						{ x: 20, y: 26, r: 11 },
+						{ x: 72, y: 28, r: 11 },
+						{ x: 50, y: 36, r: 9 },
+						{ x: 96, y: 34, r: 8 }
+					]
+				: [
+						{ x: 312, y: 4, r: 14 },
+						{ x: 286, y: 0, r: 13 },
+						{ x: 260, y: 6, r: 13 },
+						{ x: 236, y: 2, r: 11 },
+						{ x: 300, y: 28, r: 11 },
+						{ x: 250, y: 26, r: 10 },
+						{ x: 274, y: 36, r: 9 },
+						{ x: 222, y: 46, r: 9 },
+						{ x: 234, y: 56, r: 7 }
+					];
+		canopy(cv, clumps, 90 + side, {
+			fruit:
+				P >= 5
+					? { share: 0.8, per: 3, kind: (F) => (F() < (side < 0 ? 0.6 : 0.4) ? 'aR' : 'aO') }
+					: null
+		});
+	}
+}
+
+function giantTrunk(cv, bx, side, sx, P) {
+	const R = rng(40 + side);
+	// centre line and half-width per row: a flared root plate, a waist, then the fork
+	const centre = (y) => bx + side * (Math.max(0, (90 - y) / 90) ** 1.4 * -8);
+	const half = (y) => {
+		const root = Math.max(0, (y - 118) / 25) ** 2 * 9;
+		return 7 + (y / GROUND) * 4 + root;
+	};
+	for (let y = 20; y <= GROUND + 3; y++) {
+		const c = centre(y);
+		const h = half(y);
+		for (let x = Math.floor(c - h); x <= Math.ceil(c + h); x++) {
+			const u = (x - (c - h)) / (2 * h); // 0 left edge .. 1 right edge
+			const streak = vnoise2(x / 1.6, y / 8, 41 + side) * 0.9;
+			let tone = 1 + u * 2.6 + streak;
+			if (u < 0.12) tone = 0.2 + streak * 0.5;
+			cv.set(x, y, pick(BARK, tone + dither(x, y) * 0.4));
+		}
+	}
+	// the two big limbs carrying the canopy
+	limb(
+		cv,
+		[
+			[centre(40), 40],
+			[sx(44), 26],
+			[sx(70), 18],
+			[sx(96), 12]
+		],
+		6,
+		2
+	);
+	limb(
+		cv,
+		[
+			[centre(30), 30],
+			[sx(16), 18],
+			[sx(6), 10]
+		],
+		5,
+		2
+	);
+	if (side > 0)
+		limb(
+			cv,
 			[
-				[x, 143 - Math.round(h * 0.6)],
-				[x + 3, 143 - Math.round(h * 0.6) - 3]
+				[centre(60), 60],
+				[sx(78), 52],
+				[sx(92), 48]
 			],
-			id.t3
+			4,
+			1
 		);
-		cv.path(
+	// roots spreading over the soil
+	for (const d of [-1, 1]) {
+		const x0 = centre(GROUND) + d * half(GROUND);
+		cv.taper(
 			[
-				[x, 143 - Math.round(h * 0.4)],
-				[x - 3, 143 - Math.round(h * 0.4) - 2]
+				[x0 - d * 4, GROUND - 4],
+				[x0 + d * 4, GROUND + 2],
+				[x0 + d * (8 + R() * 4), GROUND + 5]
 			],
-			id.t3
+			4,
+			1,
+			id.b3
 		);
-		cv.set(x + 3, 143 - Math.round(h * 0.6) - 4, id.lm);
-		cv.set(x, 143 - h - 1, id.lh);
+	}
+	if (P >= 4) mossAndVines(cv, centre, half, side, P);
+	if (P >= 5) shelfFungus(cv, centre, half, side);
+}
+
+function mossAndVines(cv, centre, half, side, P) {
+	const R = rng(300 + side);
+	// moss on the lit side of the trunk
+	for (let y = 60; y < GROUND; y++) {
+		const x0 = Math.round(centre(y) - half(y));
+		if (vnoise(y, 6, 301 + side) > 0.1) cv.set(x0 + 1, y, id.g3);
+		if (vnoise(y, 6, 301 + side) > 0.45) cv.set(x0 + 2, y, id.g4);
+	}
+	// a flowering climber spiralling up the trunk
+	cv.group = 1;
+	let px = centre(GROUND - 2) - half(GROUND - 2) * 0.5;
+	for (let y = GROUND - 2; y > 50; y -= 1) {
+		const x = centre(y) + Math.sin(y / 7 + side) * half(y) * 0.7;
+		cv.set(x, y, id.l4);
+		if (Math.abs(x - px) > 1) cv.set((x + px) / 2, y, id.l4);
+		px = x;
+		if (y % 4 === 0) cv.leaf(x, y, side < 0 ? 2.4 : 0.7, 2, id.l3, id.l2);
+		if (y % 9 === 0 && R() < 0.8) {
+			const c = id[R() < 0.5 ? 'fR' : 'fO'];
+			cv.group = 0;
+			cv.sprite(Math.round(x) - 1, y - 1, ['.a.', 'aya', '.a.'], { a: c, y: id.fY });
+			cv.group = 1;
+		}
+	}
+	cv.group = 0;
+	// lianas hanging from the canopy, outside the centre
+	const xs = side < 0 ? [12, 30, 52, 66, 84, 100] : [218, 232, 248, 266, 288, 310];
+	xs.forEach((x, k) => {
+		const top = 14 + R() * 18;
+		const len = 18 + R() * (P >= 5 ? 50 : 40);
+		cv.group = 1;
+		for (let y = top; y < top + len && y < 118; y++) {
+			const vx = x + Math.sin(y / 9 + k) * 1.2;
+			cv.set(vx, y, id[y % 3 ? 'l4' : 'l3']);
+			if ((y + k) % 7 === 0) cv.leaf(vx, y, k % 2 ? 0.6 : 2.5, 2, id.l3, id.l2);
+		}
+		cv.group = 0;
+	});
+}
+
+function shelfFungus(cv, centre, half, side) {
+	for (const y of [78, 84, 100]) {
+		const edge = side < 0 ? centre(y) + half(y) : centre(y) - half(y);
+		const x = Math.round(edge) + (side < 0 ? 0 : -4);
+		cv.sprite(x, y, ['.aaa.', 'abbbb'], { a: id.mC, b: id.mB });
+	}
+}
+
+// ---------------------------------------------------------------------------------------------
+// The hero tree left of the centre: a sapling that becomes an orange tree
+// ---------------------------------------------------------------------------------------------
+function hero(cv, P) {
+	const x0 = 93;
+	if (P === 1) {
+		slimTrunk(
+			cv,
+			[
+				[x0, GROUND + 1],
+				[x0 - 1, 112],
+				[x0 + 2, 72],
+				[x0 + 4, 36]
+			],
+			[
+				[36, 1],
+				[70, 3],
+				[GROUND, 5]
+			],
+			10
+		);
+		[
+			[x0 + 3, 50, -1, 9, 3],
+			[x0 + 3, 58, 1, 10, 3],
+			[x0 + 2, 76, -1, 8, 2],
+			[x0 + 2, 84, 1, 8, 3],
+			[x0 + 4, 40, 1, 5, 2],
+			[x0 + 4, 38, -1, 5, 2]
+		].forEach(([x, y, dir, len, n], k) => sprig(cv, x, y, dir, len, n, 20 + k));
+		return;
+	}
+	slimTrunk(
+		cv,
+		[
+			[x0, GROUND + 1],
+			[x0 - 1, 110],
+			[x0 + 2, 60],
+			[x0 + 3, 30]
+		],
+		[
+			[30, 2],
+			[90, 3],
+			[GROUND, P >= 4 ? 6 : 5]
+		],
+		11
+	);
+	limb(
+		cv,
+		[
+			[x0 + 2, 64],
+			[x0 - 6, 52],
+			[x0 - 12, 44]
+		],
+		2,
+		1
+	);
+	limb(
+		cv,
+		[
+			[x0 + 2, 56],
+			[x0 + 10, 46],
+			[x0 + 15, 38]
+		],
+		2,
+		1
+	);
+	const g = P >= 3 ? 1 : 0;
+	canopy(
+		cv,
+		[
+			{ x: x0 + 2, y: 20, r: 8 + g },
+			{ x: x0 - 11, y: 30, r: 8 + g },
+			{ x: x0 + 14, y: 32, r: 8 },
+			{ x: x0 - 6, y: 46, r: 8 + g },
+			{ x: x0 + 12, y: 52, r: 7 },
+			{ x: x0 - 10, y: 64, r: 6 + g },
+			{ x: x0 + 9, y: 70, r: 6 }
+		],
+		30,
+		{ fruit: P >= 5 ? { share: 0.9, per: 3, kind: () => 'aO' } : null }
+	);
+	if (P >= 4) {
+		// a flowering climber on the trunk
+		for (let y = GROUND - 2; y > 78; y -= 5) {
+			const x = x0 + (y % 10 ? -2 : 2);
+			cv.set(x, y, id.l4);
+			cv.set(x, y + 1, id.l3);
+			if (y % 15 === 3) cv.set(x, y - 1, id.fR);
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------------------------
+// The two trees right of the centre (x 229 and x 258) and the small sapling on the left (x 48)
+// ---------------------------------------------------------------------------------------------
+function rightTrees(cv, P) {
+	// x 258: a sapling, then the tall young tree of phase 2 that keeps growing under the giant
+	const a = 258;
+	if (P === 1) {
+		slimTrunk(
+			cv,
+			[
+				[a, GROUND + 1],
+				[a - 1, 100],
+				[a + 1, 64]
+			],
+			[
+				[64, 1],
+				[110, 2],
+				[GROUND, 4]
+			],
+			12
+		);
+		[
+			[a, 72, -1, 7, 3],
+			[a, 80, 1, 8, 3],
+			[a - 1, 96, -1, 7, 2],
+			[a, 66, 1, 5, 2],
+			[a - 1, 108, 1, 6, 2]
+		].forEach(([x, y, dir, len, n], k) => sprig(cv, x, y, dir, len, n, 40 + k));
+	} else {
+		slimTrunk(
+			cv,
+			[
+				[a, GROUND + 1],
+				[a - 1, 100],
+				[a + 1, 50],
+				[a, 22]
+			],
+			[
+				[22, 2],
+				[90, 3],
+				[GROUND, P >= 3 ? 5 : 4]
+			],
+			13
+		);
+		canopy(
+			cv,
+			[
+				{ x: a, y: 24, r: 8 },
+				{ x: a - 12, y: 36, r: 7 },
+				{ x: a + 12, y: 38, r: 8 },
+				{ x: a - 6, y: 52, r: 8 },
+				{ x: a + 10, y: 58, r: 7 },
+				{ x: a - 2, y: 74, r: 6 + (P >= 3 ? 1 : 0) },
+				{ x: a + 8, y: 86, r: 5 }
+			],
+			50,
+			{ shade: P >= 3 ? 0.25 : 0, fruit: P >= 5 ? { share: 0.7, per: 2, kind: () => 'aO' } : null }
+		);
 	}
 
-	// ---- Grass blades -----------------------------------------------------------------------------
-	cv.group = 2;
-	const tuft = (x0, x1, base, hMin, hMax, cols, step) => {
-		for (let x = x0; x <= x1; x += step + Math.floor(R() * 2))
-			grass(
-				x,
-				base,
-				hMin + Math.floor(R() * (hMax - hMin + 1)),
-				Math.floor(R() * 3) - 1,
-				pick(cols)
-			);
-	};
-	tuft(78, 108, 142, 4, 12, ['ld', 'o2', 'll'], 2);
-	tuft(238, 294, 143, 6, 17, ['lm', 'lh', 'o1', 'lh', 'lm'], 2);
-	tuft(14, 76, 142, 3, 8, ['ld', 'll', 'ld'], 3);
-	tuft(110, 236, 143, 2, 4, ['ll', 'ld'], 9);
+	// x 229: the smaller one, a sapling until it crowns in phase 3
+	const b = 229;
+	const top = 90;
+	slimTrunk(
+		cv,
+		[
+			[b, GROUND + 1],
+			[b - 1, 120],
+			[b + 1, top]
+		],
+		[
+			[top, 1],
+			[120, 2],
+			[GROUND, P >= 4 ? 4 : 3]
+		],
+		14
+	);
+	if (P <= 2) {
+		[
+			[b, 98, -1, 6, 3],
+			[b, 104, 1, 7, 3],
+			[b, 116, -1, 6, 2],
+			[b + 1, 93, 1, 4, 2],
+			...(P === 2
+				? [
+						[b, 110, 1, 6, 3],
+						[b, 124, -1, 5, 2]
+					]
+				: [])
+		].forEach(([x, y, dir, len, n], k) => sprig(cv, x, y, dir, len, n, 60 + k));
+	} else {
+		const g = P >= 4 ? 1 : 0;
+		canopy(
+			cv,
+			[
+				{ x: b, y: 92, r: 5 + g },
+				{ x: b - 7, y: 101, r: 5 + g },
+				{ x: b + 7, y: 103, r: 5 + g },
+				{ x: b - 1, y: 112, r: 4 + g }
+			],
+			70,
+			{ fruit: P >= 5 ? { share: 0.6, per: 1, kind: () => 'aR' } : null }
+		);
+	}
+}
 
-	// ---- Seedlings: chunky two-tone leaves ---------------------------------------------------------
-	const Y9 = [
-		'hh.....hh',
-		'hhh...hhh',
-		'.hmh.hmh.',
-		'..hmhmh..',
-		'...hmh...',
-		'....m....',
-		'....m....',
-		'....m....'
+function leftSapling(cv, P) {
+	const x0 = 48;
+	slimTrunk(
+		cv,
+		[
+			[x0, GROUND + 1],
+			[x0 + 1, 120],
+			[x0 - 1, 103]
+		],
+		[
+			[103, 1],
+			[GROUND, 3]
+		],
+		15
+	);
+	const sprigs = [
+		[x0, 110, -1, 6, 3],
+		[x0, 116, 1, 6, 3],
+		[x0 - 1, 106, 1, 4, 2],
+		[x0, 126, -1, 5, 2]
 	];
-	const Y7 = ['hh...hh', 'hmh.hmh', '.hmhmh.', '..hmh..', '...m...', '...m...'];
-	const Y5 = ['hh.hh', 'hmhmh', '.hmh.', '..m..', '..m..'];
-	const y2 = ['h.h', 'mhm', '.m.', '.m.'];
-	const zig = ['.h.', 'hh.', '.mh', '.m.', 'hm.', '.m.', '.m.'];
-	const mp = { h: id.lh, m: id.lm };
-	for (const [x, y] of [
-		[193, 154],
-		[181, 162],
-		[130, 160],
-		[244, 158]
-	])
-		cv.sprite(x, y, Y9, mp);
-	for (const [x, y] of [
-		[166, 166],
-		[270, 156],
-		[213, 154]
-	])
-		cv.sprite(x, y, Y7, mp);
-	for (const [x, y] of [
-		[166, 168],
-		[150, 167],
-		[155, 170],
-		[213, 156],
-		[97, 160],
-		[41, 148],
-		[218, 160],
-		[236, 158],
-		[70, 160],
-		[270, 158]
-	])
-		cv.sprite(x, y, Y5, mp);
-	for (const [x, y] of [
-		[76, 149],
-		[86, 152],
-		[105, 149],
-		[208, 163],
-		[163, 147],
-		[53, 158],
-		[292, 156],
-		[120, 158],
-		[230, 165]
-	])
-		cv.sprite(x, y, y2, mp);
-	for (const [x, y] of [
-		[28, 150],
-		[240, 146],
-		[190, 143],
-		[140, 148],
-		[224, 150],
-		[66, 146]
-	])
-		cv.sprite(x, y, zig, mp);
-	cv.group = 0;
+	if (P >= 2) sprigs.push([x0, 122, 1, 6, 3], [x0 - 1, 104, -1, 4, 2]);
+	sprigs.forEach(([x, y, dir, len, n], k) => sprig(cv, x, y, dir, len, n, 80 + k));
+}
 
-	// ---- Dark foreground brambles: thin curved stems with a few side shoots -------------------------
-	const stem = (pts, shoots = []) => {
-		cv.path(pts, id.br);
-		for (const [i, deg, len] of shoots) {
-			const [x, y] = pts[i];
-			const turn = deg > 90 ? 28 : -28;
-			const mx = x + Math.cos(rad(deg)) * len * 0.6;
-			const my = y - Math.sin(rad(deg)) * len * 0.6;
-			const ex = x + Math.cos(rad(deg + turn)) * len;
-			const ey = y - Math.sin(rad(deg + turn)) * len;
-			cv.path(
-				[
-					[x, y],
-					[mx, my],
-					[ex, ey]
-				],
-				id.br
-			);
+// ---------------------------------------------------------------------------------------------
+// Bushes
+// ---------------------------------------------------------------------------------------------
+/** Twiggy shrub with leaf fans: the bare form every bush starts from. */
+function twigShrub(cv, x, base, h, seed, leaves) {
+	const R = rng(seed);
+	for (let s = 0; s < 5; s++) {
+		const dx = (s - 2) * 4 + (R() - 0.5) * 3;
+		const top = base - h * (0.6 + R() * 0.4);
+		cv.path(
+			[
+				[x + dx * 0.3, base],
+				[x + dx * 0.7, base - h * 0.4],
+				[x + dx, top]
+			],
+			id.b3
+		);
+		for (let k = 0; k < leaves; k++) {
+			const t = 0.35 + R() * 0.65;
+			const lx = x + dx * (0.3 + t * 0.7);
+			const ly = base - (base - top) * t;
+			cv.group = 1;
+			cv.leaf(lx, ly, Math.PI / 2 + (R() - 0.5) * 2.2, 3, id[R() < 0.5 ? 'l3' : 'l4'], id.l2);
+			cv.group = 0;
 		}
-	};
-	stem(
-		[
-			[18, 174],
-			[18, 166],
-			[20, 158],
-			[21, 150],
-			[20, 146]
-		],
-		[
-			[1, 150, 8],
-			[2, 30, 9],
-			[3, 140, 7],
-			[3, 35, 6]
-		]
-	);
-	stem(
-		[
-			[14, 172],
-			[11, 166],
-			[7, 160],
-			[5, 155]
-		],
-		[
-			[1, 40, 6],
-			[2, 130, 6]
-		]
-	);
-	stem(
-		[
-			[22, 172],
-			[26, 166],
-			[30, 160],
-			[31, 154]
-		],
-		[
-			[1, 140, 6],
-			[2, 40, 6]
-		]
-	);
-	cv.path(
-		[
-			[40, 180],
-			[48, 170],
-			[56, 160],
-			[60, 153],
-			[61, 150]
-		],
-		id.br,
-		2
-	);
-	cv.path(
-		[
-			[58, 163],
-			[70, 160],
-			[84, 162]
-		],
-		id.br,
-		2
-	);
-	stem(
-		[
-			[268, 174],
-			[267, 166],
-			[264, 160],
-			[263, 154],
-			[264, 150]
-		],
-		[
-			[1, 40, 8],
-			[2, 140, 8],
-			[3, 50, 6]
-		]
-	);
-	stem(
-		[
-			[266, 170],
-			[260, 164],
-			[256, 158]
-		],
-		[[1, 60, 6]]
-	);
-	stem(
-		[
-			[270, 172],
-			[276, 166],
-			[280, 160]
-		],
-		[[1, 120, 6]]
-	);
-	stem(
-		[
-			[300, 174],
-			[299, 166],
-			[298, 158],
-			[299, 150],
-			[298, 145]
-		],
-		[
-			[1, 40, 9],
-			[2, 140, 9],
-			[3, 35, 7],
-			[3, 145, 7]
-		]
-	);
-	stem(
-		[
-			[308, 174],
-			[309, 166],
-			[311, 158],
-			[313, 152]
-		],
-		[
-			[1, 40, 7],
-			[2, 140, 7]
-		]
-	);
-	stem(
-		[
-			[315, 174],
-			[316, 166],
-			[317, 158]
-		],
-		[[1, 140, 6]]
-	);
-	stem(
-		[
-			[304, 172],
-			[300, 166],
-			[294, 162]
-		],
-		[[1, 120, 6]]
-	);
+	}
+}
 
-	return cv;
+/** A round bush of leaf clumps, optionally dotted with flowers or berries. */
+function bush(cv, clumps, seed, dots) {
+	canopy(cv, clumps, seed);
+	if (!dots) return;
+	const R = rng(seed + 5);
+	for (const { x: cx, y: cy, r } of clumps)
+		for (let k = 0; k < dots.per; k++) {
+			const a = R() * Math.PI * 2;
+			const d = Math.sqrt(R()) * r * 0.9;
+			const x = Math.round(cx + Math.cos(a) * d);
+			const y = Math.round(cy + Math.sin(a) * d * 0.85);
+			const c = dots.cols[Math.floor(R() * dots.cols.length)];
+			if (dots.berry) cv.sprite(x, y, ['ab', 'bb'], { a: id.aH, b: id[c] });
+			else cv.set(x, y, id[c]);
+		}
+}
+
+function cornerBushes(cv, P) {
+	if (P <= 2) {
+		twigShrub(cv, 18, GROUND + 2, 38, 100, P === 1 ? 6 : 8);
+		twigShrub(cv, 304, GROUND + 2, 40, 101, P === 1 ? 6 : 8);
+		return;
+	}
+	const dots =
+		P >= 5
+			? { per: 5, cols: ['fB', 'aR', 'fB'], berry: true }
+			: { per: P >= 4 ? 6 : 4, cols: P >= 4 ? ['fW', 'fP', 'fW'] : ['fW'] };
+	bush(
+		cv,
+		[
+			{ x: 8, y: 116, r: 10 },
+			{ x: 22, y: 124, r: 9 },
+			{ x: 6, y: 134, r: 9 },
+			{ x: 30, y: 136, r: 7 }
+		],
+		110,
+		dots
+	);
+	bush(
+		cv,
+		[
+			{ x: 312, y: 114, r: 10 },
+			{ x: 298, y: 124, r: 9 },
+			{ x: 314, y: 132, r: 9 },
+			{ x: 290, y: 136, r: 7 }
+		],
+		111,
+		dots
+	);
+}
+
+/** Low bushes at the foot of the clearing, below the timer (their tops stay under y 118). */
+function centreBushes(cv, P) {
+	if (P < 2) return;
+	if (P === 2) {
+		twigShrub(cv, 128, GROUND + 1, 22, 120, 7);
+		twigShrub(cv, 142, GROUND + 1, 18, 121, 6);
+		twigShrub(cv, 196, GROUND + 1, 20, 122, 6);
+		return;
+	}
+	const dots = { per: P >= 4 ? 5 : 3, cols: P >= 4 ? ['fY', 'fW', 'fV', 'fP'] : ['fW', 'fY'] };
+	bush(
+		cv,
+		[
+			{ x: 120, y: 132, r: 8 },
+			{ x: 134, y: 128, r: 9 },
+			{ x: 148, y: 134, r: 7 },
+			{ x: 110, y: 138, r: 6 }
+		],
+		130,
+		dots
+	);
+	bush(
+		cv,
+		[
+			{ x: 192, y: 132, r: 8 },
+			{ x: 205, y: 134, r: 7 },
+			{ x: 182, y: 138, r: 5 }
+		],
+		131,
+		dots
+	);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Ground cover: sprouts, grass, moss, flowers, mushrooms
+// ---------------------------------------------------------------------------------------------
+function sprout(cv, x, y) {
+	cv.group = 2;
+	cv.sprite(x - 1, y - 2, ['a.a', 'bcb', '.c.'], { a: id.l1, b: id.l2, c: id.l3 });
+	cv.group = 0;
+}
+
+/** A few blades of uneven height fanning out from one root. */
+function tuft(cv, x, base, h, seed) {
+	const R = rng(seed);
+	cv.group = 2;
+	const blades = 2 + Math.floor(R() * 3);
+	for (let k = 0; k < blades; k++) {
+		const dx = Math.round((k - (blades - 1) / 2) * (1 + R() * 0.8));
+		const bh = Math.max(2, Math.round(h * (k === 1 ? 1 : 0.45 + R() * 0.45)));
+		const lean = Math.sign(dx);
+		for (let s = 0; s < bh; s++) {
+			const c = s === bh - 1 && bh > 3 ? 'g1' : s >= bh / 2 ? 'g2' : s > 0 ? 'g3' : 'g4';
+			cv.set(x + dx + (s > bh * 0.6 ? lean : 0), base - s, id[c]);
+		}
+	}
+	cv.group = 0;
+}
+
+function flower(cv, x, y, c) {
+	cv.group = 2;
+	cv.set(x, y + 1, id.g3);
+	cv.set(x, y + 2, id.g4);
+	cv.group = 0;
+	cv.sprite(x - 1, y - 1, ['.a.', 'aya', '.a.'], { a: id[c], y: id[c === 'fY' ? 'fO' : 'fY'] });
+}
+
+function mushroom(cv, x, y, red) {
+	const cap = red ? id.aR : id.mB;
+	cv.sprite(x - 2, y - 3, ['.aaa.', 'awaaa', '..s..', '..s..'], { a: cap, w: id.mC, s: id.mC });
+}
+
+function moss(cv, x, y, len, seed) {
+	const R = rng(seed);
+	for (let k = 0; k < len; k++) {
+		cv.set(x + k, y, id[k < 2 || k > len - 3 ? 'g4' : 'g3']);
+		if (k > 1 && k < len - 2) cv.set(x + k, y - 1, id[R() < 0.4 ? 'g2' : 'g3']);
+		if (k > 3 && k < len - 4 && R() < 0.5) cv.set(x + k, y - 2, id.g2);
+	}
+}
+
+function groundCover(cv, P) {
+	const R = rng(200);
+	// first sprouts, everywhere from the start
+	for (let k = 0; k < 26; k++) {
+		const x = 6 + R() * 308;
+		const y = GROUND + 4 + R() * 32;
+		if (P === 1 || R() < 0.6) sprout(cv, Math.round(x), Math.round(y));
+	}
+	// grass along the horizon and in tufts over the clearing
+	const T = rng(210);
+	const tufts = [0, 14, 34, 56, 66, 74][P];
+	for (let k = 0; k < 80; k++) {
+		const x = Math.round(T() * 320);
+		const y = Math.round(GROUND + 1 + T() ** 1.6 * 36);
+		const h = 2 + T() * (P === 1 ? 3 : 5);
+		if (k < tufts) tuft(cv, x, y, h, 220 + k);
+	}
+	// the edge of the clearing: a ragged line of grass and dry stalks, thinner towards the centre
+	const E = rng(215);
+	for (let x = 1; x < W; x += 2 + Math.floor(E() * 4)) {
+		const side = Math.abs(x - 160) / 160;
+		if (E() > side * 0.8 + vnoise(x, 14, 216) * 0.5 + (P - 1) * 0.08) continue;
+		tuft(cv, x, GROUND + Math.floor(E() * 2), 2 + E() * (3 + side * 6 + P), 260 + x);
+	}
+	for (const [x, y, len] of [
+		[78, 168, 16],
+		[100, 156, 8],
+		[118, 150, 12],
+		[150, 160, 9],
+		[214, 149, 12],
+		[250, 156, 11],
+		[196, 172, 10]
+	])
+		moss(cv, x, y, len, 230 + x);
+
+	if (P >= 3) {
+		// a fallen, mossy log at the right
+		cv.taper(
+			[
+				[236, 158],
+				[290, 152],
+				[320, 150]
+			],
+			6,
+			7,
+			id.b3
+		);
+		cv.taper(
+			[
+				[236, 156],
+				[290, 150],
+				[320, 148]
+			],
+			2,
+			3,
+			id.b2
+		);
+		moss(cv, 250, 154, 30, 240);
+		moss(cv, 290, 149, 24, 241);
+		if (P >= 5) {
+			mushroom(cv, 262, 153, false);
+			mushroom(cv, 270, 152, false);
+		}
+	}
+
+	if (P >= 3) {
+		const F = rng(250);
+		const n = [0, 0, 0, 10, 70, 70][P];
+		const cols = P >= 4 ? ['fR', 'fO', 'fY', 'fP', 'fV', 'fR', 'fW'] : ['fW', 'fY'];
+		for (let k = 0; k < n; k++) {
+			const x = Math.round(4 + F() * 312);
+			const y = Math.round(GROUND + 3 + F() ** 1.3 * 32);
+			const c = cols[Math.floor(F() * cols.length)];
+			if (P >= 5 && k % 9 === 0) flower(cv, x, y, 'fB');
+			else flower(cv, x, y, c);
+		}
+	}
+
+	if (P >= 5) {
+		for (const [x, y, red] of [
+			[38, 170, true],
+			[104, 146, false],
+			[214, 147, true],
+			[232, 150, false],
+			[58, 147, true]
+		])
+			mushroom(cv, x, y, red);
+		for (const [x, y, k] of [
+			[66, 164, 'aR'],
+			[134, 167, 'aR'],
+			[104, 160, 'aO'],
+			[250, 166, 'aR'],
+			[284, 170, 'aR']
+		])
+			drawFruit(cv, x, y, k);
+	}
+}
+
+// ---------------------------------------------------------------------------------------------
+// Foreground: dark fallen branches in the bottom corners and rocks, in every phase
+// ---------------------------------------------------------------------------------------------
+function foreground(cv) {
+	const k = id.d7;
+	cv.taper(
+		[
+			[44, 182],
+			[54, 168],
+			[62, 154]
+		],
+		3,
+		1,
+		k
+	);
+	cv.taper(
+		[
+			[0, 166],
+			[24, 170],
+			[50, 178]
+		],
+		3,
+		2,
+		k
+	);
+	cv.path(
+		[
+			[54, 168],
+			[66, 162],
+			[80, 160]
+		],
+		k
+	);
+	cv.path(
+		[
+			[20, 169],
+			[16, 160],
+			[10, 156]
+		],
+		k
+	);
+	cv.path(
+		[
+			[30, 172],
+			[34, 164],
+			[30, 158]
+		],
+		k
+	);
+	cv.taper(
+		[
+			[320, 160],
+			[296, 168],
+			[276, 180]
+		],
+		3,
+		2,
+		k
+	);
+	for (const [pts] of [
+		[
+			[
+				[296, 168],
+				[292, 158],
+				[286, 152]
+			]
+		],
+		[
+			[
+				[284, 176],
+				[272, 168],
+				[262, 166]
+			]
+		],
+		[
+			[
+				[308, 164],
+				[310, 154],
+				[316, 148]
+			]
+		]
+	])
+		cv.path(pts, k);
+	for (const [x, y, w] of [
+		[45, 160, 5],
+		[180, 152, 4],
+		[208, 170, 5],
+		[280, 163, 6]
+	])
+		rock(cv, x, y, w);
+}
+
+function rock(cv, x, y, w) {
+	for (let yy = 0; yy < 3; yy++)
+		for (let xx = 0; xx < w; xx++) {
+			if (yy === 0 && (xx === 0 || xx === w - 1)) continue;
+			const c = yy === 0 ? (xx < w / 2 ? 'r1' : 'r2') : yy === 1 && xx < 2 ? 'r2' : 'r3';
+			cv.set(x + xx, y + yy, id[c]);
+		}
+}
+
+// ---------------------------------------------------------------------------------------------
+// Fauna: bees in phase 4, then birds and butterflies; never over the centre
+// ---------------------------------------------------------------------------------------------
+function fauna(cv, P) {
+	if (P >= 4) {
+		const bee = ['.ww', 'ybk', '.k.'];
+		const map = { w: id.fW, y: id.fY, b: id.b5, k: id.b5 };
+		cv.sprite(66, 92, bee, map);
+		cv.sprite(242, 78, bee, map);
+		const M = rng(400);
+		for (let k = 0; k < (P >= 5 ? 14 : 8); k++) {
+			const x = M() < 0.5 ? 10 + M() * 100 : 210 + M() * 100;
+			cv.set(x, 60 + M() * 70, id.aH);
+		}
+	}
+	if (P >= 5) {
+		const bird = ['.bb.', 'bbbo', '.ff.'];
+		cv.sprite(46, 22, bird, { b: id.fB, o: id.fO, f: id.b2 });
+		cv.sprite(
+			256,
+			44,
+			bird.map((r) => [...r].reverse().join('')),
+			{ b: id.mB, o: id.fO, f: id.b2 }
+		);
+		const fly = ['a.a', '.b.', 'a.a'];
+		cv.sprite(30, 96, fly, { a: id.fP, b: id.b5 });
+		cv.sprite(276, 64, fly, { a: id.fB, b: id.b5 });
+		cv.sprite(296, 102, fly, { a: id.fV, b: id.b5 });
+		cv.sprite(92, 110, ['.ww', 'ybk', '.k.'], { w: id.fW, y: id.fY, b: id.b5, k: id.b5 });
+	}
 }

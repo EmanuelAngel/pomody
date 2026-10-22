@@ -98,15 +98,16 @@ pnpm illustrations:forest        # todas las fases + forest-palette.css
 pnpm illustrations:forest 3      # solo la fase 3
 ```
 
-| Quiero cambiar…              | Dónde                                                                                   |
-| ---------------------------- | --------------------------------------------------------------------------------------- |
-| Un color (cualquier tema)    | `forest-palette.css` a mano, o `fpal.mjs` y regenerar. Es lo único que se edita directo |
-| Un árbol, la copa, el suelo  | `scene.mjs` (fase 1) o `scene2.mjs` (fases 2-5), y regenerar                            |
-| El movimiento de los píxeles | `live.mjs` (qué píxeles saltan) y `build-phase.mjs` (tiempos y keyframes)               |
+| Quiero cambiar…              | Dónde                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| Un color (cualquier tema)    | El hex de Dawn en `palette.mjs` y regenerar: Dark y OLED se derivan de él |
+| Un árbol, la copa, el suelo  | `scene.mjs` (un solo `build(P)` para las 5 fases) y regenerar             |
+| El movimiento de los píxeles | `live.mjs` (qué píxeles saltan) y `build-phase.mjs` (tiempos y keyframes) |
 
-- Los `forest-phase-N.svelte` son **salida**: no se editan a mano, se regeneran. El ruido usa semilla, así que regenerar sin tocar el código no cambia el `git diff`. Si tocás una escena, detalles chicos de los elementos posteriores pueden moverse porque comparten la secuencia aleatoria.
-- Una fase intermedia o una ilustración nueva reusa `lib.mjs` (lienzo, trazo, ruido), `live.mjs` y el emisor de `build-phase.mjs`. Una fase nueva suma unos 150-200 KB al bundle: con varias ilustraciones conviene cargar las fases bajo demanda.
-- Cada fase pinta con `fill="var(--forest-<nombre>)"`. Los nombres de color los define `fpal.mjs`.
+- Los `forest-phase-N.svelte` y `forest-palette.css` son **salida**: no se editan a mano, se regeneran. Cada elemento de la escena tiene su propia semilla, así que regenerar sin tocar el código no cambia el `git diff`, y tocar un elemento no mueve a los demás.
+- Las 5 fases son la misma escena: cada árbol tiene un lugar fijo y nada retrocede entre fases. El README del generador (`tools/illustrations/forest/README.md`) explica las reglas.
+- Una fase intermedia o una ilustración nueva reusa `lib.mjs` (lienzo, trazo, ruido), `live.mjs` y el emisor de `build-phase.mjs`. Una fase nueva suma unos 150-250 KB al bundle: con varias ilustraciones conviene cargar las fases bajo demanda.
+- Cada fase pinta con `fill="var(--forest-<nombre>)"`. Los nombres de color los define `palette.mjs`.
 
 ## Qué tener en cuenta
 
