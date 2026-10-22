@@ -7,15 +7,25 @@
 	import Plus from '@lucide/svelte/icons/plus';
 	import { cn } from '$lib/utils';
 	import { tasksState as defaultTasksState, type TasksState } from '$lib/state/tasks.svelte';
+	import {
+		illustrationState as defaultIllustrationState,
+		type IllustrationState
+	} from '$lib/state/illustration.svelte';
 	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
 		isRunning?: boolean;
 		tasksState?: TasksState;
+		illustration?: Pick<IllustrationState, 'isVisible'>;
 		portalProps?: { disabled?: boolean };
 	}
 
-	let { isRunning = false, tasksState = defaultTasksState, portalProps }: Props = $props();
+	let {
+		isRunning = false,
+		tasksState = defaultTasksState,
+		illustration = defaultIllustrationState,
+		portalProps
+	}: Props = $props();
 
 	let open = $state(false);
 	let newTaskTitle = $state('');
@@ -23,6 +33,8 @@
 	const activeTask = $derived(tasksState.activeTask);
 	const pendingTasks = $derived(tasksState.pendingTasks);
 	const activeTaskId = $derived(tasksState.activeTaskId);
+	// The background art is hidden below md, so the backdrop only applies from md up.
+	const backed = $derived(illustration.isVisible);
 
 	onMount(() => {
 		if (!tasksState.isLoaded && !tasksState.isLoading) {
@@ -80,7 +92,9 @@
 			activeTask ? 'gap-2 px-3 text-xs' : 'p-0 text-xs text-muted-foreground/80',
 			isRunning
 				? 'opacity-60 transition-opacity hover:opacity-100'
-				: 'opacity-100 hover:bg-muted/60'
+				: 'opacity-100 hover:bg-muted/60',
+			backed && 'md:border-border/70 md:bg-bg-surface/80 md:backdrop-blur-sm',
+			backed && isRunning && 'md:opacity-90'
 		)}
 	>
 		{#if activeTask}
@@ -112,7 +126,8 @@
 					? 'text-foreground'
 					: cn(
 							'rounded-full px-3.5 text-muted-foreground/80 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring',
-							isRunning ? 'opacity-60' : 'opacity-100'
+							isRunning ? 'opacity-60' : 'opacity-100',
+							backed && isRunning && 'md:opacity-100'
 						)
 			)}
 			aria-label={activeTask

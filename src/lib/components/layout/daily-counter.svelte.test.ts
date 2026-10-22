@@ -124,4 +124,24 @@ describe('DailyCounter (Client Browser)', () => {
 		await expect.element(counter).toHaveClass('pointer-events-none');
 		await expect.element(counter).toHaveClass('select-none');
 	});
+
+	it('adds a readable backdrop to the summary while an illustration is visible', async () => {
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, createDummyTicker(false));
+
+		const screen = await render(DailyCounter, { timerState, illustration: { isVisible: true } });
+		const summary = screen.getByTestId('daily-focus-counter').element().querySelector('span');
+
+		expect(summary?.classList.contains('md:backdrop-blur-sm')).toBe(true);
+		expect(summary?.classList.contains('md:bg-bg-surface/80')).toBe(true);
+	});
+
+	it('keeps the bare summary when no illustration is visible', async () => {
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, createDummyTicker(false));
+
+		const screen = await render(DailyCounter, { timerState, illustration: { isVisible: false } });
+		const summary = screen.getByTestId('daily-focus-counter').element().querySelector('span');
+
+		expect(summary?.classList.contains('md:backdrop-blur-sm')).toBe(false);
+		expect(summary?.classList.contains('text-muted-foreground/60')).toBe(true);
+	});
 });

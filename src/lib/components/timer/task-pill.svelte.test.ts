@@ -457,4 +457,38 @@ describe('TaskPill Reactive Localization (Client Browser)', () => {
 			.element(screen.getByRole('checkbox', { name: 'Mark "Plan Sprint" as pending' }))
 			.toBeVisible();
 	});
+
+	it('adds a readable backdrop while an illustration is visible', async () => {
+		const repo = new FakeTaskRepository();
+		const tasksState = createTasksState(repo);
+		await tasksState.load();
+
+		const screen = await render(TaskPill, {
+			isRunning: false,
+			tasksState,
+			illustration: { isVisible: true },
+			portalProps: { disabled: true }
+		});
+
+		const pill = screen.container.querySelector('[data-slot="task-pill"]');
+		expect(pill?.classList.contains('md:backdrop-blur-sm')).toBe(true);
+		expect(pill?.classList.contains('md:bg-bg-surface/80')).toBe(true);
+	});
+
+	it('keeps the translucent pill when no illustration is visible', async () => {
+		const repo = new FakeTaskRepository();
+		const tasksState = createTasksState(repo);
+		await tasksState.load();
+
+		const screen = await render(TaskPill, {
+			isRunning: false,
+			tasksState,
+			illustration: { isVisible: false },
+			portalProps: { disabled: true }
+		});
+
+		const pill = screen.container.querySelector('[data-slot="task-pill"]');
+		expect(pill?.classList.contains('md:backdrop-blur-sm')).toBe(false);
+		expect(pill?.classList.contains('bg-muted/40')).toBe(true);
+	});
 });
