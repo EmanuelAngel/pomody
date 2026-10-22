@@ -312,7 +312,7 @@
 
 <style>
 	.foliage {
-		animation: forest-sway 4s steps(1, end) infinite;
+		animation: forest-sway 8s ease-in-out infinite alternate;
 		animation-play-state: paused;
 		transform-box: fill-box;
 		transform-origin: 50% 100%;
@@ -323,12 +323,11 @@
 	}
 
 	@keyframes forest-sway {
-		0%,
-		100% {
-			transform: translateX(0);
+		from {
+			transform: translateX(-1.5px);
 		}
-		50% {
-			transform: translateX(1px);
+		to {
+			transform: translateX(1.5px);
 		}
 	}
 
