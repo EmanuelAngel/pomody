@@ -14,6 +14,18 @@
 	let { children } = $props();
 	let settingsOpen = $state(false);
 
+	/**
+	 * The rail opens on the tab the request asked for: the settings button goes to
+	 * Intervals and the header's update indicator — which is only a shortcut to the
+	 * updater section — lands on Application (spec S5).
+	 */
+	type SettingsTab = 'intervals' | 'appearance' | 'companion' | 'behavior' | 'application';
+	let settingsTab: SettingsTab = $state('intervals');
+
+	function handleOpenSettings(tab: SettingsTab = 'intervals') {
+		settingsTab = tab;
+	}
+
 	const isMiniPlayer = $derived(windowState.isMiniPlayer);
 
 	/**
@@ -61,8 +73,8 @@
 {:else if isMiniPlayer}
 	<MiniPlayer />
 {:else}
-	<Header bind:settingsOpen />
-	<SettingsDialog bind:open={settingsOpen} />
+	<Header bind:settingsOpen onSettingsClick={handleOpenSettings} />
+	<SettingsDialog bind:open={settingsOpen} initialTab={settingsTab} />
 
 	{@render children()}
 

@@ -17,6 +17,8 @@
 		distractionState as defaultDistractionState,
 		type DistractionState
 	} from '$lib/state/distractionState.svelte';
+	import { updateState as defaultUpdateState, type UpdateState } from '$lib/state/update.svelte';
+	import ArrowUpCircle from '@lucide/svelte/icons/arrow-up-circle';
 	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
@@ -24,7 +26,10 @@
 		navigationState?: NavigationState;
 		windowState?: WindowState;
 		distractionState?: DistractionState;
-		onSettingsClick?: () => void;
+		updateState?: UpdateState;
+		onSettingsClick?: (
+			tab?: 'intervals' | 'appearance' | 'companion' | 'behavior' | 'application'
+		) => void;
 		settingsOpen?: boolean;
 	}
 
@@ -33,6 +38,7 @@
 		navigationState = defaultNavigationState,
 		windowState = defaultWindowState,
 		distractionState = defaultDistractionState,
+		updateState = defaultUpdateState,
 		onSettingsClick,
 		settingsOpen = $bindable(false)
 	}: Props = $props();
@@ -49,6 +55,18 @@
 		settingsOpen = true;
 		onSettingsClick?.();
 	}
+
+	/**
+	 * The indicator is a shortcut, not a control of its own: it lands on the
+	 * updater section, which lives in the Application tab of Settings.
+	 */
+	function handleUpdateClick() {
+		settingsOpen = true;
+		onSettingsClick?.('application');
+	}
+
+	/** Desktop only (spec S9): there is neither updater nor UI on the web build. */
+	const updateNoticeVisible = $derived(updateState.isSupported && updateState.hasUpdate);
 
 	function handleTabClick(tab: NavigationTab) {
 		navigationState.setTab(tab);
@@ -176,6 +194,25 @@
 
 	<!-- Right Slot: Settings Action -->
 	<div class="flex items-center gap-1">
+		<!--
+			Discreet notification that a newer version is out (spec S5). The details —
+			version, notes and the install button — live in Settings, so the indicator
+			is only a shortcut to the Application tab. Follows the Zen-mode slot rule.
+		-->
+		{#if updateNoticeVisible}
+			<Button
+				variant="ghost"
+				aria-label={t.header_update_available()}
+				onclick={handleUpdateClick}
+				class={cn(
+					'gap-1.5 rounded-full text-xs text-muted-foreground transition-opacity duration-300 ease-in-out hover:text-foreground',
+					zenClass
+				)}
+			>
+				<ArrowUpCircle class="size-4" />
+				{t.header_update_available()}
+			</Button>
+		{/if}
 		<!--
 			Rendered only when the platform can actually manipulate the window. On
 			the web build `enterMiniPlayer` is a safe no-op, so an ungated trigger

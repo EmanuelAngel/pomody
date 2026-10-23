@@ -11,6 +11,9 @@ import { FakeDistractionWhitelistRepository } from '$tests/fakes/repositories/fa
 import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
 import { createDistractionState } from '$lib/state/distractionState.svelte';
 import { WebWindowShell } from '$lib/adapters/window/web-window-shell';
+import { createUpdateState } from '$lib/state/update.svelte';
+import { FakeUpdateChecker } from '$tests/fakes/platform/fake-update-checker';
+import type { UpdateInfo } from '$lib/domain/ports/update-checker.port';
 
 function createDummyTicker(isRunning = false) {
 	return {
@@ -261,6 +264,88 @@ describe('Header (Client Browser)', () => {
 			expect(screen.getByRole('tab', { name: 'Distractions' }).query()).toBeNull();
 			// The Metrics tab of Milestone 6 keeps its own state untouched.
 			await expect.element(screen.getByRole('tab', { name: 'Metrics' })).toBeDisabled();
+		});
+	});
+
+	describe('update indicator', () => {
+		function createUpdateHarness(
+			options: { isSupported?: boolean; nextCheck?: UpdateInfo | Error } = {}
+		) {
+			const checker = new FakeUpdateChecker({ isSupported: options.isSupported });
+			if (options.nextCheck !== undefined) {
+				checker.nextCheck = options.nextCheck;
+			}
+			const updateState = createUpdateState({ checker, timer: { state: 'idle' } });
+
+			return { checker, updateState };
+		}
+
+		it('stays hidden on a platform that cannot update itself', async () => {
+			const ticker = createDummyTicker(false);
+			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+			const { checker, updateState } = createUpdateHarness({ isSupported: false });
+			checker.nextCheck = { version: '0.20.0', notes: null, publishedAt: null };
+			await updateState.checkNow();
+
+			const screen = await render(Header, { timerState, updateState });
+
+			expect(screen.getByRole('button', { name: 'Update available' }).query()).toBeNull();
+		});
+
+		it('stays hidden until a check finds an update', async () => {
+			const ticker = createDummyTicker(false);
+			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+			const { checker, updateState } = createUpdateHarness();
+			checker.nextCheck = null;
+			await updateState.checkNow();
+
+			const screen = await render(Header, { timerState, updateState });
+
+			expect(screen.getByRole('button', { name: 'Update available' }).query()).toBeNull();
+		});
+
+		it('appears when a check finds an update and the timer is idle', async () => {
+			const ticker = createDummyTicker(false);
+			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+			const { checker, updateState } = createUpdateHarness();
+			checker.nextCheck = { version: '0.20.0', notes: null, publishedAt: null };
+			await updateState.checkNow();
+
+			const screen = await render(Header, { timerState, updateState });
+
+			await expect.element(screen.getByRole('button', { name: 'Update available' })).toBeVisible();
+		});
+
+		it('recedes in Zen mode like every other header control while a block runs', async () => {
+			const ticker = createDummyTicker(true);
+			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+			timerState.start();
+			const { checker, updateState } = createUpdateHarness();
+			checker.nextCheck = { version: '0.20.0', notes: null, publishedAt: null };
+			await updateState.checkNow();
+
+			const screen = await render(Header, { timerState, updateState });
+			const indicator = screen.getByRole('button', { name: 'Update available' });
+
+			await expect.element(indicator).toHaveClass('opacity-0');
+			await expect.element(indicator).toHaveClass('pointer-events-none');
+		});
+
+		it('opens Settings on the application tab when clicked', async () => {
+			const ticker = createDummyTicker(false);
+			const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+			const { checker, updateState } = createUpdateHarness();
+			checker.nextCheck = { version: '0.20.0', notes: null, publishedAt: null };
+			await updateState.checkNow();
+			const onSettingsClick = vi.fn();
+
+			const screen = await render(Header, { timerState, updateState, onSettingsClick });
+
+			const indicator = screen.getByRole('button', { name: 'Update available' });
+			await expect.element(indicator).toBeVisible();
+			await indicator.click();
+
+			expect(onSettingsClick).toHaveBeenCalledWith('application');
 		});
 	});
 });

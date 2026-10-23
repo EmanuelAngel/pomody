@@ -22,11 +22,13 @@
 		blockNoticeState as defaultBlockNoticeState,
 		type BlockNoticeState
 	} from '$lib/state/block-notice.svelte';
+	import { updateState as defaultUpdateState, type UpdateState } from '$lib/state/update.svelte';
 	import LanguageSelector from './language-selector.svelte';
 	import IntervalsPanel from './panels/intervals-panel.svelte';
 	import AppearancePanel from './panels/appearance-panel.svelte';
 	import CompanionPanel from './panels/companion-panel.svelte';
 	import BehaviorPanel from './panels/behavior-panel.svelte';
+	import UpdatesPanel from './panels/updates-panel.svelte';
 
 	interface Props {
 		open?: boolean;
@@ -36,6 +38,8 @@
 		distractionState?: DistractionState;
 		illustrationState?: IllustrationState;
 		blockNoticeState?: BlockNoticeState;
+		updateState?: UpdateState;
+		initialTab?: 'intervals' | 'appearance' | 'companion' | 'behavior' | 'application';
 	}
 
 	let {
@@ -45,7 +49,9 @@
 		localeState = defaultLocaleState,
 		distractionState = defaultDistractionState,
 		illustrationState = defaultIllustrationState,
-		blockNoticeState = defaultBlockNoticeState
+		blockNoticeState = defaultBlockNoticeState,
+		updateState = defaultUpdateState,
+		initialTab = 'intervals'
 	}: Props = $props();
 
 	/** The rail always opens on the group the request started with: intervals. */
@@ -53,7 +59,7 @@
 
 	$effect(() => {
 		if (open) {
-			activeTab = 'intervals';
+			activeTab = initialTab;
 		}
 	});
 
@@ -140,7 +146,17 @@
 				</Tabs.Content>
 
 				<Tabs.Content value="application" class="flex-1 p-6">
-					<LanguageSelector {localeState} />
+					<div class="flex flex-col gap-6">
+						<LanguageSelector {localeState} />
+
+						<!--
+							Desktop only (spec S9): on the web build the updater is a no-op,
+							so the section would be an empty stub with two dead buttons.
+						-->
+						{#if updateState.isSupported}
+							<UpdatesPanel {updateState} />
+						{/if}
+					</div>
 				</Tabs.Content>
 			</div>
 		</Tabs.Root>
