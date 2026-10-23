@@ -73,6 +73,7 @@ export function build(P) {
 	valley(cv);
 	fog(cv);
 	mist(cv);
+	if (P >= 3) rays(cv);
 	ground(cv, P);
 	relief(cv);
 
@@ -80,6 +81,7 @@ export function build(P) {
 	lean(cv, 93, () => hero(cv, P));
 	lean(cv, 244, () => rightTrees(cv, P));
 	lean(cv, 48, () => leftSapling(cv, P));
+	giantCrowns(cv, P);
 	cornerBushes(cv, P);
 	centreBushes(cv, P);
 
@@ -392,6 +394,19 @@ function valley(cv) {
 	blob(cv, 186, 116, 5, 4, id.f1, 931);
 }
 
+/** Shafts of light slanting down from the top of the clearing, once the canopy is there to cast them. */
+function rays(cv) {
+	for (let y = 0; y < 128; y++)
+		for (let x = 0; x < W; x++) {
+			const at = PLACE.get(cv.get(x, y));
+			// only over the far layers: the sky steps of the sunset and night themes are too coarse
+			if (!at || at[0] !== RAMPS[1]) continue;
+			const u = (((x - 150 + y * 0.6) % 26) + 26) % 26;
+			const fade = 1 - y / 128 + vnoise2(x / 9, y / 9, 35) * 0.25;
+			if (u < 5 && fade > 0.35) tone(cv, x, y, -1);
+		}
+}
+
 /** Mist lifting from the valley floor, thickest at the centre, in soft wisps. */
 function mist(cv) {
 	for (let y = 108; y < GROUND; y++)
@@ -406,7 +421,7 @@ function mist(cv) {
 // Ground: soil in phase 1, grass spreading over it from phase 2
 // ---------------------------------------------------------------------------------------------
 function ground(cv, P) {
-	const cover = [0, -1, 0.45, 0.8, 0.85, 0.9][P];
+	const cover = [0, -1, 0.45, 1.3, 1.35, 1.4][P];
 	for (let y = GROUND; y < H; y++)
 		for (let x = 0; x < W; x++) {
 			const t = (y - GROUND) / (H - GROUND);
@@ -551,6 +566,13 @@ function drawFruit(cv, x, y, kind) {
 /** Tapered limb with a lit upper edge. */
 function limb(cv, pts, w0, w1) {
 	cv.taper(pts, w0, w1, id.b3);
+	if (w0 >= 4)
+		cv.taper(
+			pts.map(([x, y]) => [x, y + w0 / 3]),
+			Math.max(1, w0 / 3),
+			1,
+			id.b4
+		);
 	cv.taper(
 		pts.map(([x, y]) => [x, y - Math.max(1, w0 / 3)]),
 		Math.max(1, w0 / 2.5),
@@ -610,13 +632,17 @@ function sprig(cv, x, y, dir, len, leaves, seed) {
 // ---------------------------------------------------------------------------------------------
 // The giants at both edges: slim edge trees in phase 2 that grow into the frame of the clearing
 // ---------------------------------------------------------------------------------------------
+// trunk profiles of the giants, kept for what grows on them later in the build
+const trunks = {};
+
 function giants(cv, P) {
 	if (P < 2) return;
 	const big = P >= 3;
 	for (const side of [-1, 1]) {
 		const bx = side < 0 ? 24 : 296; // fixed spot of each giant
 		const sx = (x) => (side < 0 ? x : 320 - x); // mirror helper: x measured from the edge
-		cv.shear = shearFor(bx);
+		// the slim edge trees of phase 2 lean; the giants stand on their own S-curve
+		cv.shear = big ? 0 : shearFor(bx);
 		cv.shearBase = GROUND;
 		if (!big) {
 			slimTrunk(
@@ -645,118 +671,208 @@ function giants(cv, P) {
 			canopy(cv, crown(sx(22), 10, 26, 24, 80 + side, 8), 80 + side);
 			continue;
 		}
-		giantTrunk(cv, bx, side, sx, P);
-		// the crown runs off the top edge, so the giants never look cut
-		const clumps = [
-			...crown(sx(56), 10, 60, 32, 92 + side, 11),
-			...crown(sx(94), 40, 14, 10, 94 + side, 8)
-		];
-		canopy(cv, clumps, 90 + side, {
-			fruit:
-				P >= 5
-					? { share: 0.8, per: 3, kind: (F) => (F() < (side < 0 ? 0.6 : 0.4) ? 'aR' : 'aO') }
-					: null
-		});
+		trunks[side] = giantTrunk(cv, side, P);
 	}
 	cv.shear = 0;
 }
 
-function giantTrunk(cv, bx, side, sx, P) {
-	const R = rng(40 + side);
-	// centre line and half-width per row: a flared root plate, a waist, then the fork
-	const centre = (y) => bx + side * (Math.max(0, (90 - y) / 90) ** 1.4 * -8);
-	const half = (y) => {
-		const root = Math.max(0, (y - 118) / 25) ** 2 * 9;
-		return 7 + (y / GROUND) * 4 + root;
-	};
-	for (let y = 20; y <= GROUND + 3; y++) {
-		const c = centre(y);
-		const h = half(y);
-		for (let x = Math.floor(c - h); x <= Math.ceil(c + h); x++) {
-			const u = (x - (c - h)) / (2 * h); // 0 left edge .. 1 right edge
-			const streak = vnoise2(x / 1.6, y / 8, 41 + side) * 0.9;
-			let tone = 1 + u * 2.6 + streak;
-			if (u < 0.12) tone = 0.2 + streak * 0.5;
-			cv.set(x, y, pick(BARK, tone + dither(x, y) * 0.4));
-		}
-	}
-	// the two big limbs carrying the canopy
-	limb(
-		cv,
-		[
-			[centre(40), 40],
-			[sx(44), 26],
-			[sx(70), 18],
-			[sx(96), 12]
-		],
-		6,
-		2
-	);
-	limb(
-		cv,
-		[
-			[centre(30), 30],
-			[sx(16), 18],
-			[sx(6), 10]
-		],
-		5,
-		2
-	);
-	if (side > 0)
-		limb(
-			cv,
-			[
-				[centre(60), 60],
-				[sx(78), 52],
-				[sx(92), 48]
-			],
-			4,
-			1
+/**
+ * The giants' crowns from phase 3, drawn after the other trees so they frame the clearing in front
+ * of them: three lobes on their own limbs, with sky and branches showing between them. The outer
+ * lobe runs off the top edge, so the giants never look cut.
+ */
+function giantCrowns(cv, P) {
+	if (P < 3) return;
+	for (const side of [-1, 1]) {
+		const bx = side < 0 ? 24 : 296;
+		cv.shear = 0;
+		cv.shearBase = GROUND;
+		const fruit =
+			P >= 5
+				? { share: 0.8, per: 3, kind: (F) => (F() < (side < 0 ? 0.6 : 0.4) ? 'aR' : 'aO') }
+				: null;
+		GIANTS[side].crowns.forEach(([x, y, rx, ry, r], k) =>
+			canopy(cv, crown(x, y, rx, ry, 92 + side * 3 + k, r), 90 + side * 3 + k, { fruit })
 		);
-	// roots spreading over the soil
-	for (const d of [-1, 1]) {
-		const x0 = centre(GROUND) + d * half(GROUND);
-		cv.taper(
-			[
-				[x0 - d * 4, GROUND - 4],
-				[x0 + d * 4, GROUND + 2],
-				[x0 + d * (8 + R() * 4), GROUND + 5]
-			],
-			4,
-			1,
-			id.b3
-		);
+		if (P >= 4) lianas(cv, side, P);
+		if (P >= 5) shelfFungus(cv, trunks[side], side);
 	}
-	if (P >= 4) mossAndVines(cv, centre, half, side, P);
-	if (P >= 5) shelfFungus(cv, centre, half, side);
+	cv.shear = 0;
 }
 
-function mossAndVines(cv, centre, half, side, P) {
-	const R = rng(300 + side);
-	// moss on the lit side of the trunk
-	for (let y = 60; y < GROUND; y++) {
-		const x0 = Math.round(centre(y) - half(y));
-		if (vnoise(y, 6, 301 + side) > 0.1) cv.set(x0 + 1, y, id.g3);
-		if (vnoise(y, 6, 301 + side) > 0.45) cv.set(x0 + 2, y, id.g4);
+/** Point at t on the cubic Bézier p = [p0, p1, p2, p3]. */
+const bez = (p, t) => {
+	const u = 1 - t;
+	return [0, 1].map(
+		(k) =>
+			u * u * u * p[0][k] + 3 * u * u * t * p[1][k] + 3 * u * t * t * p[2][k] + t * t * t * p[3][k]
+	);
+};
+
+/**
+ * A thick, curving piece of wood along a Bézier, tapering from w0 to w1. Each pixel is shaded by
+ * where it sits across the stroke: the side facing `light` (a unit [x, y] toward the light) is lit,
+ * both edges get a dark outline, and the bark grain spirals around it (`twist`), with a lit ridge
+ * beside every groove. Trunks, limbs and roots of the giants are all made of these.
+ */
+function stroke(cv, p, w0, w1, seed, light, twist = 0.06) {
+	let len = 0;
+	for (let i = 1; i <= 20; i++) {
+		const [ax, ay] = bez(p, (i - 1) / 20);
+		const [bx, by] = bez(p, i / 20);
+		len += Math.hypot(bx - ax, by - ay);
 	}
-	// a flowering climber spiralling up the trunk
+	const n = Math.ceil(len * 2);
+	for (let i = 0; i <= n; i++) {
+		const t = i / n;
+		const [x, y] = bez(p, t);
+		const [x0, y0] = bez(p, Math.max(0, t - 0.01));
+		const [x1, y1] = bez(p, Math.min(1, t + 0.01));
+		const tl = Math.hypot(x1 - x0, y1 - y0) || 1;
+		const [tx, ty] = [(x1 - x0) / tl, (y1 - y0) / tl];
+		const [nx, ny] = [-ty, tx];
+		const r = (w0 + (w1 - w0) * t) / 2;
+		const along = i / 2; // arc length in px
+		const wiggle = vnoise(along, 9, seed) * 0.5;
+		for (let yy = Math.floor(y - r - 1); yy <= y + r + 1; yy++)
+			for (let xx = Math.floor(x - r - 1); xx <= x + r + 1; xx++) {
+				const dx = xx - x;
+				const dy = yy - y;
+				if (Math.abs(dx * tx + dy * ty) > 0.75) continue;
+				const u = (dx * nx + dy * ny) / Math.max(r, 0.5);
+				if (Math.abs(u) > 1) continue;
+				const facing = (nx * light[0] + ny * light[1]) * u; // > 0 faces the light
+				let tone = 2.1 - facing * 1.5 + vnoise2(xx / 3, yy / 8, seed) * 0.15;
+				if (r > 2.5) {
+					const grain = ((((u + 1) * 2.6 + along * twist + wiggle) % 1) + 1) % 1;
+					if (grain < 0.2) tone += 1.1;
+					else if (grain < 0.34 && facing > -0.2) tone -= 0.7;
+				}
+				if (Math.abs(u) > (r > 2.5 ? 0.86 : 0.7)) tone = facing > 0 && r > 2.5 ? 3.4 : 4;
+				cv.set(xx, yy, pick(BARK, tone));
+			}
+	}
+}
+
+// The two giants are different trees, not a mirrored pair. Each entry is [p0, p1, p2, p3, w0, w1]:
+// a Bézier stroke in scene coordinates.
+const GIANTS = {
+	// left: slender, an S-curve, and a long low arm reaching into the clearing
+	[-1]: {
+		trunk: [[26, GROUND + 5], [10, 120], [44, 96], [36, 60], 32, 18],
+		roots: [
+			[[20, 126], [12, 140], [4, 146], [-6, 148], 12, 2],
+			[[30, 128], [40, 138], [50, 145], [60, 148], 12, 2],
+			[[26, 134], [30, 142], [34, 147], [40, 150], 8, 2]
+		],
+		limbs: [
+			[[30, 64], [22, 50], [16, 36], [6, 18], 8, 3],
+			[[36, 62], [38, 44], [44, 26], [58, -4], 15, 7],
+			[[40, 68], [56, 60], [72, 54], [96, 40], 11, 4],
+			[[66, 56], [72, 48], [76, 40], [80, 30], 4, 2],
+			[[42, 34], [34, 24], [30, 16], [22, 4], 5, 2]
+		],
+		crowns: [
+			[16, 10, 32, 26, 10],
+			[62, 6, 34, 22, 10],
+			[100, 30, 16, 13, 8]
+		]
+	},
+	// right: older and thicker, leaning into the clearing as it rises, with a long arm holding a
+	// lobe that hangs at mid height
+	[1]: {
+		trunk: [[296, GROUND + 5], [306, 118], [268, 100], [274, 56], 40, 22],
+		roots: [
+			[[302, 124], [312, 138], [320, 146], [330, 148], 14, 2],
+			[[290, 126], [280, 138], [270, 145], [258, 148], 14, 2],
+			[[296, 132], [292, 142], [286, 148], [280, 150], 9, 2]
+		],
+		limbs: [
+			[[280, 62], [292, 50], [302, 36], [318, 24], 10, 3],
+			[[274, 60], [272, 40], [280, 20], [290, -6], 18, 8],
+			[[270, 74], [254, 70], [236, 62], [214, 54], 12, 4],
+			[[240, 64], [236, 56], [232, 48], [228, 40], 4, 2],
+			[[272, 40], [262, 30], [256, 20], [250, 6], 6, 2]
+		],
+		crowns: [
+			[298, 8, 32, 24, 10],
+			[250, 4, 28, 18, 9],
+			[222, 52, 16, 12, 8]
+		]
+	}
+};
+
+/**
+ * The trunk of a giant (see GIANTS), lit from the clearing: roots flaring over the soil, the
+ * trunk, and the limbs that carry its crown. Returns the trunk's { centre, half } profile for what
+ * grows on it.
+ */
+function giantTrunk(cv, side, P) {
+	const g = GIANTS[side];
+	const light = [-side * 0.72, -0.69]; // toward the bright clearing, from above
+	const s = 40 + side;
+	for (const [p0, p1, p2, p3, w0, w1] of g.roots)
+		stroke(cv, [p0, p1, p2, p3], w0, w1, s + w0, light);
+	const [t0, t1, t2, t3, tw0, tw1] = g.trunk;
+	const trunk = [t0, t1, t2, t3];
+	stroke(cv, trunk, tw0, tw1, s, light);
+	g.limbs.forEach(([p0, p1, p2, p3, w0, w1], k) =>
+		stroke(cv, [p0, p1, p2, p3], w0, w1, s + 10 + k, light)
+	);
+	const shape = giantProfile(trunk, tw0 / 2, tw1 / 2);
+	if (P >= 3) ivy(cv, shape.centre, shape.half, side, P);
+	return shape;
+}
+
+/** Centre line and half-width per row of a giant's trunk, sampled from its Bézier. */
+function giantProfile(trunk, h0, h1) {
+	const rows = new Map();
+	for (let i = 0; i <= 200; i++) {
+		const [x, y] = bez(trunk, i / 200);
+		rows.set(Math.round(y), { x, w: h0 + (h1 - h0) * (i / 200) });
+	}
+	const row = (y) => {
+		for (let d = 0; d < 40; d++) {
+			const r = rows.get(Math.round(y) + d) ?? rows.get(Math.round(y) - d);
+			if (r) return r;
+		}
+		return { x: 0, w: 10 };
+	};
+	return { centre: (y) => row(y).x, half: (y) => row(y).w };
+}
+
+/** Ivy winding up the trunk from phase 3, with moss on the lit side and flowers from phase 4. */
+function ivy(cv, centre, half, side, P) {
+	const R = rng(300 + side);
+	for (let y = 80; y < GROUND; y++) {
+		const x0 = Math.round(centre(y) - half(y));
+		const m = vnoise(y, 6, 301 + side);
+		if (m > 0.1) cv.set(x0 + 1, y, id.g3);
+		if (m > 0.45) cv.set(x0 + 2, y, id.g4);
+	}
 	cv.group = 1;
-	let px = centre(GROUND - 2) - half(GROUND - 2) * 0.5;
-	for (let y = GROUND - 2; y > 50; y -= 1) {
-		const x = centre(y) + Math.sin(y / 7 + side) * half(y) * 0.7;
-		cv.set(x, y, id.l4);
-		if (Math.abs(x - px) > 1) cv.set((x + px) / 2, y, id.l4);
+	let px = centre(GROUND - 2);
+	for (let y = GROUND - 2; y > 64; y--) {
+		const x = centre(y) + Math.sin(y / 8 + side) * half(y) * 0.65;
+		cv.set(x, y, id.l5);
+		if (Math.abs(x - px) > 1) cv.set((x + px) / 2, y, id.l5);
 		px = x;
-		if (y % 4 === 0) cv.leaf(x, y, side < 0 ? 2.4 : 0.7, 2, id.l3, id.l2);
-		if (y % 9 === 0 && R() < 0.8) {
-			const c = id[R() < 0.5 ? 'fR' : 'fO'];
+		if (y % 3 === 0) leafShape(cv, x, y, y % 6 ? -2.6 : -0.5, 2.5, 2 + (y % 2));
+		if (P >= 4 && y % 9 === 0 && R() < 0.8) {
 			cv.group = 0;
-			cv.sprite(Math.round(x) - 1, y - 1, ['.a.', 'aya', '.a.'], { a: c, y: id.fY });
+			cv.sprite(Math.round(x) - 1, y - 1, ['.a.', 'aya', '.a.'], {
+				a: id[R() < 0.5 ? 'fR' : 'fO'],
+				y: id.fY
+			});
 			cv.group = 1;
 		}
 	}
 	cv.group = 0;
-	// lianas hanging from the canopy, outside the centre
+}
+
+/** Lianas hanging from the canopy from phase 4, kept outside the centre. */
+function lianas(cv, side, P) {
+	const R = rng(320 + side);
 	const xs = side < 0 ? [12, 30, 52, 66, 84, 100] : [218, 232, 248, 266, 288, 310];
 	xs.forEach((x, k) => {
 		const top = 14 + R() * 18;
@@ -765,16 +881,16 @@ function mossAndVines(cv, centre, half, side, P) {
 		for (let y = top; y < top + len && y < 118; y++) {
 			const vx = x + Math.sin(y / 9 + k) * 1.2;
 			cv.set(vx, y, id[y % 3 ? 'l4' : 'l3']);
-			if ((y + k) % 7 === 0) cv.leaf(vx, y, k % 2 ? 0.6 : 2.5, 2, id.l3, id.l2);
+			if ((y + k) % 6 === 0) leafShape(cv, vx, y, k % 2 ? -0.6 : -2.5, 3, 2);
 		}
 		cv.group = 0;
 	});
 }
 
-function shelfFungus(cv, centre, half, side) {
-	for (const y of [78, 84, 100]) {
+function shelfFungus(cv, { centre, half }, side) {
+	for (const y of [80, 86, 102]) {
 		const edge = side < 0 ? centre(y) + half(y) : centre(y) - half(y);
-		const x = Math.round(edge) + (side < 0 ? 0 : -4);
+		const x = Math.round(edge) + (side < 0 ? -1 : -4);
 		cv.sprite(x, y, ['.aaa.', 'abbbb'], { a: id.mC, b: id.mB });
 	}
 }
@@ -1018,6 +1134,13 @@ function twigShrub(cv, x, base, h, seed, leaves) {
 
 /** A round bush of leaf clumps, optionally dotted with flowers or berries. */
 function bush(cv, clumps, seed, dots) {
+	// a shaded base and a row of low clumps down to the ground, so the bush sits on it
+	for (const { x: cx, y: cy, r } of clumps)
+		for (let y = Math.round(cy); y <= GROUND + 1; y++) {
+			const hw = r * 0.6 + vnoise(y, 3, seed) * 1.2;
+			for (let x = Math.round(cx - hw); x <= cx + hw; x++) cv.set(x, y, id.l6);
+		}
+	clumps = [...clumps, ...clumps.map(({ x, r }) => ({ x, y: GROUND - r * 0.45, r: r * 0.7 }))];
 	canopy(cv, clumps, seed);
 	if (!dots) return;
 	const R = rng(seed + 5);
@@ -1029,7 +1152,11 @@ function bush(cv, clumps, seed, dots) {
 			const y = Math.round(cy + Math.sin(a) * d * 0.85);
 			const c = dots.cols[Math.floor(R() * dots.cols.length)];
 			if (dots.berry) cv.sprite(x, y, ['ab', 'bb'], { a: id.aH, b: id[c] });
-			else cv.set(x, y, id[c]);
+			else
+				cv.sprite(x - 1, y - 1, ['.a.', 'aya', '.a.'], {
+					a: id[c],
+					y: id[c === 'fY' ? 'fW' : 'fY']
+				});
 		}
 }
 
@@ -1080,14 +1207,15 @@ function centreBushes(cv, P) {
 		twigShrub(cv, 196, GROUND + 1, 20, 122, 4);
 		return;
 	}
-	const dots = { per: P >= 4 ? 5 : 3, cols: P >= 4 ? ['fY', 'fW', 'fV', 'fP'] : ['fW', 'fY'] };
+	const dots = { per: 6, cols: P >= 4 ? ['fY', 'fW', 'fV', 'fP'] : ['fW', 'fY', 'fV', 'fW'] };
 	bush(
 		cv,
 		[
-			{ x: 120, y: 132, r: 8 },
-			{ x: 134, y: 128, r: 9 },
-			{ x: 148, y: 134, r: 7 },
-			{ x: 110, y: 138, r: 6 }
+			{ x: 104, y: 135, r: 7 },
+			{ x: 117, y: 129, r: 9 },
+			{ x: 131, y: 127, r: 10 },
+			{ x: 145, y: 130, r: 9 },
+			{ x: 157, y: 136, r: 7 }
 		],
 		130,
 		dots
@@ -1095,9 +1223,9 @@ function centreBushes(cv, P) {
 	bush(
 		cv,
 		[
-			{ x: 192, y: 132, r: 8 },
-			{ x: 205, y: 134, r: 7 },
-			{ x: 182, y: 138, r: 5 }
+			{ x: 184, y: 135, r: 7 },
+			{ x: 197, y: 130, r: 9 },
+			{ x: 210, y: 134, r: 7 }
 		],
 		131,
 		dots
@@ -1138,6 +1266,62 @@ function flower(cv, x, y, c) {
 	cv.sprite(x - 1, y - 1, ['.a.', 'aya', '.a.'], { a: id[c], y: id[c === 'fY' ? 'fO' : 'fY'] });
 }
 
+/** A fallen trunk lying across the bottom right, with a cut face, bark and moss along its back. */
+function fallenLog(cv) {
+	const [x0, x1] = [226, 322];
+	const at = (x) => 168 - ((x - x0) / (x1 - x0)) * 22;
+	for (let x = x0; x <= x1; x++) {
+		const top = Math.round(at(x));
+		const mossy = vnoise(x, 9, 252) > -0.35;
+		for (let k = 0; k < 12; k++) {
+			const t =
+				[0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4][k] + (vnoise2(x / 7, k / 1.5, 251) > 0.4 ? 1 : 0);
+			let c = BARK[Math.min(4, t)];
+			// a thick coat of moss along its back
+			if (mossy && k < 4) c = GRASS[k === 0 ? (vnoise(x, 3, 253) > 0.2 ? 0 : 1) : k + 1];
+			cv.set(x, top + k, id[c]);
+		}
+		if (mossy && vnoise(x, 4, 254) > 0.45) cv.set(x, top + 4, id.g4);
+	}
+	// the cut face: growth rings
+	for (let y = -6; y <= 6; y++)
+		for (let x = -3; x <= 3; x++) {
+			const d = Math.hypot(x / 3.4, y / 6.2);
+			if (d > 1) continue;
+			cv.set(x0 + x, at(x0) + 6 + y, id[d > 0.82 ? 'b3' : Math.round(d * 4) % 2 ? 'b1' : 'mB']);
+		}
+}
+
+/** A fern: fronds arching out from one root, each with leaflets that shrink toward the tip. */
+function fern(cv, x0, base, size, dir, seed) {
+	const R = rng(seed);
+	cv.group = 2;
+	for (let f = 0; f < 6; f++) {
+		let a = (-0.9 + f * 0.36 + (R() - 0.5) * 0.2) * dir; // from upright, toward dir
+		const bend = 0.05 * Math.sign(a || dir);
+		let [x, y] = [x0, base];
+		const len = size * (0.6 + R() * 0.4);
+		for (let t = 0; t < len; t++) {
+			x += Math.sin(a);
+			y -= Math.cos(a);
+			a += bend;
+			const tone = t > len * 0.7 ? 'l2' : t > len * 0.3 ? 'l3' : 'l4';
+			cv.set(x, y, id[tone]);
+			if (t % 2 === 1 && t < len - 1) {
+				const leaf = Math.max(1, Math.round((1 - t / len) * 3));
+				for (const s of [-1, 1])
+					for (let k = 1; k <= leaf; k++)
+						cv.set(
+							x + s * Math.cos(a) * k,
+							y + s * Math.sin(a) * k + k * 0.4,
+							id[s < 0 ? 'l2' : 'l4']
+						);
+			}
+		}
+	}
+	cv.group = 0;
+}
+
 function mushroom(cv, x, y, red) {
 	const cap = red ? id.aR : id.mB;
 	cv.sprite(x - 2, y - 3, ['.aaa.', 'awaaa', '..s..', '..s..'], { a: cap, w: id.mC, s: id.mC });
@@ -1162,11 +1346,12 @@ function groundCover(cv, P) {
 	}
 	// grass along the horizon and in tufts over the clearing
 	const T = rng(210);
-	const tufts = [0, 14, 34, 56, 66, 74][P];
-	for (let k = 0; k < 80; k++) {
+	const tufts = [0, 14, 34, 110, 120, 130][P];
+	for (let k = 0; k < 140; k++) {
 		const x = Math.round(T() * 320);
 		const y = Math.round(GROUND + 1 + T() ** 1.6 * 36);
-		const h = 2 + T() * (P === 1 ? 3 : 5);
+		// from phase 3 the grass grows tall in the foreground
+		const h = (2 + T() * (P === 1 ? 3 : 5)) * (P >= 3 ? 1 + ((y - GROUND) / 37) * 1.4 : 1);
 		if (k < tufts) tuft(cv, x, y, h, 220 + k);
 	}
 	// the edge of the clearing: a ragged line of grass and dry stalks, thinner towards the centre
@@ -1188,38 +1373,23 @@ function groundCover(cv, P) {
 		moss(cv, x, y, len, 230 + x);
 
 	if (P >= 3) {
-		// a fallen, mossy log at the right
-		cv.taper(
-			[
-				[236, 158],
-				[290, 152],
-				[320, 150]
-			],
-			6,
-			7,
-			id.b3
-		);
-		cv.taper(
-			[
-				[236, 156],
-				[290, 150],
-				[320, 148]
-			],
-			2,
-			3,
-			id.b2
-		);
-		moss(cv, 250, 154, 30, 240);
-		moss(cv, 290, 149, 24, 241);
-		if (P >= 5) {
-			mushroom(cv, 262, 153, false);
-			mushroom(cv, 270, 152, false);
-		}
+		fallenLog(cv);
+		for (const [x, y, size, dir] of [
+			[46, GROUND + 3, 16, 1],
+			[6, GROUND + 4, 14, 1],
+			[272, GROUND + 3, 16, -1],
+			[314, GROUND + 2, 14, -1],
+			[20, 176, 18, 1]
+		])
+			fern(cv, x, y, size, dir, 280 + x);
+		mushroom(cv, 262, 150, false);
+		mushroom(cv, 268, 149, false);
+		if (P >= 5) mushroom(cv, 300, 146, true);
 	}
 
 	if (P >= 3) {
 		const F = rng(250);
-		const n = [0, 0, 0, 10, 70, 70][P];
+		const n = [0, 0, 0, 20, 70, 70][P];
 		const cols = P >= 4 ? ['fR', 'fO', 'fY', 'fP', 'fV', 'fR', 'fW'] : ['fW', 'fY'];
 		for (let k = 0; k < n; k++) {
 			const x = Math.round(4 + F() * 312);
