@@ -137,6 +137,7 @@ Estado en Hover (Hover State - Revelación Progresiva):
 - **Atribución elemento por elemento**: el atributo nativo `data-tauri-drag-region` se aplica a cada elemento que debe arrastrar —el contenedor de la columna izquierda, su ícono, su título, el contenedor de la columna central y el texto del timer—. **No se hereda a los hijos** en Tauri v2 y, como las columnas cubren la totalidad del raíz, aplicarlo solo al contenedor general deja la ventana inmovible.
 - **Aislamiento de la botonera**: el contenedor de botones interactivos (`[Play/Pause]`, `[Reset]`, `[Skip]`, `[Restaurar]`) **no lleva el atributo**, en ningún caso. No se desactiva con `data-tauri-drag-region="false"` sino por omisión: el diseño es _opt-in_, de modo que cualquier elemento nuevo nace sin drag y WebView2 procesa los clics sin confundirlos con arrastres. Ver [`003-tauri-frameless-window-quirks.md`](../../learnings/003-tauri-frameless-window-quirks.md).
 - **Atajos de teclado**: La tecla `Escape` o el atajo global de alternancia devuelven la ventana a su tamaño completo.
+- **Anclaje a `Timer` al restaurar**: con un bloque en marcha, la pestaña activa pasa a `Timer`. Zen desvanece la cabecera durante el bloque, así que restaurar sobre Planning o Distractions dejaría al usuario sin navegación y sin forma de pausar o gestionar la sesión. Es un invariante (mientras `isRunning`, la vista activa es `timer`), no un caso especial de la restauración: cubre el botón Restaurar, `Escape`, el tray y el snapshot restaurado al arrancar.
 
 ---
 

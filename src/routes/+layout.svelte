@@ -10,6 +10,9 @@
 	import { appBootstrap } from '$lib/state/app-bootstrap.svelte';
 	import { updateState } from '$lib/state/update.svelte';
 	import { windowState } from '$lib/state/windowState.svelte';
+	import { timerState } from '$lib/state/timer.svelte';
+	import { navigationState } from '$lib/state/navigation.svelte';
+	import { anchorViewToRunningTimer } from '$lib/state/focus-view';
 
 	let { children } = $props();
 	let settingsOpen = $state(false);
@@ -37,6 +40,16 @@
 		updateState.start();
 
 		return () => updateState.stop();
+	});
+
+	/**
+	 * Zen Mode hides the header while a block runs, so a running session is only
+	 * usable on the Timer view. The rule lives in `focus-view.ts`, where it is
+	 * unit-tested; this is only the reactive wiring, because a `$effect` cannot
+	 * live at module level.
+	 */
+	$effect(() => {
+		anchorViewToRunningTimer(timerState, navigationState);
 	});
 
 	/**
