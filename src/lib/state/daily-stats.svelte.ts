@@ -1,11 +1,8 @@
 import { SvelteDate } from 'svelte/reactivity';
-import type { DomainEvent } from '../domain/events/block-completed.event';
-import type { IDailyStatsRepository } from '../domain/ports/daily-stats-repository.port';
-import {
-	LocalDailyStatsRepository,
-	getLocalDateString
-} from '../adapters/storage/local-daily-stats-repository';
-import { timerState } from './timer.svelte';
+import { summarizeDailyFocus } from '../domain/history/daily-focus-summary';
+import type { FocusHistoryEntry } from '../domain/history/focus-history-entry.entity';
+import { getLocalDateString } from '../domain/history/local-date';
+import { focusHistoryState } from './focus-history.svelte';
 
 /**
  * Formats accumulated focus minutes into a concise, human-readable format.
@@ -43,26 +40,46 @@ export function formatDailyStatsSummary(
 	return `${safeBlocks} ${blockLabel} · ${durationLabel}`;
 }
 
+/** What the daily counter needs from the focus history: the loaded entries, reactively. */
+export interface DailyStatsHistorySource {
+	readonly entries: readonly FocusHistoryEntry[];
+}
+
 /**
- * Reactive state store managing Daily Focus Counter statistics.
- * Uses Svelte 5 Runes ($state, $derived) and connects to timer domain events.
+ * Reactive Daily Focus Counter, derived from the focus history: nothing is stored for it.
+ * Counts today's completed focus blocks (migrated ones included) and sums their minutes.
+ * "Today" is a filter, so the day rollover writes nothing.
  */
 export class DailyStatsState {
-	private readonly repository: IDailyStatsRepository;
-	private readonly timer?: { onEvent: (fn: (e: DomainEvent) => void) => () => void };
+	private readonly history: DailyStatsHistorySource;
 	private readonly nowProvider: () => Date;
-	private _timerUnsubscribe?: () => void;
+	/** The day `date` last reported, kept outside the reactive graph to tell what `checkRollover` changed. */
+	private lastDate: string;
 
-	private _completedBlocks = $state<number>(0);
-	private _accumulatedMinutes = $state<number>(0);
-	private _date = $state<string>('');
+	/** Bumped by `checkRollover` to make `date` read the clock again. */
+	private _clockReads = $state<number>(0);
+
+	/**
+	 * Today's local date. It reads the clock whenever the history changes (a block ended, another
+	 * tab wrote, the history was cleared) or `checkRollover` asks; there is no midnight scheduler.
+	 */
+	private readonly _date = $derived.by(() => {
+		void this._clockReads;
+		void this.history.entries;
+		this.lastDate = getLocalDateString(this.nowProvider());
+		return this.lastDate;
+	});
+
+	private readonly _summary = $derived.by(() =>
+		summarizeDailyFocus(this.history.entries, this._date)
+	);
 
 	public get completedBlocks(): number {
-		return this._completedBlocks;
+		return this._summary.completedBlocks;
 	}
 
 	public get accumulatedMinutes(): number {
-		return this._accumulatedMinutes;
+		return this._summary.accumulatedMinutes;
 	}
 
 	public get date(): string {
@@ -70,103 +87,26 @@ export class DailyStatsState {
 	}
 
 	public readonly formattedSummary = $derived.by(() => {
-		return formatDailyStatsSummary(this._completedBlocks, this._accumulatedMinutes);
+		return formatDailyStatsSummary(this.completedBlocks, this.accumulatedMinutes);
 	});
 
 	constructor(
-		repository?: IDailyStatsRepository,
-		timer: { onEvent: (fn: (e: DomainEvent) => void) => () => void } | null = timerState,
+		history: DailyStatsHistorySource = focusHistoryState,
 		nowProvider: () => Date = () => new SvelteDate()
 	) {
+		this.history = history;
 		this.nowProvider = nowProvider;
-		this.repository = repository ?? new LocalDailyStatsRepository(undefined, nowProvider);
-		this.timer = timer ?? undefined;
-
-		this.loadInitialStats();
-
-		if (this.timer) {
-			this._timerUnsubscribe = this.timer.onEvent((event) => {
-				this.handleDomainEvent(event);
-			});
-		}
-	}
-
-	private loadInitialStats(): void {
-		const today = getLocalDateString(this.nowProvider());
-		const loaded = this.repository.loadStats();
-		if (loaded.date === today) {
-			this._date = loaded.date;
-			this._completedBlocks = loaded.completedBlocks;
-			this._accumulatedMinutes = loaded.accumulatedMinutes;
-		} else {
-			this._date = today;
-			this._completedBlocks = 0;
-			this._accumulatedMinutes = 0;
-		}
+		this.lastDate = getLocalDateString(nowProvider());
 	}
 
 	/**
-	 * Checks if the calendar date has rolled over.
-	 * If date changed, resets state to 0 for today, persists to repository, and returns true.
+	 * Re-reads the clock. Returns true when the calendar day changed since the last read, in which
+	 * case the counter now shows the new day. Nothing is written or deleted.
 	 */
 	public checkRollover(): boolean {
-		const today = getLocalDateString(this.nowProvider());
-		if (this._date !== today) {
-			this._date = today;
-			this._completedBlocks = 0;
-			this._accumulatedMinutes = 0;
-			this.repository.saveStats({
-				date: today,
-				completedBlocks: 0,
-				accumulatedMinutes: 0
-			});
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * Handles timer domain events.
-	 * Increments blocks and minutes only on focus block completion.
-	 */
-	private handleDomainEvent(event: DomainEvent): void {
-		if (event.type === 'block-completed' && event.mode === 'focus') {
-			this.checkRollover();
-
-			this._completedBlocks += 1;
-			const durationMs =
-				typeof event.durationMs === 'number' && Number.isFinite(event.durationMs)
-					? event.durationMs
-					: 0;
-			this._accumulatedMinutes += Math.round(durationMs / 60000);
-
-			this.repository.saveStats({
-				date: this._date,
-				completedBlocks: this._completedBlocks,
-				accumulatedMinutes: this._accumulatedMinutes
-			});
-		}
-	}
-
-	/**
-	 * Resets daily statistics for today to zero and persists to repository.
-	 */
-	public reset(): void {
-		const today = getLocalDateString(this.nowProvider());
-		this._date = today;
-		this._completedBlocks = 0;
-		this._accumulatedMinutes = 0;
-		this.repository.resetStats();
-	}
-
-	/**
-	 * Unsubscribes from timer domain events.
-	 */
-	public destroy(): void {
-		if (this._timerUnsubscribe) {
-			this._timerUnsubscribe();
-			this._timerUnsubscribe = undefined;
-		}
+		const before = this.lastDate;
+		this._clockReads += 1;
+		return this._date !== before;
 	}
 }
 
@@ -174,11 +114,10 @@ export class DailyStatsState {
  * Factory function to create isolated DailyStatsState instances.
  */
 export function createDailyStatsState(
-	repository?: IDailyStatsRepository,
-	timer?: { onEvent: (fn: (e: DomainEvent) => void) => () => void } | null,
+	history?: DailyStatsHistorySource,
 	nowProvider?: () => Date
 ): DailyStatsState {
-	return new DailyStatsState(repository, timer, nowProvider);
+	return new DailyStatsState(history, nowProvider);
 }
 
 /**
