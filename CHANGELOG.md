@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.19.0...pomody-v0.20.0) (2026-10-23)
+
+
+### Features
+
+* **desktop:** update the app from within itself ([#211](https://github.com/EmanuelAngel/pomody/issues/211)) ([c156574](https://github.com/EmanuelAngel/pomody/commit/c156574441c69b303fa588a4c475f9a57c11e6c7))
+
 ## [0.19.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.18.0...pomody-v0.19.0) (2026-10-23)
 
 
