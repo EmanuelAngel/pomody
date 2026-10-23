@@ -24,6 +24,8 @@ export default defineConfig({
 	],
 	test: {
 		expect: { requireAssertions: true },
+		// Local runs share a 4-core machine with parallel worktrees; CI keeps the default.
+		maxWorkers: process.env.CI ? undefined : 2,
 		setupFiles: ['./src/testing/setup-locale.ts'],
 		projects: [
 			{

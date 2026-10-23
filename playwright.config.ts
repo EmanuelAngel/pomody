@@ -17,5 +17,7 @@ export default defineConfig({
 	use: {
 		channel: resolveBrowserChannel()
 	},
+	// Local runs share a 4-core machine with parallel worktrees; CI keeps the default.
+	workers: inCI ? undefined : 2,
 	testMatch: '**/*.e2e.{ts,js}'
 });
