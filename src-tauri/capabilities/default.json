@@ -14,6 +14,7 @@
 		"core:window:allow-set-resizable",
 		"core:window:allow-start-dragging",
 		"core:window:allow-center",
-		"notification:default"
+		"notification:default",
+		"updater:default"
 	]
 }

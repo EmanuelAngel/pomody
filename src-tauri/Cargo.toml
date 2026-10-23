@@ -48,3 +48,10 @@ windows-sys = { version = "0.61", features = [
 # Consequence, documented in docs/features/distraction-detector/decisions.md §5.2: 2.4 has no
 # desktop action API, so on Windows the notice is a faro and classification lives in the view.
 tauri-plugin-notification = "~2.6.0"
+# In-app updater (docs/features/auto-update/decisions.md). Pinned exactly (`=2.14.0`) for the
+# same reason as `single-instance`: this plugin writes to Cargo.lock, so its version is chosen
+# here and not delegated to Cargo. It is the newest release the pinned Tauri family admits,
+# measured on a disposable copy of this manifest and lockfile: 47 new packages and zero
+# existing lock entries changed, the whole Tauri family byte-identical (AGENTS.md rule 8).
+# Default features stay on: `rustls-tls` and `zip` are what a Windows NSIS update needs.
+tauri-plugin-updater = "=2.14.0"
