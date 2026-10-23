@@ -4,6 +4,7 @@ import {
 	InvalidTimerConfigError,
 	InvalidTimerSnapshotError,
 	TimerFSM,
+	type BlockAbandonedEvent,
 	type BlockCompletedEvent,
 	type BlockSkippedEvent,
 	type DomainEvent
@@ -992,7 +993,7 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 		fsm.reset();
 
 		expect(fsm.state).toBe('idle');
-		expect(events).toHaveLength(0);
+		expect(events.filter((e) => e.type === 'block-completed')).toHaveLength(0);
 
 		fsm.skip();
 		expect(fsm.mode).toBe('shortBreak');
@@ -1276,5 +1277,214 @@ describe('TimerFSM.adopt', () => {
 
 		expect(fsm.state).toBe('running');
 		expect(fsm.remainingMs).toBe(1500000);
+	});
+});
+
+describe('Block timing events: elapsedMs and block-abandoned', () => {
+	function createRecordedFsm(config?: ConstructorParameters<typeof TimerFSM>[0]) {
+		const fsm = new TimerFSM(config);
+		const events: DomainEvent[] = [];
+		fsm.onEvent((event) => {
+			events.push(event);
+		});
+		return { fsm, events };
+	}
+
+	describe('elapsedMs', () => {
+		it('should carry the full block duration as elapsedMs on block-completed', () => {
+			const { fsm, events } = createRecordedFsm();
+
+			fsm.start();
+			fsm.tick(1500000);
+
+			const event = events[0] as BlockCompletedEvent;
+			expect(event.type).toBe('block-completed');
+			expect(event.elapsedMs).toBe(1500000);
+			expect(event.elapsedMs).toBe(event.durationMs);
+		});
+
+		it('should carry the running time as elapsedMs when skipping mid-block, excluding paused time', () => {
+			const { fsm, events } = createRecordedFsm();
+
+			fsm.start();
+			fsm.tick(300000);
+			fsm.pause();
+			fsm.tick(900000); // ignored: paused
+			fsm.resume();
+			fsm.tick(300000);
+			fsm.skip();
+
+			const event = events[0] as BlockSkippedEvent;
+			expect(event.type).toBe('block-skipped');
+			expect(event.durationMs).toBe(1500000);
+			expect(event.elapsedMs).toBe(600000);
+		});
+
+		it('should carry the running time as elapsedMs when skipping while paused', () => {
+			const { fsm, events } = createRecordedFsm();
+
+			fsm.start();
+			fsm.tick(600000);
+			fsm.pause();
+			fsm.skip();
+
+			expect((events[0] as BlockSkippedEvent).elapsedMs).toBe(600000);
+		});
+
+		it('should carry elapsedMs 0 on a cold skip from idle with a fresh block', () => {
+			const { fsm, events } = createRecordedFsm();
+
+			fsm.skip();
+
+			const event = events[0] as BlockSkippedEvent;
+			expect(event.type).toBe('block-skipped');
+			expect(event.elapsedMs).toBe(0);
+		});
+
+		it('should carry the full duration as elapsedMs when skipping from completed', () => {
+			const { fsm, events } = createRecordedFsm();
+
+			fsm.start();
+			fsm.tick(1500000);
+			fsm.skip();
+
+			expect((events[1] as BlockSkippedEvent).elapsedMs).toBe(1500000);
+		});
+	});
+
+	describe('block-abandoned', () => {
+		it('should emit block-abandoned with the abandoned block fields when reset() runs while running', () => {
+			const { fsm, events } = createRecordedFsm();
+			const before = Date.now();
+
+			fsm.start();
+			fsm.tick(600000);
+			fsm.reset();
+
+			expect(events).toHaveLength(1);
+			expect(events[0]).toEqual({
+				type: 'block-abandoned',
+				mode: 'focus',
+				round: 1,
+				totalRoundsCompleted: 0,
+				durationMs: 1500000,
+				elapsedMs: 600000,
+				abandonedAt: expect.any(Date)
+			});
+			const event = events[0] as BlockAbandonedEvent;
+			expect(event.abandonedAt.getTime()).toBeGreaterThanOrEqual(before);
+			expect(event.abandonedAt.getTime()).toBeLessThanOrEqual(Date.now());
+			expect(fsm.state).toBe('idle');
+			expect(fsm.remainingMs).toBe(1500000);
+		});
+
+		it('should emit block-abandoned when reset() runs while paused, excluding paused time', () => {
+			const { fsm, events } = createRecordedFsm();
+
+			fsm.start();
+			fsm.tick(300000);
+			fsm.pause();
+			fsm.tick(900000);
+			fsm.reset();
+
+			expect(events).toHaveLength(1);
+			expect(events[0]).toMatchObject({
+				type: 'block-abandoned',
+				mode: 'focus',
+				durationMs: 1500000,
+				elapsedMs: 300000
+			});
+		});
+
+		it('should report the mode, round and totalRoundsCompleted of the abandoned block', () => {
+			const { fsm, events } = createRecordedFsm();
+
+			fsm.start();
+			fsm.tick(1500000); // focus 1 completed
+			fsm.start(); // shortBreak
+			fsm.tick(100000);
+			fsm.reset();
+
+			expect(events[1]).toMatchObject({
+				type: 'block-abandoned',
+				mode: 'shortBreak',
+				round: 1,
+				totalRoundsCompleted: 1,
+				durationMs: 300000,
+				elapsedMs: 100000
+			});
+		});
+
+		it('should emit nothing when reset() runs in idle', () => {
+			const { fsm, events } = createRecordedFsm();
+
+			fsm.reset();
+
+			expect(events).toHaveLength(0);
+		});
+
+		it('should emit nothing when reset() runs in completed', () => {
+			const { fsm, events } = createRecordedFsm();
+
+			fsm.start();
+			fsm.tick(1500000);
+			fsm.reset();
+
+			expect(events.filter((e) => e.type === 'block-abandoned')).toHaveLength(0);
+		});
+
+		it('should emit block-abandoned once when resetToInitial() runs while running', () => {
+			const { fsm, events } = createRecordedFsm();
+
+			fsm.start();
+			fsm.tick(200000);
+			fsm.resetToInitial();
+
+			expect(events).toHaveLength(1);
+			expect(events[0]).toMatchObject({
+				type: 'block-abandoned',
+				mode: 'focus',
+				round: 1,
+				durationMs: 1500000,
+				elapsedMs: 200000
+			});
+		});
+
+		it('should emit block-abandoned when resetToInitial() runs while paused', () => {
+			const { fsm, events } = createRecordedFsm();
+
+			fsm.start();
+			fsm.tick(200000);
+			fsm.pause();
+			fsm.resetToInitial();
+
+			expect(events).toHaveLength(1);
+			expect(events[0].type).toBe('block-abandoned');
+		});
+
+		it('should emit nothing when resetToInitial() runs in idle or completed', () => {
+			const { fsm, events } = createRecordedFsm();
+
+			fsm.resetToInitial();
+			fsm.start();
+			fsm.tick(1500000);
+			events.length = 0;
+			fsm.resetToInitial();
+
+			expect(events).toHaveLength(0);
+		});
+
+		it('should emit block-abandoned before notifying state subscribers', () => {
+			const { fsm } = createRecordedFsm();
+			const order: string[] = [];
+			fsm.onEvent((event) => order.push(event.type));
+			fsm.subscribe((snapshot) => order.push(`snapshot:${snapshot.state}`));
+
+			fsm.start();
+			order.length = 0;
+			fsm.reset();
+
+			expect(order).toEqual(['block-abandoned', 'snapshot:idle']);
+		});
 	});
 });

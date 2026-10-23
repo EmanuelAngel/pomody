@@ -521,6 +521,7 @@ describe('PlanningState', () => {
 				round: 1,
 				totalRoundsCompleted: 1,
 				durationMs: 1500 * 1000,
+				elapsedMs: 1500 * 1000,
 				completedAt: new Date()
 			});
 
@@ -541,6 +542,7 @@ describe('PlanningState', () => {
 				round: 1,
 				totalRoundsCompleted: 1,
 				durationMs: 1500 * 1000,
+				elapsedMs: 1500 * 1000,
 				completedAt: new Date()
 			});
 
@@ -564,6 +566,24 @@ describe('PlanningState', () => {
 			expect(state.isSessionActive).toBe(false);
 		});
 
+		it('should ignore block-abandoned domain events and leave the plan untouched', async () => {
+			await state.startSession();
+
+			await state.handleTimerDomainEvent({
+				type: 'block-abandoned',
+				mode: 'focus',
+				round: 1,
+				totalRoundsCompleted: 0,
+				durationMs: 1500 * 1000,
+				elapsedMs: 600 * 1000,
+				abandonedAt: new Date()
+			});
+
+			expect(state.activeBlockIndex).toBe(0);
+			expect(state.activePlan?.blocks[0].status).toBe('in_progress');
+			expect(state.isSessionActive).toBe(true);
+		});
+
 		it('should accurately evaluate isPlanCompleted with mixed completed and skipped blocks', async () => {
 			state.setBlockCount(2); // 3 blocks: focus, shortBreak, focus
 			await state.startSession();
@@ -579,6 +599,7 @@ describe('PlanningState', () => {
 				round: 1,
 				totalRoundsCompleted: 0,
 				durationMs: 300 * 1000,
+				elapsedMs: 300 * 1000,
 				completedAt: new Date()
 			});
 			expect(state.isPlanCompleted).toBe(false);
