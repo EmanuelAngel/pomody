@@ -525,8 +525,9 @@ function canopy(cv, clumps, seed, { shade = 0, fruit = null } = {}) {
 		for (const { x: cx, y: cy, r } of clumps)
 			if (F() < fruit.share)
 				for (let k = 0; k < fruit.per; k++) {
-					const a = F() * Math.PI * 2;
-					const d = (0.3 + F() * 0.6) * r;
+					// hanging in the lower half of the clump
+					const a = Math.PI * (0.15 + F() * 0.7);
+					const d = (0.35 + F() * 0.5) * r;
 					drawFruit(cv, cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.8, fruit.kind(F));
 				}
 	}
@@ -553,14 +554,18 @@ function crown(cx, cy, rx, ry, seed, r = 8) {
 	return clumps;
 }
 
-/** Round 3x3 fruit with a highlight: 'aR' apple or 'aO' orange. */
+/** Round 5x5 fruit with a highlight, a stem and a leaf: 'aR' apple or 'aO' orange. */
 function drawFruit(cv, x, y, kind) {
 	x = Math.round(x);
 	y = Math.round(y);
 	const [lit, dark] = kind === 'aR' ? ['aR', 'aR2'] : ['aO', 'aO2'];
-	cv.sprite(x - 1, y - 1, ['.ab', 'aab', '.b.'], { a: id[lit], b: id[dark] });
-	cv.set(x - 1, y - 1, id.aH);
-	cv.set(x, y - 2, id.b4);
+	cv.sprite(x - 2, y - 3, ['..sl.', '.haa.', 'haaab', 'aaabb', '.abb.'], {
+		s: id.b4,
+		l: id.l3,
+		h: id.aH,
+		a: id[lit],
+		b: id[dark]
+	});
 }
 
 /** Tapered limb with a lit upper edge. */
@@ -689,7 +694,7 @@ function giantCrowns(cv, P) {
 		cv.shearBase = GROUND;
 		const fruit =
 			P >= 5
-				? { share: 0.8, per: 3, kind: (F) => (F() < (side < 0 ? 0.6 : 0.4) ? 'aR' : 'aO') }
+				? { share: 0.3, per: 1, kind: (F) => (F() < (side < 0 ? 0.6 : 0.4) ? 'aR' : 'aO') }
 				: null;
 		GIANTS[side].crowns.forEach(([x, y, rx, ry, r], k) =>
 			canopy(cv, crown(x, y, rx, ry, 92 + side * 3 + k, r), 90 + side * 3 + k, { fruit })
@@ -920,10 +925,10 @@ function lianas(cv, side, P) {
 }
 
 function shelfFungus(cv, { centre, half }, side) {
-	for (const y of [80, 86, 102]) {
+	for (const y of [84, 88, 92, 106, 110]) {
 		const edge = side < 0 ? centre(y) + half(y) : centre(y) - half(y);
 		const x = Math.round(edge) + (side < 0 ? -1 : -4);
-		cv.sprite(x, y, ['.aaa.', 'abbbb'], { a: id.mC, b: id.mB });
+		cv.sprite(x - 1, y, ['.aaaa.', 'abbbbb'], { a: id.mC, b: id.mB });
 	}
 }
 
@@ -1003,7 +1008,7 @@ function hero(cv, P) {
 			...crown(x0 + 10, 60, 8, 7 + g / 2, 33, 6)
 		],
 		30,
-		{ fruit: P >= 5 ? { share: 0.6, per: 2, kind: () => 'aO' } : null }
+		{ fruit: P >= 5 ? { share: 0.45, per: 1, kind: () => 'aO' } : null }
 	);
 	if (P >= 4) {
 		// a flowering climber on the trunk
@@ -1069,7 +1074,7 @@ function rightTrees(cv, P) {
 				...crown(a - 10, 72, 8, 7 + g, 53, 6)
 			],
 			50,
-			{ shade: P >= 3 ? 0.25 : 0, fruit: P >= 5 ? { share: 0.7, per: 2, kind: () => 'aO' } : null }
+			{ shade: P >= 3 ? 0.25 : 0, fruit: P >= 5 ? { share: 0.4, per: 1, kind: () => 'aO' } : null }
 		);
 	}
 
@@ -1106,7 +1111,7 @@ function rightTrees(cv, P) {
 	} else {
 		const g = P >= 4 ? 2 : 0;
 		canopy(cv, crown(b, 102, 9 + g, 12 + g, 71, 5), 70, {
-			fruit: P >= 5 ? { share: 0.6, per: 1, kind: () => 'aR' } : null
+			fruit: P >= 5 ? { share: 0.5, per: 1, kind: () => 'aR' } : null
 		});
 	}
 }
@@ -1367,8 +1372,16 @@ function spike(cv, x, base, h, c) {
 }
 
 function mushroom(cv, x, y, red) {
-	const cap = red ? id.aR : id.mB;
-	cv.sprite(x - 2, y - 3, ['.aaa.', 'awaaa', '..s..', '..s..'], { a: cap, w: id.mC, s: id.mC });
+	if (!red) {
+		cv.sprite(x - 2, y - 3, ['.aaa.', 'awaaa', '..s..', '..s..'], { a: id.mB, w: id.mC, s: id.mC });
+		return;
+	}
+	cv.sprite(x - 3, y - 5, ['.rrrrr.', 'rwrrrwr', 'rrrwrrd', '.ddddd.', '..ccc..', '..ccc..'], {
+		r: id.aR,
+		d: id.aR2,
+		w: id.fW,
+		c: id.mC
+	});
 }
 
 function moss(cv, x, y, len, seed) {
@@ -1595,18 +1608,29 @@ function fauna(cv, P) {
 		}
 	}
 	if (P >= 5) {
-		const bird = ['.bb.', 'bbbo', '.ff.'];
-		cv.sprite(46, 22, bird, { b: id.fB, o: id.fO, f: id.b2 });
-		cv.sprite(
-			256,
-			44,
-			bird.map((r) => [...r].reverse().join('')),
-			{ b: id.mB, o: id.fO, f: id.b2 }
-		);
-		const fly = ['a.a', '.b.', 'a.a'];
-		cv.sprite(30, 96, fly, { a: id.fP, b: id.b5 });
-		cv.sprite(276, 64, fly, { a: id.fB, b: id.b5 });
-		cv.sprite(296, 102, fly, { a: id.fV, b: id.b5 });
+		// birds perched on the giants' long arms, facing the clearing
+		const bird = ['..bb...', '.bkbo..', 'bbbbb..', '.rrbbbb', '..f.f..'];
+		for (const [side, t, b, r] of [
+			[-1, 0.45, 'fB', 'fO'],
+			[1, 0.4, 'mB', 'fO']
+		]) {
+			const [p0, p1, p2, p3, w0, w1] = GIANTS[side].limbs[2];
+			const [x, y] = bez([p0, p1, p2, p3], t);
+			const top = Math.round(y - (w0 + (w1 - w0) * t) / 2);
+			const rows = side < 0 ? bird.map((row) => [...row].reverse().join('')) : bird;
+			cv.sprite(Math.round(x) - 3, top - 5, rows, {
+				b: id[b],
+				r: id[r],
+				k: id.b5,
+				o: id.fY,
+				f: id.b4
+			});
+		}
+		const fly = ['aa.aa', 'abkba', '.a.a.'];
+		cv.sprite(28, 94, fly, { a: id.fP, b: id.fW, k: id.b5 });
+		cv.sprite(274, 62, fly, { a: id.fB, b: id.fW, k: id.b5 });
+		cv.sprite(294, 100, fly, { a: id.fV, b: id.fW, k: id.b5 });
+		cv.sprite(84, 96, fly, { a: id.fO, b: id.fY, k: id.b5 });
 		cv.sprite(92, 110, ['.ww', 'ybk', '.k.'], { w: id.fW, y: id.fY, b: id.b5, k: id.b5 });
 	}
 }
