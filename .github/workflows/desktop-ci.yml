@@ -57,11 +57,39 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build frontend static SPA
-        run: pnpm build
+      # tauri-action reads the body from its `releaseBody` input, not from the release that
+      # release-please already created, so the changelog has to be handed to it explicitly.
+      # It ends up as the `notes` of latest.json, which the in-app update panel shows.
+      - name: Read release notes
+        id: notes
+        if: inputs.release_tag != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          delimiter="NOTES_$(openssl rand -hex 8)"
+          {
+            echo "body<<${delimiter}"
+            gh release view "$RELEASE_TAG" --json body --jq .body
+            echo "${delimiter}"
+          } >> "$GITHUB_OUTPUT"
 
+      # With a release tag this builds, signs the updater bundle and uploads the installer,
+      # its .sig and latest.json to the existing release. Without one it only builds: the
+      # build-only config switches the updater artifacts off, so a pull request (whose
+      # secrets may be unavailable, e.g. from a fork) never needs the private key.
+      # `beforeBuildCommand` in tauri.conf.json builds the frontend, so no separate step.
       - name: Build Tauri desktop application
-        run: pnpm tauri:build
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ inputs.release_tag }}
+          releaseBody: ${{ steps.notes.outputs.body }}
+          args: ${{ inputs.release_tag == '' && '--config src-tauri/tauri.build-only.conf.json' || '' }}
 
       - name: Upload Windows installer and binary
         uses: actions/upload-artifact@v4
@@ -72,11 +100,11 @@ jobs:
             src-tauri/target/release/pomody-desktop.exe
           if-no-files-found: warn
 
-      - name: Attach artifacts to GitHub Release
+      # tauri-action attaches the installer, its signature and latest.json. The portable
+      # executable is not a Tauri bundle, so it keeps its own step and its current asset name.
+      - name: Attach portable executable to GitHub Release
         if: inputs.release_tag != ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.release_tag }}
-          files: |
-            src-tauri/target/release/bundle/nsis/*.exe
-            src-tauri/target/release/pomody-desktop.exe
+          files: src-tauri/target/release/pomody-desktop.exe

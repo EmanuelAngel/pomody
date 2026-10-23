@@ -139,6 +139,12 @@ pub fn run() {
 		// docs/features/distraction-detector/decisions.md §5.2: no desktop action API, hence
 		// the notice is a faro and the classification gestures live in the view.
 		.plugin(tauri_plugin_notification::init())
+		// In-app updater (docs/features/auto-update/decisions.md). The public key, the
+		// `latest.json` endpoint and the Windows install mode live in `tauri.conf.json`;
+		// the frontend drives it through `@tauri-apps/plugin-updater`, so no command of
+		// ours is involved. Installing quits the app on Windows, which is why the frontend
+		// refuses to install while a block is in progress.
+		.plugin(tauri_plugin_updater::Builder::new().build())
 		// The two reads of the distraction detector (spec §8). Commands of the app itself
 		// need no capability entry; the poll loop that consumes them is slice 5.5.
 		.invoke_handler(tauri::generate_handler![active_window, open_windows])
