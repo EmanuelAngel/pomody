@@ -131,6 +131,7 @@ describe('DailyStatsState', () => {
 				round: 1,
 				totalRoundsCompleted: 1,
 				durationMs: 1500000, // 25 minutes
+				elapsedMs: 1500000,
 				completedAt: new Date()
 			};
 
@@ -157,6 +158,7 @@ describe('DailyStatsState', () => {
 				round: 1,
 				totalRoundsCompleted: 1,
 				durationMs: 1500000,
+				elapsedMs: 1500000,
 				completedAt: new Date()
 			});
 
@@ -167,6 +169,7 @@ describe('DailyStatsState', () => {
 				round: 2,
 				totalRoundsCompleted: 2,
 				durationMs: 1500000,
+				elapsedMs: 1500000,
 				completedAt: new Date()
 			});
 
@@ -181,6 +184,7 @@ describe('DailyStatsState', () => {
 				round: 3,
 				totalRoundsCompleted: 3,
 				durationMs: 3000000,
+				elapsedMs: 3000000,
 				completedAt: new Date()
 			});
 
@@ -198,6 +202,7 @@ describe('DailyStatsState', () => {
 				round: 1,
 				totalRoundsCompleted: 1,
 				durationMs: 300000,
+				elapsedMs: 300000,
 				completedAt: new Date()
 			};
 
@@ -207,6 +212,7 @@ describe('DailyStatsState', () => {
 				round: 4,
 				totalRoundsCompleted: 4,
 				durationMs: 900000,
+				elapsedMs: 900000,
 				completedAt: new Date()
 			};
 
@@ -226,6 +232,8 @@ describe('DailyStatsState', () => {
 				mode: 'focus',
 				round: 1,
 				totalRoundsCompleted: 0,
+				durationMs: 1_500_000,
+				elapsedMs: 0,
 				skippedAt: new Date()
 			};
 
@@ -234,6 +242,8 @@ describe('DailyStatsState', () => {
 				mode: 'shortBreak',
 				round: 1,
 				totalRoundsCompleted: 1,
+				durationMs: 300_000,
+				elapsedMs: 0,
 				skippedAt: new Date()
 			};
 
@@ -257,6 +267,7 @@ describe('DailyStatsState', () => {
 				round: 1,
 				totalRoundsCompleted: 1,
 				durationMs: 1500000,
+				elapsedMs: 1500000,
 				completedAt: new Date()
 			});
 			mockTimer.emit({
@@ -265,6 +276,7 @@ describe('DailyStatsState', () => {
 				round: 2,
 				totalRoundsCompleted: 2,
 				durationMs: 1500000,
+				elapsedMs: 1500000,
 				completedAt: new Date()
 			});
 
@@ -282,6 +294,7 @@ describe('DailyStatsState', () => {
 				round: 1,
 				totalRoundsCompleted: 3,
 				durationMs: 1500000,
+				elapsedMs: 1500000,
 				completedAt: new Date()
 			});
 
@@ -300,6 +313,7 @@ describe('DailyStatsState', () => {
 				round: 1,
 				totalRoundsCompleted: 1,
 				durationMs: 1500000,
+				elapsedMs: 1500000,
 				completedAt: new Date()
 			});
 
@@ -354,6 +368,7 @@ describe('DailyStatsState', () => {
 				round: 1,
 				totalRoundsCompleted: 1,
 				durationMs: 1500000,
+				elapsedMs: 1500000,
 				completedAt: new Date()
 			});
 

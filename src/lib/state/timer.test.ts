@@ -4,7 +4,7 @@ import { FakeAudioNotifier } from '$tests/fakes/engine/fake-audio-notifier';
 import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
 import { FakeTimerStateRepository } from '$tests/fakes/repositories/fake-timer-state-repository';
 import { TimerState, createTimerState, formatTime, timerState } from './timer.svelte';
-import { DEFAULT_TIMER_CONFIG, TimerFSM } from '../domain/timer/timer-fsm';
+import { DEFAULT_TIMER_CONFIG, TimerFSM, type DomainEvent } from '../domain/timer/timer-fsm';
 
 describe('formatTime', () => {
 	it('should format full standard Pomodoro duration as 25:00', () => {
@@ -149,6 +149,48 @@ describe('TimerState Composition Root', () => {
 		expect(timer.remainingMs).toBe(10000);
 		expect(timer.isRunning).toBe(false);
 		expect(mockTicker.isRunning).toBe(false);
+	});
+
+	it('should emit exactly one block-abandoned event when reset() discards a running block', () => {
+		const timer = createTimerState({ focusDurationSeconds: 10 }, mockTicker);
+		const events: DomainEvent[] = [];
+		timer.onEvent((event) => events.push(event));
+
+		timer.start();
+		mockTicker.simulateTick(4000);
+		timer.reset();
+
+		expect(events).toHaveLength(1);
+		expect(events[0]).toMatchObject({
+			type: 'block-abandoned',
+			mode: 'focus',
+			round: 1,
+			durationMs: 10000,
+			elapsedMs: 4000
+		});
+	});
+
+	it('should emit exactly one block-abandoned event when resetToInitial() discards a running block', () => {
+		const timer = createTimerState({ focusDurationSeconds: 10 }, mockTicker);
+		const events: DomainEvent[] = [];
+		timer.onEvent((event) => events.push(event));
+
+		timer.start();
+		mockTicker.simulateTick(4000);
+		timer.resetToInitial();
+
+		expect(events.filter((e) => e.type === 'block-abandoned')).toHaveLength(1);
+		expect(events).toHaveLength(1);
+	});
+
+	it('should emit no block-abandoned event when resetToInitial() runs on an idle timer', () => {
+		const timer = createTimerState({ focusDurationSeconds: 10 }, mockTicker);
+		const events: DomainEvent[] = [];
+		timer.onEvent((event) => events.push(event));
+
+		timer.resetToInitial();
+
+		expect(events).toHaveLength(0);
 	});
 
 	it('should advance to next mode on skip()', () => {
