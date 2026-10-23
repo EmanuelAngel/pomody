@@ -689,9 +689,7 @@ function giants(cv, P) {
 function giantCrowns(cv, P) {
 	if (P < 3) return;
 	for (const side of [-1, 1]) {
-		const bx = side < 0 ? 24 : 296;
 		cv.shear = 0;
-		cv.shearBase = GROUND;
 		const fruit =
 			P >= 5
 				? { share: 0.3, per: 1, kind: (F) => (F() < (side < 0 ? 0.6 : 0.4) ? 'aR' : 'aO') }
