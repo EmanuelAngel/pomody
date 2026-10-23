@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.18.0...pomody-v0.19.0) (2026-10-23)
+
+
+### Features
+
+* **illustration:** make the forest phases one consistent scene ([#208](https://github.com/EmanuelAngel/pomody/issues/208)) ([bb009fc](https://github.com/EmanuelAngel/pomody/commit/bb009fcf28d6ced89548bb3323a8fe3f7e5d6b6e))
+* **ui:** redraw the forest illustration as pixel art (5 phases) ([#206](https://github.com/EmanuelAngel/pomody/issues/206)) ([8c27ca1](https://github.com/EmanuelAngel/pomody/commit/8c27ca12a5d02bae4a5425a1a8a3c0c9933b1d1e))
+
 ## [0.18.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.17.0...pomody-v0.18.0) (2026-10-21)
 
 
