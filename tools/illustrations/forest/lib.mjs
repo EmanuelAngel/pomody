@@ -68,10 +68,14 @@ export class Canvas {
 		this.g = new Uint8Array(W * H); // animation group (0 = static)
 		this.u = new Uint8Array(W * H); // colour that sat under a moving cell
 		this.group = 0;
+		// lean: every row is shifted by shear * (shearBase - y), so a whole element tilts as one
+		// piece (no gaps) the way a wide lens bends the edges of a scene
+		this.shear = 0;
+		this.shearBase = H;
 	}
 
 	set(x, y, c) {
-		x = Math.round(x);
+		x = Math.round(x + this.shear * (this.shearBase - y));
 		y = Math.round(y);
 		if (x < 0 || y < 0 || x >= W || y >= H) return;
 		const i = y * W + x;

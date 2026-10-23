@@ -8,9 +8,8 @@
 // docs/features/compania-viva/adding-an-illustration.md.
 import { writeFileSync } from 'node:fs';
 import { emitLive } from './live.mjs';
-import { NAMES, paletteCss } from './fpal.mjs';
-import { build as build1 } from './scene.mjs';
-import { build as buildN } from './scene2.mjs';
+import { NAMES, paletteCss } from './palette.mjs';
+import { build } from './scene.mjs';
 
 const OUT_DIR = new URL('../../../src/lib/components/illustration/', import.meta.url);
 const arg = process.argv[2] ?? 'all';
@@ -21,7 +20,7 @@ for (const phase of phases) writePhase(phase);
 writeFileSync(new URL('forest-palette.css', OUT_DIR), paletteCss());
 
 function writePhase(phase) {
-	const cv = phase === 1 ? build1() : buildN(phase - 1);
+	const cv = build(phase);
 	const { groups, count } = emitLive(cv, NAMES.length);
 
 	const markup = groups
