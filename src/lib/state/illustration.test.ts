@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
-import { FakeDailyStatsRepository } from '$tests/fakes/repositories/fake-daily-stats-repository';
-import { DailyStatsState } from './daily-stats.svelte';
+import { InMemoryStorage } from '../adapters/storage/in-memory-storage';
+import { LocalFocusHistoryRepository } from '../adapters/storage/local-focus-history-repository';
+import { createDailyStatsState } from './daily-stats.svelte';
+import { createFocusHistoryState } from './focus-history.svelte';
 import { IllustrationState } from './illustration.svelte';
 import { DEFAULT_ILLUSTRATION_SETTINGS } from '../domain/ports/settings-storage.port';
 import type { BlockCompletedEvent, DomainEvent } from '../domain/events/block-completed.event';
@@ -263,14 +265,17 @@ describe('IllustrationState', () => {
 	});
 
 	describe('integration with daily stats', () => {
-		it('advances with completed focus blocks and ignores breaks', () => {
-			const repo = new FakeDailyStatsRepository({
-				date: '2026-10-03',
-				completedBlocks: 0,
-				accumulatedMinutes: 0
-			});
+		// The progress is derived from the focus history through the daily counter.
+		function buildIntegrated() {
+			const now = () => new Date(2026, 9, 3, 10, 0, 0);
 			const emitter = new MockTimerEmitter();
-			const dailyStats = new DailyStatsState(repo, emitter, () => new Date(2026, 9, 3, 10, 0, 0));
+			const history = createFocusHistoryState({
+				repository: new LocalFocusHistoryRepository(new InMemoryStorage(), now),
+				timer: emitter,
+				tasks: { activeTask: null },
+				nowProvider: now
+			});
+			const dailyStats = createDailyStatsState(history, now);
 			const timer = new FakeTimerSnapshot();
 			timer.startFocus();
 
@@ -282,11 +287,17 @@ describe('IllustrationState', () => {
 				timer
 			);
 
+			return { state, dailyStats, emitter, history };
+		}
+
+		it('advances with completed focus blocks and ignores breaks', async () => {
+			const { state, dailyStats, emitter, history } = buildIntegrated();
 			expect(state.phase).toBe(0);
 
 			emitter.emit(focusCompleted(25));
 			emitter.emit(focusCompleted(25));
 			emitter.emit(focusCompleted(25));
+			await history.whenIdle();
 
 			expect(dailyStats.accumulatedMinutes).toBe(75);
 			expect(state.step).toBe(3);
@@ -301,9 +312,55 @@ describe('IllustrationState', () => {
 				elapsedMs: 300_000,
 				completedAt: new Date()
 			});
+			await history.whenIdle();
 
 			expect(state.step).toBe(3);
 			expect(state.phase).toBe(1);
+			history.destroy();
+		});
+
+		it('does not advance with skipped or abandoned focus blocks', async () => {
+			const { state, emitter, history } = buildIntegrated();
+
+			emitter.emit({
+				type: 'block-skipped',
+				mode: 'focus',
+				round: 1,
+				totalRoundsCompleted: 0,
+				durationMs: 1_500_000,
+				elapsedMs: 600_000,
+				skippedAt: new Date()
+			});
+			emitter.emit({
+				type: 'block-abandoned',
+				mode: 'focus',
+				round: 1,
+				totalRoundsCompleted: 0,
+				durationMs: 1_500_000,
+				elapsedMs: 600_000,
+				abandonedAt: new Date()
+			});
+			await history.whenIdle();
+
+			expect(history.entries).toHaveLength(2);
+			expect(state.step).toBe(0);
+			expect(state.phase).toBe(0);
+			history.destroy();
+		});
+
+		it('goes back to the first phase when the history is cleared', async () => {
+			const { state, emitter, history } = buildIntegrated();
+			emitter.emit(focusCompleted(25));
+			emitter.emit(focusCompleted(25));
+			emitter.emit(focusCompleted(25));
+			await history.whenIdle();
+			expect(state.phase).toBe(1);
+
+			await history.clear();
+
+			expect(state.step).toBe(0);
+			expect(state.phase).toBe(0);
+			history.destroy();
 		});
 	});
 });

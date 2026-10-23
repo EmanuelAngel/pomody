@@ -8,7 +8,7 @@ import { WebAudioNotifier } from '../adapters/audio/web-audio-notifier';
 import { LocalStorageDistractionRuleRepository } from '../adapters/storage/local-distraction-rule-repository';
 import { LocalStorageDistractionWhitelistRepository } from '../adapters/storage/local-distraction-whitelist-repository';
 import { LocalSettingsStorage } from '../adapters/storage/local-settings-storage';
-import { getLocalDateString } from '../adapters/storage/local-daily-stats-repository';
+import { getLocalDateString } from '../domain/history/local-date';
 import type { IDistractionMonitor, OpenWindow } from '../domain/ports/distraction-monitor.port';
 import type {
 	IDistractionRuleRepository,
