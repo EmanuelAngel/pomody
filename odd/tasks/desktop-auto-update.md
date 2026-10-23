@@ -29,8 +29,8 @@ S15 — `pnpm check`, `pnpm lint`, `pnpm test:unit`, `pnpm test:browser` y `pnpm
 - [x] T4 — S5 S6 S9 S13 — inline — UI: indicador en header + sección de actualización en Settings (shadcn-svelte), i18n ES/EN, tests de componente — commit: 0c90979
 - [x] T5 — S8 S11 S12 — inline — Rust y config: `tauri-plugin-updater =2.14.0`, registro en `lib.rs`, `tauri.conf.json` (pubkey, endpoint, `createUpdaterArtifacts`, `installMode`), capability, `Cargo.lock` mínimo — commit: 6d6607c — Risk: item 2 (confianza del updater, firma) → commit propio
 - [x] T6 — S7 S8 — inline — CI: `tauri-action` en `desktop-ci.yml`, secrets, `latest.json`, build sin publicar en PR — commit: 2d3afb4 — Risk: item 5 (release/CI) → commit propio
-- [x] T7 — S14 S10 — inline — Docs: `docs/features/auto-update/decisions.md`, procedimiento de claves, nota de bootstrap, roadmap — commit: T7_SHA
-- [ ] T8 — S15 — inline — Verificación final: `pnpm check`, `pnpm lint`, `pnpm test`, `pnpm test:e2e`, diferencial de comportamiento previo — commit: n/a
+- [x] T7 — S14 S10 — inline — Docs: `docs/features/auto-update/decisions.md`, procedimiento de claves, nota de bootstrap, roadmap — commit: 5a48430
+- [x] T8 — S15 — inline — Verificación final: `pnpm check`, `pnpm lint`, `pnpm test`, `pnpm test:e2e`, diferencial de comportamiento previo — commit: n/a — check 0 errores; lint ok; unit 1302/1302; browser 268/268; e2e 12/12
 
 ## Log
 
