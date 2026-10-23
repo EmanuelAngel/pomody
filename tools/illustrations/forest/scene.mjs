@@ -99,10 +99,10 @@ function vignette(cv) {
 		for (let x = 0; x < W; x++) {
 			const e =
 				((x - 160) / 170) ** 2 * 1.1 +
-				((y - 70) / 125) ** 2 +
-				(y > GROUND ? ((y - GROUND) / 37) ** 2 * 0.25 : 0);
+				((y - 80) / 112) ** 2 +
+				(y > GROUND ? ((y - GROUND) / 37) ** 2 * 0.45 : 0);
 			const v = e + vnoise2(x / 5, y / 3, 33) * 0.18;
-			tone(cv, x, y, v > 1.35 ? 2 : v > 0.95 ? 1 : 0);
+			tone(cv, x, y, v > 1.55 ? 3 : v > 1.15 ? 2 : v > 0.78 ? 1 : 0);
 		}
 }
 
@@ -858,7 +858,7 @@ function ivy(cv, centre, half, side, P) {
 		if (Math.abs(x - px) > 1) cv.set((x + px) / 2, y, id.l5);
 		px = x;
 		if (y % 3 === 0) leafShape(cv, x, y, y % 6 ? -2.6 : -0.5, 2.5, 2 + (y % 2));
-		if (P >= 4 && y % 9 === 0 && R() < 0.8) {
+		if (P >= 4 && y % 6 === 0 && R() < 0.85) {
 			cv.group = 0;
 			cv.sprite(Math.round(x) - 1, y - 1, ['.a.', 'aya', '.a.'], {
 				a: id[R() < 0.5 ? 'fR' : 'fO'],
@@ -870,21 +870,53 @@ function ivy(cv, centre, half, side, P) {
 	cv.group = 0;
 }
 
-/** Lianas hanging from the canopy from phase 4, kept outside the centre. */
+/**
+ * Vines from phase 4, the way the reference drapes them: a cap of moss along the top of the giant's
+ * long arm and its outer limb, tufts of thin strands of uneven length hanging from them, and a rope
+ * sagging in a U from the arm back to the trunk. All of it stays outside the centre.
+ */
 function lianas(cv, side, P) {
 	const R = rng(320 + side);
-	const xs = side < 0 ? [12, 30, 52, 66, 84, 100] : [218, 232, 248, 266, 288, 310];
-	xs.forEach((x, k) => {
-		const top = 14 + R() * 18;
-		const len = 18 + R() * (P >= 5 ? 50 : 40);
-		cv.group = 1;
-		for (let y = top; y < top + len && y < 118; y++) {
-			const vx = x + Math.sin(y / 9 + k) * 1.2;
-			cv.set(vx, y, id[y % 3 ? 'l4' : 'l3']);
-			if ((y + k) % 6 === 0) leafShape(cv, vx, y, k % 2 ? -0.6 : -2.5, 3, 2);
+	const g = GIANTS[side];
+	const ok = (x, y) => y < 118 && (x < 112 || x > 208);
+	cv.group = 1;
+	for (const k of [2, 0]) {
+		const [p0, p1, p2, p3, w0, w1] = g.limbs[k];
+		const limbPts = [p0, p1, p2, p3];
+		for (let t = 0.12; t <= 0.95; t += 0.02) {
+			const [x, y] = bez(limbPts, t);
+			const r = (w0 + (w1 - w0) * t) / 2;
+			// moss over the top of the limb
+			cv.set(x, y - r, id.g3);
+			if (vnoise(t * 60, 4, 321 + k) > 0) cv.set(x, y - r - 1, id.g2);
+			if (R() > 0.42) continue;
+			// a strand hanging from its underside, two pixels wide, thinning to a lit tip
+			const len = 6 + R() ** 1.6 * (P >= 5 ? 58 : 46);
+			const drift = (R() - 0.5) * 0.12;
+			for (let d = 0; d < len; d++) {
+				const sx = x + drift * d + Math.sin(d / 9 + t * 20) * 0.6;
+				const sy = y + r + d;
+				if (!ok(sx, sy)) break;
+				const tip = d > len - 3;
+				cv.set(sx, sy, id[tip ? 'l2' : 'l4']);
+				if (!tip && d < len * 0.7) cv.set(sx + 1, sy, id.l5);
+			}
 		}
-		cv.group = 0;
-	});
+	}
+	// a rope sagging from the arm back to the trunk
+	const arm = g.limbs[2];
+	const [ax, ay] = bez([arm[0], arm[1], arm[2], arm[3]], 0.7);
+	const [tx, ty] = bez([g.trunk[0], g.trunk[1], g.trunk[2], g.trunk[3]], 0.62);
+	for (let i = 0; i <= 90; i++) {
+		const t = i / 90;
+		const x = ax + (tx - ax) * t;
+		const y = ay + (ty - ay) * t + Math.sin(Math.PI * t) * 26;
+		if (!ok(x, y)) continue;
+		cv.set(x, y, id.l4);
+		cv.set(x, y + 1, id.l5);
+		if (i % 9 === 4) leafShape(cv, x, y + 1, Math.PI / 2 + (R() - 0.5), 3, 2);
+	}
+	cv.group = 0;
 }
 
 function shelfFungus(cv, { centre, half }, side) {
@@ -1322,6 +1354,18 @@ function fern(cv, x0, base, size, dir, seed) {
 	cv.group = 0;
 }
 
+/** A flower spike (lupine-like): a stem with blossoms stacked up it, paler toward the tip. */
+function spike(cv, x, base, h, c) {
+	cv.group = 2;
+	for (let i = 0; i < h; i++) cv.set(x, base - i, id[i < h * 0.4 ? 'g3' : 'g4']);
+	cv.group = 0;
+	for (let i = Math.round(h * 0.35); i < h; i++) {
+		const tip = i > h * 0.8;
+		cv.set(x + (i % 2 ? -1 : 1), base - i, id[tip ? 'fW' : c]);
+		if (!tip) cv.set(x, base - i, id[c]);
+	}
+}
+
 function mushroom(cv, x, y, red) {
 	const cap = red ? id.aR : id.mB;
 	cv.sprite(x - 2, y - 3, ['.aaa.', 'awaaa', '..s..', '..s..'], { a: cap, w: id.mC, s: id.mC });
@@ -1381,7 +1425,7 @@ function groundCover(cv, P) {
 			[314, GROUND + 2, 14, -1],
 			[20, 176, 18, 1]
 		])
-			fern(cv, x, y, size, dir, 280 + x);
+			fern(cv, x, y, size * (P >= 4 ? 1.4 : 1), dir, 280 + x);
 		mushroom(cv, 262, 150, false);
 		mushroom(cv, 268, 149, false);
 		if (P >= 5) mushroom(cv, 300, 146, true);
@@ -1399,6 +1443,19 @@ function groundCover(cv, P) {
 			else flower(cv, x, y, c);
 		}
 	}
+
+	if (P >= 4)
+		for (const [x, base, h, c] of [
+			[62, GROUND + 2, 12, 'fV'],
+			[100, GROUND + 4, 10, 'fP'],
+			[112, GROUND + 1, 13, 'fV'],
+			[178, GROUND + 2, 11, 'fV'],
+			[220, GROUND + 3, 12, 'fP'],
+			[258, GROUND + 6, 10, 'fV'],
+			[36, 158, 14, 'fV'],
+			[150, 164, 11, 'fP']
+		])
+			spike(cv, x, base, h, c);
 
 	if (P >= 5) {
 		for (const [x, y, red] of [
@@ -1526,10 +1583,11 @@ function rock(cv, x, y, w) {
 // ---------------------------------------------------------------------------------------------
 function fauna(cv, P) {
 	if (P >= 4) {
-		const bee = ['.ww', 'ybk', '.k.'];
+		const bee = ['.ww.', 'ykyk', '.kk.'];
 		const map = { w: id.fW, y: id.fY, b: id.b5, k: id.b5 };
-		cv.sprite(66, 92, bee, map);
-		cv.sprite(242, 78, bee, map);
+		cv.sprite(64, 90, bee, map);
+		cv.sprite(240, 76, bee, map);
+		cv.sprite(104, 104, bee, map);
 		const M = rng(400);
 		for (let k = 0; k < (P >= 5 ? 14 : 8); k++) {
 			const x = M() < 0.5 ? 10 + M() * 100 : 210 + M() * 100;
