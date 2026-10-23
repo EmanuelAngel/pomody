@@ -29,5 +29,7 @@ jobs:
     needs: release-please
     if: ${{ needs.release-please.outputs.releases_created == 'true' }}
     uses: ./.github/workflows/desktop-ci.yml
+    # The reusable workflow signs the updater bundle with TAURI_SIGNING_PRIVATE_KEY.
+    secrets: inherit
     with:
       release_tag: ${{ needs.release-please.outputs.tag_name }}
