@@ -24,8 +24,8 @@ S15 — `pnpm check`, `pnpm lint`, `pnpm test:unit`, `pnpm test:browser` y `pnpm
 ## Tasks
 
 - [x] T1 — S3 S13 — inline — Puerto `IUpdateChecker` + tipos (`UpdateInfo`) y `NoopUpdateChecker` — commit: 1151a6f
-- [x] T2 — S2 S11 S13 — inline — `@tauri-apps/plugin-updater` (pnpm, pin `~` familia) + `TauriUpdateChecker` con cliente inyectable — commit: T2_SHA
-- [ ] T3 — S3 S4 S9 — inline — `UpdateState` (`state/update.svelte.ts`): estados, chequeo al abrir + cada 6 h, `canInstall` bloqueado con timer `running`/`paused`; cableado en `AppBootstrap`/layout — commit: pendiente
+- [x] T2 — S2 S11 S13 — inline — `@tauri-apps/plugin-updater` (pnpm, pin `~` familia) + `TauriUpdateChecker` con cliente inyectable — commit: 3df1d06
+- [x] T3 — S3 S4 S9 — inline — `UpdateState` (`state/update.svelte.ts`): estados, chequeo al abrir + cada 6 h, `canInstall` bloqueado con timer `running`/`paused`; cableado en `AppBootstrap`/layout — commit: T3_SHA
 - [ ] T4 — S5 S6 S9 S13 — inline — UI: indicador en header + sección de actualización en Settings (shadcn-svelte), i18n ES/EN, tests de componente — commit: pendiente
 - [ ] T5 — S8 S11 S12 — inline — Rust y config: `tauri-plugin-updater =2.14.0`, registro en `lib.rs`, `tauri.conf.json` (pubkey, endpoint, `createUpdaterArtifacts`, `installMode`), capability, `Cargo.lock` mínimo — commit: pendiente — Risk: item 2 (confianza del updater, firma) → commit propio — BLOQUEADO: requiere la clave pública real (acción del dueño)
 - [ ] T6 — S7 S8 — inline — CI: `tauri-action` en `desktop-ci.yml`, secrets, `latest.json`, build sin publicar en PR — commit: pendiente — Risk: item 5 (release/CI) → commit propio

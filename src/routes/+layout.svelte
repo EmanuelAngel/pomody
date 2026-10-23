@@ -8,6 +8,7 @@
 	import MiniPlayer from '$lib/components/timer/mini-player.svelte';
 	import BlockNoticeToaster from '$lib/components/notification/block-notice-toaster.svelte';
 	import { appBootstrap } from '$lib/state/app-bootstrap.svelte';
+	import { updateState } from '$lib/state/update.svelte';
 	import { windowState } from '$lib/state/windowState.svelte';
 
 	let { children } = $props();
@@ -21,6 +22,9 @@
 	 */
 	onMount(() => {
 		void appBootstrap.restore();
+		updateState.start();
+
+		return () => updateState.stop();
 	});
 
 	/**

@@ -13,17 +13,3 @@ export const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 export function isUpdateInstallBlocked(timerState: TimerState): boolean {
 	return timerState === 'running' || timerState === 'paused';
 }
-
-/**
- * Whether enough time has passed since the last check to ask again.
- * A clock that moved backwards counts as due: the stored instant can no longer be trusted.
- */
-export function shouldCheckForUpdate(lastCheckedAt: number | null, now: number): boolean {
-	if (lastCheckedAt === null) {
-		return true;
-	}
-
-	const elapsed = now - lastCheckedAt;
-
-	return elapsed < 0 || elapsed >= UPDATE_CHECK_INTERVAL_MS;
-}
