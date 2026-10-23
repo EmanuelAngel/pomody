@@ -62,7 +62,6 @@ flowchart TD
   - `src/testing/fakes/repositories/fake-task-repository.ts`: Implementación en memoria respetando el contrato `ITaskRepository`.
   - `src/testing/fakes/repositories/fake-break-activity-repository.ts`: Implementación en memoria respetando el contrato `IBreakActivityRepository`.
   - `src/testing/fakes/repositories/fake-session-plan-repository.ts`: Implementación en memoria respetando el contrato `ISessionPlanRepository`.
-  - `src/testing/fakes/repositories/fake-daily-stats-repository.ts`: Implementación en memoria respetando el contrato `IDailyStatsRepository`.
   - `src/testing/fakes/repositories/fake-settings-storage.ts`: Implementación en memoria respetando el contrato `ISettingsStorage`.
   - `src/testing/fakes/engine/fake-ticker.ts`: Control manual determinista del tiempo para la FSM.
   - `src/testing/fakes/engine/fake-audio-notifier.ts`: Espía in-memory para eventos de audio.

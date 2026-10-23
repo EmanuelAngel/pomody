@@ -8,6 +8,7 @@ import {
 import type { TimerMode } from '../domain/timer/timer-fsm';
 import type { IFocusHistoryRepository } from '../domain/ports/focus-history-repository.port';
 import { LocalFocusHistoryRepository } from '../adapters/storage/local-focus-history-repository';
+import { migrateLegacyDailyStats } from '../adapters/storage/legacy-daily-stats-migration';
 import { tasksState } from './tasks.svelte';
 import { timerState } from './timer.svelte';
 
@@ -16,6 +17,11 @@ export interface FocusHistoryDependencies {
 	timer?: { onEvent: (fn: (e: DomainEvent) => void) => () => void };
 	tasks?: { readonly activeTask: FocusHistoryTask | null };
 	nowProvider?: () => Date;
+	/**
+	 * One-shot startup task run on the serialized queue before the first load, so every event and the
+	 * initial reload come after it. Absent in isolated instances: only the app singleton migrates.
+	 */
+	migrateLegacy?: (repository: IFocusHistoryRepository, nowProvider: () => Date) => Promise<void>;
 }
 
 /**
@@ -48,6 +54,10 @@ export class FocusHistoryState {
 		this.tasks = deps.tasks ?? tasksState;
 		const timer = deps.timer ?? timerState;
 
+		const migrateLegacy = deps.migrateLegacy;
+		if (migrateLegacy) {
+			this.enqueue(() => migrateLegacy(this.repository, this.nowProvider));
+		}
 		this.enqueue(() => this.reload());
 		this._timerUnsubscribe = timer.onEvent((event) => this.handleDomainEvent(event));
 		this._externalUnsubscribe = this.repository.onExternalChange(() => {
@@ -142,6 +152,9 @@ export function createFocusHistoryState(deps?: FocusHistoryDependencies): FocusH
 /**
  * Global singleton recorder for the application.
  */
-export const focusHistoryState = new FocusHistoryState();
+export const focusHistoryState = new FocusHistoryState({
+	migrateLegacy: (repository, nowProvider) =>
+		migrateLegacyDailyStats({ repository, now: nowProvider })
+});
 
 export default focusHistoryState;
