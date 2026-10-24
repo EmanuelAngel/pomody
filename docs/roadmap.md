@@ -107,7 +107,7 @@ _Objetivo: Vincular la planificación con los descansos y ofrecer contención ac
 
 _Objetivo: Transformar los datos reales acumulados de sesiones, tareas y pausas en retrospectivas visuales accionables._
 
-- [ ] **P4 — Panel de Métricas nativo** (en progreso · [decisiones](./features/metrics-panel/decisions.md)):
+- [x] **P4 — Panel de Métricas nativo** ([decisiones](./features/metrics-panel/decisions.md)):
   - Desbloqueo de la pestaña _Métricas_ en la barra superior.
   - Gráficos de barras semanales y patrones de productividad renderizados con CSS/SVG nativo (sin dependencias externas pesadas).
 - [ ] **P4 — Calidad de sesión y correlación**:
