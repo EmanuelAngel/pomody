@@ -78,6 +78,34 @@ describe('SettingsDialog (Client Browser)', () => {
 			.toHaveAttribute('aria-selected', 'false');
 	});
 
+	it('lists the Metrics tab and renders its panel when selected', async () => {
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, createDummyTicker());
+
+		const screen = await render(SettingsDialog, { open: true, timerState });
+		const metricsTab = screen.getByRole('tab', { name: 'Metrics' });
+		await metricsTab.click();
+
+		await expect.element(metricsTab).toHaveAttribute('aria-selected', 'true');
+		await expect
+			.element(screen.getByRole('spinbutton', { name: 'Daily focus goal in minutes' }))
+			.toBeVisible();
+	});
+
+	it('opens straight on the Metrics tab when the caller asks for it', async () => {
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, createDummyTicker());
+
+		const screen = await render(SettingsDialog, {
+			open: true,
+			timerState,
+			initialTab: 'metrics'
+		});
+
+		await expect
+			.element(screen.getByRole('tab', { name: 'Metrics' }))
+			.toHaveAttribute('aria-selected', 'true');
+		await expect.element(screen.getByRole('button', { name: 'Delete history' })).toBeVisible();
+	});
+
 	it('renders the updater section on a platform that can update itself', async () => {
 		const timerState = createTimerState({ focusDurationSeconds: 1500 }, createDummyTicker());
 		const { updateState } = createUpdateHarness();
