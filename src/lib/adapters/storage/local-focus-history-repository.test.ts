@@ -332,6 +332,21 @@ describe('LocalFocusHistoryRepository', () => {
 
 			expect(await fallback.getAll()).toEqual([added]);
 		});
+
+		it('falls back to in-memory storage when reading window.localStorage throws', async () => {
+			vi.stubGlobal('window', {
+				get localStorage(): Storage {
+					throw new DOMException('denied', 'SecurityError');
+				}
+			});
+			const blocked = new LocalFocusHistoryRepository(undefined, () => NOW);
+			const added = entry();
+
+			await blocked.append(added);
+
+			expect(await blocked.getAll()).toEqual([added]);
+			vi.unstubAllGlobals();
+		});
 	});
 
 	describe('onExternalChange', () => {
