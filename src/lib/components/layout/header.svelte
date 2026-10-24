@@ -7,7 +7,8 @@
 	import {
 		navigationState as defaultNavigationState,
 		type NavigationState,
-		type NavigationTab
+		type NavigationTab,
+		type SettingsTab
 	} from '$lib/state/navigation.svelte';
 	import {
 		windowState as defaultWindowState,
@@ -27,9 +28,7 @@
 		windowState?: WindowState;
 		distractionState?: DistractionState;
 		updateState?: UpdateState;
-		onSettingsClick?: (
-			tab?: 'intervals' | 'appearance' | 'companion' | 'behavior' | 'application'
-		) => void;
+		onSettingsClick?: (tab?: SettingsTab) => void;
 		settingsOpen?: boolean;
 	}
 
@@ -182,12 +181,23 @@
 			<button
 				type="button"
 				role="tab"
-				aria-selected="false"
-				aria-disabled="true"
-				disabled
-				class="relative flex cursor-not-allowed flex-col items-center py-2 text-xs font-medium tracking-tight text-muted-foreground/35 transition-colors focus-visible:outline-none sm:text-xs"
+				id="tab-metrics"
+				aria-controls="tabpanel-metrics"
+				aria-selected={activeTab === 'metrics'}
+				onclick={() => handleTabClick('metrics')}
+				class={cn(
+					'group relative flex cursor-pointer flex-col items-center py-2 text-xs font-medium tracking-tight transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-xs',
+					activeTab === 'metrics'
+						? 'font-semibold text-foreground'
+						: 'text-muted-foreground/70 hover:text-foreground'
+				)}
 			>
 				<span>{t.header_nav_metrics()}</span>
+				{#if activeTab === 'metrics'}
+					<span
+						class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
+					></span>
+				{/if}
 			</button>
 		</div>
 	</nav>
