@@ -50,5 +50,13 @@
 		>
 			<DistractionView />
 		</div>
+	{:else if activeTab === 'metrics'}
+		<div role="tabpanel" id="tabpanel-metrics" aria-labelledby="tab-metrics" class="w-full">
+			<!-- Lazy: the charts and their math stay out of the timer's bundle (spec S25). -->
+			{#await import('$lib/components/metrics/metrics-view.svelte') then metricsModule}
+				{@const MetricsView = metricsModule.default}
+				<MetricsView />
+			{/await}
+		</div>
 	{/if}
 </main>

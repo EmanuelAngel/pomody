@@ -25,7 +25,7 @@ test.describe('Settings dialog', () => {
 		await expect(dialog.getByRole('heading', { name: 'Settings' })).toBeVisible();
 
 		// Every group is reachable from the rail, and intervals wins the first visit.
-		await expect(dialog.getByRole('tab')).toHaveCount(5);
+		await expect(dialog.getByRole('tab')).toHaveCount(6);
 		await expect(dialog.getByRole('tab', { name: 'Intervals' })).toHaveAttribute(
 			'aria-selected',
 			'true'
@@ -71,6 +71,13 @@ test.describe('Settings dialog', () => {
 		await expect(dialog.getByRole('switch', { name: 'Sound alerts' })).toBeVisible();
 
 		await page.keyboard.press('ArrowDown');
+		await expect(dialog.getByRole('tab', { name: 'Metrics' })).toHaveAttribute(
+			'aria-selected',
+			'true'
+		);
+		await expect(dialog.getByLabel('Daily focus goal in minutes')).toBeVisible();
+
+		await page.keyboard.press('ArrowDown');
 		await expect(dialog.getByRole('tab', { name: 'Application' })).toHaveAttribute(
 			'aria-selected',
 			'true'
@@ -78,7 +85,7 @@ test.describe('Settings dialog', () => {
 		await expect(dialog.getByRole('radio', { name: 'Spanish language' })).toBeVisible();
 
 		await page.keyboard.press('ArrowUp');
-		await expect(dialog.getByRole('tab', { name: 'Behavior' })).toHaveAttribute(
+		await expect(dialog.getByRole('tab', { name: 'Metrics' })).toHaveAttribute(
 			'aria-selected',
 			'true'
 		);

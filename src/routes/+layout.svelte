@@ -8,13 +8,13 @@
 	import MiniPlayer from '$lib/components/timer/mini-player.svelte';
 	import BlockNoticeToaster from '$lib/components/notification/block-notice-toaster.svelte';
 	import { appBootstrap } from '$lib/state/app-bootstrap.svelte';
+	import { navigationState, type SettingsTab } from '$lib/state/navigation.svelte';
 	// Importing the recorder is what starts it: it subscribes to the timer on construction. It lives
 	// here, above the Mini-Player branch, so blocks finished in compact mode are recorded too.
 	import '$lib/state/focus-history.svelte';
 	import { updateState } from '$lib/state/update.svelte';
 	import { windowState } from '$lib/state/windowState.svelte';
 	import { timerState } from '$lib/state/timer.svelte';
-	import { navigationState } from '$lib/state/navigation.svelte';
 	import { anchorViewToRunningTimer } from '$lib/state/focus-view';
 
 	let { children } = $props();
@@ -25,12 +25,26 @@
 	 * Intervals and the header's update indicator — which is only a shortcut to the
 	 * updater section — lands on Application (spec S5).
 	 */
-	type SettingsTab = 'intervals' | 'appearance' | 'companion' | 'behavior' | 'application';
 	let settingsTab: SettingsTab = $state('intervals');
 
 	function handleOpenSettings(tab: SettingsTab = 'intervals') {
 		settingsTab = tab;
 	}
+
+	/**
+	 * Views that cannot reach the dialog (the Metrics invitation to set a goal) ask through the
+	 * navigation state; the shell owns the dialog, so it opens it here. Each request has its own id,
+	 * so asking twice for the same tab reopens it after the user closed it.
+	 */
+	let handledSettingsRequestId = 0;
+	$effect(() => {
+		const request = navigationState.settingsRequest;
+		if (request !== null && request.id !== handledSettingsRequestId) {
+			handledSettingsRequestId = request.id;
+			handleOpenSettings(request.tab);
+			settingsOpen = true;
+		}
+	});
 
 	const isMiniPlayer = $derived(windowState.isMiniPlayer);
 

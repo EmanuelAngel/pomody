@@ -57,8 +57,35 @@ describe('Header (Client Browser)', () => {
 
 		const metricsTab = screen.getByRole('tab', { name: /Metrics/i });
 		await expect.element(metricsTab).toBeVisible();
-		await expect.element(metricsTab).toHaveAttribute('aria-disabled', 'true');
-		await expect.element(metricsTab).toBeDisabled();
+		await expect.element(metricsTab).toHaveAttribute('id', 'tab-metrics');
+		await expect.element(metricsTab).toHaveAttribute('aria-controls', 'tabpanel-metrics');
+		await expect.element(metricsTab).toHaveAttribute('aria-selected', 'false');
+		await expect.element(metricsTab).not.toBeDisabled();
+	});
+
+	it('switches to the Metrics tab and back, leaving the previous tabs working', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+		const navigationState = createNavigationState('timer');
+
+		const screen = await render(Header, { timerState, navigationState });
+
+		const metricsTab = screen.getByRole('tab', { name: 'Metrics' });
+		await metricsTab.click();
+
+		expect(navigationState.activeTab).toBe('metrics');
+		await expect.element(metricsTab).toHaveAttribute('aria-selected', 'true');
+		await expect
+			.element(screen.getByRole('tab', { name: 'Timer' }))
+			.toHaveAttribute('aria-selected', 'false');
+
+		await screen.getByRole('tab', { name: /^Planning$/i }).click();
+		expect(navigationState.activeTab).toBe('planning');
+
+		await metricsTab.click();
+		await screen.getByRole('tab', { name: 'Timer' }).click();
+		expect(navigationState.activeTab).toBe('timer');
+		await expect.element(metricsTab).toHaveAttribute('aria-selected', 'false');
 	});
 
 	it('switches navigation tab and settings button texts reactively on locale changes', async () => {
@@ -262,8 +289,8 @@ describe('Header (Client Browser)', () => {
 			});
 
 			expect(screen.getByRole('tab', { name: 'Distractions' }).query()).toBeNull();
-			// The Metrics tab of Milestone 6 keeps its own state untouched.
-			await expect.element(screen.getByRole('tab', { name: 'Metrics' })).toBeDisabled();
+			// Metrics does not depend on the detector: it stays reachable on every platform.
+			await expect.element(screen.getByRole('tab', { name: 'Metrics' })).not.toBeDisabled();
 		});
 	});
 
