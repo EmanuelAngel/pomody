@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.20.0...pomody-v0.21.0) (2026-10-24)
+
+
+### Features
+
+* **metrics:** add pure weekly, hourly, compliance and goal aggregations ([#220](https://github.com/EmanuelAngel/pomody/issues/220)) ([3b39683](https://github.com/EmanuelAngel/pomody/commit/3b396831cbda2174c1d5dbd2942681b18cc2f681)), closes [#214](https://github.com/EmanuelAngel/pomody/issues/214)
+* **metrics:** add the daily goal and a Metrics settings panel (3/5) ([#219](https://github.com/EmanuelAngel/pomody/issues/219)) ([682ea50](https://github.com/EmanuelAngel/pomody/commit/682ea50081307adc7fb3cc5c1b8d3db85875fdfd)), closes [#214](https://github.com/EmanuelAngel/pomody/issues/214)
+* **metrics:** derive the daily counter from the focus history and migrate the legacy record ([#218](https://github.com/EmanuelAngel/pomody/issues/218)) ([ccac6ad](https://github.com/EmanuelAngel/pomody/commit/ccac6ade2c9770f22cada2ec1fe04edf2ab66fb1)), closes [#214](https://github.com/EmanuelAngel/pomody/issues/214)
+* **metrics:** enable the Metrics tab with native SVG charts (5/5) ([#221](https://github.com/EmanuelAngel/pomody/issues/221)) ([ee843ed](https://github.com/EmanuelAngel/pomody/commit/ee843ed06b2cee281fad183c580579915e899535)), closes [#214](https://github.com/EmanuelAngel/pomody/issues/214)
+* **metrics:** record every finished block in a focus history (1/5) ([#217](https://github.com/EmanuelAngel/pomody/issues/217)) ([f32c82d](https://github.com/EmanuelAngel/pomody/commit/f32c82d86c763a61a2b54bc88377de8d95cd9591)), closes [#214](https://github.com/EmanuelAngel/pomody/issues/214)
+
+
+### Bug Fixes
+
+* **desktop:** anchor the shell to the timer view while a block runs ([#168](https://github.com/EmanuelAngel/pomody/issues/168)) ([#188](https://github.com/EmanuelAngel/pomody/issues/188)) ([408001b](https://github.com/EmanuelAngel/pomody/commit/408001b717789ac6aabbd110c690b43a57d9ec6b))
+
 ## [0.20.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.19.0...pomody-v0.20.0) (2026-10-23)
 
 
