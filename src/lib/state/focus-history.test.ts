@@ -9,6 +9,10 @@ import {
 	LocalFocusHistoryRepository
 } from '../adapters/storage/local-focus-history-repository';
 import { InMemoryStorage } from '../adapters/storage/in-memory-storage';
+import {
+	LEGACY_DAILY_STATS_STORAGE_KEY,
+	migrateLegacyDailyStats
+} from '../adapters/storage/legacy-daily-stats-migration';
 import type {
 	BlockAbandonedEvent,
 	BlockCompletedEvent,
@@ -349,6 +353,100 @@ describe('FocusHistoryState', () => {
 
 			expect(() => state.destroy()).not.toThrow();
 		});
+	});
+});
+
+describe('FocusHistoryState legacy migration', () => {
+	const LEGACY_TODAY = JSON.stringify({
+		version: 1,
+		stats: { date: '2026-10-23', completedBlocks: 3, accumulatedMinutes: 75 }
+	});
+	// A local-time clock keeps the legacy date equal to today's wherever the tests run.
+	const LOCAL_NOW = new Date(2026, 9, 23, 14, 5, 0);
+
+	let storage: InMemoryStorage;
+	let repository: LocalFocusHistoryRepository;
+	let timer: MockTimerEmitter;
+	const states: FocusHistoryState[] = [];
+
+	function createState(migrate = true): FocusHistoryState {
+		const state = createFocusHistoryState({
+			repository,
+			timer,
+			tasks: { activeTask: null },
+			nowProvider: () => LOCAL_NOW,
+			...(migrate
+				? {
+						migrateLegacy: (repo, now) =>
+							migrateLegacyDailyStats({ storage, repository: repo, now })
+					}
+				: {})
+		});
+		states.push(state);
+		return state;
+	}
+
+	beforeEach(() => {
+		storage = new InMemoryStorage();
+		repository = new LocalFocusHistoryRepository(storage, () => LOCAL_NOW);
+		timer = new MockTimerEmitter();
+		storage.setItem(LEGACY_DAILY_STATS_STORAGE_KEY, LEGACY_TODAY);
+	});
+
+	afterEach(() => {
+		states.splice(0).forEach((state) => state.destroy());
+		vi.restoreAllMocks();
+	});
+
+	it('migrates before the first load, so the exposed entries already include them', async () => {
+		const state = createState();
+		await state.whenIdle();
+
+		expect(state.entries).toHaveLength(3);
+		expect(state.entries.every((entry) => entry.migrated === true)).toBe(true);
+		expect(storage.getItem(LEGACY_DAILY_STATS_STORAGE_KEY)).toBeNull();
+	});
+
+	it('migrates only once across restarts', async () => {
+		await createState().whenIdle();
+
+		const restarted = createState();
+		await restarted.whenIdle();
+
+		expect(restarted.entries).toHaveLength(3);
+	});
+
+	it('records a block finished while the migration is pending after the migrated ones', async () => {
+		const state = createState();
+		timer.emit(completed());
+		await state.whenIdle();
+
+		expect(state.entries).toHaveLength(4);
+		expect(state.entries.filter((entry) => entry.migrated === true)).toHaveLength(3);
+	});
+
+	it('leaves the legacy record alone when no migration is configured', async () => {
+		const state = createState(false);
+		await state.whenIdle();
+
+		expect(state.entries).toEqual([]);
+		expect(storage.getItem(LEGACY_DAILY_STATS_STORAGE_KEY)).toBe(LEGACY_TODAY);
+	});
+
+	it('starts normally when the migration fails', async () => {
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		const state = createFocusHistoryState({
+			repository,
+			timer,
+			tasks: { activeTask: null },
+			nowProvider: () => LOCAL_NOW,
+			migrateLegacy: () => Promise.reject(new Error('boom'))
+		});
+		states.push(state);
+		timer.emit(completed());
+		await state.whenIdle();
+
+		expect(state.entries).toHaveLength(1);
 	});
 });
 

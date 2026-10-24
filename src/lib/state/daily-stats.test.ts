@@ -1,5 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { FakeDailyStatsRepository } from '$tests/fakes/repositories/fake-daily-stats-repository';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
 	DailyStatsState,
 	createDailyStatsState,
@@ -7,11 +6,21 @@ import {
 	formatDailyDuration,
 	formatDailyStatsSummary
 } from './daily-stats.svelte';
+import { createFocusHistoryState, type FocusHistoryState } from './focus-history.svelte';
+import { InMemoryStorage } from '../adapters/storage/in-memory-storage';
+import { LocalFocusHistoryRepository } from '../adapters/storage/local-focus-history-repository';
+import {
+	LEGACY_DAILY_STATS_STORAGE_KEY,
+	migrateLegacyDailyStats
+} from '../adapters/storage/legacy-daily-stats-migration';
 import type {
-	DomainEvent,
+	BlockAbandonedEvent,
 	BlockCompletedEvent,
-	BlockSkippedEvent
+	BlockSkippedEvent,
+	DomainEvent
 } from '../domain/events/block-completed.event';
+import type { FocusHistoryEntry } from '../domain/history/focus-history-entry.entity';
+import type { TimerMode } from '../domain/timer/timer-fsm';
 
 class MockTimerEmitter {
 	public subscribers = new Set<(event: DomainEvent) => void>();
@@ -61,265 +70,242 @@ describe('formatDailyStatsSummary', () => {
 		expect(formatDailyStatsSummary(0, 25)).toBe('0 blocks · 0m');
 	});
 
-	it('should format singular "1 block · Xm"', () => {
+	it('should format 1 completed block with singular label "block"', () => {
 		expect(formatDailyStatsSummary(1, 25)).toBe('1 block · 25m');
 		expect(formatDailyStatsSummary(1, 60)).toBe('1 block · 1h 0m');
 	});
 
-	it('should format plural "N blocks · Xm"', () => {
+	it('should format multiple completed blocks with plural label "blocks"', () => {
 		expect(formatDailyStatsSummary(2, 50)).toBe('2 blocks · 50m');
 		expect(formatDailyStatsSummary(4, 60)).toBe('4 blocks · 1h 0m');
 		expect(formatDailyStatsSummary(4, 100)).toBe('4 blocks · 1h 40m');
 	});
 });
 
-describe('DailyStatsState', () => {
-	let mockRepo: FakeDailyStatsRepository;
-	let mockTimer: MockTimerEmitter;
+describe('DailyStatsState (derived from the focus history)', () => {
+	// Local-time clock: the counter compares local calendar days.
 	let currentDate: Date;
 	const nowProvider = () => currentDate;
 
+	let storage: InMemoryStorage;
+	let repository: LocalFocusHistoryRepository;
+	let timer: MockTimerEmitter;
+	let history: FocusHistoryState;
+	let state: DailyStatsState;
+
+	function offsetOf(date: Date): number {
+		return 0 - date.getTimezoneOffset();
+	}
+
+	function entry(overrides: Partial<FocusHistoryEntry> = {}): FocusHistoryEntry {
+		return {
+			mode: 'focus',
+			outcome: 'completed',
+			plannedMs: 1_500_000,
+			elapsedMs: 1_500_000,
+			endedAt: currentDate.getTime(),
+			utcOffsetMinutes: offsetOf(currentDate),
+			...overrides
+		};
+	}
+
+	async function seed(...entries: FocusHistoryEntry[]): Promise<void> {
+		for (const seeded of entries) {
+			await repository.append(seeded);
+		}
+		history.destroy();
+		history = createFocusHistoryState({ repository, timer, nowProvider });
+		state = createDailyStatsState(history, nowProvider);
+		await history.whenIdle();
+	}
+
+	function blockEvent(
+		type: 'block-completed' | 'block-skipped' | 'block-abandoned',
+		mode: TimerMode,
+		durationMs: number,
+		round = 1
+	): DomainEvent {
+		const base = { mode, round, totalRoundsCompleted: round, durationMs, elapsedMs: durationMs };
+		if (type === 'block-completed') {
+			return { type, ...base, completedAt: currentDate } satisfies BlockCompletedEvent;
+		}
+		if (type === 'block-skipped') {
+			return { type, ...base, skippedAt: currentDate } satisfies BlockSkippedEvent;
+		}
+		return { type, ...base, abandonedAt: currentDate } satisfies BlockAbandonedEvent;
+	}
+
+	async function completeFocus(durationMs: number, round = 1): Promise<void> {
+		timer.emit(blockEvent('block-completed', 'focus', durationMs, round));
+		await history.whenIdle();
+	}
+
 	beforeEach(() => {
 		currentDate = new Date(2026, 9, 3, 10, 0, 0); // 2026-10-03
-		mockRepo = new FakeDailyStatsRepository({
-			date: '2026-10-03',
-			completedBlocks: 0,
-			accumulatedMinutes: 0
-		});
-		mockTimer = new MockTimerEmitter();
+		storage = new InMemoryStorage();
+		repository = new LocalFocusHistoryRepository(storage, nowProvider);
+		timer = new MockTimerEmitter();
+		history = createFocusHistoryState({ repository, timer, nowProvider });
+		state = createDailyStatsState(history, nowProvider);
 	});
 
-	describe('initial load from repository', () => {
-		it('should load matching today stats from repository', () => {
-			mockRepo.stats = {
-				date: '2026-10-03',
-				completedBlocks: 3,
-				accumulatedMinutes: 75
-			};
+	afterEach(() => {
+		history.destroy();
+	});
 
-			const state = new DailyStatsState(mockRepo, mockTimer, nowProvider);
+	describe('previous outputs (differential)', () => {
+		const cases: ReadonlyArray<{ durationsMs: number[]; expected: string }> = [
+			{ durationsMs: [], expected: '0 blocks · 0m' },
+			{ durationsMs: [1_500_000], expected: '1 block · 25m' },
+			{
+				durationsMs: [1_500_000, 1_500_000, 1_500_000, 1_500_000],
+				expected: '4 blocks · 1h 40m'
+			},
+			{ durationsMs: [90_000, 30_000], expected: '2 blocks · 3m' },
+			{ durationsMs: [29_999], expected: '1 block · 0m' },
+			{ durationsMs: [3_000_000, 1_500_000, 1_500_000], expected: '3 blocks · 1h 40m' }
+		];
 
-			expect(state.completedBlocks).toBe(3);
-			expect(state.accumulatedMinutes).toBe(75);
-			expect(state.date).toBe('2026-10-03');
-			expect(state.formattedSummary).toBe('3 blocks · 1h 15m');
-		});
+		it.each(cases)(
+			'shows $expected for the blocks $durationsMs, same as the previous counter',
+			async ({ durationsMs, expected }) => {
+				for (const [index, durationMs] of durationsMs.entries()) {
+					await completeFocus(durationMs, index + 1);
+				}
 
-		it('should initialize clean 0 stats if repository stats belong to a past date', () => {
-			mockRepo.stats = {
-				date: '2026-10-02',
-				completedBlocks: 4,
-				accumulatedMinutes: 100
-			};
+				expect(state.formattedSummary).toBe(expected);
+			}
+		);
+	});
 
-			const state = new DailyStatsState(mockRepo, mockTimer, nowProvider);
+	describe('initial load from the history', () => {
+		it('starts at zero with today’s date when the history is empty', async () => {
+			await history.whenIdle();
 
 			expect(state.completedBlocks).toBe(0);
 			expect(state.accumulatedMinutes).toBe(0);
 			expect(state.date).toBe('2026-10-03');
 			expect(state.formattedSummary).toBe('0 blocks · 0m');
 		});
-	});
 
-	describe('event handling and accumulation', () => {
-		it('should increment completedBlocks and accumulatedMinutes on focus block-completed event', () => {
-			const state = new DailyStatsState(mockRepo, mockTimer, nowProvider);
-
-			const event: BlockCompletedEvent = {
-				type: 'block-completed',
-				mode: 'focus',
-				round: 1,
-				totalRoundsCompleted: 1,
-				durationMs: 1500000, // 25 minutes
-				elapsedMs: 1500000,
-				completedAt: new Date()
-			};
-
-			mockTimer.emit(event);
-
-			expect(state.completedBlocks).toBe(1);
-			expect(state.accumulatedMinutes).toBe(25);
-			expect(state.formattedSummary).toBe('1 block · 25m');
-			expect(mockRepo.saveStatsCalls).toHaveLength(1);
-			expect(mockRepo.saveStatsCalls[0]).toEqual({
-				date: '2026-10-03',
-				completedBlocks: 1,
-				accumulatedMinutes: 25
-			});
-		});
-
-		it('should accumulate multiple focus blocks sequentially', () => {
-			const state = new DailyStatsState(mockRepo, mockTimer, nowProvider);
-
-			// First 25m focus block
-			mockTimer.emit({
-				type: 'block-completed',
-				mode: 'focus',
-				round: 1,
-				totalRoundsCompleted: 1,
-				durationMs: 1500000,
-				elapsedMs: 1500000,
-				completedAt: new Date()
-			});
-
-			// Second 25m focus block
-			mockTimer.emit({
-				type: 'block-completed',
-				mode: 'focus',
-				round: 2,
-				totalRoundsCompleted: 2,
-				durationMs: 1500000,
-				elapsedMs: 1500000,
-				completedAt: new Date()
-			});
-
-			expect(state.completedBlocks).toBe(2);
-			expect(state.accumulatedMinutes).toBe(50);
-			expect(state.formattedSummary).toBe('2 blocks · 50m');
-
-			// Third block: 50m (long focus block)
-			mockTimer.emit({
-				type: 'block-completed',
-				mode: 'focus',
-				round: 3,
-				totalRoundsCompleted: 3,
-				durationMs: 3000000,
-				elapsedMs: 3000000,
-				completedAt: new Date()
-			});
+		it('counts the focus blocks already completed today', async () => {
+			await seed(entry(), entry(), entry({ plannedMs: 1_500_000 }));
 
 			expect(state.completedBlocks).toBe(3);
-			expect(state.accumulatedMinutes).toBe(100);
-			expect(state.formattedSummary).toBe('3 blocks · 1h 40m');
+			expect(state.accumulatedMinutes).toBe(75);
+			expect(state.formattedSummary).toBe('3 blocks · 1h 15m');
 		});
 
-		it('should ignore shortBreak and longBreak block-completed events', () => {
-			const state = new DailyStatsState(mockRepo, mockTimer, nowProvider);
-
-			const shortBreakEvent: BlockCompletedEvent = {
-				type: 'block-completed',
-				mode: 'shortBreak',
-				round: 1,
-				totalRoundsCompleted: 1,
-				durationMs: 300000,
-				elapsedMs: 300000,
-				completedAt: new Date()
-			};
-
-			const longBreakEvent: BlockCompletedEvent = {
-				type: 'block-completed',
-				mode: 'longBreak',
-				round: 4,
-				totalRoundsCompleted: 4,
-				durationMs: 900000,
-				elapsedMs: 900000,
-				completedAt: new Date()
-			};
-
-			mockTimer.emit(shortBreakEvent);
-			mockTimer.emit(longBreakEvent);
-
-			expect(state.completedBlocks).toBe(0);
-			expect(state.accumulatedMinutes).toBe(0);
-			expect(mockRepo.saveStatsCalls).toHaveLength(0);
-		});
-
-		it('should ignore block-skipped events regardless of mode', () => {
-			const state = new DailyStatsState(mockRepo, mockTimer, nowProvider);
-
-			const focusSkipped: BlockSkippedEvent = {
-				type: 'block-skipped',
-				mode: 'focus',
-				round: 1,
-				totalRoundsCompleted: 0,
-				durationMs: 1_500_000,
-				elapsedMs: 0,
-				skippedAt: new Date()
-			};
-
-			const breakSkipped: BlockSkippedEvent = {
-				type: 'block-skipped',
-				mode: 'shortBreak',
-				round: 1,
-				totalRoundsCompleted: 1,
-				durationMs: 300_000,
-				elapsedMs: 0,
-				skippedAt: new Date()
-			};
-
-			mockTimer.emit(focusSkipped);
-			mockTimer.emit(breakSkipped);
-
-			expect(state.completedBlocks).toBe(0);
-			expect(state.accumulatedMinutes).toBe(0);
-			expect(mockRepo.saveStatsCalls).toHaveLength(0);
-		});
-	});
-
-	describe('day rollover logic', () => {
-		it('should reset stats before accumulating when date changes to next day', () => {
-			const state = new DailyStatsState(mockRepo, mockTimer, nowProvider);
-
-			// Complete 2 blocks on 2026-10-03
-			mockTimer.emit({
-				type: 'block-completed',
-				mode: 'focus',
-				round: 1,
-				totalRoundsCompleted: 1,
-				durationMs: 1500000,
-				elapsedMs: 1500000,
-				completedAt: new Date()
-			});
-			mockTimer.emit({
-				type: 'block-completed',
-				mode: 'focus',
-				round: 2,
-				totalRoundsCompleted: 2,
-				durationMs: 1500000,
-				elapsedMs: 1500000,
-				completedAt: new Date()
-			});
-
-			expect(state.completedBlocks).toBe(2);
-			expect(state.accumulatedMinutes).toBe(50);
-			expect(state.date).toBe('2026-10-03');
-
-			// Advance date to tomorrow (2026-10-04)
-			currentDate = new Date(2026, 9, 4, 9, 0, 0);
-
-			// First focus block of the new day
-			mockTimer.emit({
-				type: 'block-completed',
-				mode: 'focus',
-				round: 1,
-				totalRoundsCompleted: 3,
-				durationMs: 1500000,
-				elapsedMs: 1500000,
-				completedAt: new Date()
-			});
+		it('does not count yesterday’s or tomorrow’s blocks', async () => {
+			const day = 24 * 60 * 60 * 1000;
+			await seed(
+				entry({ endedAt: currentDate.getTime() - day }),
+				entry({ endedAt: currentDate.getTime() + day }),
+				entry()
+			);
 
 			expect(state.completedBlocks).toBe(1);
 			expect(state.accumulatedMinutes).toBe(25);
-			expect(state.date).toBe('2026-10-04');
+		});
+	});
+
+	describe('what counts', () => {
+		it('adds a block to the counter as soon as the timer completes it', async () => {
+			expect(state.formattedSummary).toBe('0 blocks · 0m');
+
+			await completeFocus(1_500_000);
+
+			expect(state.completedBlocks).toBe(1);
+			expect(state.accumulatedMinutes).toBe(25);
 			expect(state.formattedSummary).toBe('1 block · 25m');
 		});
 
-		it('should reset and return true from checkRollover when date has changed', () => {
-			const state = new DailyStatsState(mockRepo, mockTimer, nowProvider);
+		it('ignores breaks, skipped and abandoned blocks', async () => {
+			timer.emit(blockEvent('block-completed', 'shortBreak', 300_000));
+			timer.emit(blockEvent('block-completed', 'longBreak', 900_000));
+			timer.emit(blockEvent('block-skipped', 'focus', 1_500_000));
+			timer.emit(blockEvent('block-skipped', 'shortBreak', 300_000));
+			timer.emit(blockEvent('block-abandoned', 'focus', 1_500_000));
+			await history.whenIdle();
 
-			mockTimer.emit({
-				type: 'block-completed',
-				mode: 'focus',
-				round: 1,
-				totalRoundsCompleted: 1,
-				durationMs: 1500000,
-				elapsedMs: 1500000,
-				completedAt: new Date()
+			expect(history.entries.length).toBeGreaterThan(0);
+			expect(state.completedBlocks).toBe(0);
+			expect(state.accumulatedMinutes).toBe(0);
+			expect(state.formattedSummary).toBe('0 blocks · 0m');
+		});
+
+		it('attributes an entry to the day of its stored offset, not the machine’s', async () => {
+			// 23:50 on 2026-10-03 at UTC-03:00, whatever offset this machine has.
+			const lateNight = Date.UTC(2026, 9, 4, 2, 50, 0);
+			await seed(entry({ endedAt: lateNight, utcOffsetMinutes: -180 }));
+
+			expect(state.completedBlocks).toBe(1);
+		});
+
+		it('leaves out an entry that is already the next day for its own offset', async () => {
+			// 00:10 on 2026-10-04 at UTC+02:00 is still 22:10 UTC on the 3rd.
+			const afterMidnight = Date.UTC(2026, 9, 3, 22, 10, 0);
+			await seed(entry({ endedAt: afterMidnight, utcOffsetMinutes: 120 }));
+
+			expect(state.completedBlocks).toBe(0);
+		});
+
+		it('counts entries migrated from the legacy counter', async () => {
+			await seed(
+				entry({ migrated: true, plannedMs: 1_500_000, elapsedMs: 1_500_000 }),
+				entry({ migrated: true, plannedMs: 1_500_000, elapsedMs: 1_500_000 })
+			);
+
+			expect(state.formattedSummary).toBe('2 blocks · 50m');
+		});
+
+		it('shows what the legacy counter showed after the migration (4 blocks, 100 minutes)', async () => {
+			storage.setItem(
+				LEGACY_DAILY_STATS_STORAGE_KEY,
+				JSON.stringify({
+					version: 1,
+					stats: { date: '2026-10-03', completedBlocks: 4, accumulatedMinutes: 100 }
+				})
+			);
+			history.destroy();
+			history = createFocusHistoryState({
+				repository,
+				timer,
+				nowProvider,
+				migrateLegacy: (repo, now) => migrateLegacyDailyStats({ storage, repository: repo, now })
 			});
+			state = createDailyStatsState(history, nowProvider);
+			await history.whenIdle();
 
-			expect(state.checkRollover()).toBe(false);
+			expect(state.formattedSummary).toBe('4 blocks · 1h 40m');
+		});
 
-			// Advance date to next day
+		it('drops back to zero when the history is cleared', async () => {
+			await completeFocus(1_500_000);
+			await completeFocus(1_500_000, 2);
+			expect(state.completedBlocks).toBe(2);
+
+			await history.clear();
+
+			expect(state.completedBlocks).toBe(0);
+			expect(state.accumulatedMinutes).toBe(0);
+			expect(state.formattedSummary).toBe('0 blocks · 0m');
+		});
+	});
+
+	describe('day rollover', () => {
+		it('starts the new day at zero without writing anything', async () => {
+			await completeFocus(1_500_000);
+			await completeFocus(1_500_000, 2);
+			expect(state.completedBlocks).toBe(2);
+			const stored = storage.getItem('pomody:focus-history');
+			const writes: string[] = [];
+			const realSetItem = storage.setItem.bind(storage);
+			storage.setItem = (key, value) => {
+				writes.push(key);
+				realSetItem(key, value);
+			};
+
 			currentDate = new Date(2026, 9, 4, 0, 1, 0);
 
 			expect(state.checkRollover()).toBe(true);
@@ -327,53 +313,42 @@ describe('DailyStatsState', () => {
 			expect(state.accumulatedMinutes).toBe(0);
 			expect(state.date).toBe('2026-10-04');
 			expect(state.formattedSummary).toBe('0 blocks · 0m');
+			expect(writes).toEqual([]);
+			expect(storage.getItem('pomody:focus-history')).toBe(stored);
 		});
-	});
 
-	describe('reset', () => {
-		it('should reset state to zero and invoke repository.resetStats()', () => {
-			mockRepo.stats = {
-				date: '2026-10-03',
-				completedBlocks: 4,
-				accumulatedMinutes: 100
-			};
-			const state = new DailyStatsState(mockRepo, mockTimer, nowProvider);
+		it('returns false from checkRollover while the date has not changed', async () => {
+			await completeFocus(1_500_000);
 
-			expect(state.completedBlocks).toBe(4);
-			expect(state.formattedSummary).toBe('4 blocks · 1h 40m');
-
-			state.reset();
-
-			expect(state.completedBlocks).toBe(0);
-			expect(state.accumulatedMinutes).toBe(0);
-			expect(state.formattedSummary).toBe('0 blocks · 0m');
-			expect(mockRepo.resetStatsCalls).toBe(1);
+			expect(state.checkRollover()).toBe(false);
+			expect(state.completedBlocks).toBe(1);
+			expect(state.date).toBe('2026-10-03');
 		});
-	});
 
-	describe('destroy', () => {
-		it('should unsubscribe from timer events upon destroy', () => {
-			const state = new DailyStatsState(mockRepo, mockTimer, nowProvider);
+		it('counts the first block of the new day on its own, without a previous checkRollover', async () => {
+			await completeFocus(1_500_000);
+			await completeFocus(1_500_000, 2);
+			expect(state.completedBlocks).toBe(2);
 
-			expect(mockTimer.subscribers.size).toBe(1);
+			currentDate = new Date(2026, 9, 4, 9, 0, 0);
+			await completeFocus(1_500_000, 3);
 
-			state.destroy();
+			expect(state.completedBlocks).toBe(1);
+			expect(state.accumulatedMinutes).toBe(25);
+			expect(state.date).toBe('2026-10-04');
+			expect(state.formattedSummary).toBe('1 block · 25m');
+		});
 
-			expect(mockTimer.subscribers.size).toBe(0);
-
-			// Emitting after destroy should not change state
-			mockTimer.emit({
-				type: 'block-completed',
-				mode: 'focus',
-				round: 1,
-				totalRoundsCompleted: 1,
-				durationMs: 1500000,
-				elapsedMs: 1500000,
-				completedAt: new Date()
-			});
-
+		it('brings yesterday’s count back if the clock returns to yesterday', async () => {
+			await completeFocus(1_500_000);
+			currentDate = new Date(2026, 9, 4, 0, 1, 0);
+			state.checkRollover();
 			expect(state.completedBlocks).toBe(0);
-			expect(state.accumulatedMinutes).toBe(0);
+
+			currentDate = new Date(2026, 9, 3, 23, 59, 0);
+
+			expect(state.checkRollover()).toBe(true);
+			expect(state.completedBlocks).toBe(1);
 		});
 	});
 
@@ -383,7 +358,7 @@ describe('DailyStatsState', () => {
 		});
 
 		it('should allow creating isolated state instances via createDailyStatsState', () => {
-			const isolated = createDailyStatsState(mockRepo, null, nowProvider);
+			const isolated = createDailyStatsState(history, nowProvider);
 			expect(isolated).toBeInstanceOf(DailyStatsState);
 			expect(isolated.completedBlocks).toBe(0);
 		});
