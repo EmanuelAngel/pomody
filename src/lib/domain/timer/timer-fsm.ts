@@ -1,10 +1,11 @@
 import type {
 	DomainEvent,
 	BlockCompletedEvent,
-	BlockSkippedEvent
+	BlockSkippedEvent,
+	BlockAbandonedEvent
 } from '../events/block-completed.event';
 
-export type { DomainEvent, BlockCompletedEvent, BlockSkippedEvent };
+export type { DomainEvent, BlockCompletedEvent, BlockSkippedEvent, BlockAbandonedEvent };
 export type TimerState = 'idle' | 'running' | 'paused' | 'completed';
 export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
@@ -273,6 +274,8 @@ export class TimerFSM {
 	}
 
 	public reset(): void {
+		this.emitAbandonedIfInProgress();
+
 		if (this._state === 'idle') {
 			this._durationMs = this.getModeDurationMs(this._mode);
 			this._remainingMs = this._durationMs;
@@ -289,6 +292,8 @@ export class TimerFSM {
 	 * Completely resets the timer to its initial state: idle, focus mode, round 1, full duration.
 	 */
 	public resetToInitial(): void {
+		this.emitAbandonedIfInProgress();
+
 		this._state = 'idle';
 		this._mode = 'focus';
 		this._currentRound = 1;
@@ -383,6 +388,8 @@ export class TimerFSM {
 		const mode = this._mode;
 		const round = this._currentRound;
 		const totalRoundsCompleted = this._totalRoundsCompleted;
+		const durationMs = this._durationMs;
+		const elapsedMs = durationMs - this._remainingMs;
 		this.advanceMode();
 		this._state = 'idle';
 		this.emitEvent({
@@ -390,6 +397,8 @@ export class TimerFSM {
 			mode,
 			round,
 			totalRoundsCompleted,
+			durationMs,
+			elapsedMs,
 			skippedAt: new Date()
 		});
 		this.notify();
@@ -416,6 +425,7 @@ export class TimerFSM {
 				round: this._currentRound,
 				totalRoundsCompleted: this._totalRoundsCompleted,
 				durationMs: this._durationMs,
+				elapsedMs: this._durationMs,
 				completedAt: new Date()
 			});
 			this.notify();
@@ -424,6 +434,20 @@ export class TimerFSM {
 
 		this._remainingMs -= deltaMs;
 		this.notify();
+	}
+
+	/** Emits `block-abandoned` when a block is in progress (running or paused); idle and completed emit nothing. */
+	private emitAbandonedIfInProgress(): void {
+		if (this._state !== 'running' && this._state !== 'paused') return;
+		this.emitEvent({
+			type: 'block-abandoned',
+			mode: this._mode,
+			round: this._currentRound,
+			totalRoundsCompleted: this._totalRoundsCompleted,
+			durationMs: this._durationMs,
+			elapsedMs: this._durationMs - this._remainingMs,
+			abandonedAt: new Date()
+		});
 	}
 
 	private advanceMode(): void {

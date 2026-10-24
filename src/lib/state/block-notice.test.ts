@@ -297,6 +297,17 @@ describe('BlockNoticeState', () => {
 			expect(notifier.notifyCalls).toEqual([]);
 		});
 
+		it('should say nothing when a block in progress is abandoned with a reset', async () => {
+			const { notifier, timer } = createHarness();
+
+			timer.start();
+			timer.tick(1000);
+			timer.reset();
+			await flush();
+
+			expect(notifier.notifyCalls).toEqual([]);
+		});
+
 		it('should survive a failing notifier without touching the timer', async () => {
 			const { notifier, timer } = createHarness();
 			notifier.notify = async () => {

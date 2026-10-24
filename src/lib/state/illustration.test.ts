@@ -48,6 +48,7 @@ function focusCompleted(durationMinutes: number): BlockCompletedEvent {
 		round: 1,
 		totalRoundsCompleted: 1,
 		durationMs: durationMinutes * 60_000,
+		elapsedMs: durationMinutes * 60_000,
 		completedAt: new Date()
 	};
 }
@@ -297,6 +298,7 @@ describe('IllustrationState', () => {
 				round: 1,
 				totalRoundsCompleted: 1,
 				durationMs: 300_000,
+				elapsedMs: 300_000,
 				completedAt: new Date()
 			});
 
