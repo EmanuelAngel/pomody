@@ -3,10 +3,12 @@ import { render } from 'vitest-browser-svelte';
 import CujTestShell from './cuj-test-shell.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
 import { createDailyStatsState } from '$lib/state/daily-stats.svelte';
+import { createFocusHistoryState } from '$lib/state/focus-history.svelte';
 import { createBreaksState } from '$lib/state/breaks.svelte';
 import { FakeTicker } from '$tests/fakes/engine/fake-ticker';
 import { FakeAudioNotifier } from '$tests/fakes/engine/fake-audio-notifier';
-import { FakeDailyStatsRepository } from '$tests/fakes/repositories/fake-daily-stats-repository';
+import { InMemoryStorage } from '$lib/adapters/storage/in-memory-storage';
+import { LocalFocusHistoryRepository } from '$lib/adapters/storage/local-focus-history-repository';
 import { FakeBreakActivityRepository } from '$tests/fakes/repositories/fake-break-activity-repository';
 import { createBreakActivityFixture } from '$tests/fixtures/break-activity.fixture';
 
@@ -24,8 +26,13 @@ describe('CUJ 1: Core Focus Loop (Browser)', () => {
 			fakeTicker,
 			fakeAudio
 		);
-		const dailyStatsRepo = new FakeDailyStatsRepository();
-		const dailyStatsState = createDailyStatsState(dailyStatsRepo, timerState);
+		const historyRepo = new LocalFocusHistoryRepository(new InMemoryStorage());
+		const focusHistory = createFocusHistoryState({
+			repository: historyRepo,
+			timer: timerState,
+			tasks: { activeTask: null }
+		});
+		const dailyStatsState = createDailyStatsState(focusHistory);
 		const breaksRepo = new FakeBreakActivityRepository([
 			createBreakActivityFixture({ id: 'act-1', title: 'Neck & Shoulder Stretch' })
 		]);
@@ -92,9 +99,11 @@ describe('CUJ 1: Core Focus Loop (Browser)', () => {
 			.toHaveTextContent('1 block · 25m');
 		await expect.element(dailyCounter).not.toHaveAttribute('aria-hidden');
 
-		// Repositorio persistido
-		expect(dailyStatsRepo.stats.completedBlocks).toBe(1);
-		expect(dailyStatsRepo.stats.accumulatedMinutes).toBe(25);
+		// Historial persistido: un registro de foco completado
+		await focusHistory.whenIdle();
+		expect(await historyRepo.getAll()).toMatchObject([
+			{ mode: 'focus', outcome: 'completed', plannedMs: 1_500_000, elapsedMs: 1_500_000 }
+		]);
 
 		// e) Transición a Short Break
 		const startBreakButton = screen.getByRole('button', { name: 'Start timer' });
@@ -116,6 +125,6 @@ describe('CUJ 1: Core Focus Loop (Browser)', () => {
 
 		// Cleanup
 		timerState.destroy();
-		dailyStatsState.destroy();
+		focusHistory.destroy();
 	});
 });

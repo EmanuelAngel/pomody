@@ -2,7 +2,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import DailyCounter from './daily-counter.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
+import type { DomainEvent } from '$lib/domain/events/block-completed.event';
 import { createDailyStatsState } from '$lib/state/daily-stats.svelte';
+import { createFocusHistoryState } from '$lib/state/focus-history.svelte';
+import { InMemoryStorage } from '$lib/adapters/storage/in-memory-storage';
+import { LocalFocusHistoryRepository } from '$lib/adapters/storage/local-focus-history-repository';
 
 function createDummyTicker(isRunning = false) {
 	return {
@@ -13,20 +17,38 @@ function createDummyTicker(isRunning = false) {
 	};
 }
 
+const TODAY = new Date(2026, 9, 3, 12, 0, 0);
+const idleTimer = { onEvent: () => () => {} };
+
+/** A counter over a history holding `blocks` completed focus blocks that add up to `minutes`. */
+async function createCounterWith(blocks: number, minutes: number) {
+	const repository = new LocalFocusHistoryRepository(new InMemoryStorage(), () => TODAY);
+	for (let index = 0; index < blocks; index += 1) {
+		const plannedMs = (minutes / blocks) * 60_000;
+		await repository.append({
+			mode: 'focus',
+			outcome: 'completed',
+			plannedMs,
+			elapsedMs: plannedMs,
+			endedAt: TODAY.getTime(),
+			utcOffsetMinutes: 0 - TODAY.getTimezoneOffset()
+		});
+	}
+	const history = createFocusHistoryState({
+		repository,
+		timer: idleTimer,
+		tasks: { activeTask: null },
+		nowProvider: () => TODAY
+	});
+	await history.whenIdle();
+	return createDailyStatsState(history, () => TODAY);
+}
+
 describe('DailyCounter (Client Browser)', () => {
 	it('renders default formatted summary text accurately (0 blocks · 0m)', async () => {
 		const ticker = createDummyTicker(false);
 		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
-		const mockRepo = {
-			loadStats: () => ({ date: '2026-10-03', completedBlocks: 0, accumulatedMinutes: 0 }),
-			saveStats: vi.fn(),
-			resetStats: vi.fn()
-		};
-		const dailyStatsState = createDailyStatsState(
-			mockRepo,
-			null,
-			() => new Date('2026-10-03T12:00:00')
-		);
+		const dailyStatsState = await createCounterWith(0, 0);
 
 		const screen = await render(DailyCounter, { timerState, dailyStatsState });
 		const counter = screen.getByTestId('daily-focus-counter');
@@ -38,16 +60,7 @@ describe('DailyCounter (Client Browser)', () => {
 	it('renders custom formatted summary text accurately for completed blocks and duration', async () => {
 		const ticker = createDummyTicker(false);
 		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
-		const mockRepo = {
-			loadStats: () => ({ date: '2026-10-03', completedBlocks: 4, accumulatedMinutes: 100 }),
-			saveStats: vi.fn(),
-			resetStats: vi.fn()
-		};
-		const dailyStatsState = createDailyStatsState(
-			mockRepo,
-			null,
-			() => new Date('2026-10-03T12:00:00')
-		);
+		const dailyStatsState = await createCounterWith(4, 100);
 
 		const screen = await render(DailyCounter, { timerState, dailyStatsState });
 		const counter = screen.getByTestId('daily-focus-counter');
@@ -59,16 +72,7 @@ describe('DailyCounter (Client Browser)', () => {
 	it('switches formatted summary reactively on locale changes', async () => {
 		const ticker = createDummyTicker(false);
 		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
-		const mockRepo = {
-			loadStats: () => ({ date: '2026-10-03', completedBlocks: 4, accumulatedMinutes: 100 }),
-			saveStats: vi.fn(),
-			resetStats: vi.fn()
-		};
-		const dailyStatsState = createDailyStatsState(
-			mockRepo,
-			null,
-			() => new Date('2026-10-03T12:00:00')
-		);
+		const dailyStatsState = await createCounterWith(4, 100);
 
 		const screen = await render(DailyCounter, { timerState, dailyStatsState });
 		const counter = screen.getByTestId('daily-focus-counter');
@@ -143,5 +147,40 @@ describe('DailyCounter (Client Browser)', () => {
 
 		expect(summary?.classList.contains('md:backdrop-blur-sm')).toBe(false);
 		expect(summary?.classList.contains('text-muted-foreground/60')).toBe(true);
+	});
+
+	it('updates by itself when a block is recorded and when the history is cleared', async () => {
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, createDummyTicker(false));
+		let emit: (event: DomainEvent) => void = () => {};
+		const history = createFocusHistoryState({
+			repository: new LocalFocusHistoryRepository(new InMemoryStorage(), () => TODAY),
+			timer: {
+				onEvent: (fn) => {
+					emit = fn;
+					return () => {};
+				}
+			},
+			tasks: { activeTask: null },
+			nowProvider: () => TODAY
+		});
+		const dailyStatsState = createDailyStatsState(history, () => TODAY);
+		const screen = await render(DailyCounter, { timerState, dailyStatsState });
+		const counter = screen.getByTestId('daily-focus-counter');
+		await expect.element(counter).toHaveTextContent('0 blocks · 0m');
+
+		emit({
+			type: 'block-completed',
+			mode: 'focus',
+			round: 1,
+			totalRoundsCompleted: 1,
+			durationMs: 1_500_000,
+			elapsedMs: 1_500_000,
+			completedAt: TODAY
+		});
+		await expect.element(counter).toHaveTextContent('1 block · 25m');
+
+		await history.clear();
+		await expect.element(counter).toHaveTextContent('0 blocks · 0m');
+		history.destroy();
 	});
 });
