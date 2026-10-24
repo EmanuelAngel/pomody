@@ -47,9 +47,12 @@ export class LocalFocusHistoryRepository implements IFocusHistoryRepository {
 			return this.injectedStorage;
 		}
 
-		if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
+		if (typeof window !== 'undefined') {
 			try {
-				return window.localStorage;
+				// Reading the property is what throws a SecurityError, so the guard stays inside the try.
+				if (typeof window.localStorage !== 'undefined') {
+					return window.localStorage;
+				}
 			} catch {
 				// SecurityError or blocked storage: fall through to the in-memory fallback.
 			}
