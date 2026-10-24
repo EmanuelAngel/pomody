@@ -49,5 +49,46 @@ describe('NavigationState', () => {
 			nav.activeTab = 'timer';
 			expect(nav.activeTab).toBe('timer');
 		});
+
+		it('should switch to the metrics tab', () => {
+			const nav = createNavigationState();
+
+			nav.setTab('metrics');
+
+			expect(nav.activeTab).toBe('metrics');
+		});
+	});
+
+	describe('Settings requests', () => {
+		it('should have no pending request on initialization', () => {
+			expect(createNavigationState().settingsRequest).toBeNull();
+		});
+
+		it('should expose the requested settings tab', () => {
+			const nav = createNavigationState();
+
+			nav.requestSettings('metrics');
+
+			expect(nav.settingsRequest?.tab).toBe('metrics');
+		});
+
+		it('should issue a new request every time, even for the same tab', () => {
+			const nav = createNavigationState();
+
+			nav.requestSettings('metrics');
+			const first = nav.settingsRequest;
+			nav.requestSettings('metrics');
+
+			expect(nav.settingsRequest).not.toBe(first);
+			expect(nav.settingsRequest?.id).toBeGreaterThan(first?.id ?? 0);
+		});
+
+		it('should not change the active tab', () => {
+			const nav = createNavigationState('planning');
+
+			nav.requestSettings('metrics');
+
+			expect(nav.activeTab).toBe('planning');
+		});
 	});
 });

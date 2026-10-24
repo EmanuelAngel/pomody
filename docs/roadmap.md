@@ -15,7 +15,7 @@ El proyecto organiza sus objetivos en **Milestones temáticos** orientados a val
 | **Milestone 3** | Internacionalización (i18n ES/EN) y Desktop Shell (Mini-Player & Tray)         | P0 / P1   | **Completado**   |
 | **Milestone 4** | Recompensa visual (Ilustración por fases — Compañía Viva)                      | P2        | **Completado**   |
 | **Milestone 5** | Hábitos avanzados en timeline y Detector de dispersión ligero                  | P3        | **Próximo foco** |
-| **Milestone 6** | Analítica avanzada, métricas visuales nativas y calidad de sesión              | P4        | Roadmap futuro   |
+| **Milestone 6** | Analítica avanzada, métricas visuales nativas y calidad de sesión              | P4        | **En progreso**  |
 | **Milestone 7** | Blindaje de foco (No Molestar del SO) e Integración de presencia (Discord RPC) | P5        | Roadmap futuro   |
 
 ---
@@ -48,7 +48,7 @@ _Objetivo: Integrar el flujo ágil de tareas, dinámicas de pausa saludable y pe
 - [x] **Presupuesto de sesión (Session Budget)**: Cálculo proyectado en la pestaña _Planning_ a partir de una meta de bloques o límite horario con cálculo determinista de intervalos.
 - [x] **Revitalización automática**: Sugerencia suave de actividades saludables bajo el temporizador al entrar en descanso (estiramientos, hidratación, respiración) con botón de rotación (_shuffle_) y toggle en ajustes.
 - [x] **Catálogo y gestión de hábitos de descanso**: Segmento en vista Planning para explorar hábitos predefinidos y gestionar hábitos personalizados (CRUD accesible con modales shadcn-svelte).
-- [x] **Persistencia y repositorios desacoplados**: Puertos de dominio (`ITaskRepository`, `ISessionPlanRepository`, `IBreakActivityRepository`, `IDailyStatsRepository`) con adaptadores síncronos en `localStorage` y botón de purga defensiva en Settings Drawer.
+- [x] **Persistencia y repositorios desacoplados**: Puertos de dominio (`ITaskRepository`, `ISessionPlanRepository`, `IBreakActivityRepository`, `IFocusHistoryRepository`) con adaptadores síncronos en `localStorage` y botón de purga defensiva en Settings Drawer.
 - [x] **Contador diario (Zen Statusline)**: Indicador numérico pasivo de bloques completados y tiempo acumulado al pie de pantalla, con desvanecimiento suave a `opacity-0` en ejecución.
 
 > [!NOTE]
@@ -103,11 +103,11 @@ _Objetivo: Vincular la planificación con los descansos y ofrecer contención ac
 
 ---
 
-### Milestone 6 — Analítica Avanzada & Métricas Visuales (Roadmap futuro)
+### Milestone 6 — Analítica Avanzada & Métricas Visuales (En progreso)
 
 _Objetivo: Transformar los datos reales acumulados de sesiones, tareas y pausas en retrospectivas visuales accionables._
 
-- [ ] **P4 — Panel de Métricas nativo**:
+- [ ] **P4 — Panel de Métricas nativo** (en progreso · [decisiones](./features/metrics-panel/decisions.md)):
   - Desbloqueo de la pestaña _Métricas_ en la barra superior.
   - Gráficos de barras semanales y patrones de productividad renderizados con CSS/SVG nativo (sin dependencias externas pesadas).
 - [ ] **P4 — Calidad de sesión y correlación**:
