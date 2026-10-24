@@ -5,6 +5,7 @@
 	import Palette from '@lucide/svelte/icons/palette';
 	import Wallpaper from '@lucide/svelte/icons/wallpaper';
 	import Bell from '@lucide/svelte/icons/bell';
+	import ChartColumn from '@lucide/svelte/icons/chart-column';
 	import Globe from '@lucide/svelte/icons/globe';
 
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
@@ -23,11 +24,20 @@
 		type BlockNoticeState
 	} from '$lib/state/block-notice.svelte';
 	import { updateState as defaultUpdateState, type UpdateState } from '$lib/state/update.svelte';
+	import {
+		dailyGoalState as defaultDailyGoalState,
+		type DailyGoalState
+	} from '$lib/state/daily-goal.svelte';
+	import {
+		focusHistoryState as defaultFocusHistoryState,
+		type FocusHistoryState
+	} from '$lib/state/focus-history.svelte';
 	import LanguageSelector from './language-selector.svelte';
 	import IntervalsPanel from './panels/intervals-panel.svelte';
 	import AppearancePanel from './panels/appearance-panel.svelte';
 	import CompanionPanel from './panels/companion-panel.svelte';
 	import BehaviorPanel from './panels/behavior-panel.svelte';
+	import MetricsPanel from './panels/metrics-panel.svelte';
 	import UpdatesPanel from './panels/updates-panel.svelte';
 
 	interface Props {
@@ -39,7 +49,9 @@
 		illustrationState?: IllustrationState;
 		blockNoticeState?: BlockNoticeState;
 		updateState?: UpdateState;
-		initialTab?: 'intervals' | 'appearance' | 'companion' | 'behavior' | 'application';
+		dailyGoalState?: DailyGoalState;
+		focusHistoryState?: FocusHistoryState;
+		initialTab?: 'intervals' | 'appearance' | 'companion' | 'behavior' | 'metrics' | 'application';
 	}
 
 	let {
@@ -51,6 +63,8 @@
 		illustrationState = defaultIllustrationState,
 		blockNoticeState = defaultBlockNoticeState,
 		updateState = defaultUpdateState,
+		dailyGoalState = defaultDailyGoalState,
+		focusHistoryState = defaultFocusHistoryState,
 		initialTab = 'intervals'
 	}: Props = $props();
 
@@ -91,6 +105,7 @@
 		{ value: 'appearance', label: t.settings_tab_appearance, icon: Palette },
 		{ value: 'companion', label: t.settings_tab_companion, icon: Wallpaper },
 		{ value: 'behavior', label: t.settings_tab_behavior, icon: Bell },
+		{ value: 'metrics', label: t.settings_tab_metrics, icon: ChartColumn },
 		{ value: 'application', label: t.settings_tab_application, icon: Globe }
 	]);
 </script>
@@ -143,6 +158,10 @@
 
 				<Tabs.Content value="behavior" class="flex-1 p-6">
 					<BehaviorPanel {timerState} {distractionState} {blockNoticeState} />
+				</Tabs.Content>
+
+				<Tabs.Content value="metrics" class="flex-1 p-6">
+					<MetricsPanel {dailyGoalState} {focusHistoryState} />
 				</Tabs.Content>
 
 				<Tabs.Content value="application" class="flex-1 p-6">
