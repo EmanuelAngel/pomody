@@ -263,6 +263,36 @@ export function calculateSessionBudgetByEndTime(
 	return plan;
 }
 
+export interface PlanBlockSchedule {
+	readonly startTimestamp: number;
+	readonly endTimestamp: number;
+}
+
+/**
+ * Projects the estimated clock window of every block by accumulating
+ * `durationSeconds` from the plan's scheduled start.
+ *
+ * Returns null when the plan has no scheduled start anchor, because there is
+ * nothing to project from. The residual `freeMarginSeconds` of an end_time plan
+ * is intentionally left outside the schedule: it is margin, not a block.
+ */
+export function projectBlockSchedule(plan: SessionPlan): readonly PlanBlockSchedule[] | null {
+	validateSessionPlan(plan);
+
+	if (plan.scheduledStartTimestamp === undefined) {
+		return null;
+	}
+
+	let cursor = plan.scheduledStartTimestamp;
+	const schedule = plan.blocks.map((block) => {
+		const startTimestamp = cursor;
+		cursor = startTimestamp + block.durationSeconds * 1000;
+		return Object.freeze({ startTimestamp, endTimestamp: cursor });
+	});
+
+	return Object.freeze(schedule);
+}
+
 /**
  * Immutably assigns a task ID to a focus block.
  */

@@ -13,7 +13,8 @@ import {
 	assignBreakActivityToBlock,
 	unassignBreakActivityFromBlock,
 	updateBlockStatus,
-	validateSessionPlan
+	validateSessionPlan,
+	projectBlockSchedule
 } from './session-plan.entity';
 import type { TimerConfig } from '../timer/timer-fsm';
 
@@ -573,6 +574,78 @@ describe('SessionPlan Domain Entity', () => {
 			expect(() => validateSessionPlan({ ...validPlan, blocks: endsWithBreak })).toThrow(
 				InvalidSessionPlanError
 			);
+		});
+	});
+
+	describe('projectBlockSchedule', () => {
+		const cadence: TimerConfig = {
+			focusDurationSeconds: 45 * 60,
+			shortBreakDurationSeconds: 15 * 60,
+			longBreakDurationSeconds: 30 * 60,
+			roundsBeforeLongBreak: 3
+		};
+		const start = new Date(2026, 0, 5, 12, 0, 0, 0).getTime();
+		const at = (minutes: number) => start + minutes * 60_000;
+
+		it('projects the estimated window of each block from the scheduled start', () => {
+			const plan = calculateSessionBudgetByBlocks({
+				blockCount: 8,
+				sessionConfig: cadence,
+				scheduledStartTimestamp: start
+			});
+
+			const schedule = projectBlockSchedule(plan);
+
+			expect(schedule).not.toBeNull();
+			expect(schedule).toHaveLength(plan.blocks.length);
+			expect(plan.blocks).toHaveLength(15);
+			expect(
+				schedule?.slice(0, 6).map((window) => [window.startTimestamp, window.endTimestamp])
+			).toEqual([
+				[at(0), at(45)],
+				[at(45), at(60)],
+				[at(60), at(105)],
+				[at(105), at(120)],
+				[at(120), at(165)],
+				[at(165), at(195)]
+			]);
+		});
+
+		it('keeps consecutive windows contiguous and closes at targetEndTimestamp', () => {
+			const plan = calculateSessionBudgetByBlocks({
+				blockCount: 8,
+				sessionConfig: cadence,
+				scheduledStartTimestamp: start
+			});
+
+			const schedule = projectBlockSchedule(plan) ?? [];
+
+			for (let i = 1; i < schedule.length; i++) {
+				expect(schedule[i].startTimestamp).toBe(schedule[i - 1].endTimestamp);
+			}
+			expect(schedule.at(-1)?.endTimestamp).toBe(at(495));
+			expect(schedule.at(-1)?.endTimestamp).toBe(plan.targetEndTimestamp);
+		});
+
+		it('returns null when the plan has no scheduled start anchor', () => {
+			const plan = calculateSessionBudgetByBlocks({ blockCount: 2, sessionConfig: cadence });
+
+			expect(plan.scheduledStartTimestamp).toBeUndefined();
+			expect(projectBlockSchedule(plan)).toBeNull();
+		});
+
+		it('leaves the residual margin of an end_time plan outside the schedule', () => {
+			const plan = calculateSessionBudgetByEndTime({
+				scheduledStartTimestamp: start,
+				targetEndTimestamp: at(100),
+				sessionConfig: cadence
+			});
+
+			const schedule = projectBlockSchedule(plan) ?? [];
+
+			expect(schedule).toHaveLength(1);
+			expect(schedule.at(-1)?.endTimestamp).toBe(at(45));
+			expect((schedule.at(-1)?.endTimestamp ?? 0) + plan.freeMarginSeconds * 1000).toBe(at(100));
 		});
 	});
 });

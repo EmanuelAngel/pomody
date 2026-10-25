@@ -197,6 +197,15 @@ El usuario define la hora de inicio (actual o programada) y una hora tope de fin
 - **Ajuste por bloques completos**: El planificador calcula cuántos ciclos caben en la ventana temporal sin cortar bloques de foco a la mitad.
 - **Tratamiento del sobrante residual**: Si al final de la jornada queda un remanente menor a un bloque completo de foco (ej. sobran 15 minutos), este margen se descarta del plan y se visualiza como "Margen libre", garantizando que todos los bloques de trabajo sean íntegros.
 
+### Horario Estimado por Bloque
+
+Cada bloque del Timeline muestra su ventana horaria estimada (`HH:mm – HH:mm`), derivada acumulando duraciones desde la hora de inicio programada de la sesión.
+
+- **Ejemplo**: 45m foco, 15m descanso corto, 30m descanso largo, intervalo 3, inicio 12:00 → `12:00–12:45` (foco), `12:45–13:00` (descanso corto), `13:00–13:45` (foco), `13:45–14:00` (descanso corto), `14:00–14:45` (foco), `14:45–15:15` (descanso largo).
+- **Derivación pura**: `projectBlockSchedule(plan)` en `session-plan.entity.ts` acumula `durationSeconds` sobre `scheduledStartTimestamp`. No se persiste ningún horario por bloque ni se migran planes ya guardados.
+- **Proyección fija**: la ventana se ancla en la hora de inicio programada y no se re-ancla con el atraso real de la sesión. Si el plan no tiene ancla temporal, no se muestran horarios.
+- **Margen libre**: en modo horario límite el remanente queda fuera de la proyección porque no es un bloque.
+
 ### Sincronización en Caliente y Modificaciones Hacia Adelante
 
 - **Settings vs Planning**: _Settings_ almacena los valores por defecto globales del usuario. _Planning_ toma esos valores como plantilla para la sesión del día, permitiendo modificarlos localmente sin sobreescribir la configuración global.
