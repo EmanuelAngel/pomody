@@ -9,11 +9,12 @@
 
 	interface Props {
 		block: PlanBlock;
+		timeRange?: string | null;
 		timerState?: TimerState;
 		class?: string;
 	}
 
-	let { block, timerState, class: className = '' }: Props = $props();
+	let { block, timeRange = null, timerState, class: className = '' }: Props = $props();
 </script>
 
 <li
@@ -65,6 +66,11 @@
 				>
 					{Math.round(block.durationSeconds / 60)}m
 				</span>
+				{#if timeRange}
+					<span class="font-mono text-[10px] text-muted-foreground/80 tabular-nums">
+						{timeRange}
+					</span>
+				{/if}
 			</div>
 			{#if block.status === 'in_progress'}
 				<div class="flex items-center gap-1.5">

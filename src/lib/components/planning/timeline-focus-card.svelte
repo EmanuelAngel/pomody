@@ -14,6 +14,7 @@
 
 	interface Props {
 		block: PlanBlock;
+		timeRange?: string | null;
 		focusIndex: number;
 		assignedTask: FocusTask | null;
 		activeTaskTitle?: string | null;
@@ -29,6 +30,7 @@
 
 	let {
 		block,
+		timeRange = null,
 		focusIndex,
 		assignedTask,
 		activeTaskTitle = null,
@@ -162,6 +164,11 @@
 				>
 					{Math.round(block.durationSeconds / 60)}m
 				</span>
+				{#if timeRange}
+					<span class="font-mono text-[10px] text-muted-foreground/80 tabular-nums">
+						{timeRange}
+					</span>
+				{/if}
 			</div>
 
 			{#if block.status === 'in_progress'}

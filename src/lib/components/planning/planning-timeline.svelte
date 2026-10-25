@@ -14,6 +14,7 @@
 		planningState as defaultPlanningState,
 		type PlanningState
 	} from '$lib/state/planning.svelte';
+	import { projectBlockSchedule } from '$lib/domain/planning/session-plan.entity';
 	import { tasksState as defaultTasksState, type TasksState } from '$lib/state/tasks.svelte';
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
 	import {
@@ -54,6 +55,22 @@
 		}
 		return `${mins}m`;
 	}
+
+	function formatClockTime(timestamp: number): string {
+		const date = new Date(timestamp);
+		const hours = String(date.getHours()).padStart(2, '0');
+		const minutes = String(date.getMinutes()).padStart(2, '0');
+		return `${hours}:${minutes}`;
+	}
+
+	const blockTimeLabels = $derived.by<readonly string[] | null>(() => {
+		const schedule = projectBlockSchedule(planningState.projectedPlan);
+		if (schedule === null) return null;
+		return schedule.map(
+			(window) =>
+				`${formatClockTime(window.startTimestamp)} – ${formatClockTime(window.endTimestamp)}`
+		);
+	});
 
 	function getAssignedTask(taskId?: string) {
 		if (!taskId) return null;
@@ -184,6 +201,7 @@
 				{#if block.mode === 'focus'}
 					<TimelineFocusCard
 						{block}
+						timeRange={blockTimeLabels?.[block.index] ?? null}
 						focusIndex={getFocusBlockSequenceNumber(block.index)}
 						assignedTask={getAssignedTask(block.assignedTaskId)}
 						{activeTaskTitle}
@@ -205,7 +223,11 @@
 						{timerState}
 					/>
 				{:else}
-					<TimelineBreakCard {block} {timerState} />
+					<TimelineBreakCard
+						{block}
+						timeRange={blockTimeLabels?.[block.index] ?? null}
+						{timerState}
+					/>
 				{/if}
 			{/each}
 
