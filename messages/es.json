@@ -6,6 +6,8 @@
 	"timer_mode_long_break": "DESCANSO LARGO",
 	"timer_time_remaining": "Tiempo restante: {time}",
 	"timer_cycle_status": "Ciclo pomodoro: {completed} de {total} rondas completadas",
+	"timer_waiting_since_paused": "Pausado hace {elapsed}",
+	"timer_waiting_since_completed": "Bloque terminado hace {elapsed}",
 	"timer_arc_progress": "Progreso del temporizador",
 	"timer_controls_reset": "Reiniciar temporizador",
 	"timer_controls_start": "Iniciar temporizador",

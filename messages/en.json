@@ -6,6 +6,8 @@
 	"timer_mode_long_break": "LONG BREAK",
 	"timer_time_remaining": "Time remaining: {time}",
 	"timer_cycle_status": "Pomodoro cycle: {completed} of {total} rounds completed",
+	"timer_waiting_since_paused": "Paused for {elapsed}",
+	"timer_waiting_since_completed": "Block finished {elapsed} ago",
 	"timer_arc_progress": "Timer progress",
 	"timer_controls_reset": "Reset timer",
 	"timer_controls_start": "Start timer",

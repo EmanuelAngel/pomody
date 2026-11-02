@@ -18,7 +18,7 @@
 	let { isRunning = false, isPaused = false, onPlayPause, onReset, onSkip }: Props = $props();
 </script>
 
-<div class="mt-8 flex items-center justify-center gap-6 sm:gap-8">
+<div class="mt-1 flex items-center justify-center gap-6 sm:gap-8">
 	<!-- Reset button (Ghost, secondary — fades in Zen mode) -->
 	<Button
 		variant="ghost"

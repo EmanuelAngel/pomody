@@ -59,6 +59,11 @@ export interface RestoreAdoptDecision {
 	readonly remainingMs: number;
 	readonly currentRound: number;
 	readonly totalRoundsCompleted: number;
+	/**
+	 * Instant at which a `paused` or `completed` block started waiting for the user, taken from
+	 * the record's `savedAt`. `null` for `idle` and `running`, which wait for nobody.
+	 */
+	readonly waitingSince?: number | null;
 }
 
 /** Idle timer anchored to the plan's active block after a discard. */
@@ -244,6 +249,8 @@ function anchorToActiveBlock(
 }
 
 function adoptRecord(snapshot: TimerSnapshotRecord, remainingMs: number): RestoreAdoptDecision {
+	const waiting = snapshot.state === 'paused' || snapshot.state === 'completed';
+
 	return {
 		kind: 'adopt',
 		planId: snapshot.planId,
@@ -253,7 +260,8 @@ function adoptRecord(snapshot: TimerSnapshotRecord, remainingMs: number): Restor
 		durationMs: snapshot.durationMs,
 		remainingMs,
 		currentRound: snapshot.currentRound,
-		totalRoundsCompleted: snapshot.totalRoundsCompleted
+		totalRoundsCompleted: snapshot.totalRoundsCompleted,
+		waitingSince: waiting ? snapshot.savedAt : null
 	};
 }
 

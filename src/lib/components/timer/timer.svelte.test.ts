@@ -9,6 +9,7 @@ import { createBreaksState } from '$lib/state/breaks.svelte';
 import { createBreakActivity } from '$lib/domain/breaks/break-activity.entity';
 import { FakeBreakActivityRepository } from '$tests/fakes/repositories/fake-break-activity-repository';
 import { localeState } from '$lib/state/locale.svelte';
+import { FakeTicker } from '$tests/fakes/engine/fake-ticker';
 
 const mockActivity = createBreakActivity({
 	id: 'act-phys',
@@ -247,6 +248,42 @@ describe('Timer Slot Mode & BreakRevitalization Integration (Client Browser)', (
 			expect(screen.container.querySelector('[data-slot="task-pill"]')).toBeNull();
 		});
 		expect(screen.container.querySelector('[data-slot="break-revitalization"]')).toBeNull();
+	});
+
+	it('shows the waiting counter only while paused or finished, and clears it on continue', async () => {
+		const ticker = new FakeTicker();
+		const timerState = createTimerState({ focusDurationSeconds: 4 }, ticker);
+		const breaksState = createBreaksState(new FakeBreakActivityRepository([mockActivity]));
+		await breaksState.load();
+
+		const screen = await render(Timer, { state: timerState, breaksState });
+		const counter = () => screen.container.querySelector('[data-waiting-since]');
+
+		expect(counter()).toBeNull();
+
+		timerState.start();
+		expect(counter()).toBeNull();
+
+		timerState.pause();
+		await vi.waitFor(() => {
+			expect(counter()?.getAttribute('data-waiting-since')).toBe('paused');
+		});
+		await expect.element(screen.getByText(/^Paused for \d{2}:\d{2}$/)).toBeVisible();
+
+		timerState.resume();
+		await vi.waitFor(() => {
+			expect(counter()).toBeNull();
+		});
+
+		ticker.simulateTick(4000);
+		await vi.waitFor(() => {
+			expect(counter()?.getAttribute('data-waiting-since')).toBe('completed');
+		});
+
+		timerState.start();
+		await vi.waitFor(() => {
+			expect(counter()).toBeNull();
+		});
 	});
 
 	it('calls breaksState.resetCycle() when in focus mode', async () => {
