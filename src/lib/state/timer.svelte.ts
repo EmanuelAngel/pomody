@@ -59,6 +59,11 @@ export class TimerState {
 	private readonly unsubscribe: Unsubscribe;
 	private readonly unsubscribeEvents: Unsubscribe;
 	private _planBinding: TimerPlanBinding | null = null;
+	/**
+	 * Clock instant at which the timer started waiting for the user: when it was paused or when a
+	 * block finished and nobody pressed continue. `null` in every other state.
+	 */
+	private _waitingSince = $state<number | null>(null);
 
 	private _soundEnabled = $state<boolean>(true);
 	private _revitalizationEnabled = $state<boolean>(true);
@@ -141,6 +146,15 @@ export class TimerState {
 		return this._snapshot.progress;
 	}
 
+	/**
+	 * Clock instant at which the timer started waiting for the user — paused, or a block that
+	 * finished without anyone pressing continue. `null` while it runs, idles or is restored
+	 * without a known anchor.
+	 */
+	public get waitingSince(): number | null {
+		return this._waitingSince;
+	}
+
 	public get isRunning(): boolean {
 		return this._snapshot.state === 'running';
 	}
@@ -151,6 +165,15 @@ export class TimerState {
 
 	public get roundsBeforeLongBreak(): number {
 		return this._config.roundsBeforeLongBreak;
+	}
+
+	/**
+	 * A state where the timer holds still and only the user can move it forward. These are the
+	 * two moments where the elapsed time measures time lost, and the ones the waiting counter
+	 * reports.
+	 */
+	private isWaitingState(state: TimerFsmState): boolean {
+		return state === 'paused' || state === 'completed';
 	}
 
 	constructor(
@@ -184,6 +207,9 @@ export class TimerState {
 			this._config = this.fsm.config;
 			if (newSnapshot.state !== 'running') {
 				this.ticker.stop();
+			}
+			if (newSnapshot.state !== previousState) {
+				this._waitingSince = this.isWaitingState(newSnapshot.state) ? this.now() : null;
 			}
 			if (
 				newSnapshot.state === 'completed' &&
@@ -353,7 +379,8 @@ export class TimerState {
 					currentRound: decision.currentRound,
 					totalRoundsCompleted: decision.totalRoundsCompleted
 				},
-				config
+				config,
+				decision.waitingSince ?? null
 			);
 			return;
 		}
@@ -388,7 +415,11 @@ export class TimerState {
 		);
 	}
 
-	private applyAdoption(adoption: TimerExecutionAdoption, config?: Partial<TimerConfig>): void {
+	private applyAdoption(
+		adoption: TimerExecutionAdoption,
+		config?: Partial<TimerConfig>,
+		waitingSince: number | null = null
+	): void {
 		try {
 			this.fsm.adopt(adoption, config);
 		} catch (error) {
@@ -405,6 +436,7 @@ export class TimerState {
 
 		this._snapshot = this.fsm.snapshot;
 		this._config = this.fsm.config;
+		this._waitingSince = this.isWaitingState(adoption.state) ? waitingSince : null;
 		for (const subscriber of this._configSubscribers) {
 			subscriber(this._config);
 		}

@@ -179,6 +179,32 @@ describe('resolveTimerRestore', () => {
 		expect(decision).toMatchObject({ kind: 'adopt', state: 'paused', remainingMs: 900_000 });
 	});
 
+	it('carries the persisted write instant as the waiting anchor of a paused block', () => {
+		const decision = resolveTimerRestore({
+			persisted: makeSnapshot({ state: 'paused', remainingMs: 900_000, savedAt: NOW - 120_000 }),
+			plan: makePlan(0),
+			now: NOW
+		});
+
+		expect(decision).toMatchObject({ kind: 'adopt', waitingSince: NOW - 120_000 });
+	});
+
+	it('carries no waiting anchor for a running or idle block', () => {
+		const running = resolveTimerRestore({
+			persisted: makeSnapshot({ state: 'running', remainingMs: undefined, endsAt: NOW + 600_000 }),
+			plan: makePlan(0),
+			now: NOW
+		});
+		const idle = resolveTimerRestore({
+			persisted: makeSnapshot({ state: 'idle', remainingMs: 1_500_000 }),
+			plan: makePlan(0),
+			now: NOW
+		});
+
+		expect(running).toMatchObject({ kind: 'adopt', waitingSince: null });
+		expect(idle).toMatchObject({ kind: 'adopt', waitingSince: null });
+	});
+
 	it('restores a completed block against the previous plan block', () => {
 		const decision = resolveTimerRestore({
 			persisted: makeSnapshot({

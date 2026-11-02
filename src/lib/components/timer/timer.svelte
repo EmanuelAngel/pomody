@@ -5,6 +5,7 @@
 	import TimerControls from './timer-controls.svelte';
 	import TaskPill from './task-pill.svelte';
 	import BreakRevitalization from './break-revitalization.svelte';
+	import WaitingSince from './waiting-since.svelte';
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
 	import { tasksState as defaultTasksState, type TasksState } from '$lib/state/tasks.svelte';
 	import { breaksState as defaultBreaksState, type BreaksState } from '$lib/state/breaks.svelte';
@@ -26,6 +27,14 @@
 			breaksState.resetCycle();
 		}
 	});
+
+	/**
+	 * What the timer is waiting for, or `null` while it runs or idles. The counter under the clock
+	 * only exists in the two states where the user can lose time by not pressing continue.
+	 */
+	const waitingKind = $derived(
+		state.state === 'paused' || state.state === 'completed' ? state.state : null
+	);
 
 	function handlePlayPause() {
 		if (state.isRunning) {
@@ -55,6 +64,11 @@
 			roundsBeforeLongBreak={state.roundsBeforeLongBreak}
 		/>
 	</TimerArc>
+
+	<!-- Always reserved, so the controls never jump when the counter appears. -->
+	<div class="mt-1 grid h-5 place-items-center">
+		<WaitingSince waitingSince={state.waitingSince} kind={waitingKind} />
+	</div>
 
 	<TimerControls
 		isRunning={state.isRunning}

@@ -994,3 +994,104 @@ describe('TimerState persistence', () => {
 		expect(() => state.persistNow()).not.toThrow();
 	});
 });
+
+describe('TimerState waitingSince', () => {
+	const NOW = 1_700_000_000_000;
+	let ticker: FakeTicker;
+	let clock: number;
+
+	beforeEach(() => {
+		ticker = new FakeTicker();
+		clock = NOW;
+	});
+
+	function createState(config?: Parameters<typeof createTimerState>[0]) {
+		return createTimerState(
+			config,
+			ticker,
+			new FakeAudioNotifier(),
+			undefined,
+			undefined,
+			() => clock
+		);
+	}
+
+	it('has no waiting anchor while the block is running or idle', () => {
+		const state = createState({ focusDurationSeconds: 10 });
+
+		expect(state.waitingSince).toBeNull();
+		state.start();
+		expect(state.waitingSince).toBeNull();
+	});
+
+	it('anchors the pause instant when the block is paused, and drops it on resume', () => {
+		const state = createState({ focusDurationSeconds: 10 });
+
+		state.start();
+		ticker.simulateTick(2000);
+		clock = NOW + 45_000;
+		state.pause();
+
+		expect(state.state).toBe('paused');
+		expect(state.waitingSince).toBe(clock);
+
+		clock = NOW + 120_000;
+		state.resume();
+
+		expect(state.state).toBe('running');
+		expect(state.waitingSince).toBeNull();
+	});
+
+	it('anchors the completion instant when the block finishes', () => {
+		const state = createState({ focusDurationSeconds: 4 });
+
+		state.start();
+		clock = NOW + 4000;
+		ticker.simulateTick(4000);
+
+		expect(state.state).toBe('completed');
+		expect(state.waitingSince).toBe(clock);
+	});
+
+	it('drops the anchor on start, skip and reset', () => {
+		const state = createState({ focusDurationSeconds: 4 });
+
+		state.start();
+		ticker.simulateTick(4000);
+		expect(state.waitingSince).not.toBeNull();
+		state.start();
+		expect(state.waitingSince).toBeNull();
+
+		state.pause();
+		expect(state.waitingSince).toBe(clock);
+		state.skip();
+		expect(state.waitingSince).toBeNull();
+
+		state.start();
+		state.pause();
+		expect(state.waitingSince).toBe(clock);
+		state.reset();
+		expect(state.waitingSince).toBeNull();
+	});
+
+	it('anchors a restored pause at the persisted write instant, not at the reload instant', () => {
+		const state = createState();
+
+		clock = NOW + 600_000;
+		state.applyRestoreDecision({
+			kind: 'adopt',
+			planId: null,
+			blockIndex: null,
+			state: 'paused',
+			mode: 'focus',
+			durationMs: 1_500_000,
+			remainingMs: 900_000,
+			currentRound: 1,
+			totalRoundsCompleted: 0,
+			waitingSince: NOW - 300_000
+		});
+
+		expect(state.state).toBe('paused');
+		expect(state.waitingSince).toBe(NOW - 300_000);
+	});
+});
