@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.21.0...pomody-v0.22.0) (2026-11-02)
+
+
+### Features
+
+* **planning:** show the estimated start time of each block ([#226](https://github.com/EmanuelAngel/pomody/issues/226)) ([f152dd6](https://github.com/EmanuelAngel/pomody/commit/f152dd652f8bf9362e37d5afd2fbb94d30af9a3b)), closes [#225](https://github.com/EmanuelAngel/pomody/issues/225)
+* **timer:** show the elapsed time since a pause or a finished block ([#229](https://github.com/EmanuelAngel/pomody/issues/229)) ([6ac3f82](https://github.com/EmanuelAngel/pomody/commit/6ac3f82129adf907f1db527f9b86d1a6902d04d0)), closes [#228](https://github.com/EmanuelAngel/pomody/issues/228)
+
 ## [0.21.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.20.0...pomody-v0.21.0) (2026-10-24)
 
 
