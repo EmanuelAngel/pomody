@@ -385,6 +385,8 @@
 	"settings_metrics_delete_cancel": "Cancel",
 	"settings_metrics_delete_confirm": "Delete history",
 	"metrics_title": "Metrics",
+	"metrics_subtitle": "Focus minutes, goal progress and the hours you focus best.",
+	"metrics_loading": "Loading your metrics…",
 	"metrics_empty_title": "Complete your first pomodoro to see your metrics",
 	"metrics_empty_description": "Your weekly focus and the hours you focus best will show up here as you finish blocks.",
 	"metrics_week_total_title": "Week focus",

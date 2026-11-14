@@ -42,9 +42,15 @@ export class FocusHistoryState {
 	private _lastCompleted: { mode: TimerMode; round: number } | null = null;
 
 	private _entries = $state<readonly FocusHistoryEntry[]>([]);
+	private _isLoaded = $state<boolean>(false);
 
 	public get entries(): readonly FocusHistoryEntry[] {
 		return this._entries;
+	}
+
+	/** True once a read of the persisted history succeeded at least once. */
+	public get isLoaded(): boolean {
+		return this._isLoaded;
 	}
 
 	constructor(deps: FocusHistoryDependencies = {}) {
@@ -73,6 +79,7 @@ export class FocusHistoryState {
 
 	private async reload(): Promise<void> {
 		this._entries = await this.repository.getAll();
+		this._isLoaded = true;
 	}
 
 	/**

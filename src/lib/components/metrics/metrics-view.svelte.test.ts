@@ -279,4 +279,51 @@ describe('MetricsView (Client Browser)', () => {
 			await expect.element(screen.getByRole('button', { name: 'Next week' })).toBeDisabled();
 		});
 	});
+
+	describe('load states', () => {
+		it('shows a polite loading status until the history is read', async () => {
+			const historyRepository = new LocalFocusHistoryRepository(
+				new InMemoryStorage(),
+				() => FRIDAY
+			);
+			const pendingReads: ((entries: readonly FocusHistoryEntry[]) => void)[] = [];
+			vi.spyOn(historyRepository, 'getAll').mockImplementationOnce(
+				() => new Promise((resolve) => pendingReads.push(resolve))
+			);
+			const focusHistoryState = createFocusHistoryState({
+				repository: historyRepository,
+				timer: { onEvent: () => () => {} },
+				tasks: { activeTask: null },
+				nowProvider: () => FRIDAY
+			});
+			historyStates.push(focusHistoryState);
+			const dailyGoalState = createDailyGoalState({
+				repository: new LocalDailyGoalRepository(new InMemoryStorage()),
+				nowProvider: () => FRIDAY
+			});
+			goalStates.push(dailyGoalState);
+
+			const screen = await render(MetricsView, {
+				dailyGoalState,
+				focusHistoryState,
+				dailyStatsState: createDailyStatsState(focusHistoryState, () => FRIDAY),
+				navigationState: createNavigationState('metrics')
+			});
+
+			await expect.element(screen.getByRole('status')).toBeVisible();
+			await expect.element(screen.getByText('Loading your metrics…')).toBeVisible();
+			expect(screen.container.querySelectorAll('svg[role="img"]')).toHaveLength(0);
+			expect(
+				screen.getByText('Complete your first pomodoro to see your metrics').query()
+			).toBeNull();
+
+			await vi.waitFor(() => expect(pendingReads).toHaveLength(1));
+			pendingReads.pop()?.([]);
+			await focusHistoryState.whenIdle();
+
+			await expect
+				.element(screen.getByText('Complete your first pomodoro to see your metrics'))
+				.toBeVisible();
+		});
+	});
 });
