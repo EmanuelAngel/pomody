@@ -37,3 +37,14 @@ La vista de Métricas no puede abrir el diálogo de Settings: lo posee `+layout.
 - **Sin estado de error, a propósito.** `LocalFocusHistoryRepository.getAll()` es total: se traga los errores de `getItem`/`JSON.parse`/forma y `getStorage()` cae a `InMemoryStorage`. Un estado de error con reintento sería UI inalcanzable, así que no existe; un historial ilegible se muestra como vacío, que es lo que la capa de almacenamiento ya decidió.
 
 **Fuera de este cambio.** `weekly-bars-chart.svelte` y `hourly-pattern-chart.svelte` conservan su SVG, sus tokens, su `role="img"` con lista `sr-only` y sus hooks `data-chart-bar` / `data-today`. La consistencia interna de los dos gráficos (contraste, tooltips, accesibilidad) es otra rebanada.
+
+## Consistencia interna de los gráficos (slice 2)
+
+**Decisión.** Los dos SVG comparten una sola gramática visual, sin abandonar el SVG a mano:
+
+- **Mismo lienzo.** Ambos usan `viewBox="0 0 320 160"` con la misma área de trazado (`18`–`138`), así que rinden a la misma altura en cualquier ancho y los dos paneles quedan parejos en la rejilla de dos columnas.
+- **Un solo token para el dato.** Las barras ordinarias de ambos gráficos son `fill-accent-iris/70`; el semanal marca el día de hoy con `fill-primary` a plena opacidad. El `fill-primary/40` anterior daba ~1.45:1 en Dawn y ~1.14:1 contra la barra de hoy en OLED.
+- **Misma forma de barra.** `barPath()` redondea solo la parte superior; las dos usan el mismo helper y el mismo radio, en vez de `rx="1.5"` contra path redondeado.
+- **Tooltips simétricos.** Los dos envuelven cada banda en `Tooltip.Root` con una banda de impacto transparente a toda altura, así el hover funciona también sobre las horas en cero.
+- **Contrato de accesibilidad.** El `role="img"` con `aria-label` y lista `sr-only` se mantiene: el SVG es una imagen con alternativa textual, no un widget. Las barras llevan `tabindex="-1"` para no entrar al orden de tabulación siendo inertes, y la lista del semanal es `aria-live="polite"` para anunciar el cambio de semana.
+- **Tipografía del eje.** `text-[10px]` en ambos; se fue el `9px` que quedaba fuera de escala.

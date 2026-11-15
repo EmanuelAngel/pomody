@@ -250,6 +250,19 @@ describe('MetricsView (Client Browser)', () => {
 				)
 			);
 		});
+
+		it('shows the minutes of an hour in a tooltip on hover', async () => {
+			const { screen } = await renderView({ entries: sampleEntries() });
+
+			const tenAm = screen.container.querySelectorAll('[data-chart-bar="hourly"]')[10];
+			await page.elementLocator(tenAm).hover();
+
+			await vi.waitFor(() =>
+				expect(document.querySelector('[data-slot="tooltip-content"]')?.textContent).toContain(
+					'10:00: 375 min'
+				)
+			);
+		});
 	});
 
 	describe('week navigation', () => {

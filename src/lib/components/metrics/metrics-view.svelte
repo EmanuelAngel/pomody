@@ -219,7 +219,7 @@
 			</div>
 		{/if}
 
-		<div class="grid gap-6 lg:grid-cols-2 lg:items-start">
+		<div class="grid gap-6 lg:grid-cols-2">
 			<section
 				aria-labelledby="metrics-weekly-heading"
 				class="rounded-2xl border border-border/50 bg-card/40 p-5 shadow-xs"

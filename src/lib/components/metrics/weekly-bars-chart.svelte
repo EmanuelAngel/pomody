@@ -88,7 +88,7 @@
 					stroke-dasharray={step === 0 ? undefined : '3 3'}
 				/>
 			{/each}
-			<text x="0" y={PLOT_TOP - 6} class="fill-muted-foreground text-[9px]">
+			<text x="0" y={PLOT_TOP - 6} class="fill-muted-foreground text-[10px]">
 				{formatDailyDuration(axisMax)}
 			</text>
 
@@ -98,6 +98,7 @@
 						{#snippet child({ props })}
 							<g
 								{...props}
+								tabindex="-1"
 								data-chart-bar="weekly"
 								data-today={bar.isToday ? 'true' : undefined}
 								class="cursor-default"
@@ -110,7 +111,7 @@
 									class="fill-transparent"
 								/>
 								{#if bar.path !== null}
-									<path d={bar.path} class={bar.isToday ? 'fill-primary' : 'fill-primary/40'} />
+									<path d={bar.path} class={bar.isToday ? 'fill-primary' : 'fill-accent-iris/70'} />
 								{/if}
 							</g>
 						{/snippet}
@@ -131,7 +132,7 @@
 		</svg>
 	</Tooltip.Provider>
 
-	<ul class="sr-only">
+	<ul class="sr-only" aria-live="polite">
 		{#each bars as bar (bar.dateKey)}
 			<li>{bar.label}</li>
 		{/each}
