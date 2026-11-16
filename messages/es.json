@@ -385,6 +385,8 @@
 	"settings_metrics_delete_cancel": "Cancelar",
 	"settings_metrics_delete_confirm": "Borrar historial",
 	"metrics_title": "Métricas",
+	"metrics_subtitle": "Minutos de foco, progreso de tus metas y las horas en las que mejor te concentras.",
+	"metrics_loading": "Cargando tus métricas…",
 	"metrics_empty_title": "Completa tu primer pomodoro para ver tus métricas",
 	"metrics_empty_description": "Tu foco semanal y las horas en las que mejor te concentras aparecerán aquí a medida que termines bloques.",
 	"metrics_week_total_title": "Foco de la semana",

@@ -112,6 +112,45 @@ describe('FocusHistoryState', () => {
 		expect(timer.subscribers.size).toBe(1);
 	});
 
+	describe('load state', () => {
+		it('starts not loaded, then reports loaded after the first read', async () => {
+			let release: (entries: readonly FocusHistoryEntry[]) => void = () => {};
+			vi.spyOn(repository, 'getAll').mockImplementationOnce(
+				() => new Promise((resolve) => (release = resolve))
+			);
+			const pending = createFocusHistoryState({
+				repository,
+				timer,
+				tasks,
+				nowProvider: () => NOW
+			});
+
+			expect(pending.isLoaded).toBe(false);
+
+			// Let the queued first read reach the repository before releasing it.
+			await Promise.resolve();
+			release([]);
+			await pending.whenIdle();
+
+			expect(pending.isLoaded).toBe(true);
+			pending.destroy();
+		});
+
+		it('keeps the entries it already loaded when a later read fails', async () => {
+			vi.spyOn(console, 'error').mockImplementation(() => {});
+			timer.emit(completed());
+			await state.whenIdle();
+			expect(state.entries).toHaveLength(1);
+
+			vi.spyOn(repository, 'getAll').mockRejectedValueOnce(new Error('read failed'));
+			timer.emit(completed({ round: 2 }));
+			await state.whenIdle();
+
+			expect(state.entries).toHaveLength(1);
+			expect(state.isLoaded).toBe(true);
+		});
+	});
+
 	it('loads the entries already stored', async () => {
 		const stored: FocusHistoryEntry = {
 			mode: 'focus',

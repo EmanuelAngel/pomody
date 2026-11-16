@@ -2,7 +2,7 @@
 	import ChartColumn from '@lucide/svelte/icons/chart-column';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import * as Card from '$lib/components/ui/card';
+	import Clock from '@lucide/svelte/icons/clock';
 	import * as Empty from '$lib/components/ui/empty';
 	import { Button } from '$lib/components/ui/button';
 	import WeeklyBarsChart from './weekly-bars-chart.svelte';
@@ -96,22 +96,40 @@
 	);
 </script>
 
-{#snippet statCard(title: string, value: string, detail?: string)}
-	<Card.Root size="sm">
-		<Card.Header>
-			<Card.Description>{title}</Card.Description>
-			<Card.Title class="text-2xl tabular-nums">{value}</Card.Title>
-		</Card.Header>
+{#snippet statCell(title: string, value: string, detail?: string)}
+	<div class="rounded-2xl border border-border/50 bg-card/40 p-4 shadow-xs">
+		<span class="block text-[11px] font-medium text-muted-foreground">{title}</span>
+		<span class="mt-1 block text-lg font-semibold tracking-tight text-foreground tabular-nums">
+			{value}
+		</span>
 		{#if detail}
-			<Card.Content class="text-xs text-muted-foreground">{detail}</Card.Content>
+			<span class="mt-0.5 block text-[11px] text-muted-foreground">{detail}</span>
 		{/if}
-	</Card.Root>
+	</div>
 {/snippet}
 
-<div data-slot="metrics-view" class="flex w-full max-w-2xl flex-col gap-6 self-center">
-	<h2 class="text-lg font-semibold tracking-tight text-foreground">{t.metrics_title()}</h2>
+<div
+	data-slot="metrics-view"
+	class="mx-auto flex w-full max-w-5xl flex-col gap-6 px-2 py-4 sm:px-6"
+>
+	<header class="flex flex-col gap-4 border-b border-border/40 pb-5">
+		<div>
+			<h2 class="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+				{t.metrics_title()}
+			</h2>
+			<p class="text-xs text-muted-foreground sm:text-sm">{t.metrics_subtitle()}</p>
+		</div>
+	</header>
 
-	{#if entries.length === 0}
+	{#if !focusHistoryState.isLoaded}
+		<div
+			class="flex flex-col items-center justify-center rounded-2xl border border-border/40 bg-muted/10 py-12 text-center"
+			role="status"
+			aria-live="polite"
+		>
+			<p class="text-xs font-medium text-muted-foreground">{t.metrics_loading()}</p>
+		</div>
+	{:else if entries.length === 0}
 		<Empty.Root class="border border-dashed border-border/60">
 			<Empty.Header>
 				<Empty.Media variant="icon">
@@ -122,13 +140,17 @@
 			</Empty.Header>
 		</Empty.Root>
 	{:else}
-		<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-			{@render statCard(
+		<div
+			class="grid grid-cols-2 gap-3 {today === null
+				? 'lg:grid-cols-2'
+				: 'sm:grid-cols-3 lg:grid-cols-5'} lg:gap-4"
+		>
+			{@render statCell(
 				t.metrics_week_total_title(),
 				formatDailyDuration(total.minutes),
 				t.metrics_week_total_blocks({ blocks: total.blocks })
 			)}
-			{@render statCard(
+			{@render statCell(
 				t.metrics_compliance_title(),
 				compliance.ratio === null
 					? t.metrics_compliance_none()
@@ -141,25 +163,9 @@
 						})
 			)}
 
-			{#if today === null}
-				<Card.Root size="sm" class="col-span-full sm:col-span-1">
-					<Card.Header>
-						<Card.Title>{t.metrics_goal_invite_title()}</Card.Title>
-						<Card.Description>{t.metrics_goal_invite_description()}</Card.Description>
-					</Card.Header>
-					<Card.Footer>
-						<Button
-							variant="outline"
-							size="sm"
-							onclick={() => navigationState.requestSettings('metrics')}
-						>
-							{t.metrics_goal_invite_action()}
-						</Button>
-					</Card.Footer>
-				</Card.Root>
-			{:else}
+			{#if today !== null}
 				{#if today.kind === 'active'}
-					{@render statCard(
+					{@render statCell(
 						t.metrics_today_title(),
 						t.metrics_today_progress({
 							minutes: today.minutes,
@@ -168,13 +174,13 @@
 						})
 					)}
 				{:else}
-					{@render statCard(
+					{@render statCell(
 						t.metrics_today_title(),
 						t.metrics_today_rest_day(),
 						t.metrics_today_rest_detail()
 					)}
 				{/if}
-				{@render statCard(
+				{@render statCell(
 					t.metrics_week_goal_title(),
 					attainment.ratio === null
 						? t.metrics_week_goal_none()
@@ -185,57 +191,112 @@
 							}),
 					attainment.ratio === null ? t.metrics_week_goal_detail_none() : undefined
 				)}
-				{@render statCard(
+				{@render statCell(
 					t.metrics_streak_title(),
 					streak === 1 ? t.metrics_streak_one() : t.metrics_streak_other({ days: streak })
 				)}
 			{/if}
 		</div>
 
-		<Card.Root>
-			<Card.Header>
-				<Card.Title>{t.metrics_weekly_title()}</Card.Title>
-				<Card.Description>{t.metrics_weekly_description()}</Card.Description>
-				<Card.Action class="flex items-center gap-1">
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						aria-label={t.metrics_week_prev()}
-						onclick={() => (weeksBack += 1)}
-					>
-						<ChevronLeft />
-					</Button>
-					<span class="min-w-28 text-center text-xs text-muted-foreground tabular-nums">
-						{weekRange}
-					</span>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						aria-label={t.metrics_week_next()}
-						disabled={weeksBack === 0}
-						onclick={() => (weeksBack -= 1)}
-					>
-						<ChevronRight />
-					</Button>
-				</Card.Action>
-			</Card.Header>
-			<Card.Content>
-				<WeeklyBarsChart
-					{days}
-					{todayKey}
-					ariaLabel={t.metrics_weekly_chart_aria({ range: weekRange })}
-				/>
-			</Card.Content>
-		</Card.Root>
+		{#if today === null}
+			<div
+				class="flex flex-col gap-3 rounded-2xl border border-border/50 bg-card/40 p-5 shadow-xs sm:flex-row sm:items-center sm:justify-between"
+			>
+				<div>
+					<h3 class="text-sm font-semibold tracking-tight text-foreground">
+						{t.metrics_goal_invite_title()}
+					</h3>
+					<p class="text-xs text-muted-foreground">{t.metrics_goal_invite_description()}</p>
+				</div>
+				<Button
+					variant="outline"
+					size="sm"
+					class="self-start sm:self-auto"
+					onclick={() => navigationState.requestSettings('metrics')}
+				>
+					{t.metrics_goal_invite_action()}
+				</Button>
+			</div>
+		{/if}
 
-		<Card.Root>
-			<Card.Header>
-				<Card.Title>{t.metrics_hourly_title()}</Card.Title>
-				<Card.Description>{t.metrics_hourly_description()}</Card.Description>
-			</Card.Header>
-			<Card.Content>
-				<HourlyPatternChart {hours} ariaLabel={t.metrics_hourly_chart_aria()} />
-			</Card.Content>
-		</Card.Root>
+		<div class="grid gap-6 lg:grid-cols-2">
+			<section
+				aria-labelledby="metrics-weekly-heading"
+				class="rounded-2xl border border-border/50 bg-card/40 p-5 shadow-xs"
+			>
+				<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+					<div class="flex items-center gap-2.5">
+						<div
+							class="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary"
+						>
+							<ChartColumn class="size-4" />
+						</div>
+						<div>
+							<h3
+								id="metrics-weekly-heading"
+								class="text-sm font-semibold tracking-tight text-foreground sm:text-base"
+							>
+								{t.metrics_weekly_title()}
+							</h3>
+							<p class="text-xs text-muted-foreground">{t.metrics_weekly_description()}</p>
+						</div>
+					</div>
+					<div class="flex items-center gap-1">
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							aria-label={t.metrics_week_prev()}
+							onclick={() => (weeksBack += 1)}
+						>
+							<ChevronLeft />
+						</Button>
+						<span class="min-w-28 text-center text-xs text-muted-foreground tabular-nums">
+							{weekRange}
+						</span>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							aria-label={t.metrics_week_next()}
+							disabled={weeksBack === 0}
+							onclick={() => (weeksBack -= 1)}
+						>
+							<ChevronRight />
+						</Button>
+					</div>
+				</div>
+				<div class="mt-4">
+					<WeeklyBarsChart
+						{days}
+						{todayKey}
+						ariaLabel={t.metrics_weekly_chart_aria({ range: weekRange })}
+					/>
+				</div>
+			</section>
+
+			<section
+				aria-labelledby="metrics-hourly-heading"
+				class="rounded-2xl border border-border/50 bg-card/40 p-5 shadow-xs"
+			>
+				<div class="flex items-center gap-2.5">
+					<div
+						class="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary"
+					>
+						<Clock class="size-4" />
+					</div>
+					<div>
+						<h3
+							id="metrics-hourly-heading"
+							class="text-sm font-semibold tracking-tight text-foreground sm:text-base"
+						>
+							{t.metrics_hourly_title()}
+						</h3>
+						<p class="text-xs text-muted-foreground">{t.metrics_hourly_description()}</p>
+					</div>
+				</div>
+				<div class="mt-4">
+					<HourlyPatternChart {hours} ariaLabel={t.metrics_hourly_chart_aria()} />
+				</div>
+			</section>
+		</div>
 	{/if}
 </div>
