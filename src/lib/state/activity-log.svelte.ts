@@ -32,9 +32,6 @@ export class ActivityLogState {
 	private _timerUnsubscribe?: () => void;
 	private _externalUnsubscribe?: () => void;
 	private _queue: Promise<void> = Promise.resolve();
-	/** A skip pressed on a completed block reports that block again; it is not a second action. */
-	private _lastCompleted: { mode: string; round: number } | null = null;
-
 	private _entries = $state<readonly ActivityLogEntry[]>([]);
 	private _isLoaded = $state<boolean>(false);
 
@@ -71,18 +68,9 @@ export class ActivityLogState {
 	}
 
 	private handleTimerEvent(event: DomainEvent): void {
-		const last = this._lastCompleted;
-		if (event.type === 'block-completed') {
-			this._lastCompleted = { mode: event.mode, round: event.round };
-		} else if (event.type !== 'config-changed') {
-			this._lastCompleted = null;
-		}
-		if (
-			event.type === 'block-skipped' &&
-			last?.mode === event.mode &&
-			last.round === event.round &&
-			event.elapsedMs === event.durationMs
-		) {
+		// Only a block that already ran to the end skips with its full duration elapsed: the skip
+		// that leaves it (even after a restore) is not a second outcome.
+		if (event.type === 'block-skipped' && event.elapsedMs >= event.durationMs) {
 			return;
 		}
 
