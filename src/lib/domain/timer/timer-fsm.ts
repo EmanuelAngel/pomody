@@ -2,10 +2,17 @@ import type {
 	DomainEvent,
 	BlockCompletedEvent,
 	BlockSkippedEvent,
-	BlockAbandonedEvent
+	BlockAbandonedEvent,
+	BlockEndedEvent
 } from '../events/block-completed.event';
 
-export type { DomainEvent, BlockCompletedEvent, BlockSkippedEvent, BlockAbandonedEvent };
+export type {
+	DomainEvent,
+	BlockCompletedEvent,
+	BlockSkippedEvent,
+	BlockAbandonedEvent,
+	BlockEndedEvent
+};
 export type TimerState = 'idle' | 'running' | 'paused' | 'completed';
 export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
@@ -173,6 +180,9 @@ export class TimerFSM {
 			...config
 		};
 		validateTimerConfig(merged);
+		const changed = (Object.keys(merged) as (keyof TimerConfig)[]).some(
+			(key) => merged[key] !== this._config[key]
+		);
 		this._config = Object.freeze(merged);
 
 		if (this._state === 'idle') {
@@ -180,6 +190,9 @@ export class TimerFSM {
 			this._remainingMs = this._durationMs;
 		}
 
+		if (changed) {
+			this.emitEvent({ type: 'config-changed', config: this._config });
+		}
 		this.notify();
 	}
 
@@ -243,6 +256,7 @@ export class TimerFSM {
 	public start(): void {
 		if (this._state === 'idle') {
 			this._state = 'running';
+			this.emitStarted();
 			this.notify();
 			return;
 		}
@@ -250,6 +264,7 @@ export class TimerFSM {
 		if (this._state === 'completed') {
 			this.advanceMode();
 			this._state = 'running';
+			this.emitStarted();
 			this.notify();
 			return;
 		}
@@ -260,6 +275,12 @@ export class TimerFSM {
 	public pause(): void {
 		if (this._state === 'running') {
 			this._state = 'paused';
+			this.emitEvent({
+				type: 'block-paused',
+				mode: this._mode,
+				round: this._currentRound,
+				remainingMs: this._remainingMs
+			});
 			this.notify();
 		}
 		// 'idle', 'paused', 'completed' are safe no-ops
@@ -268,6 +289,12 @@ export class TimerFSM {
 	public resume(): void {
 		if (this._state === 'paused') {
 			this._state = 'running';
+			this.emitEvent({
+				type: 'block-resumed',
+				mode: this._mode,
+				round: this._currentRound,
+				remainingMs: this._remainingMs
+			});
 			this.notify();
 		}
 		// 'idle', 'running', 'completed' are safe no-ops
@@ -434,6 +461,15 @@ export class TimerFSM {
 
 		this._remainingMs -= deltaMs;
 		this.notify();
+	}
+
+	private emitStarted(): void {
+		this.emitEvent({
+			type: 'block-started',
+			mode: this._mode,
+			round: this._currentRound,
+			durationMs: this._durationMs
+		});
 	}
 
 	/** Emits `block-abandoned` when a block is in progress (running or paused); idle and completed emit nothing. */

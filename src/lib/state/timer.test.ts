@@ -1,3 +1,4 @@
+import { isBlockEndedEvent } from '../domain/events/block-completed.event';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FakeTicker } from '$tests/fakes/engine/fake-ticker';
 import { FakeAudioNotifier } from '$tests/fakes/engine/fake-audio-notifier';
@@ -154,7 +155,7 @@ describe('TimerState Composition Root', () => {
 	it('should emit exactly one block-abandoned event when reset() discards a running block', () => {
 		const timer = createTimerState({ focusDurationSeconds: 10 }, mockTicker);
 		const events: DomainEvent[] = [];
-		timer.onEvent((event) => events.push(event));
+		timer.onEvent((event) => isBlockEndedEvent(event) && events.push(event));
 
 		timer.start();
 		mockTicker.simulateTick(4000);
@@ -173,7 +174,7 @@ describe('TimerState Composition Root', () => {
 	it('should emit exactly one block-abandoned event when resetToInitial() discards a running block', () => {
 		const timer = createTimerState({ focusDurationSeconds: 10 }, mockTicker);
 		const events: DomainEvent[] = [];
-		timer.onEvent((event) => events.push(event));
+		timer.onEvent((event) => isBlockEndedEvent(event) && events.push(event));
 
 		timer.start();
 		mockTicker.simulateTick(4000);
@@ -186,7 +187,7 @@ describe('TimerState Composition Root', () => {
 	it('should emit no block-abandoned event when resetToInitial() runs on an idle timer', () => {
 		const timer = createTimerState({ focusDurationSeconds: 10 }, mockTicker);
 		const events: DomainEvent[] = [];
-		timer.onEvent((event) => events.push(event));
+		timer.onEvent((event) => isBlockEndedEvent(event) && events.push(event));
 
 		timer.resetToInitial();
 

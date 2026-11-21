@@ -1,5 +1,9 @@
 import { SvelteDate } from 'svelte/reactivity';
-import type { DomainEvent } from '../domain/events/block-completed.event';
+import {
+	isBlockEndedEvent,
+	type BlockEndedEvent,
+	type DomainEvent
+} from '../domain/events/block-completed.event';
 import {
 	createEntryFromEvent,
 	type FocusHistoryEntry,
@@ -86,7 +90,7 @@ export class FocusHistoryState {
 	 * Skip is reachable from the `completed` state and then reports the already finished block as
 	 * skipped with its full duration. That block is already recorded as completed, so it is not recorded twice.
 	 */
-	private isSkipOfCompletedBlock(event: DomainEvent): boolean {
+	private isSkipOfCompletedBlock(event: BlockEndedEvent): boolean {
 		return (
 			event.type === 'block-skipped' &&
 			this._lastCompleted !== null &&
@@ -97,6 +101,9 @@ export class FocusHistoryState {
 	}
 
 	private handleDomainEvent(event: DomainEvent): void {
+		if (!isBlockEndedEvent(event)) {
+			return;
+		}
 		const ignore = this.isSkipOfCompletedBlock(event);
 		this._lastCompleted =
 			event.type === 'block-completed' ? { mode: event.mode, round: event.round } : null;

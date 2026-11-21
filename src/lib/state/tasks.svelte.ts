@@ -8,6 +8,7 @@ import {
 } from '../domain/tasks/task.entity';
 import { type ITaskRepository, sortFocusTasks } from '../domain/ports/task-repository.port';
 import { LocalStorageTaskRepository } from '../adapters/storage/local-task-repository';
+import type { IActivityRecorder } from '../domain/ports/activity-log-repository.port';
 
 export type ActiveTaskSubscriber = (taskId: string | null) => void;
 
@@ -39,6 +40,9 @@ export class TasksState {
 	);
 	public readonly isLoading = $derived.by(() => this._isLoading);
 	public readonly isLoaded = $derived.by(() => this._isLoaded);
+
+	/** Set by the activity log at start-up; null keeps isolated instances (tests) silent. */
+	public activity: IActivityRecorder | null = null;
 
 	constructor(repository?: ITaskRepository) {
 		this.repository = repository ?? new LocalStorageTaskRepository();
@@ -76,6 +80,9 @@ export class TasksState {
 		const updated = toggleFocusTask(task);
 		await this.repository.save(updated);
 		this._tasks = sortFocusTasks(this._tasks.map((t) => (t.id === taskId ? updated : t)));
+		if (updated.completed) {
+			this.activity?.record('task-completed', { detail: updated.title });
+		}
 	}
 
 	public async updateTitle(taskId: string, newTitle: string): Promise<void> {

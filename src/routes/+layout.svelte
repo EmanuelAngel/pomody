@@ -12,6 +12,7 @@
 	// Importing the recorder is what starts it: it subscribes to the timer on construction. It lives
 	// here, above the Mini-Player branch, so blocks finished in compact mode are recorded too.
 	import '$lib/state/focus-history.svelte';
+	import '$lib/state/activity-log.svelte';
 	import { updateState } from '$lib/state/update.svelte';
 	import { windowState } from '$lib/state/windowState.svelte';
 	import { timerState } from '$lib/state/timer.svelte';
