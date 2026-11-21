@@ -1,3 +1,4 @@
+import { isBlockEndedEvent } from '../events/block-completed.event';
 import { describe, it, expect, vi } from 'vitest';
 import {
 	DEFAULT_TIMER_CONFIG,
@@ -867,7 +868,7 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 		const startTime = new Date();
 
 		fsm.onEvent((event) => {
-			events.push(event);
+			if (isBlockEndedEvent(event)) events.push(event);
 		});
 
 		fsm.start();
@@ -897,7 +898,7 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 		const events: DomainEvent[] = [];
 
 		fsm.onEvent((event) => {
-			events.push(event);
+			if (isBlockEndedEvent(event)) events.push(event);
 		});
 
 		// Round 1 Focus
@@ -959,7 +960,7 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 		const events: DomainEvent[] = [];
 
 		fsm.onEvent((event) => {
-			events.push(event);
+			if (isBlockEndedEvent(event)) events.push(event);
 		});
 
 		fsm.start();
@@ -985,7 +986,7 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 		const events: DomainEvent[] = [];
 
 		fsm.onEvent((event) => {
-			events.push(event);
+			if (isBlockEndedEvent(event)) events.push(event);
 		});
 
 		fsm.start();
@@ -1011,7 +1012,7 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 		const startTime = new Date();
 
 		fsm.onEvent((event) => {
-			events.push(event);
+			if (isBlockEndedEvent(event)) events.push(event);
 		});
 
 		// Skip from focus mode round 1
@@ -1043,7 +1044,7 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 		const events: DomainEvent[] = [];
 
 		fsm.onEvent((event) => {
-			events.push(event);
+			if (isBlockEndedEvent(event)) events.push(event);
 		});
 
 		// Running skip
@@ -1080,10 +1081,10 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 		const events2: DomainEvent[] = [];
 
 		const unsub1 = fsm.onEvent((event) => {
-			events1.push(event);
+			if (isBlockEndedEvent(event)) events1.push(event);
 		});
 		fsm.onEvent((event) => {
-			events2.push(event);
+			if (isBlockEndedEvent(event)) events2.push(event);
 		});
 
 		fsm.start();
@@ -1135,8 +1136,8 @@ describe('Phase 4: Domain Events & Event Subscription', () => {
 			}
 		});
 
-		fsm.onEvent(() => {
-			executionOrder.push('domain-event');
+		fsm.onEvent((event) => {
+			if (isBlockEndedEvent(event)) executionOrder.push('domain-event');
 		});
 
 		fsm.start();
@@ -1285,7 +1286,7 @@ describe('Block timing events: elapsedMs and block-abandoned', () => {
 		const fsm = new TimerFSM(config);
 		const events: DomainEvent[] = [];
 		fsm.onEvent((event) => {
-			events.push(event);
+			if (isBlockEndedEvent(event)) events.push(event);
 		});
 		return { fsm, events };
 	}

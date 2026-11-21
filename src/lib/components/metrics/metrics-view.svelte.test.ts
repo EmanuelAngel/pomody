@@ -9,6 +9,8 @@ import { createDailyGoalState, type DailyGoalState } from '$lib/state/daily-goal
 import { createDailyStatsState } from '$lib/state/daily-stats.svelte';
 import { createFocusHistoryState, type FocusHistoryState } from '$lib/state/focus-history.svelte';
 import { createNavigationState } from '$lib/state/navigation.svelte';
+import { ActivityLogState } from '$lib/state/activity-log.svelte';
+import { LocalActivityLogRepository } from '$lib/adapters/storage/local-activity-log-repository';
 import { localeState } from '$lib/state/locale.svelte';
 import type { DailyGoalChange } from '$lib/domain/goals/daily-goal.entity';
 import type { FocusHistoryEntry } from '$lib/domain/history/focus-history-entry.entity';
@@ -290,6 +292,30 @@ describe('MetricsView (Client Browser)', () => {
 
 			await expect.element(screen.getByText('Oct 19 – Oct 25', { exact: true })).toBeVisible();
 			await expect.element(screen.getByRole('button', { name: 'Next week' })).toBeDisabled();
+		});
+	});
+
+	describe('history tab', () => {
+		it('shows the activity timeline grouped by day, newest first', async () => {
+			const activityLogState = new ActivityLogState({
+				repository: new LocalActivityLogRepository(new InMemoryStorage(), () => FRIDAY),
+				timer: { onEvent: () => () => {} },
+				nowProvider: () => new Date(2026, 9, 23, 9, 5, 0)
+			});
+			activityLogState.record('block-started', { mode: 'focus' });
+			await activityLogState.whenIdle();
+			const harness = await createHarness();
+			const screen = await render(MetricsView, { ...harness, activityLogState });
+
+			await expect.element(screen.getByRole('tab', { name: 'Statistics' })).toBeVisible();
+			await screen.getByRole('tab', { name: 'History' }).click();
+
+			await expect.element(screen.getByText('Started a Focus block')).toBeVisible();
+			await expect.element(screen.getByText('09:05')).toBeVisible();
+			await expect.element(screen.getByRole('button', { name: 'Export' })).toBeEnabled();
+			activityLogState.destroy();
+			harness.dailyGoalState.destroy();
+			harness.focusHistoryState.destroy();
 		});
 	});
 
