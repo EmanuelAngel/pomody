@@ -21,6 +21,8 @@ import {
 } from '../domain/planning/cadence-preset.entity';
 import type { ISessionPlanRepository } from '../domain/ports/session-plan-repository.port';
 import { LocalStoragePlanRepository } from '../adapters/storage/local-session-plan-repository';
+import type { IActivityRecorder } from '../domain/ports/activity-log-repository.port';
+import { formatCadence } from '../domain/activity/activity-log-entry.entity';
 import { TimerState, timerState as defaultTimerState } from './timer.svelte';
 import { TasksState, tasksState as defaultTasksState } from './tasks.svelte';
 
@@ -186,6 +188,9 @@ export class PlanningState {
 		return Math.round(this.projectedPlan.freeMarginSeconds / 60);
 	});
 
+	/** Set by the activity log at start-up; null keeps isolated instances (tests) silent. */
+	public activity: IActivityRecorder | null = null;
+
 	constructor(
 		repositoryOrDeps?: ISessionPlanRepository | PlanningStateDependencies,
 		timerState?: TimerState,
@@ -222,6 +227,11 @@ export class PlanningState {
 	/**
 	 * Connects and subscribes to a TimerState instance for domain events.
 	 */
+	private recordTaskActivity(kind: 'task-assigned' | 'task-unassigned', taskId: string): void {
+		const title = this.tasksState?.tasks.find((task) => task.id === taskId)?.title;
+		this.activity?.record(kind, title ? { detail: title } : {});
+	}
+
 	public connectTimer(timer: TimerState): () => void {
 		this._timerUnsubscribe?.();
 		this.timerState = timer;
@@ -636,6 +646,7 @@ export class PlanningState {
 			const updated = new SvelteMap(this._draftTaskAssignments);
 			updated.set(blockIndex, trimmed);
 			this._draftTaskAssignments = updated;
+			this.recordTaskActivity('task-assigned', trimmed);
 
 			if (blockIndex === 0 && this.tasksState) {
 				this.tasksState.setActiveTask(trimmed);
@@ -659,6 +670,7 @@ export class PlanningState {
 
 		this._activePlan = assignTaskToBlock(this._activePlan, blockIndex, trimmed);
 		void this.repository.saveActivePlan(this._activePlan);
+		this.recordTaskActivity('task-assigned', trimmed);
 
 		if (blockIndex === this._activeBlockIndex && this.tasksState) {
 			this.tasksState.setActiveTask(trimmed);
@@ -674,9 +686,11 @@ export class PlanningState {
 			if (!this._draftTaskAssignments.has(blockIndex)) {
 				return;
 			}
+			const removedTaskId = this._draftTaskAssignments.get(blockIndex);
 			const updated = new SvelteMap(this._draftTaskAssignments);
 			updated.delete(blockIndex);
 			this._draftTaskAssignments = updated;
+			if (removedTaskId) this.recordTaskActivity('task-unassigned', removedTaskId);
 
 			if (blockIndex === 0 && this.tasksState) {
 				this.tasksState.setActiveTask(null);
@@ -695,6 +709,7 @@ export class PlanningState {
 
 		this._activePlan = unassignTaskFromBlock(this._activePlan, blockIndex);
 		void this.repository.saveActivePlan(this._activePlan);
+		this.recordTaskActivity('task-unassigned', targetBlock.assignedTaskId);
 
 		if (blockIndex === this._activeBlockIndex && this.tasksState) {
 			this.tasksState.setActiveTask(null);
@@ -760,6 +775,7 @@ export class PlanningState {
 		this.syncTimerBinding();
 
 		await this.repository.saveActivePlan(this._activePlan);
+		this.activity?.record('session-started', { detail: String(plan.blocks.length) });
 
 		const timer = customTimerState ?? this.timerState;
 		const tasks = customTasksState ?? this.tasksState;
@@ -788,6 +804,7 @@ export class PlanningState {
 	public async endSession(customTimerState?: TimerState): Promise<void> {
 		const timer = customTimerState ?? this.timerState;
 		timer?.resetToInitial();
+		if (this._activePlan) this.activity?.record('session-ended');
 
 		await this.repository.clearActivePlan();
 		this._activePlan = null;
@@ -908,6 +925,7 @@ export class PlanningState {
 			...newConfig
 		};
 		validateTimerConfig(updatedConfig);
+		this.activity?.record('plan-modified', { detail: formatCadence(updatedConfig) });
 
 		if (newConfig.focusDurationSeconds !== undefined) {
 			this._focusMinutes = Math.round(newConfig.focusDurationSeconds / 60);

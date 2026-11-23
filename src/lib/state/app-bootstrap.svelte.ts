@@ -1,6 +1,7 @@
 import type { SessionPlan } from '../domain/planning/session-plan.entity';
 import type { ITimerStateRepository } from '../domain/ports/timer-state-repository.port';
 import { LocalTimerStateRepository } from '../adapters/storage/local-timer-state-repository';
+import type { IActivityRecorder } from '../domain/ports/activity-log-repository.port';
 import { resolveTimerRestore, type ActivePlanView } from '../domain/timer/timer-snapshot.entity';
 import { PlanningState, planningState as defaultPlanningState } from './planning.svelte';
 import {
@@ -58,6 +59,9 @@ export class AppBootstrap {
 
 	private _isReady = $state(false);
 
+	/** Set by the activity log at start-up; null keeps isolated instances (tests) silent. */
+	public activity: IActivityRecorder | null = null;
+
 	constructor(deps: AppBootstrapDependencies = {}) {
 		this.planning = deps.planning ?? defaultPlanningState;
 		this.timer = deps.timer ?? defaultTimerState;
@@ -99,6 +103,9 @@ export class AppBootstrap {
 			this.restoreActiveTask(plan, planView);
 
 			this.timer.persistNow();
+			if (decision.kind !== 'fresh') {
+				this.activity?.record('session-restored', { mode: this.timer.mode });
+			}
 		} catch (error) {
 			console.error('Failed to restore the previous session; starting from defaults.', error);
 		} finally {

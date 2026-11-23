@@ -1,4 +1,4 @@
-import type { DomainEvent } from '../events/block-completed.event';
+import type { BlockEndedEvent } from '../events/block-completed.event';
 import type { TimerMode } from '../timer/timer-fsm';
 
 export type FocusHistoryOutcome = 'completed' | 'skipped' | 'abandoned';
@@ -119,7 +119,7 @@ export function isValidFocusHistoryEntry(raw: unknown): boolean {
 const MAX_DATE_MS = 8.64e15;
 
 export function createEntryFromEvent(
-	event: DomainEvent,
+	event: BlockEndedEvent,
 	now: Date,
 	activeTask: FocusHistoryTask | null
 ): FocusHistoryEntry | null {

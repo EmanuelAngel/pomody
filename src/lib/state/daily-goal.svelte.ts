@@ -9,6 +9,7 @@ import {
 import { getLocalDateString } from '../domain/history/local-date';
 import type { IDailyGoalRepository } from '../domain/ports/daily-goal-repository.port';
 import { LocalDailyGoalRepository } from '../adapters/storage/local-daily-goal-repository';
+import type { IActivityRecorder } from '../domain/ports/activity-log-repository.port';
 
 export interface DailyGoalDependencies {
 	repository?: IDailyGoalRepository;
@@ -54,6 +55,9 @@ export class DailyGoalState {
 		return this._currentGoal;
 	}
 
+	/** Set by the activity log at start-up; null keeps isolated instances (tests) silent. */
+	public activity: IActivityRecorder | null = null;
+
 	constructor(deps: DailyGoalDependencies = {}) {
 		this.nowProvider = deps.nowProvider ?? (() => new SvelteDate());
 		this.repository = deps.repository ?? new LocalDailyGoalRepository();
@@ -98,6 +102,7 @@ export class DailyGoalState {
 			await this.reload();
 		});
 		await this._queue;
+		this.activity?.record('daily-goal-changed', { detail: String(change.minutes) });
 
 		return { ok: true, change };
 	}

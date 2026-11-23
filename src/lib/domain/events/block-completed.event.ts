@@ -1,4 +1,4 @@
-import type { TimerMode } from '../timer/timer-fsm';
+import type { TimerConfig, TimerMode } from '../timer/timer-fsm';
 
 export interface BlockCompletedEvent {
 	readonly type: 'block-completed';
@@ -35,4 +35,44 @@ export interface BlockAbandonedEvent {
 	readonly abandonedAt: Date;
 }
 
-export type DomainEvent = BlockCompletedEvent | BlockSkippedEvent | BlockAbandonedEvent;
+/** A block entering `running`: the first start, or the start after a completed block. */
+export interface BlockStartedEvent {
+	readonly type: 'block-started';
+	readonly mode: TimerMode;
+	readonly round: number;
+	readonly durationMs: number;
+}
+
+export interface BlockPausedEvent {
+	readonly type: 'block-paused';
+	readonly mode: TimerMode;
+	readonly round: number;
+	readonly remainingMs: number;
+}
+
+export interface BlockResumedEvent {
+	readonly type: 'block-resumed';
+	readonly mode: TimerMode;
+	readonly round: number;
+	readonly remainingMs: number;
+}
+
+/** Emitted only when an update actually changes the configuration. */
+export interface ConfigChangedEvent {
+	readonly type: 'config-changed';
+	readonly config: TimerConfig;
+}
+
+/** The events that close a block; every one of them carries its planned and elapsed time. */
+export type BlockEndedEvent = BlockCompletedEvent | BlockSkippedEvent | BlockAbandonedEvent;
+
+export type DomainEvent =
+	BlockEndedEvent | BlockStartedEvent | BlockPausedEvent | BlockResumedEvent | ConfigChangedEvent;
+
+export function isBlockEndedEvent(event: DomainEvent): event is BlockEndedEvent {
+	return (
+		event.type === 'block-completed' ||
+		event.type === 'block-skipped' ||
+		event.type === 'block-abandoned'
+	);
+}
