@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.23.0...pomody-v0.24.0) (2026-11-23)
+
+
+### Features
+
+* **metrics:** add History tab with an activity timeline of timer actions ([#235](https://github.com/EmanuelAngel/pomody/issues/235)) ([35384b1](https://github.com/EmanuelAngel/pomody/commit/35384b151d63b003fa467c212ada5bdac9d1316e))
+
 ## [0.23.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.22.0...pomody-v0.23.0) (2026-11-16)
 
 
