@@ -3,6 +3,7 @@
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import Header from '$lib/components/layout/header.svelte';
+	import TitleBar from '$lib/components/layout/title-bar.svelte';
 	import DailyCounter from '$lib/components/layout/daily-counter.svelte';
 	import SettingsDialog from '$lib/components/settings/settings-dialog.svelte';
 	import MiniPlayer from '$lib/components/timer/mini-player.svelte';
@@ -48,6 +49,21 @@
 	});
 
 	const isMiniPlayer = $derived(windowState.isMiniPlayer);
+
+	/**
+	 * The frameless desktop window owns a title bar strip (spec S5). It is desktop chrome
+	 * only, so the layout has to make room for it — and the web build, which keeps the
+	 * browser's own tab chrome, must stay exactly as it was.
+	 *
+	 * The strip is 32px tall, and the header cannot move by itself: it is `fixed top-0`
+	 * inside its own component. Instead of editing it, this branch pushes it down by the
+	 * strip height (`[&>header]:top-8`) and gives the routed view the same 32px back
+	 * (`[&>main]:pt-24`, which is the page's own `pt-16` plus the strip) so the 8px gap
+	 * between the header band and the content is preserved.
+	 */
+	const windowChromeOffset = $derived(
+		windowState.isSupported ? '[&>header]:top-8 [&>main]:pt-24' : undefined
+	);
 
 	/**
 	 * The previous session must be restored before the shell paints: rendering first
@@ -104,17 +120,26 @@
 {:else if isMiniPlayer}
 	<MiniPlayer />
 {:else}
-	<Header bind:settingsOpen onSettingsClick={handleOpenSettings} />
-	<SettingsDialog bind:open={settingsOpen} initialTab={settingsTab} />
+	<div class={windowChromeOffset}>
+		<!--
+			Above the header, on purpose (spec S5). During a running block the header fades
+			away and this strip is the only surface left to drag, maximize or close the
+			window, so it must never live inside the fading container.
+		-->
+		<TitleBar />
 
-	{@render children()}
+		<Header bind:settingsOpen onSettingsClick={handleOpenSettings} />
+		<SettingsDialog bind:open={settingsOpen} initialTab={settingsTab} />
 
-	<DailyCounter />
+		{@render children()}
 
-	<!--
-		The toast host lives in the main shell and not in the Mini-Player branch: a compact
-		window that always stays on top already shows the phase change, and the block-end
-		state suppresses its notices there.
-	-->
-	<BlockNoticeToaster />
+		<DailyCounter />
+
+		<!--
+			The toast host lives in the main shell and not in the Mini-Player branch: a compact
+			window that always stays on top already shows the phase change, and the block-end
+			state suppresses its notices there.
+		-->
+		<BlockNoticeToaster />
+	</div>
 {/if}

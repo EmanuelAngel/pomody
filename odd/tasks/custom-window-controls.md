@@ -24,7 +24,7 @@
 | ID  | Specs              | Route                                                               | Commit  |
 | --- | ------------------ | ------------------------------------------------------------------- | ------- |
 | T1  | S2, S3, S4, S5, S6 | Port + adapter + fake + state + config/capabilities + decisions doc | 4197f2b |
-| T2  | S1, S5, S6         | Title bar strip component + layout wiring + spec doc                | pending |
+| T2  | S1, S5, S6         | Title bar strip component + layout wiring + spec doc                | 3afab01 |
 | T3  | S6                 | Manual verification checklist on Windows + desktop-ci run           | pending |
 
 ## Log
