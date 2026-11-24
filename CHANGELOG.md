@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.24.0...pomody-v0.25.0) (2026-11-24)
+
+
+### Features
+
+* **brand:** add the Pomody mark and wire it into the app, icons and README ([#239](https://github.com/EmanuelAngel/pomody/issues/239)) ([9bdb03b](https://github.com/EmanuelAngel/pomody/commit/9bdb03bf1bc10e195f91241e164718f9387c2b2f))
+
+
+### Bug Fixes
+
+* **header:** paint a translucent surface only on scrolling views ([#237](https://github.com/EmanuelAngel/pomody/issues/237)) ([accd0e2](https://github.com/EmanuelAngel/pomody/commit/accd0e253055c23d93affdad4b40cd074bff133b))
+
 ## [0.24.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.23.0...pomody-v0.24.0) (2026-11-23)
 
 
