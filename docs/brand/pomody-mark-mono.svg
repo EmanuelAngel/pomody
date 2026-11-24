@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="pomody-mark-mono-title">
+	<title id="pomody-mark-mono-title">Pomody, una sola tinta</title>
+	<g transform="translate(-1 -2)" fill="#e0def4">
+		<g fill="none" stroke="#e0def4" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+			<path d="M24 56 V 16" />
+			<path d="M24 16 A 18 18 0 0 1 24 52" />
+		</g>
+		<path d="M35 24.5 C 34.3 17, 39.8 10.5, 46.6 8 C 46.1 14.6, 41.4 21.6, 35 24.5 Z" />
+	</g>
+</svg>

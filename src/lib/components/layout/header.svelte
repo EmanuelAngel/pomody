@@ -21,6 +21,7 @@
 	import { updateState as defaultUpdateState, type UpdateState } from '$lib/state/update.svelte';
 	import ArrowUpCircle from '@lucide/svelte/icons/arrow-up-circle';
 	import { t } from '$lib/state/locale.svelte';
+	import PomodyMark from '$lib/components/brand/pomody-mark.svelte';
 
 	interface Props {
 		timerState?: TimerState;
@@ -106,6 +107,7 @@
 >
 	<!-- Left Slot: Brand Identity -->
 	<div class={cn('flex items-center gap-2 transition-opacity duration-300 ease-in-out', zenClass)}>
+		<PomodyMark size={20} />
 		<span
 			class="text-xs font-semibold tracking-wider text-muted-foreground/70 uppercase transition-colors select-none hover:text-foreground"
 		>
