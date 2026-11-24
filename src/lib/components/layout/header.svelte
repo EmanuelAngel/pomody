@@ -85,9 +85,25 @@
 	const zenClass = $derived(
 		isRunning ? 'pointer-events-none opacity-0' : 'pointer-events-auto opacity-100'
 	);
+
+	/**
+	 * The header floats over the page, so any view taller than the viewport slides
+	 * its content under the tabs and the two layers mix. Every view except the Timer
+	 * does that (Planning, Metrics and Distractions are all list-like and scroll), so
+	 * those are the ones that get a surface: a translucent theme token plus
+	 * `backdrop-blur` — the token, never a hard-coded colour, is what keeps dark, dawn
+	 * and oled consistent. The Timer is one centred canvas that never reaches the
+	 * bar, and a band there would only cut across the illustration, so it stays bare.
+	 */
+	const hasSurface = $derived(activeTab !== 'timer');
 </script>
 
-<header class="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between px-4 sm:px-6">
+<header
+	class={cn(
+		'fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between px-4 sm:px-6',
+		hasSurface && 'border-b border-border/40 bg-background/50 backdrop-blur-2xl'
+	)}
+>
 	<!-- Left Slot: Brand Identity -->
 	<div class={cn('flex items-center gap-2 transition-opacity duration-300 ease-in-out', zenClass)}>
 		<span

@@ -189,6 +189,28 @@ describe('Header (Client Browser)', () => {
 		await expect.element(nav).toHaveClass('pointer-events-auto');
 	});
 
+	it('paints its surface only on the views whose content scrolls under it', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+		const navigationState = createNavigationState('timer');
+
+		const screen = await render(Header, { timerState, navigationState });
+		const header = screen.getByRole('banner');
+
+		// Timer: one centred canvas that never reaches the bar, so no band over the art.
+		await expect.element(header).not.toHaveClass('bg-background/50');
+		await expect.element(header).not.toHaveClass('backdrop-blur-2xl');
+
+		// Planning: taller than the viewport, so the content must not show through.
+		await screen.getByRole('tab', { name: /^Planning$/i }).click();
+		await expect.element(header).toHaveClass('bg-background/50');
+		await expect.element(header).toHaveClass('backdrop-blur-2xl');
+
+		// And back: the surface is derived, not latched on the first scrollable view.
+		await screen.getByRole('tab', { name: 'Timer' }).click();
+		await expect.element(header).not.toHaveClass('backdrop-blur-2xl');
+	});
+
 	describe('compact mode trigger', () => {
 		it('renders when the platform supports native window manipulation', async () => {
 			const ticker = createDummyTicker(false);
