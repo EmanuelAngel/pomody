@@ -6,6 +6,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
+		"brand:render": "node tools/brand/render.mjs",
 		"preview": "vite preview --outDir build",
 		"prepare": "svelte-kit sync && paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide && husky",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
