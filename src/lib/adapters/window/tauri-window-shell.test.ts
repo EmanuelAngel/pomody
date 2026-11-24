@@ -21,16 +21,39 @@ interface CallLog {
 	readonly resizable: boolean[];
 }
 
-function createSpyClient(supported = true): {
+/**
+ * Handles the native behaviour the spy client cannot drive by itself:
+ * OS-reported state changes (maximize through Win+Up) and failed subscriptions.
+ */
+interface SpyControls {
+	/** Simulates a maximize/restore the OS performed behind the app's back. */
+	setMaximizedExternally(value: boolean): void;
+	/** Fires the native resize event every subscriber received. */
+	emitResize(): Promise<void>;
+	/** Number of times a resize subscription has been detached. */
+	unlistenCount(): number;
+	/** Makes the next `onResized` call reject, as a missing permission would. */
+	rejectNextResizeSubscription(): void;
+	/** Makes the next `isMaximized` read reject, as a failing native call would. */
+	failNextMaximizedRead(): void;
+}
+
+function createSpyClient(): {
 	client: TauriWindowClientLike;
 	log: CallLog;
+	controls: SpyControls;
 } {
 	const order: string[] = [];
 	const sizes: { width: number; height: number }[] = [];
 	const alwaysOnTop: boolean[] = [];
 	const decorations: boolean[] = [];
 	const resizable: boolean[] = [];
+	const resizeHandlers: (() => void)[] = [];
+	let resizeUnlistenCount = 0;
+	let rejectNextSubscription = false;
+	let failNextMaximized = false;
 	let currentAlwaysOnTop = false;
+	let currentMaximized = false;
 
 	const client: TauriWindowClientLike = {
 		async setMinSize(dimensions) {
@@ -60,12 +83,70 @@ function createSpyClient(supported = true): {
 		async isAlwaysOnTop() {
 			order.push('isAlwaysOnTop');
 			return currentAlwaysOnTop;
+		},
+		async minimize() {
+			order.push('minimize');
+		},
+		async toggleMaximize() {
+			order.push('toggleMaximize');
+			currentMaximized = !currentMaximized;
+		},
+		async close() {
+			order.push('close');
+		},
+		async isMaximized() {
+			order.push('isMaximized');
+
+			if (failNextMaximized) {
+				failNextMaximized = false;
+				throw new Error('native call failed');
+			}
+
+			return currentMaximized;
+		},
+		async onResized(handler) {
+			order.push('onResized');
+
+			if (rejectNextSubscription) {
+				rejectNextSubscription = false;
+				throw new Error('core:event:allow-listen missing');
+			}
+
+			resizeHandlers.push(handler);
+
+			return () => {
+				resizeUnlistenCount++;
+				const index = resizeHandlers.indexOf(handler);
+				if (index >= 0) resizeHandlers.splice(index, 1);
+			};
+		}
+	};
+
+	const controls: SpyControls = {
+		setMaximizedExternally(value) {
+			currentMaximized = value;
+		},
+		async emitResize() {
+			for (const handler of [...resizeHandlers]) handler();
+			// A resize handler reads the state asynchronously; flush the microtasks
+			// it queued so the assertion sees the notification it produced.
+			await new Promise((resolve) => setTimeout(resolve, 0));
+		},
+		unlistenCount() {
+			return resizeUnlistenCount;
+		},
+		rejectNextResizeSubscription() {
+			rejectNextSubscription = true;
+		},
+		failNextMaximizedRead() {
+			failNextMaximized = true;
 		}
 	};
 
 	return {
-		client: supported ? client : client,
-		log: { order, sizes, alwaysOnTop, decorations, resizable }
+		client,
+		log: { order, sizes, alwaysOnTop, decorations, resizable },
+		controls
 	};
 }
 
@@ -135,22 +216,25 @@ describe('TauriWindowShell', () => {
 	});
 
 	describe('restoreMainWindow', () => {
-		it('should restore decorations before resizing back to the main window', async () => {
+		it('should restore the main dimensions without bringing the native bar back', async () => {
 			const { client, log } = createSpyClient();
 			const shell = new TauriWindowShell(client);
 
 			await shell.restoreMainWindow();
 
+			// The main window is frameless for good (tauri.conf.json). Restoring
+			// decorations here would reintroduce the native title bar on top of the
+			// custom strip, so the restore path must never call setDecorations.
 			expect(log.order).toEqual([
 				'setAlwaysOnTop',
 				'setResizable',
 				'setMinSize',
-				'setDecorations',
 				'setSize',
 				'center'
 			]);
 			expect(log.alwaysOnTop).toEqual([false]);
 			expect(log.sizes).toEqual([MAIN_WINDOW_MIN_DIMENSIONS, MAIN_WINDOW_DIMENSIONS]);
+			expect(log.decorations).toEqual([]);
 		});
 
 		it('should centre the restored window on the primary display', async () => {
@@ -166,23 +250,25 @@ describe('TauriWindowShell', () => {
 			expect(log.order.indexOf('center')).toBeGreaterThan(log.order.indexOf('setSize'));
 		});
 
-		it('should restore the frame and re-enable resizing', async () => {
+		it('should re-enable resizing', async () => {
 			const { client, log } = createSpyClient();
 			const shell = new TauriWindowShell(client);
 
 			await shell.restoreMainWindow();
 
-			expect(log.decorations).toEqual([true]);
 			expect(log.resizable).toEqual([true]);
 		});
 
-		it('should re-enable the frame even when entering from a mini window that was never entered', async () => {
+		it('should leave the window frameless after a full mini-player round trip', async () => {
 			const { client, log } = createSpyClient();
 			const shell = new TauriWindowShell(client);
 
+			await shell.enterMiniPlayer();
 			await shell.restoreMainWindow();
 
-			expect(log.order.indexOf('setDecorations')).toBeLessThan(log.order.indexOf('setSize'));
+			// Only enterMiniPlayer may touch decorations, and it only ever strips
+			// them: the native bar must not come back on exit.
+			expect(log.decorations).toEqual([false]);
 		});
 
 		it('should degrade without calling the client when unsupported', async () => {
@@ -224,6 +310,180 @@ describe('TauriWindowShell', () => {
 		});
 	});
 
+	describe('minimize', () => {
+		it('should minimize the native window', async () => {
+			const { client, log } = createSpyClient();
+			const shell = new TauriWindowShell(client);
+
+			await shell.minimize();
+
+			expect(log.order).toEqual(['minimize']);
+		});
+
+		it('should degrade without calling the client when unsupported', async () => {
+			const { log } = createSpyClient();
+			const shell = new TauriWindowShell(null);
+
+			await expect(shell.minimize()).resolves.toBeUndefined();
+			expect(log.order).toEqual([]);
+		});
+	});
+
+	describe('toggleMaximize', () => {
+		it('should delegate the maximize/restore toggle to the native window', async () => {
+			const { client, log } = createSpyClient();
+			const shell = new TauriWindowShell(client);
+
+			await shell.toggleMaximize();
+
+			expect(log.order).toEqual(['toggleMaximize']);
+		});
+
+		it('should degrade without calling the client when unsupported', async () => {
+			const { log } = createSpyClient();
+			const shell = new TauriWindowShell(null);
+
+			await expect(shell.toggleMaximize()).resolves.toBeUndefined();
+			expect(log.order).toEqual([]);
+		});
+	});
+
+	describe('close', () => {
+		it('should request a native close on the window', async () => {
+			const { client, log } = createSpyClient();
+			const shell = new TauriWindowShell(client);
+
+			await shell.close();
+
+			// Rust turns this request into hide-to-tray (`prevent_close` + `hide`),
+			// so the adapter only has to ask for a close and never terminates the app
+			// on its own.
+			expect(log.order).toEqual(['close']);
+		});
+
+		it('should degrade without calling the client when unsupported', async () => {
+			const { log } = createSpyClient();
+			const shell = new TauriWindowShell(null);
+
+			await expect(shell.close()).resolves.toBeUndefined();
+			expect(log.order).toEqual([]);
+		});
+	});
+
+	describe('isMaximized', () => {
+		it('should delegate to the injected client', async () => {
+			const { client, controls } = createSpyClient();
+			const shell = new TauriWindowShell(client);
+
+			await expect(shell.isMaximized()).resolves.toBe(false);
+
+			controls.setMaximizedExternally(true);
+
+			await expect(shell.isMaximized()).resolves.toBe(true);
+		});
+
+		it('should resolve false without touching the client when unsupported', async () => {
+			const { log } = createSpyClient();
+			const shell = new TauriWindowShell(null);
+
+			await expect(shell.isMaximized()).resolves.toBe(false);
+			expect(log.order).toEqual([]);
+		});
+	});
+
+	describe('onMaximizedChange', () => {
+		it('should report an OS-driven maximize and restore', async () => {
+			const { client, controls } = createSpyClient();
+			const shell = new TauriWindowShell(client);
+			const seen: boolean[] = [];
+
+			await shell.onMaximizedChange((maximized) => seen.push(maximized));
+
+			controls.setMaximizedExternally(true);
+			await controls.emitResize();
+			controls.setMaximizedExternally(false);
+			await controls.emitResize();
+
+			expect(seen).toEqual([true, false]);
+		});
+
+		it('should subscribe through the native resize event', async () => {
+			const { client, log } = createSpyClient();
+			const shell = new TauriWindowShell(client);
+
+			await shell.onMaximizedChange(() => {});
+
+			// Maximizing has no dedicated event in Tauri v2: the adapter listens to
+			// resize and re-reads `isMaximized`, seeding the last value on subscribe so
+			// the first notification is a real change.
+			expect(log.order).toEqual(['isMaximized', 'onResized']);
+		});
+
+		it('should stay silent on a resize that leaves the state unchanged', async () => {
+			const { client, controls } = createSpyClient();
+			const shell = new TauriWindowShell(client);
+			const seen: boolean[] = [];
+
+			await shell.onMaximizedChange((maximized) => seen.push(maximized));
+			await controls.emitResize();
+
+			expect(seen).toEqual([]);
+		});
+
+		it('should stop reporting after the unsubscribe runs', async () => {
+			const { client, controls } = createSpyClient();
+			const shell = new TauriWindowShell(client);
+			const seen: boolean[] = [];
+
+			const unsubscribe = await shell.onMaximizedChange((maximized) => seen.push(maximized));
+			unsubscribe();
+			controls.setMaximizedExternally(true);
+			await controls.emitResize();
+
+			expect(seen).toEqual([]);
+			expect(controls.unlistenCount()).toBe(1);
+		});
+
+		it('should return a no-op unsubscribe when unsupported', async () => {
+			const { log } = createSpyClient();
+			const shell = new TauriWindowShell(null);
+
+			const unsubscribe = await shell.onMaximizedChange(() => {});
+
+			expect(log.order).toEqual([]);
+			expect(() => unsubscribe()).not.toThrow();
+		});
+
+		it('should survive a failing state read after a resize', async () => {
+			// The resize listener runs outside any caller's await chain, so a failing
+			// native read would surface as an unhandled rejection and take the state
+			// observer down with it. It is swallowed instead.
+			const { client, controls } = createSpyClient();
+			const shell = new TauriWindowShell(client);
+			const seen: boolean[] = [];
+
+			await shell.onMaximizedChange((maximized) => seen.push(maximized));
+			controls.failNextMaximizedRead();
+			await controls.emitResize();
+
+			expect(seen).toEqual([]);
+		});
+
+		it('should degrade to a no-op unsubscribe when the subscription fails', async () => {
+			// A missing `core:event:allow-listen` makes `listen` reject. A dead
+			// subscription must not reject into the caller's effect, so the adapter
+			// resolves with an unsubscribe instead.
+			const { client, controls } = createSpyClient();
+			const shell = new TauriWindowShell(client);
+
+			controls.rejectNextResizeSubscription();
+			const unsubscribe = await shell.onMaximizedChange(() => {});
+
+			expect(typeof unsubscribe).toBe('function');
+			expect(() => unsubscribe()).not.toThrow();
+		});
+	});
+
 	describe('Tauri capability permissions', () => {
 		function readCapabilities(): { permissions: string[] } {
 			return JSON.parse(
@@ -246,6 +506,8 @@ describe('TauriWindowShell', () => {
 		it('should grant the compact-mode chrome permissions', () => {
 			const { permissions } = readCapabilities();
 
+			// `set-decorations` is still called: entering the Mini-Player strips the
+			// decorations explicitly. Only the restore path gave that call up.
 			expect(permissions).toContain('core:window:allow-set-decorations');
 			expect(permissions).toContain('core:window:allow-set-resizable');
 		});
@@ -255,6 +517,41 @@ describe('TauriWindowShell', () => {
 			// which can be partly off-screen. `center` is a separate command from
 			// `setPosition`, so it needs its own permission.
 			expect(readCapabilities().permissions).toContain('core:window:allow-center');
+		});
+
+		it('should grant the custom window control permissions', () => {
+			const { permissions } = readCapabilities();
+
+			expect(permissions).toContain('core:window:allow-minimize');
+			expect(permissions).toContain('core:window:allow-toggle-maximize');
+			expect(permissions).toContain('core:window:allow-close');
+			expect(permissions).toContain('core:window:allow-is-maximized');
+		});
+
+		it('should grant the event permission the maximized-state subscription needs', () => {
+			// `onResized` is `listen` on the window events, which is not covered by
+			// `core:window:default`.
+			expect(readCapabilities().permissions).toContain('core:event:allow-listen');
+		});
+	});
+
+	describe('Main window configuration', () => {
+		function readWindowConfig(): { label: string; decorations: boolean } {
+			const config = JSON.parse(
+				readFileSync(
+					fileURLToPath(new URL('../../../../src-tauri/tauri.conf.json', import.meta.url)),
+					'utf8'
+				)
+			) as { app: { windows: { label: string; decorations: boolean }[] } };
+
+			return config.app.windows[0];
+		}
+
+		it('should start the main window frameless', () => {
+			// The custom title bar strip replaces the native one, so the window must be
+			// born without decorations. `setDecorations(false)` at runtime would only
+			// do it after the native bar had already flashed on screen.
+			expect(readWindowConfig()).toMatchObject({ label: 'main', decorations: false });
 		});
 	});
 
@@ -267,6 +564,19 @@ describe('TauriWindowShell', () => {
 
 			expect(source).not.toMatch(/^\s*import\s[^;]*['"]@tauri-apps/m);
 			expect(source).toMatch(/import\(['"]@tauri-apps\/api\/window['"]\)/);
+		});
+
+		it('should resolve every window control without evaluating the native module', async () => {
+			// No injected client and no `__TAURI_INTERNALS__`: the lazy resolver returns
+			// null, so the new methods must resolve as no-ops instead of pulling
+			// `@tauri-apps/api/window` into the Node module graph.
+			const shell = new TauriWindowShell();
+
+			await expect(shell.minimize()).resolves.toBeUndefined();
+			await expect(shell.toggleMaximize()).resolves.toBeUndefined();
+			await expect(shell.close()).resolves.toBeUndefined();
+			await expect(shell.isMaximized()).resolves.toBe(false);
+			await expect(shell.onMaximizedChange(() => {})).resolves.toBeTypeOf('function');
 		});
 	});
 });

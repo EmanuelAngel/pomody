@@ -70,7 +70,12 @@ describe('WindowState', () => {
 					await gate;
 				},
 				restoreMainWindow: async () => {},
-				isAlwaysOnTop: async () => false
+				isAlwaysOnTop: async () => false,
+				minimize: async () => {},
+				toggleMaximize: async () => {},
+				close: async () => {},
+				isMaximized: async () => false,
+				onMaximizedChange: async () => () => {}
 			};
 			const gatedState = createWindowState(gatedShell);
 
@@ -131,6 +136,124 @@ describe('WindowState', () => {
 	describe('Default Shell Selection', () => {
 		it('should fall back to the web shell outside a Tauri runtime', () => {
 			expect(createDefaultWindowShell()).toBeInstanceOf(WebWindowShell);
+		});
+	});
+
+	describe('Window controls', () => {
+		it('should start in the restored (not maximized) state', () => {
+			expect(state.isMaximized).toBe(false);
+		});
+
+		describe('minimize', () => {
+			it('should delegate to the shell', async () => {
+				await state.minimize();
+
+				expect(shell.minimizeCallCount).toBe(1);
+			});
+
+			it('should no-op when the shell is unsupported', async () => {
+				const unsupportedShell = new FakeWindowShell({ isSupported: false });
+				const unsupportedState = createWindowState(unsupportedShell);
+
+				await unsupportedState.minimize();
+
+				expect(unsupportedShell.minimizeCallCount).toBe(0);
+			});
+		});
+
+		describe('toggleMaximize', () => {
+			it('should toggle the shell and mirror the new maximized state', async () => {
+				await state.toggleMaximize();
+
+				expect(shell.toggleMaximizeCallCount).toBe(1);
+				expect(state.isMaximized).toBe(true);
+
+				await state.toggleMaximize();
+
+				expect(state.isMaximized).toBe(false);
+			});
+
+			it('should mirror the state even when the native event never arrives', async () => {
+				const silentShell: IWindowShell = {
+					isSupported: true,
+					enterMiniPlayer: async () => {},
+					restoreMainWindow: async () => {},
+					isAlwaysOnTop: async () => false,
+					minimize: async () => {},
+					toggleMaximize: async () => {},
+					close: async () => {},
+					isMaximized: async () => true,
+					onMaximizedChange: async () => () => {}
+				};
+				const silentState = createWindowState(silentShell);
+
+				await silentState.toggleMaximize();
+
+				expect(silentState.isMaximized).toBe(true);
+			});
+
+			it('should no-op when the shell is unsupported', async () => {
+				const unsupportedShell = new FakeWindowShell({ isSupported: false });
+				const unsupportedState = createWindowState(unsupportedShell);
+
+				await unsupportedState.toggleMaximize();
+
+				expect(unsupportedShell.toggleMaximizeCallCount).toBe(0);
+				expect(unsupportedState.isMaximized).toBe(false);
+			});
+		});
+
+		describe('close', () => {
+			it('should delegate to the shell', async () => {
+				await state.close();
+
+				expect(shell.closeCallCount).toBe(1);
+			});
+
+			it('should no-op when the shell is unsupported', async () => {
+				const unsupportedShell = new FakeWindowShell({ isSupported: false });
+				const unsupportedState = createWindowState(unsupportedShell);
+
+				await unsupportedState.close();
+
+				expect(unsupportedShell.closeCallCount).toBe(0);
+			});
+		});
+
+		describe('watchMaximizedState', () => {
+			it('should read the current state and mirror later OS-driven changes', async () => {
+				shell.emitMaximizedChange(true);
+
+				const unsubscribe = await state.watchMaximizedState();
+
+				expect(state.isMaximized).toBe(true);
+				expect(shell.onMaximizedChangeCallCount).toBe(1);
+
+				shell.emitMaximizedChange(false);
+
+				expect(state.isMaximized).toBe(false);
+
+				unsubscribe();
+			});
+
+			it('should stop mirroring once unsubscribed', async () => {
+				const unsubscribe = await state.watchMaximizedState();
+				unsubscribe();
+
+				shell.emitMaximizedChange(true);
+
+				expect(state.isMaximized).toBe(false);
+			});
+
+			it('should return a no-op unsubscribe on the web shell', async () => {
+				const webState = createWindowState(new WebWindowShell());
+
+				const unsubscribe = await webState.watchMaximizedState();
+
+				expect(typeof unsubscribe).toBe('function');
+				expect(() => unsubscribe()).not.toThrow();
+				expect(webState.isMaximized).toBe(false);
+			});
 		});
 	});
 });
