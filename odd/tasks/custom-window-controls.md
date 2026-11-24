@@ -23,7 +23,7 @@
 
 | ID  | Specs              | Route                                                               | Commit  |
 | --- | ------------------ | ------------------------------------------------------------------- | ------- |
-| T1  | S2, S3, S4, S5, S6 | Port + adapter + fake + state + config/capabilities + decisions doc | pending |
+| T1  | S2, S3, S4, S5, S6 | Port + adapter + fake + state + config/capabilities + decisions doc | 4197f2b |
 | T2  | S1, S5, S6         | Title bar strip component + layout wiring + spec doc                | pending |
 | T3  | S6                 | Manual verification checklist on Windows + desktop-ci run           | pending |
 
@@ -34,3 +34,5 @@
 - **L3**: User correction adopted: "El mini-player no tiene decorations actualmente" — verified true; removed mini-player from decision surface.
 - **L4**: User correction adopted: "El botón de cerrar actualmente manda a la bandeja, tray. ¿no?" — verified true; close behavior is preserved, not redefined.
 - **L5**: User chose **B · Franja separada** over integrating controls into the header (the header itself stays untouched except by T2's layout wiring).
+- **L6**: Independent verification of T1 (risk item 3) completed: all S# verdicts met (S2 code path, S3 code level, S4, S5-shell-share, S6-unit-tier); 1696 server + 39 client tests, `pnpm check`/`pnpm lint` exit 0, no repo mutation. Advisories adopted: durable share-regression test to add; decisions.md capability claim to correct; two stale mini-player docs to annotate as superseded; T1 must not ship alone (T2 lands on the same branch — planned).
+- **L7**: User ordered verification redone in situ after the first verifier copied node_modules to /tmp (broke on MAX_PATH symlinks; cancelled and cleaned up). Verification must always run on the repo, never on a sandbox copy.
