@@ -1,5 +1,10 @@
 # Pomody
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/pomody-banner-dark.png">
+  <img src="docs/brand/pomody-banner-light.png" alt="Pomody — temporizador Pomodoro para foco real">
+</picture>
+
 > El temporizador Pomodoro pensado para el foco real: planificá tus tareas, protegé tu concentración y descansá con propósito, sin bloatware ni suscripciones abusivas.
 
 [![Estado del Proyecto](https://img.shields.io/badge/Estado-Milestones%201--4%20Completados-brightgreen)](docs/roadmap.md)
