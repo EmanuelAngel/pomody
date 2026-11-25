@@ -136,6 +136,30 @@
 	--radius: 0.625rem;
 }
 
+/*
+	Motion foundation — theme-independent.
+
+	One vocabulary of durations and curves for every micro-interaction, so a press,
+	a hover and a reveal cannot drift apart into `duration-150` here and
+	`duration-300` there. Two durations is the whole set: `fast` for direct
+	manipulation (press, hover, chips, steppers) and `base` for a surface entering
+	or settling (cards, panels).
+
+	`--ease-out-quart` decelerates hard at the start, which is what makes a short
+	transition read as instant-but-smooth instead of sluggish.
+
+	150ms is the floor of perceptibility, not a preference: the first pass shipped
+	120ms and it tested as "I barely notice the changes" on a phone, where there is
+	no hover state to compensate and the press scale is the only feedback. Below
+	~150ms a press-and-release fits inside one or two frames of the finger's own
+	movement and reads as "nothing happened".
+*/
+:root {
+	--duration-fast: 150ms;
+	--duration-base: 200ms;
+	--ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
 @theme inline {
 	--font-sans: 'Inter Variable', sans-serif;
 	--font-mono: 'JetBrains Mono Variable', monospace;
@@ -212,5 +236,94 @@
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
 		text-rendering: optimizeLegibility;
+		/*
+			The header is `fixed` and floats over every scrolling view, so an in-page
+			jump would otherwise land the target underneath the bar. 3.5rem is the
+			header height (`h-14`) plus air.
+		*/
+		scroll-padding-top: calc(3.5rem + 0.75rem);
+	}
+
+	/*
+		Smooth scrolling is opt-in, never the default: it is movement, and movement
+		is what `prefers-reduced-motion` exists to remove. Users who have not asked
+		for reduced motion get the glide; everyone else keeps the instant jump.
+	*/
+	@media (prefers-reduced-motion: no-preference) {
+		html {
+			scroll-behavior: smooth;
+		}
+	}
+}
+
+/*
+	Opt-in interaction treatments. They exist so a hundred hand-written
+	`transition-colors` classes cannot drift into a hundred slightly different
+	timings; a component asks for the behaviour by name and inherits the tokens.
+
+	They are deliberately opt-in and never blanket-applied to `*`: a `*` transition
+	turns theme switching into a full-page crossfade and makes every layout change
+	look like an animation.
+
+	`interactive` — state colours, border and shadow only. The resting treatment for
+	rows, chips, steppers, links and cards.
+
+	`pressable` — `interactive` plus a real press: the control shrinks under the
+	pointer. The scale is guarded by `prefers-reduced-motion` in CSS itself, so the
+	press scale can never reach a user who has asked for still motion, while the
+	colour feedback is always kept.
+*/
+@utility interactive {
+	transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+	transition-duration: var(--duration-fast);
+	transition-timing-function: var(--ease-out-quart);
+}
+
+@utility pressable {
+	transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+	transition-duration: var(--duration-fast);
+	transition-timing-function: var(--ease-out-quart);
+
+	/*
+		0.94, not 0.96: a 4% shrink on a 40px control is 1.6px, which is under the
+		noise floor of a finger covering the button. 6% is the smallest value that
+		still reads as "the surface moved" on a phone without looking bouncy.
+	*/
+	@media (prefers-reduced-motion: no-preference) {
+		&:active:not(:disabled) {
+			scale: 0.94;
+		}
+	}
+}
+
+/*
+	`card-hover` — the ONE hover recipe for project-owned cards (break card,
+	timeline focus / break / buffer cards).
+
+	It is deliberately only the elevation half of the feedback. Which border a card
+	rests on is part of its identity — a break category tint, an in-progress accent,
+	a dashed buffer — so a shared utility that forced a border colour would either
+	be overridden by those tints or override them, and the recipe would drift the
+	moment one card added a state. Lift plus shadow is theme-agnostic and reads
+	identically on `dark`, `dawn` and `oled`.
+
+	`shadow-md` is one full step above the cards' resting `shadow-xs`: `shadow-sm`
+	(what the cards used first) is 1px of blur and is invisible on a Rosé Pine
+	surface at 1x. The 2px lift is the part that survives touch, where hover does
+	not exist: it is the same movement the press scale uses, one magnitude subtler.
+*/
+@utility card-hover {
+	transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+	transition-duration: var(--duration-fast);
+	transition-timing-function: var(--ease-out-quart);
+
+	&:hover {
+		@apply shadow-md;
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		&:hover {
+			transform: translateY(-2px);
+		}
 	}
 }

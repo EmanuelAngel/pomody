@@ -146,7 +146,7 @@
 								aria-selected={activeTab === 'timer'}
 								onclick={() => handleTabClick('timer')}
 								class={cn(
-									'group relative flex cursor-pointer flex-col items-center rounded-lg px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+									'group relative flex cursor-pointer flex-col items-center rounded-lg px-3 py-2 interactive focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
 									'hover:bg-muted focus-visible:bg-muted',
 									activeTab === 'timer'
 										? 'text-foreground'
@@ -157,7 +157,7 @@
 								<span class="sr-only">{t.header_nav_timer()}</span>
 								{#if activeTab === 'timer'}
 									<span
-										class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
+										class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose motion-safe:animate-in motion-safe:duration-200 motion-safe:fade-in"
 									></span>
 								{/if}
 							</button>
@@ -178,7 +178,7 @@
 								aria-selected={activeTab === 'planning'}
 								onclick={() => handleTabClick('planning')}
 								class={cn(
-									'group relative flex cursor-pointer flex-col items-center rounded-lg px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+									'group relative flex cursor-pointer flex-col items-center rounded-lg px-3 py-2 interactive focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
 									'hover:bg-muted focus-visible:bg-muted',
 									activeTab === 'planning'
 										? 'text-foreground'
@@ -189,7 +189,7 @@
 								<span class="sr-only">{t.header_nav_planning()}</span>
 								{#if activeTab === 'planning'}
 									<span
-										class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
+										class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose motion-safe:animate-in motion-safe:duration-200 motion-safe:fade-in"
 									></span>
 								{/if}
 							</button>
@@ -211,7 +211,7 @@
 									aria-selected={activeTab === 'distractions'}
 									onclick={() => handleTabClick('distractions')}
 									class={cn(
-										'group relative flex cursor-pointer flex-col items-center rounded-lg px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+										'group relative flex cursor-pointer flex-col items-center rounded-lg px-3 py-2 interactive focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
 										'hover:bg-muted focus-visible:bg-muted',
 										activeTab === 'distractions'
 											? 'text-foreground'
@@ -222,7 +222,7 @@
 									<span class="sr-only">{t.header_nav_distractions()}</span>
 									{#if activeTab === 'distractions'}
 										<span
-											class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
+											class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose motion-safe:animate-in motion-safe:duration-200 motion-safe:fade-in"
 										></span>
 									{/if}
 								</button>
@@ -246,7 +246,7 @@
 								aria-selected={activeTab === 'metrics'}
 								onclick={() => handleTabClick('metrics')}
 								class={cn(
-									'group relative flex cursor-pointer flex-col items-center rounded-lg px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+									'group relative flex cursor-pointer flex-col items-center rounded-lg px-3 py-2 interactive focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
 									'hover:bg-muted focus-visible:bg-muted',
 									activeTab === 'metrics'
 										? 'text-foreground'
@@ -257,7 +257,7 @@
 								<span class="sr-only">{t.header_nav_metrics()}</span>
 								{#if activeTab === 'metrics'}
 									<span
-										class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
+										class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose motion-safe:animate-in motion-safe:duration-200 motion-safe:fade-in"
 									></span>
 								{/if}
 							</button>

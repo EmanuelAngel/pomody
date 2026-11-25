@@ -78,7 +78,7 @@
 
 {#if task.completed}
 	<li
-		class="group flex items-start justify-between gap-3 rounded-xl border border-border/20 bg-muted/20 px-3 py-2 text-muted-foreground/70 transition-colors"
+		class="group flex items-start justify-between gap-3 rounded-xl border border-border/20 bg-muted/20 px-3 py-2 text-muted-foreground/70 interactive"
 	>
 		<div class="flex min-w-0 flex-1 items-start gap-3">
 			<button
@@ -87,7 +87,7 @@
 				aria-checked={true}
 				aria-label={t.task_item_mark_as_pending({ title: task.title })}
 				onclick={() => ontoggle?.(task.id)}
-				class="mt-0.5 flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-primary bg-primary text-primary-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="mt-0.5 flex size-4.5 shrink-0 pressable cursor-pointer items-center justify-center rounded-full border border-primary bg-primary text-primary-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				<Check class="size-2.5 stroke-[3]" />
 			</button>
@@ -117,7 +117,7 @@
 		ondragstart={handleDragStart}
 		ondragend={handleDragEnd}
 		class={cn(
-			'group flex items-start justify-between gap-3 rounded-xl border px-3 py-2.5 transition-all duration-150',
+			'group flex items-start justify-between gap-3 rounded-xl border px-3 py-2.5 interactive',
 			isDragging && 'border-dashed border-primary/50 opacity-40',
 			!isEditing && 'cursor-grab active:cursor-grabbing',
 			isActive
@@ -141,7 +141,7 @@
 				aria-checked={false}
 				aria-label={t.task_item_mark_as_completed({ title: task.title })}
 				onclick={() => ontoggle?.(task.id)}
-				class="mt-0.5 flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-muted-foreground/40 transition-colors hover:border-primary focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="mt-0.5 flex size-4.5 shrink-0 pressable cursor-pointer items-center justify-center rounded-full border border-muted-foreground/40 hover:border-primary focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 			</button>
 
@@ -158,7 +158,7 @@
 				<button
 					type="button"
 					aria-label={t.task_item_edit_button_aria({ title: task.title })}
-					class="min-w-0 flex-1 cursor-text text-left text-sm leading-snug font-medium break-words text-foreground transition-colors hover:text-foreground/80 focus-visible:outline-none"
+					class="min-w-0 flex-1 pressable cursor-text text-left text-sm leading-snug font-medium break-words text-foreground hover:text-foreground/80 focus-visible:outline-none"
 					title={t.task_item_edit_button_title()}
 					onclick={startEditing}
 				>

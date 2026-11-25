@@ -162,7 +162,7 @@
 					type="button"
 					onclick={() => (isCompletedOpen = !isCompletedOpen)}
 					aria-expanded={isCompletedOpen}
-					class="flex cursor-pointer items-center gap-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase transition-colors hover:text-foreground"
+					class="flex pressable cursor-pointer items-center gap-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase hover:text-foreground"
 				>
 					{#if isCompletedOpen}
 						<ChevronDown class="size-3.5" />
@@ -176,7 +176,7 @@
 					type="button"
 					aria-label={t.task_backlog_clear_completed()}
 					onclick={handleClearCompleted}
-					class="cursor-pointer text-xs text-muted-foreground/70 transition-colors hover:text-destructive"
+					class="pressable cursor-pointer text-xs text-muted-foreground/70 hover:text-destructive"
 				>
 					{t.task_backlog_clear_completed()}
 				</button>

@@ -88,7 +88,7 @@
 	<div
 		data-slot="task-pill"
 		class={cn(
-			'group inline-flex h-8 items-center rounded-full border border-border/40 bg-muted/40 shadow-xs transition-all duration-200 sm:text-sm',
+			'group inline-flex h-8 items-center rounded-full border border-border/40 bg-muted/40 shadow-xs interactive sm:text-sm',
 			activeTask ? 'gap-2 px-3 text-xs' : 'p-0 text-xs text-muted-foreground/80',
 			isRunning
 				? 'opacity-60 transition-opacity hover:opacity-100'
@@ -107,7 +107,7 @@
 					: t.task_pill_mark_as_completed({ title: activeTask.title })}
 				onclick={handleToggleCompleted}
 				class={cn(
-					'flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-all duration-150 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+					'flex size-4 shrink-0 pressable cursor-pointer items-center justify-center rounded-full border focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
 					activeTask.completed
 						? 'border-primary bg-primary text-primary-foreground'
 						: 'border-muted-foreground/50 hover:border-foreground'
@@ -197,7 +197,7 @@
 					type="button"
 					aria-label={t.task_pill_add_task_aria()}
 					onclick={handleSubmitNewTask}
-					class="absolute right-1 flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none"
+					class="absolute right-1 flex size-6 pressable cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none"
 				>
 					<Plus class="size-3.5" />
 				</button>
@@ -211,7 +211,7 @@
 			aria-selected={activeTaskId === null}
 			onclick={() => handleSelectTask(null)}
 			class={cn(
-				'flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted/60',
+				'flex w-full pressable cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs hover:bg-muted/60',
 				activeTaskId === null && 'bg-muted/50 font-medium text-foreground'
 			)}
 		>
@@ -245,7 +245,7 @@
 						aria-selected={task.id === activeTaskId}
 						onclick={() => handleSelectTask(task.id)}
 						class={cn(
-							'group flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted/60',
+							'group flex w-full pressable cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs hover:bg-muted/60',
 							task.id === activeTaskId && 'bg-muted/50 font-medium text-foreground'
 						)}
 					>

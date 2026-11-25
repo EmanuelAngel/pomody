@@ -300,4 +300,16 @@
 	:global(.animate-mini-player-marquee) {
 		animation: mini-player-marquee 10s linear infinite;
 	}
+
+	/*
+		A looping transform is the one thing `prefers-reduced-motion` is really about:
+		under the reduce preference the marquee is dropped entirely and the truncated
+		title simply stays put. The hover still reveals the duplicate copy, it just no
+		longer travels.
+	*/
+	@media (prefers-reduced-motion: reduce) {
+		:global(.animate-mini-player-marquee) {
+			animation: none;
+		}
+	}
 </style>

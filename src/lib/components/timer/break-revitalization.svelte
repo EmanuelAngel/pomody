@@ -101,7 +101,7 @@
 			<Popover.Trigger
 				type="button"
 				aria-label={t.break_revitalization_view_instructions({ title: activeTitle })}
-				class="inline-flex size-6 cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="inline-flex size-6 pressable cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				<BookOpen class="size-3.5" />
 			</Popover.Trigger>
@@ -143,8 +143,8 @@
 			aria-label={t.break_revitalization_shuffle_aria()}
 			onclick={handleShuffle}
 			class={cn(
-				'inline-flex size-6 cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 transition-all duration-200 hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none active:scale-90',
-				isShuffling && 'rotate-180 duration-300'
+				'inline-flex size-6 pressable cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+				isShuffling && 'motion-safe:rotate-180 motion-safe:duration-300'
 			)}
 		>
 			<Shuffle class="size-3.5" />

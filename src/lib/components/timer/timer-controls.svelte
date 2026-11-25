@@ -28,7 +28,7 @@
 		aria-hidden={isRunning ? true : undefined}
 		onclick={onReset}
 		class={cn(
-			'size-12 rounded-full text-muted-foreground transition-opacity duration-300 ease-in-out hover:text-foreground',
+			'size-12 rounded-full text-muted-foreground transition-[opacity,color] duration-300 ease-in-out hover:text-foreground',
 			isRunning ? 'pointer-events-none opacity-0' : 'pointer-events-auto opacity-100'
 		)}
 	>
@@ -44,7 +44,7 @@
 				? t.timer_controls_resume()
 				: t.timer_controls_start()}
 		onclick={onPlayPause}
-		class="size-16 cursor-pointer rounded-full shadow-md transition-transform duration-200 hover:scale-105 active:scale-95"
+		class="size-16 cursor-pointer rounded-full shadow-md transition-transform duration-200 motion-safe:hover:scale-105 motion-safe:active:scale-95"
 	>
 		{#if isRunning}
 			<Pause class="size-7" />
@@ -62,7 +62,7 @@
 		aria-hidden={isRunning ? true : undefined}
 		onclick={onSkip}
 		class={cn(
-			'size-12 rounded-full text-muted-foreground transition-opacity duration-300 ease-in-out hover:text-foreground',
+			'size-12 rounded-full text-muted-foreground transition-[opacity,color] duration-300 ease-in-out hover:text-foreground',
 			isRunning ? 'pointer-events-none opacity-0' : 'pointer-events-auto opacity-100'
 		)}
 	>

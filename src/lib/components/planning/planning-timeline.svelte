@@ -112,7 +112,7 @@
 					type="button"
 					disabled={planningState.isSessionActive}
 					class={cn(
-						'cursor-pointer rounded-md px-2.5 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+						'pressable cursor-pointer rounded-md px-2.5 py-1 font-medium disabled:cursor-not-allowed disabled:opacity-60',
 						planningState.targetMode === 'blocks'
 							? 'bg-background text-foreground shadow-xs'
 							: 'text-muted-foreground hover:text-foreground'
@@ -125,7 +125,7 @@
 					type="button"
 					disabled={planningState.isSessionActive}
 					class={cn(
-						'cursor-pointer rounded-md px-2.5 py-1 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+						'pressable cursor-pointer rounded-md px-2.5 py-1 font-medium disabled:cursor-not-allowed disabled:opacity-60',
 						planningState.targetMode === 'end_time'
 							? 'bg-background text-foreground shadow-xs'
 							: 'text-muted-foreground hover:text-foreground'
@@ -251,7 +251,7 @@
 					</div>
 					<button
 						type="button"
-						class="w-full cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+						class="w-full pressable cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 						onclick={() => planningState.endSession(timerState)}
 					>
 						{t.planning_timeline_start_new_session()}
@@ -262,7 +262,7 @@
 					<div class="flex flex-col gap-2.5 sm:flex-row sm:items-center">
 						<button
 							type="button"
-							class="flex-1 cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+							class="flex-1 pressable cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 							onclick={() => navigationState.setTab('timer')}
 						>
 							{t.planning_back_to_timer()}
@@ -284,7 +284,7 @@
 						<Tooltip.Provider>
 							<Tooltip.Root>
 								<Tooltip.Trigger
-									class="cursor-pointer font-medium text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+									class="pressable cursor-pointer font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 									aria-label={t.planning_timeline_forward_sync_more_aria()}
 								>
 									{t.planning_timeline_learn_more()}
@@ -305,7 +305,7 @@
 							await planningState.startSession(timerState, tasksState);
 							navigationState.setTab('timer');
 						}}
-						class="w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+						class="w-full pressable cursor-pointer rounded-xl bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						{t.planning_timeline_start_session()}
 					</button>

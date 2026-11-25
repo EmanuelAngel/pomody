@@ -281,7 +281,7 @@
 			<button
 				type="button"
 				onclick={handleOpenResetDefaults}
-				class="inline-flex cursor-pointer items-center gap-1.5 rounded-sm px-2 py-1 text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="inline-flex pressable cursor-pointer items-center gap-1.5 rounded-sm px-2 py-1 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				<RotateCcw class="size-3" />
 				<span>{t.break_catalog_reset_defaults_button()}</span>
