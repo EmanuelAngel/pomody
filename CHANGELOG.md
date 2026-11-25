@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.27.0...pomody-v0.28.0) (2026-11-25)
+
+
+### Features
+
+* **ux:** motion polish — micro-interacciones, transiciones y animaciones del timer ([#245](https://github.com/EmanuelAngel/pomody/issues/245)) ([2d44cb7](https://github.com/EmanuelAngel/pomody/commit/2d44cb7f70584ec3092d2418e2eb24dc055a0486))
+
 ## [0.27.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.26.0...pomody-v0.27.0) (2026-11-25)
 
 
