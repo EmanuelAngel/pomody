@@ -12,6 +12,7 @@ import { FakeBreakActivityRepository } from '$tests/fakes/repositories/fake-brea
 import { localeState } from '$lib/state/locale.svelte';
 import { FakeTicker } from '$tests/fakes/engine/fake-ticker';
 import { FakeAudioNotifier } from '$tests/fakes/engine/fake-audio-notifier';
+import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
 
 const mockActivity = createBreakActivity({
 	id: 'act-phys',
@@ -564,5 +565,98 @@ describe('Timer block end-time label (Client Browser)', () => {
 
 		state.start();
 		await expect.element(screen.getByText('Termina a las 15:25')).toBeVisible();
+	});
+});
+
+describe('Timer block end-time preference (Client Browser)', () => {
+	/** 15:00 local, the instant every expectation below is written against. */
+	const START = new Date(2024, 0, 15, 15, 0, 0).getTime();
+	const MINUTE = 60_000;
+	let clock: number;
+	let ticker: FakeTicker;
+
+	beforeEach(() => {
+		clock = START;
+		ticker = new FakeTicker();
+	});
+
+	function createState(options: { blockEndTimeEnabled?: boolean } = {}) {
+		return createTimerState(
+			{ focusDurationSeconds: 1500 },
+			ticker,
+			new FakeAudioNotifier(),
+			new FakeSettingsStorage({ blockEndTimeEnabled: options.blockEndTimeEnabled ?? true }),
+			undefined,
+			() => clock
+		);
+	}
+
+	const endLabels = (screen: { container: HTMLElement }) =>
+		screen.container.querySelectorAll('[data-block-end]');
+
+	it('hides the projected end time while idle when the preference is off', async () => {
+		const screen = await render(Timer, {
+			state: createState({ blockEndTimeEnabled: false })
+		});
+
+		const line = screen.container.querySelector('[data-timer-status-line]');
+		expect(line).not.toBeNull();
+		expect(endLabels(screen)).toHaveLength(0);
+		expect(screen.container.textContent).not.toContain('Would end at');
+		expect(screen.container.textContent).not.toContain('15:25');
+	});
+
+	it('hides the end time of a running block when the preference is off', async () => {
+		const state = createState({ blockEndTimeEnabled: false });
+		const screen = await render(Timer, { state });
+
+		state.start();
+		await tick();
+
+		expect(endLabels(screen)).toHaveLength(0);
+		expect(screen.container.textContent).not.toContain('Ends at');
+	});
+
+	it('leaves the waiting counter alone when the preference is off', async () => {
+		const state = createState({ blockEndTimeEnabled: false });
+		const screen = await render(Timer, { state });
+
+		state.start();
+		clock += MINUTE;
+		ticker.simulateTick(MINUTE);
+		state.pause();
+		await tick();
+
+		const line = screen.container.querySelector('[data-timer-status-line]');
+
+		expect(line?.querySelector('[data-waiting-since="paused"]')).not.toBeNull();
+		expect(endLabels(screen)).toHaveLength(0);
+		expect(line?.textContent).not.toContain('·');
+		expect(line?.textContent).not.toContain('Ends at');
+	});
+
+	it('keeps the reserved status line on one unbreakable row either way', async () => {
+		const state = createState({ blockEndTimeEnabled: false });
+		const screen = await render(Timer, { state });
+
+		const line = screen.container.querySelector('[data-timer-status-line]');
+		const content = line?.firstElementChild;
+
+		expect(line?.className).toContain('h-5');
+		expect(content?.className).toContain('whitespace-nowrap');
+	});
+
+	it('shows the label again the moment the preference is turned back on', async () => {
+		const state = createState({ blockEndTimeEnabled: false });
+		const screen = await render(Timer, { state });
+
+		state.start();
+		await tick();
+		expect(endLabels(screen)).toHaveLength(0);
+
+		state.setBlockEndTimeEnabled(true);
+
+		await expect.element(screen.getByText('Ends at 15:25')).toBeVisible();
+		expect(endLabels(screen)).toHaveLength(1);
 	});
 });

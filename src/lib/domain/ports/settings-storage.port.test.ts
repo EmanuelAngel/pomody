@@ -23,6 +23,7 @@ describe('Settings Storage Port & UserSettings Model', () => {
 				revitalizationEnabled: true,
 				distractionDetectorEnabled: false,
 				blockNotificationsEnabled: true,
+				blockEndTimeEnabled: true,
 				theme: 'dark',
 				illustration: {
 					enabled: false,

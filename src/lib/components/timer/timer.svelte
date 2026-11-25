@@ -42,7 +42,9 @@
 	 * The states where the ticker is stopped: their end time only moves with the wall clock, so the
 	 * label needs its own minute nudge. While the block runs, the snapshot ticks and does it for us.
 	 */
-	const needsWallClock = $derived(state.state === 'idle' || state.state === 'paused');
+	const needsWallClock = $derived(
+		state.blockEndTimeEnabled && (state.state === 'idle' || state.state === 'paused')
+	);
 
 	$effect(() => {
 		if (!needsWallClock) {
@@ -57,8 +59,13 @@
 	/**
 	 * When the block in course ends: a reading of the clock, not a countdown. Idle projects the block
 	 * that would start right now, which is why its copy is conditional rather than the same sentence.
+	 * Off by preference leaves the reserved line to the waiting counter alone.
 	 */
 	const endTimeLabel = $derived.by(() => {
+		if (!state.blockEndTimeEnabled) {
+			return null;
+		}
+
 		const endsAt = state.blockEndsAt;
 
 		if (endsAt === null) {
@@ -104,7 +111,7 @@
 	<!-- Always reserved, so the controls never jump when the counter appears. -->
 	<div class="mt-1 grid h-5 place-items-center" data-timer-status-line>
 		<div
-			class="flex items-center justify-center gap-2 text-xs text-muted-foreground tabular-nums sm:text-sm"
+			class="flex items-center justify-center gap-2 text-xs whitespace-nowrap text-muted-foreground tabular-nums sm:text-sm"
 		>
 			<WaitingSince waitingSince={state.waitingSince} kind={waitingKind} />
 			{#if waitingKind !== null && endTimeLabel !== null}

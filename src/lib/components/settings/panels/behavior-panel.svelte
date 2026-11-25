@@ -118,6 +118,32 @@
 		</div>
 	</div>
 
+	<Separator />
+
+	<!-- Block End Time -->
+	<div class="flex flex-col gap-3">
+		<div>
+			<h3 class="text-sm font-semibold tracking-wide text-foreground">
+				{t.settings_section_display()}
+			</h3>
+			<p class="mt-0.5 text-xs text-muted-foreground">
+				{t.settings_section_display_description()}
+			</p>
+		</div>
+
+		<div class="flex items-center justify-between rounded-lg border border-border p-3.5 shadow-xs">
+			<div class="flex flex-col gap-0.5">
+				<span class="text-xs font-medium text-foreground">{t.settings_block_end_time()}</span>
+				<span class="text-xs text-muted-foreground">{t.settings_block_end_time_description()}</span>
+			</div>
+			<Switch
+				checked={timerState.blockEndTimeEnabled}
+				onCheckedChange={(checked) => timerState.setBlockEndTimeEnabled(checked)}
+				aria-label={t.settings_block_end_time_aria()}
+			/>
+		</div>
+	</div>
+
 	{#if distractionDetectorSupported}
 		<Separator />
 

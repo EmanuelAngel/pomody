@@ -39,6 +39,11 @@ export interface UserSettings {
 	 * the audio chime alone is lost when Pomody is behind another window.
 	 */
 	readonly blockNotificationsEnabled: boolean;
+	/**
+	 * Whether the main view shows the estimated wall-clock end time of the current block.
+	 * On by default: it is a reading of the clock, not extra configuration.
+	 */
+	readonly blockEndTimeEnabled: boolean;
 	readonly theme: Theme;
 	readonly illustration: IllustrationSettings;
 }
@@ -52,6 +57,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = Object.freeze({
 	revitalizationEnabled: true,
 	distractionDetectorEnabled: false,
 	blockNotificationsEnabled: true,
+	blockEndTimeEnabled: true,
 	theme: 'dark',
 	illustration: DEFAULT_ILLUSTRATION_SETTINGS
 });

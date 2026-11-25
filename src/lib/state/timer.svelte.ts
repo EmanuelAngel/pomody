@@ -74,6 +74,7 @@ export class TimerState {
 
 	private _soundEnabled = $state<boolean>(true);
 	private _revitalizationEnabled = $state<boolean>(true);
+	private _blockEndTimeEnabled = $state<boolean>(true);
 	private _configSubscribers = new SvelteSet<(config: TimerConfig) => void>();
 
 	private _snapshot = $state<TimerSnapshot>({
@@ -119,6 +120,24 @@ export class TimerState {
 	public toggleRevitalization(): void {
 		this._revitalizationEnabled = !this._revitalizationEnabled;
 		this.storage?.saveSettings({ revitalizationEnabled: this._revitalizationEnabled });
+	}
+
+	/**
+	 * Whether the main view shows the estimated end time of the current block. Purely a display
+	 * preference: the projection itself is always available through `blockEndsAt`.
+	 */
+	public get blockEndTimeEnabled(): boolean {
+		return this._blockEndTimeEnabled;
+	}
+
+	public setBlockEndTimeEnabled(enabled: boolean): void {
+		this._blockEndTimeEnabled = enabled;
+		this.storage?.saveSettings({ blockEndTimeEnabled: this._blockEndTimeEnabled });
+	}
+
+	public toggleBlockEndTime(): void {
+		this._blockEndTimeEnabled = !this._blockEndTimeEnabled;
+		this.storage?.saveSettings({ blockEndTimeEnabled: this._blockEndTimeEnabled });
 	}
 
 	public get snapshot(): TimerSnapshot {
@@ -243,6 +262,7 @@ export class TimerState {
 			this._soundEnabled = storedSettings.soundEnabled;
 		}
 		this._revitalizationEnabled = storedSettings?.revitalizationEnabled ?? true;
+		this._blockEndTimeEnabled = storedSettings?.blockEndTimeEnabled ?? true;
 
 		this.fsm = new TimerFSM(initialConfig);
 		this.ticker = ticker ?? new WebWorkerTimerTicker();
@@ -351,12 +371,14 @@ export class TimerState {
 	 */
 	public resetSettings(): void {
 		this._revitalizationEnabled = DEFAULT_USER_SETTINGS.revitalizationEnabled;
+		this._blockEndTimeEnabled = DEFAULT_USER_SETTINGS.blockEndTimeEnabled;
 		this._soundEnabled = DEFAULT_USER_SETTINGS.soundEnabled;
 		this.fsm.updateConfig(DEFAULT_TIMER_CONFIG);
 		this.storage?.saveSettings({
 			timer: this.fsm.config,
 			soundEnabled: this._soundEnabled,
-			revitalizationEnabled: this._revitalizationEnabled
+			revitalizationEnabled: this._revitalizationEnabled,
+			blockEndTimeEnabled: this._blockEndTimeEnabled
 		});
 		this._config = this.fsm.config;
 		for (const subscriber of this._configSubscribers) {

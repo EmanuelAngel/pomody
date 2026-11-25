@@ -4,6 +4,11 @@ import { FakeTicker } from '$tests/fakes/engine/fake-ticker';
 import { FakeAudioNotifier } from '$tests/fakes/engine/fake-audio-notifier';
 import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
 import { FakeTimerStateRepository } from '$tests/fakes/repositories/fake-timer-state-repository';
+import { InMemoryStorage } from '../adapters/storage/in-memory-storage';
+import {
+	LocalSettingsStorage,
+	SETTINGS_STORAGE_KEY
+} from '../adapters/storage/local-settings-storage';
 import { TimerState, createTimerState, formatTime, timerState } from './timer.svelte';
 import { DEFAULT_TIMER_CONFIG, TimerFSM, type DomainEvent } from '../domain/timer/timer-fsm';
 
@@ -676,7 +681,8 @@ describe('TimerState Composition Root', () => {
 				{
 					timer: DEFAULT_TIMER_CONFIG,
 					soundEnabled: true,
-					revitalizationEnabled: true
+					revitalizationEnabled: true,
+					blockEndTimeEnabled: true
 				}
 			]);
 
@@ -690,6 +696,8 @@ describe('TimerState Composition Root', () => {
 			expect(() => timer.toggleSound()).not.toThrow();
 			expect(() => timer.setRevitalizationEnabled(false)).not.toThrow();
 			expect(() => timer.toggleRevitalization()).not.toThrow();
+			expect(() => timer.setBlockEndTimeEnabled(false)).not.toThrow();
+			expect(() => timer.toggleBlockEndTime()).not.toThrow();
 			expect(() => timer.resetSettings()).not.toThrow();
 			timer.destroy();
 		});
@@ -1227,5 +1235,85 @@ describe('TimerState blockEndsAt', () => {
 		state.tickWallClock();
 		expect(state.wallClockTick).toBe(1);
 		expect(state.blockEndsAt).toBe(NOW + 11 * MINUTE + 1_440_000);
+	});
+});
+
+describe('TimerState blockEndTimeEnabled', () => {
+	const ticker = () => new FakeTicker();
+
+	it('shows the block end time by default when no settings are stored', () => {
+		const state = createTimerState(undefined, ticker(), new FakeAudioNotifier());
+
+		expect(state.blockEndTimeEnabled).toBe(true);
+
+		state.destroy();
+	});
+
+	it('loads the persisted preference', () => {
+		const state = createTimerState(
+			undefined,
+			ticker(),
+			new FakeAudioNotifier(),
+			new FakeSettingsStorage({ blockEndTimeEnabled: false })
+		);
+
+		expect(state.blockEndTimeEnabled).toBe(false);
+
+		state.destroy();
+	});
+
+	it('keeps the label on when the stored settings predate the preference', () => {
+		const storage = new InMemoryStorage();
+		storage.setItem(
+			SETTINGS_STORAGE_KEY,
+			JSON.stringify({ version: 1, timer: DEFAULT_TIMER_CONFIG, soundEnabled: true, theme: 'dark' })
+		);
+
+		const state = createTimerState(
+			undefined,
+			ticker(),
+			new FakeAudioNotifier(),
+			new LocalSettingsStorage(storage)
+		);
+
+		expect(state.blockEndTimeEnabled).toBe(true);
+
+		state.destroy();
+	});
+
+	it('persists the preference and toggles it reactively', () => {
+		const storage = new FakeSettingsStorage();
+		const state = createTimerState(undefined, ticker(), new FakeAudioNotifier(), storage);
+
+		state.setBlockEndTimeEnabled(false);
+		expect(state.blockEndTimeEnabled).toBe(false);
+		expect(storage.loadSettings().blockEndTimeEnabled).toBe(false);
+
+		state.toggleBlockEndTime();
+		expect(state.blockEndTimeEnabled).toBe(true);
+		expect(storage.loadSettings().blockEndTimeEnabled).toBe(true);
+
+		state.toggleBlockEndTime();
+		expect(state.blockEndTimeEnabled).toBe(false);
+		expect(storage.saveSettingsCalls).toEqual([
+			{ blockEndTimeEnabled: false },
+			{ blockEndTimeEnabled: true },
+			{ blockEndTimeEnabled: false }
+		]);
+
+		state.destroy();
+	});
+
+	it('restores the default when the settings are reset', () => {
+		const storage = new FakeSettingsStorage({ blockEndTimeEnabled: false });
+		const state = createTimerState(undefined, ticker(), new FakeAudioNotifier(), storage);
+		expect(state.blockEndTimeEnabled).toBe(false);
+
+		state.resetSettings();
+
+		expect(state.blockEndTimeEnabled).toBe(true);
+		expect(storage.loadSettings().blockEndTimeEnabled).toBe(true);
+
+		state.destroy();
 	});
 });

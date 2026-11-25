@@ -65,6 +65,7 @@ describe('LocalSettingsStorage', () => {
 				revitalizationEnabled: false,
 				distractionDetectorEnabled: true,
 				blockNotificationsEnabled: false,
+				blockEndTimeEnabled: true,
 				theme: 'dawn',
 				illustration: {
 					enabled: true,
