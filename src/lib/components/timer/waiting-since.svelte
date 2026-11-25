@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { fade, fly } from 'svelte/transition';
 	import { formatElapsed } from '$lib/domain/timer/elapsed-since';
+	import { motionIn, motionOut } from '$lib/utils/motion';
 	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
@@ -44,7 +46,18 @@
 </script>
 
 {#if label !== null}
-	<p class="text-xs text-muted-foreground tabular-nums sm:text-sm" data-waiting-since={kind}>
+	<!--
+		The counter mounts and unmounts every time the timer is paused, resumed or
+		completed, so it is one of the few surfaces where an entry transition is not
+		decoration: without it the line under the clock appears out of nowhere and
+		the view reads as having jumped.
+	-->
+	<p
+		class="text-xs text-muted-foreground tabular-nums sm:text-sm"
+		data-waiting-since={kind}
+		in:fly={motionIn()}
+		out:fade={motionOut()}
+	>
 		{label}
 	</p>
 {/if}

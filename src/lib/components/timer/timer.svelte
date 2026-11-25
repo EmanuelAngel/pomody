@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { fade } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
 	import TimerArc from './timer-arc.svelte';
 	import TimerDisplay from './timer-display.svelte';
 	import TimerControls from './timer-controls.svelte';
@@ -8,6 +8,7 @@
 	import WaitingSince from './waiting-since.svelte';
 	import { formatClockTime } from '$lib/domain/timer/block-end';
 	import { t } from '$lib/state/locale.svelte';
+	import { motionIn, motionOut } from '$lib/utils/motion';
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
 	import { tasksState as defaultTasksState, type TasksState } from '$lib/state/tasks.svelte';
 	import { breaksState as defaultBreaksState, type BreaksState } from '$lib/state/breaks.svelte';
@@ -132,12 +133,17 @@
 	/>
 
 	<div class="mt-6 grid h-8 place-items-center">
+		<!--
+			The two branches are the timer's whole footer and they swap on every mode
+			change. `fade` was the first pass; it is now the shared in/out pair, so the
+			swap matches the rest of the app and honours `prefers-reduced-motion`.
+		-->
 		{#if state.mode === 'focus'}
-			<div class="col-start-1 row-start-1" transition:fade={{ duration: 150 }}>
+			<div class="col-start-1 row-start-1" in:fly={motionIn()} out:fade={motionOut()}>
 				<TaskPill isRunning={state.isRunning} {tasksState} />
 			</div>
 		{:else if (state.mode === 'shortBreak' || state.mode === 'longBreak') && state.revitalizationEnabled}
-			<div class="col-start-1 row-start-1" transition:fade={{ duration: 150 }}>
+			<div class="col-start-1 row-start-1" in:fly={motionIn()} out:fade={motionOut()}>
 				<BreakRevitalization {breaksState} mode={state.mode} currentRound={state.currentRound} />
 			</div>
 		{/if}

@@ -6,7 +6,9 @@
 	import * as Popover from '$lib/components/ui/popover';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
+	import { fade, fly } from 'svelte/transition';
 	import { cn } from '$lib/utils';
+	import { motionIn, motionOut } from '$lib/utils/motion';
 	import type { PlanBlock } from '$lib/domain/planning/session-plan.entity';
 	import type { FocusTask } from '$lib/domain/tasks/task.entity';
 	import type { TimerState } from '$lib/state/timer.svelte';
@@ -114,6 +116,8 @@
 	ondragover={handleDragOver}
 	ondragleave={handleDragLeave}
 	ondrop={handleDrop}
+	in:fly={motionIn()}
+	out:fade={motionOut()}
 >
 	<!-- Left Circular Badge -->
 	<div
@@ -145,7 +149,7 @@
 	<!-- Card Body -->
 	<div
 		class={cn(
-			'rounded-xl border p-3 transition-all duration-150',
+			'card-hover rounded-xl border p-3',
 			isDragOver
 				? 'border-primary bg-primary/10 shadow-sm ring-2 ring-primary/40'
 				: block.status === 'in_progress'
@@ -206,7 +210,7 @@
 
 		{#if isDragOver}
 			<div
-				class="mt-2.5 flex animate-pulse items-center justify-center rounded-lg border border-dashed border-primary/50 bg-primary/10 py-1.5 text-xs font-medium text-primary"
+				class="mt-2.5 flex items-center justify-center rounded-lg border border-dashed border-primary/50 bg-primary/10 py-1.5 text-xs font-medium text-primary motion-safe:animate-pulse"
 			>
 				<span>{t.planning_focus_card_drop_task({ index: focusIndex })}</span>
 			</div>
@@ -334,7 +338,7 @@
 										aria-label={t.planning_focus_card_assign_specific_task_aria({
 											title: task.title
 										})}
-										class="flex w-full cursor-pointer items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted focus-visible:outline-none"
+										class="flex w-full pressable cursor-pointer items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs hover:bg-muted focus-visible:outline-none"
 										onclick={() => {
 											onAssignTask(task.id);
 											quickSearchQuery = '';

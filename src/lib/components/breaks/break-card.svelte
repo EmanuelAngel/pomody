@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { slide } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
 	import Activity from '@lucide/svelte/icons/activity';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import Droplet from '@lucide/svelte/icons/droplet';
@@ -11,6 +11,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { cn } from '$lib/utils';
+	import { motionIn, motionOut } from '$lib/utils/motion';
 	import type { BreakActivity, BreakCategory } from '$lib/domain/breaks/break-activity.entity';
 	import {
 		getLocalizedPresetTitle,
@@ -46,7 +47,7 @@
 	data-slot="break-card"
 	data-preset={activity.isPreset}
 	class={cn(
-		'group flex flex-col justify-between rounded-xl border border-border/50 bg-card p-3.5 shadow-xs transition-colors hover:border-border/80',
+		'group flex card-hover flex-col justify-between rounded-xl border border-border/50 bg-card p-3.5 shadow-xs hover:border-border/80',
 		className
 	)}
 >
@@ -137,9 +138,15 @@
 		</h4>
 	</div>
 
-	<!-- Expandable Micro-Guide with smooth slide transition -->
+	<!--
+		Expandable micro-guide. It used to be `transition:slide={{ duration: 200 }}`: a
+		hard-coded duration that ignored `prefers-reduced-motion` and drifted from the
+		rest of the app. The shared in/out pair is the only motion vocabulary this app
+		has, and the 8px settle is enough to make the card growing read as a reveal
+		rather than a jump.
+	-->
 	{#if isExpanded && localizedGuide && localizedGuide.trim().length > 0}
-		<div transition:slide={{ duration: 200 }}>
+		<div in:fly={motionIn()} out:fade={motionOut()}>
 			<div
 				id={`guide-${activity.id}`}
 				class="mt-2.5 border-t border-border/40 pt-2 text-xs/relaxed whitespace-pre-line text-muted-foreground"

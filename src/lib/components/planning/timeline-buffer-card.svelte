@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Clock from '@lucide/svelte/icons/clock';
+	import { fade, fly } from 'svelte/transition';
 	import { cn } from '$lib/utils';
+	import { motionIn, motionOut } from '$lib/utils/motion';
 	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
@@ -14,6 +16,8 @@
 <li
 	class={cn('group relative list-none', className)}
 	aria-label={t.planning_buffer_card_region_aria()}
+	in:fly={motionIn()}
+	out:fade={motionOut()}
 >
 	<div
 		class="absolute top-2.5 -left-6 flex size-5.5 items-center justify-center rounded-full border border-dashed border-accent-gold/40 bg-accent-gold/10 text-accent-gold"
@@ -21,7 +25,7 @@
 		<Clock class="size-3" />
 	</div>
 	<div
-		class="rounded-xl border border-dashed border-accent-gold/30 bg-accent-gold/5 p-2.5 transition-colors"
+		class="card-hover rounded-xl border border-dashed border-accent-gold/30 bg-accent-gold/5 p-2.5"
 	>
 		<div class="flex items-center justify-between gap-2">
 			<div class="flex items-center gap-2">
