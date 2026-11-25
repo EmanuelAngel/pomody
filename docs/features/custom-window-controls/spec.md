@@ -19,6 +19,7 @@
 | Reopened wave from T3 feedback (brand duplication, scrollbar)  | Done 2026-11-24 — §2, §3.2, §3.6                                     |
 | Wave 2: Timer canvas centered under the strip (Option A)       | **Superseded** by wave 3 — §3.6                                      |
 | Wave 3: Option B — window height 650 → 682, one universal push | Done 2026-11-24 — §3.6, `L9`                                         |
+| Wave 3 follow-up: daily counter back **below** the pill        | Done 2026-11-24 — `bottom-2` on `/timer` only, §3.6                  |
 | Native behaviour (drag, resize, OS shortcuts, tray, ghosting)  | **Manual** — §6 checklist (T3); `desktop-ci.yml` is the compile gate |
 | Windows 11 shadow / rounded corners                            | Tauri defaults, unchanged                                            |
 | Double-click maximize glitch                                   | **Known issue, accepted, not fixed** — §8                            |
@@ -164,10 +165,26 @@ window 800x682         y = 0
   content sat at 51..599 in a 650 window (51px above the bottom), so what Option B restores is the
   _budget_ and the absence of a scrollbar, not the old absolute y positions: the push spends 96px on
   top instead of the page's own 32px, and the +32 window height is what pays for the strip.
-- The daily counter keeps `bottom-5` with no override, so at the default size its box (~638–662)
-  touches the pill's own band (615..647) by about 9px — the pill's visible bottom edge (~643) and the
-  counter's chip (~638) share ~5px. Pre-strip the counter sat 7px _below_ the pill. Accepted with
-  Option B, eyeballed in checklist row 21.
+- **Daily counter slot, Timer view only.** With the canvas centred, the pill (`TaskPill` is `h-8`, so
+  it fills its whole band) ends at **y=647**, and the counter's universal `bottom-5` (20px) put its box
+  at 638..662 — on top of the pill, where pre-strip it sat under it. The shell therefore lowers the
+  counter **only on the Timer view** (`bottom-2`, gated on `windowState.isSupported`, wired through
+  `DailyCounter`'s existing `class` prop):
+
+  | Slot                             | box (24px tall at md+) | gap below the pill (647) | distance from the window bottom (682) |
+  | :------------------------------- | :--------------------- | :----------------------- | :------------------------------------ |
+  | universal `bottom-5` (20px)      | 638..662               | −9 (overlaps the pill)   | 20px                                  |
+  | Timer view `bottom-2` (8px)      | 650..674               | **3px**                  | **8px**                               |
+  | pre-strip reference (650 window) | 606..630               | 7px                      | 20px                                  |
+
+  The counter's height is real, not assumed: `text-xs` gives a 16px line box and `md:py-1` adds 8px,
+  so 24px at md+ (16px when the illustration is off and the `md:` classes do not apply). A 7px gap
+  like pre-strip is **not reachable** while keeping the counter off the window edge: it needs the
+  counter top at 654, i.e. its bottom at 678, only 4px above the edge. `bottom-2` is the offset that
+  keeps a ≥3px gap under the pill **and** ≥6px from the bottom edge at the same time. Every other
+  view keeps the component's own `bottom-5`: their content scrolls and their slot is unchanged from
+  pre-strip.
+
 - Short windows still scroll the document: at the 500px `minHeight` the canvas needs 676px of shell,
   main grows, and the page scrolls as it always did.
 
@@ -186,13 +203,15 @@ dodge it.
 **Wave 3 (Option B, this one, `L9`).** The user's decision: stop doing CSS gymnastics and give the
 strip the 32px the native bar used to occupy outside the client area, via the default window height.
 The height goes 650 → 682 in the port constant and in `tauri.conf.json`, the wave-2 timer shape is
-reverted, and every desktop view shares the single `[&>header]:top-8 [&>main]:pt-24` push. The daily
-counter keeps its original `bottom-5` with no view-specific override — wave 2's nudge is gone, and
-`DailyCounter` renders with no `class` prop at all.
+reverted, and every desktop view shares the single `[&>header]:top-8 [&>main]:pt-24` push. Wave 2's
+counter nudge was dropped at first (`DailyCounter` rendered with no `class` prop), and the exe check
+that followed put it back for one view only: the counter collided with the pill on `/timer` at the new
+geometry, so it keeps `bottom-5` everywhere except the Timer view, where it uses `bottom-2` — see the
+counter table above. The mechanism is `DailyCounter`'s own `class` prop; the component is unchanged.
 
 One honest note on the numbers: the pre-strip canvas sat at 51..599 in a 650 window because the page's
 own padding was `sm:p-8` (32/32). With the push (96 top / 32 bottom) inside the 682 window the canvas
-lands at 99..647, so the _budget_ is restored (6px slack, no scrollbar, counter back at `bottom-5`)
+lands at 99..647, so the _budget_ is restored (6px slack, no scrollbar, counter below the pill)
 while the absolute y positions shift by the extra top offset. The user's `L9` intent — «alarguemos un
 poco el tamaño default» — is exactly this: the window grows by the strip instead of the layout
 compensating for it. Maximizing stays OS-fullscreen, and `restoreMainWindow()` reuses the same 682
@@ -283,7 +302,7 @@ the manual checklist (rows 19–24), executed in the desktop build.
 | 18  | Theme sweep (dark / dawn / oled)              | Strip matches the app background, glyphs legible, hover visible                   | ☐    |
 | 19  | Open `/timer` at the default 800×682          | **No vertical scrollbar** (the `L8` regression); content not clipped              | ☐    |
 | 20  | Measure `/timer` against the plan             | Canvas ≈3px inside its content box; task pill ≈35px above the window bottom       | ☐    |
-| 21  | On `/timer` with a task pinned, idle          | Daily counter sits at its original `bottom-5`, with no view-specific override     | ☐    |
+| 21  | On `/timer` with a task pinned, idle          | Daily counter sits **below** the pill, ≈3px gap, ≈8px above the window bottom     | ☐    |
 | 22  | Look at the top of the window                 | “Pomody” appears **once**, in the header; the strip has no icon and no title      | ☐    |
 | 23  | Scroll Planning and Metrics                   | Both still scroll, nothing cut off above the top edge                             | ☐    |
 | 24  | Maximize, then look at `/timer`               | Canvas still centred in the taller viewport (no top-heavy or bottom-heavy drift)  | ☐    |

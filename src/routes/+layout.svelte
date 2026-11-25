@@ -74,8 +74,26 @@
 	 * document, because `min-h-screen` is the page's own floor and nothing here caps it.
 	 */
 	const hasTitleBar = $derived(windowState.isSupported);
+	const activeTab = $derived(navigationState.activeTab);
 
 	const shellLayout = $derived(hasTitleBar ? '[&>header]:top-8 [&>main]:pt-24' : undefined);
+
+	/**
+	 * The daily counter needs a lower slot on the Timer view, and only there.
+	 *
+	 * The strip pushed the canvas down, so at the default 800x682 the task pill (TaskPill is
+	 * `h-8`, so it fills its whole band) ends at y=647 and the counter's universal `bottom-5`
+	 * slot (box 638..662, 24px tall: `text-xs` line box + `md:py-1`) would sit ON the pill
+	 * instead of under it. Its own default stays untouched for every other view, whose content
+	 * scrolls and whose slot is unchanged from pre-strip.
+	 *
+	 * `bottom-2` = 8px from the window edge -> counter band 650..674: 3px clear below the pill,
+	 * 8px above the bottom edge. The pre-strip 7px gap is unreachable here: it would need the
+	 * counter top at 654, i.e. its bottom edge at 678, only 4px from the window edge.
+	 */
+	const dailyCounterOffset = $derived(
+		hasTitleBar && activeTab === 'timer' ? 'bottom-2' : undefined
+	);
 
 	/**
 	 * The previous session must be restored before the shell paints: rendering first
@@ -145,7 +163,7 @@
 
 		{@render children()}
 
-		<DailyCounter />
+		<DailyCounter class={dailyCounterOffset} />
 
 		<!--
 			The toast host lives in the main shell and not in the Mini-Player branch: a compact
