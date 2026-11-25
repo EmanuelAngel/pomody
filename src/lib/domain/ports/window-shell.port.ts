@@ -7,10 +7,17 @@ export interface WindowDimensions {
 	readonly height: number;
 }
 
-/** Default size of the main application window. Mirrors `tauri.conf.json` width/height. */
+/**
+ * Default size of the main application window. Mirrors `tauri.conf.json` width/height.
+ *
+ * The height carries the 32px of the custom title bar strip. The native bar it replaces lived
+ * outside the client area, so a frameless window needs exactly those 32px back in its own height
+ * to keep the same layout budget below the chrome (spec S5, `L9`). `restoreMainWindow` reuses this
+ * constant, so the Mini-Player round trip lands on the same size.
+ */
 export const MAIN_WINDOW_DIMENSIONS: WindowDimensions = Object.freeze({
 	width: 800,
-	height: 650
+	height: 682
 });
 
 /** Minimum size enforced while the main window layout is active. Mirrors `tauri.conf.json` minWidth/minHeight. */

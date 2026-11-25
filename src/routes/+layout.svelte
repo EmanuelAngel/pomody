@@ -52,47 +52,30 @@
 
 	/**
 	 * Room for the title bar strip (spec S5), desktop only: the web build keeps the browser's
-	 * own chrome and must keep the exact layout it always had.
+	 * own chrome and must keep the exact layout it always had, so it gets no classes at all.
 	 *
 	 * The strip is 32px of chrome ABOVE the fixed header, and `header.svelte` cannot be edited,
-	 * so the shell owns the geometry. Two shapes, because the routed views behave differently:
+	 * so the shell owns the geometry with one universal push for every view:
 	 *
-	 * - Every view: `[&>header]:top-8` drops the fixed header below the strip band, and
-	 *   `[&>main]:pt-24` keeps the page's own top offset plus the strip, so the content clears
-	 *   the header (which now ends at 88px).
-	 * - The Timer view is one centred canvas that never scrolls, so it also gets a shell of
-	 *   exactly one viewport: `h-screen` + `flex flex-col` + `pt-8` reserve the strip inside the
-	 *   viewport, and `[&>main]:flex-1` + `[&>main]:min-h-0` make the routed view take the height
-	 *   that is left instead of asserting `min-h-screen`.
+	 * - `[&>header]:top-8` drops the fixed header below the strip band. The header's own `top-0`
+	 *   is a class, so the arbitrary variant's higher specificity wins.
+	 * - `[&>main]:pt-24` keeps the page's top offset plus the strip, so the content clears the
+	 *   header (which now ends at 88px) with the original 8px gap.
 	 *
-	 * The Timer's padding is what centres the canvas, and it is measured in absolute terms, not
-	 * in gaps. Window 650 tall -> strip 0..32, header 32..88, so the band the canvas lives in is
-	 * 88..650 (562px). The shell wrapper already offsets main by the strip (`pt-8`, main's box
-	 * starts at 32), so main needs `pt-14` (56px, the header height) and `pb-0` to put its
-	 * content box exactly on 88..650. The rigid canvas is 548px (400 arc + 24 + 68 + 56), so it
-	 * centres with 7px above and 7px below and nothing spills: it fits, with 14px to spare.
+	 * Nothing here bounds or centres the routed view: the 32px the strip occupies are paid for by
+	 * the window height instead (`MAIN_WINDOW_DIMENSIONS` and `tauri.conf.json` are 682, not 650 —
+	 * the height the native bar used to consume outside the client area). At the default size:
 	 *
-	 * Do not reuse `pt-24` (96px) here: with 32px of bottom padding it left a 490px box for a
-	 * 548px canvas, and centring the overflow split it 29/29 — 11px above, 3px below. The canvas
-	 * was not centred in the band, all the imbalance landed under the task pill, and the daily
-	 * counter had to be nudged to dodge it. Symmetric padding fixes both at once: the box now
-	 * equals the band, the 7/7 split is real centring, and the counter keeps its own offset.
+	 *   strip 0..32, header 32..88, main padded 96 top / 32 bottom -> content box 96..650 = 554px
+	 *   Timer canvas 548px (400 arc + 24 + 68 + 56) -> 3px of slack each side, 6px total
 	 *
-	 * The list-like views keep their normal `min-h-screen` flow on purpose: bounding them would
-	 * turn `justify-center` into unreachable overflow above the viewport once their content is
-	 * taller than the window, and those views are supposed to scroll. Short windows still scroll
-	 * the document in either shape, because nothing caps the page height.
+	 * Those 6px are exactly the budget the Timer had before the strip existed, which is why no view
+	 * needs a special shape and why no scrollbar comes back. Shorter windows still scroll the
+	 * document, because `min-h-screen` is the page's own floor and nothing here caps it.
 	 */
 	const hasTitleBar = $derived(windowState.isSupported);
-	const activeTab = $derived(navigationState.activeTab);
 
-	const shellLayout = $derived.by(() => {
-		if (!hasTitleBar) return undefined;
-
-		return activeTab === 'timer'
-			? 'flex h-screen flex-col pt-8 [&>header]:top-8 [&>main]:min-h-0 [&>main]:flex-1 [&>main]:pt-14 [&>main]:pb-0'
-			: '[&>header]:top-8 [&>main]:pt-24';
-	});
+	const shellLayout = $derived(hasTitleBar ? '[&>header]:top-8 [&>main]:pt-24' : undefined);
 
 	/**
 	 * The previous session must be restored before the shell paints: rendering first

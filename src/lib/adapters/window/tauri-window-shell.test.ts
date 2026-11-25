@@ -245,7 +245,7 @@ describe('TauriWindowShell', () => {
 
 			// `center` centres the CURRENT size, so it must run after the final
 			// resize. Centring first would centre the 320x48 compact box and then
-			// grow it to 800x650 from that origin, leaving it off-centre.
+			// grow it to 800x682 from that origin, leaving it off-centre.
 			expect(log.order.indexOf('center')).toBe(log.order.length - 1);
 			expect(log.order.indexOf('center')).toBeGreaterThan(log.order.indexOf('setSize'));
 		});

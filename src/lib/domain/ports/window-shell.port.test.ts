@@ -10,8 +10,8 @@ import {
 
 describe('Window Shell Port', () => {
 	describe('Dimension Constants', () => {
-		it('should define the main window dimensions as 800x650', () => {
-			expect(MAIN_WINDOW_DIMENSIONS).toEqual({ width: 800, height: 650 });
+		it('should define the main window dimensions as 800x682', () => {
+			expect(MAIN_WINDOW_DIMENSIONS).toEqual({ width: 800, height: 682 });
 		});
 
 		it('should define the main window minimum dimensions as 480x500', () => {
