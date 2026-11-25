@@ -144,7 +144,7 @@
 				{/each}
 			</Tabs.List>
 
-			<div class="min-h-0 flex-1 overflow-y-auto">
+			<div class="flex min-h-0 flex-1 flex-col overflow-y-auto">
 				<Tabs.Content value="intervals" class="flex-1 p-6">
 					<IntervalsPanel {timerState} {open} />
 				</Tabs.Content>
@@ -178,11 +178,12 @@
 						{/if}
 					</div>
 				</Tabs.Content>
+
+				<!-- Inside the scroll area: a fixed footer would take the panels' last rows in short windows. -->
+				<p class="mt-auto px-6 pb-3 text-[11px] text-muted-foreground">
+					{t.settings_app_version({ version: APP_VERSION })}
+				</p>
 			</div>
 		</Tabs.Root>
-
-		<p class="shrink-0 border-t border-border/40 px-6 py-2 text-[11px] text-muted-foreground">
-			{t.settings_app_version({ version: APP_VERSION })}
-		</p>
 	</Dialog.Content>
 </Dialog.Root>
