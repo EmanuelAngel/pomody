@@ -324,6 +324,7 @@
 	"distraction_rule_picker_label": "Open windows",
 	"distraction_rule_picker_placeholder": "Pick a window",
 	"distraction_rule_picker_empty": "No windows to pick from: declare it by hand with the fields below.",
+	"distraction_rule_picker_failed": "Couldn’t read the list of open windows. Type the program name in “Executable” (for example, chrome).",
 	"distraction_rule_exe_label": "Executable",
 	"distraction_rule_exe_placeholder": "chrome",
 	"distraction_rule_title_pattern_label": "Title pattern",

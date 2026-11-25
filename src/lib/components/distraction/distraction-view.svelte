@@ -30,6 +30,7 @@
 	let editingRule = $state<DistractionRule | null>(null);
 	let ruleToDelete = $state<DistractionRule | null>(null);
 	let isDeleteOpen = $state(false);
+	let windowsFailed = $state(false);
 
 	onMount(() => {
 		void loadView();
@@ -42,7 +43,13 @@
 	 */
 	async function loadView(): Promise<void> {
 		await distractionState.load();
-		windows = await distractionState.openWindows();
+		try {
+			windows = await distractionState.openWindows();
+			windowsFailed = false;
+		} catch {
+			windows = [];
+			windowsFailed = true;
+		}
 	}
 
 	async function handleSave(input: DistractionRuleInput): Promise<boolean> {
@@ -94,6 +101,7 @@
 
 	<DistractionRuleForm
 		{windows}
+		{windowsFailed}
 		{editingRule}
 		onSave={handleSave}
 		onCancel={handleCancelEdit}

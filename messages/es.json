@@ -324,6 +324,7 @@
 	"distraction_rule_picker_label": "Ventanas abiertas",
 	"distraction_rule_picker_placeholder": "Elige una ventana",
 	"distraction_rule_picker_empty": "No hay ventanas para elegir: declárala a mano con los campos de abajo.",
+	"distraction_rule_picker_failed": "No se pudo leer la lista de ventanas abiertas. Escribe el nombre del programa en «Ejecutable» (por ejemplo, chrome).",
 	"distraction_rule_exe_label": "Ejecutable",
 	"distraction_rule_exe_placeholder": "chrome",
 	"distraction_rule_title_pattern_label": "Patrón del título",

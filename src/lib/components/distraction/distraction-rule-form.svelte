@@ -15,6 +15,8 @@
 	interface Props {
 		/** Windows enumerated by the monitor, already read by the view. */
 		windows?: readonly OpenWindow[];
+		/** The monitor could not enumerate the windows, so only the manual fields remain. */
+		windowsFailed?: boolean;
 		/** The rule being edited, or `null` when declaring a new one. */
 		editingRule?: DistractionRule | null;
 		onSave: (input: DistractionRuleInput) => boolean | Promise<boolean>;
@@ -22,7 +24,14 @@
 		portalProps?: { disabled?: boolean };
 	}
 
-	let { windows = [], editingRule = null, onSave, onCancel, portalProps }: Props = $props();
+	let {
+		windows = [],
+		windowsFailed = false,
+		editingRule = null,
+		onSave,
+		onCancel,
+		portalProps
+	}: Props = $props();
 
 	let exe = $state('');
 	let titlePattern = $state('');
@@ -160,7 +169,11 @@
 				</Select.Root>
 			</Field.Field>
 		{:else}
-			<p class="text-xs text-muted-foreground">{t.distraction_rule_picker_empty()}</p>
+			{#if windowsFailed}
+				<p class="text-xs text-destructive" role="alert">{t.distraction_rule_picker_failed()}</p>
+			{:else}
+				<p class="text-xs text-muted-foreground">{t.distraction_rule_picker_empty()}</p>
+			{/if}
 		{/if}
 
 		<Field.Field class="gap-1.5">
