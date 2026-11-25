@@ -17,6 +17,7 @@
 | `src/lib/components/layout/title-bar.svelte.test.ts`          | Done — browser mode (`--project client`)                             |
 | `src/routes/+layout.svelte` wiring above the header           | Done — this document                                                 |
 | Reopened wave from T3 feedback (brand duplication, scrollbar) | Done 2026-11-24 — §2, §3.2, §3.6                                     |
+| Wave 2: Timer canvas centered under the strip (Option A)      | Done 2026-11-24 — §3.6                                               |
 | Native behaviour (drag, resize, OS shortcuts, tray, ghosting) | **Manual** — §6 checklist (T3); `desktop-ci.yml` is the compile gate |
 | Windows 11 shadow / rounded corners                           | Tauri defaults, unchanged                                            |
 | Double-click maximize glitch                                  | **Known issue, accepted, not fixed** — §8                            |
@@ -121,43 +122,71 @@ always had, gated on `windowState.isSupported`):
 	<TitleBar />
 	<Header … />
 	{@render children()}
-	<DailyCounter class={dailyCounterOffset} />
+	<DailyCounter />
 	…
 </div>
 ```
 
 Two shapes, because the routed views behave differently:
 
-| View              | Wrapper classes                                                                                |
-| :---------------- | :--------------------------------------------------------------------------------------------- |
-| `timer` (default) | `flex h-screen flex-col pt-8 [&>header]:top-8 [&>main]:min-h-0 [&>main]:flex-1 [&>main]:pt-24` |
-| every other view  | `[&>header]:top-8 [&>main]:pt-24`                                                              |
+| View              | Wrapper classes                                                                                              |
+| :---------------- | :----------------------------------------------------------------------------------------------------------- |
+| `timer` (default) | `flex h-screen flex-col pt-8 [&>header]:top-8 [&>main]:min-h-0 [&>main]:flex-1 [&>main]:pt-14 [&>main]:pb-0` |
+| every other view  | `[&>header]:top-8 [&>main]:pt-24`                                                                            |
 
 - `[&>header]:top-8` drops the fixed header below the strip band. The header's own `top-0` is a
   class, so the arbitrary variant's higher specificity wins.
-- `[&>main]:pt-24` keeps the page's own 64px top offset plus the strip, so content still clears the
-  header (which now ends at 88px) with the original 8px gap.
+- On the list-like views, `[&>main]:pt-24` keeps the page's own top offset plus the strip, so content
+  still clears the header (which now ends at 88px).
 - On the Timer view — one centred canvas that never scrolls — the shell becomes exactly one viewport
   tall (`h-screen` + `flex flex-col` + `pt-8` reserve the strip inside it) and
   `[&>main]:min-h-0` + `[&>main]:flex-1` make the routed view take the height that is left.
 
-**Scrollbar fix (2026-11-24, `L8`).** The first iteration only shifted the header and added
-`[&>main]:pt-24` while the page still asserted `min-h-screen`. The shell's padding (96px top + 32px
-bottom) plus the Timer's rigid canvas (548px = 400 arc + 24 + 68 + 56) summed 26px more than the
-default 800×650 window, so /timer painted a vertical scrollbar that had not existed before. With the
-viewport-sized shell the canvas overflows into main's **own** padding — 96px above, 32px below — the
-document stays exactly one viewport tall, and nothing is clipped. The overflow budget is 128px, so
-there is real slack instead of the 6px the pre-strip layout lived on.
+#### Timer-view geometry (Option A, 2026-11-24)
+
+The Timer's padding is measured in **absolute** terms, not in gaps, because that is the only way the
+canvas centers in the band it actually lives in:
+
+```text
+window 800x650        y = 0
+  strip (h-8)         y = 0 .. 32
+  header (h-14)       y = 32 .. 88     <- wrapper `pt-8` + main `pt-14` (56px) puts main's
+  band for the canvas y = 88 .. 650       content box exactly here: 88 .. 650 = 562px
+    canvas 548px      y = 95 .. 643     <- (562 - 548) / 2 = 7px above and 7px below
+```
+
+- Canvas height is rigid: 400 arc + 24 (waiting line) + 68 (controls) + 56 (task pill) = **548px**.
+- Content box = **562px**, so the canvas **fits** with 14px to spare: `justify-center` centers it for
+  real (7px / 7px) and nothing overflows, clips or scrolls.
+- The task pill therefore ends **7px** above the window bottom, centered in the band rather than
+  pressed against either edge.
+
+**Scrollbar fix (wave 1, `L8`).** The first iteration only shifted the header and added
+`[&>main]:pt-24` while the page still asserted `min-h-screen`. Padding (96px top + 32px bottom) plus
+the 548px canvas summed 26px more than the 650px window, so /timer painted a vertical scrollbar that
+had not existed before. Wave 1 bounded the shell to one viewport and let the canvas overflow into
+main's **own** padding.
+
+**Centering fix (wave 2, Option A).** Wave 1 kept `pt-24` + the page's 32px bottom padding, so main's
+content box was 490px for a 548px canvas: the 58px of overflow split 29/29, which put the canvas at
+99..647 — **11px above and 3px below**. The canvas was not centered in the band, all the imbalance
+landed under the task pill, and the fixed daily counter had to be nudged to `bottom-9` to dodge it.
+Symmetric padding replaces the trick: main's content box now equals the band (88..650) and the canvas
+simply fits, so no overflow is being absorbed at all. The 14px of slack is the operating budget — a
+canvas that grows past 562px would scroll again, and that is the number to check if the Timer view
+ever gains height.
+
+Consequence worth knowing when reading the numbers: the pill now ends 7px from the window bottom,
+which is where the daily counter's own `bottom-5` slot begins. The counter keeps its **original**
+offset on every view (no view-specific nudge); at the default height its box (~606–630) therefore
+shares the pill's lower band (~611–643). Pre-strip the pill sat 51px above the bottom with the
+counter 7px below it, so this overlap is the geometric price of centering the canvas in the shorter
+band the strip leaves — accepted with Option A, verified visually in checklist row 20.
 
 The list-like views deliberately keep their normal `min-h-screen` flow: bounding them would turn
 `justify-center` into overflow above the top edge, which no scroll can reach, and those views are
 supposed to scroll. Short windows still scroll the document in both shapes, because nothing caps the
 page height.
-
-One consequence of the 32px shift is that the Timer's task pill now ends ~3px from the window
-bottom, where the fixed daily counter used to sit just underneath it. On that view only, the counter
-gets `bottom-9` instead of `bottom-5`, which puts it back in the 24px the Timer already leaves
-between its controls and the pill. Every other view keeps its counter unchanged.
 
 ### 3.7. Markup hooks used by the tests
 
@@ -208,8 +237,9 @@ Run: `pnpm vitest run src/lib/components/layout/title-bar.svelte.test.ts --proje
 
 **Not automated**: the `+layout.svelte` geometry. Every browser test sees
 `windowState.isSupported === false`, so the Tauri offsets never apply there, and the shell's real
-height budget can only be observed in the native window. The scrollbar fix is therefore backed by
-the arithmetic in §3.6 plus the manual checklist (rows 19–21), executed in the desktop build.
+height budget can only be observed in the native window. Both geometry waves (the `L8` scrollbar and
+Option A's centering) are therefore backed by the arithmetic in §3.6 plus the manual checklist
+(rows 19–24), executed in the desktop build.
 
 ---
 
@@ -239,9 +269,11 @@ the arithmetic in §3.6 plus the manual checklist (rows 19–21), executed in th
 | 17  | Web build (`pnpm dev` in a browser)           | No strip, no controls, header and content exactly as before                       | ☐    |
 | 18  | Theme sweep (dark / dawn / oled)              | Strip matches the app background, glyphs legible, hover visible                   | ☐    |
 | 19  | Open `/timer` at the default 800×650          | **No vertical scrollbar** (the `L8` regression); content not clipped              | ☐    |
-| 20  | On `/timer` with a task pinned, idle          | Daily counter sits between the controls and the task pill, no overlap             | ☐    |
-| 21  | Look at the top of the window                 | “Pomody” appears **once**, in the header; the strip has no icon and no title      | ☐    |
-| 22  | Scroll Planning and Metrics                   | Both still scroll, nothing cut off above the top edge                             | ☐    |
+| 20  | Measure the canvas gaps on `/timer`           | ≈7px between header and canvas top, ≈7px between task pill and window bottom      | ☐    |
+| 21  | On `/timer` with a task pinned, idle          | Daily counter back at its original `bottom-5` slot and still legible              | ☐    |
+| 22  | Look at the top of the window                 | “Pomody” appears **once**, in the header; the strip has no icon and no title      | ☐    |
+| 23  | Scroll Planning and Metrics                   | Both still scroll, nothing cut off above the top edge                             | ☐    |
+| 24  | Maximize, then look at `/timer`               | Canvas still centered in the taller band (no top-heavy or bottom-heavy drift)     | ☐    |
 
 `pnpm check`, `pnpm lint`, `pnpm test:unit` and `pnpm test:browser` must be green before starting
 the list; `desktop-ci.yml` must be green before signing it off.

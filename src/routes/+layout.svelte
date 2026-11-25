@@ -58,21 +58,30 @@
 	 * so the shell owns the geometry. Two shapes, because the routed views behave differently:
 	 *
 	 * - Every view: `[&>header]:top-8` drops the fixed header below the strip band, and
-	 *   `[&>main]:pt-24` keeps the page's own 64px top offset plus the strip, so the content
-	 *   still clears the header (which now ends at 88px) with the original 8px gap.
+	 *   `[&>main]:pt-24` keeps the page's own top offset plus the strip, so the content clears
+	 *   the header (which now ends at 88px).
 	 * - The Timer view is one centred canvas that never scrolls, so it also gets a shell of
 	 *   exactly one viewport: `h-screen` + `flex flex-col` + `pt-8` reserve the strip inside the
 	 *   viewport, and `[&>main]:flex-1` + `[&>main]:min-h-0` make the routed view take the height
-	 *   that is left instead of asserting `min-h-screen` and overflowing by the strip height.
-	 *   That pair is the scrollbar fix from the T3 feedback (L8): without it, the shell's padding
-	 *   (96px + 32px) plus the rigid canvas (548px: 400 arc + 24 + 68 + 56) summed 26px more than
-	 *   the default 800x650 window. With it the canvas overflows into main's OWN padding — 96px
-	 *   above, 32px below — so the document stays one viewport tall and nothing is clipped.
+	 *   that is left instead of asserting `min-h-screen`.
+	 *
+	 * The Timer's padding is what centres the canvas, and it is measured in absolute terms, not
+	 * in gaps. Window 650 tall -> strip 0..32, header 32..88, so the band the canvas lives in is
+	 * 88..650 (562px). The shell wrapper already offsets main by the strip (`pt-8`, main's box
+	 * starts at 32), so main needs `pt-14` (56px, the header height) and `pb-0` to put its
+	 * content box exactly on 88..650. The rigid canvas is 548px (400 arc + 24 + 68 + 56), so it
+	 * centres with 7px above and 7px below and nothing spills: it fits, with 14px to spare.
+	 *
+	 * Do not reuse `pt-24` (96px) here: with 32px of bottom padding it left a 490px box for a
+	 * 548px canvas, and centring the overflow split it 29/29 — 11px above, 3px below. The canvas
+	 * was not centred in the band, all the imbalance landed under the task pill, and the daily
+	 * counter had to be nudged to dodge it. Symmetric padding fixes both at once: the box now
+	 * equals the band, the 7/7 split is real centring, and the counter keeps its own offset.
 	 *
 	 * The list-like views keep their normal `min-h-screen` flow on purpose: bounding them would
 	 * turn `justify-center` into unreachable overflow above the viewport once their content is
-	 * taller than the window, and those views are supposed to scroll. Small windows still scroll
-	 * the document either way, because nothing caps the page height.
+	 * taller than the window, and those views are supposed to scroll. Short windows still scroll
+	 * the document in either shape, because nothing caps the page height.
 	 */
 	const hasTitleBar = $derived(windowState.isSupported);
 	const activeTab = $derived(navigationState.activeTab);
@@ -81,19 +90,9 @@
 		if (!hasTitleBar) return undefined;
 
 		return activeTab === 'timer'
-			? 'flex h-screen flex-col pt-8 [&>header]:top-8 [&>main]:min-h-0 [&>main]:flex-1 [&>main]:pt-24'
+			? 'flex h-screen flex-col pt-8 [&>header]:top-8 [&>main]:min-h-0 [&>main]:flex-1 [&>main]:pt-14 [&>main]:pb-0'
 			: '[&>header]:top-8 [&>main]:pt-24';
 	});
-
-	/**
-	 * On the Timer view the canvas now ends ~3px from the window bottom (the strip took that room
-	 * from the bottom margin), which left the fixed daily counter on top of the task pill instead
-	 * of just under it. One notch up puts it back in the 24px the Timer already leaves between its
-	 * controls and the pill. Other views keep their counter exactly where it was.
-	 */
-	const dailyCounterOffset = $derived(
-		hasTitleBar && activeTab === 'timer' ? 'bottom-9' : undefined
-	);
 
 	/**
 	 * The previous session must be restored before the shell paints: rendering first
@@ -163,7 +162,7 @@
 
 		{@render children()}
 
-		<DailyCounter class={dailyCounterOffset} />
+		<DailyCounter />
 
 		<!--
 			The toast host lives in the main shell and not in the Mini-Player branch: a compact
