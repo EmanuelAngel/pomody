@@ -1,7 +1,12 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
+	import * as Tooltip from '$lib/components/ui/tooltip';
 	import Settings from '@lucide/svelte/icons/settings';
 	import Minimize2 from '@lucide/svelte/icons/minimize-2';
+	import Timer from '@lucide/svelte/icons/timer';
+	import ListChecks from '@lucide/svelte/icons/list-checks';
+	import ShieldLock from '@lucide/svelte/icons/shield-lock';
+	import ChartColumn from '@lucide/svelte/icons/chart-column';
 	import { cn } from '$lib/utils.js';
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
 	import {
@@ -123,101 +128,145 @@
 			zenClass
 		)}
 	>
-		<div
-			role="tablist"
-			aria-label={t.header_nav_views_aria()}
-			class="flex items-center gap-6 sm:gap-8"
-		>
-			<button
-				type="button"
-				role="tab"
-				id="tab-timer"
-				aria-controls="tabpanel-timer"
-				aria-selected={activeTab === 'timer'}
-				onclick={() => handleTabClick('timer')}
-				class={cn(
-					'group relative flex cursor-pointer flex-col items-center py-2 text-xs font-medium tracking-tight transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-xs',
-					activeTab === 'timer'
-						? 'font-semibold text-foreground'
-						: 'text-muted-foreground/70 hover:text-foreground'
-				)}
+		<Tooltip.Provider delayDuration={300}>
+			<div
+				role="tablist"
+				aria-label={t.header_nav_views_aria()}
+				class="flex items-center gap-1 sm:gap-2"
 			>
-				<span>{t.header_nav_timer()}</span>
-				{#if activeTab === 'timer'}
-					<span
-						class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
-					></span>
-				{/if}
-			</button>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								type="button"
+								role="tab"
+								id="tab-timer"
+								aria-controls="tabpanel-timer"
+								aria-selected={activeTab === 'timer'}
+								onclick={() => handleTabClick('timer')}
+								class={cn(
+									'group relative flex cursor-pointer flex-col items-center rounded-lg px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+									'hover:bg-muted focus-visible:bg-muted',
+									activeTab === 'timer'
+										? 'text-foreground'
+										: 'text-muted-foreground/70 hover:text-foreground'
+								)}
+							>
+								<Timer class="size-[18px]" strokeWidth={1.75} aria-hidden="true" />
+								<span class="sr-only">{t.header_nav_timer()}</span>
+								{#if activeTab === 'timer'}
+									<span
+										class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
+									></span>
+								{/if}
+							</button>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content side="bottom" sideOffset={6}>{t.header_nav_timer()}</Tooltip.Content>
+				</Tooltip.Root>
 
-			<button
-				type="button"
-				role="tab"
-				id="tab-planning"
-				aria-controls="tabpanel-planning"
-				aria-selected={activeTab === 'planning'}
-				onclick={() => handleTabClick('planning')}
-				class={cn(
-					'group relative flex cursor-pointer flex-col items-center py-2 text-xs font-medium tracking-tight transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-xs',
-					activeTab === 'planning'
-						? 'font-semibold text-foreground'
-						: 'text-muted-foreground/70 hover:text-foreground'
-				)}
-			>
-				<span>{t.header_nav_planning()}</span>
-				{#if activeTab === 'planning'}
-					<span
-						class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
-					></span>
-				{/if}
-			</button>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								type="button"
+								role="tab"
+								id="tab-planning"
+								aria-controls="tabpanel-planning"
+								aria-selected={activeTab === 'planning'}
+								onclick={() => handleTabClick('planning')}
+								class={cn(
+									'group relative flex cursor-pointer flex-col items-center rounded-lg px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+									'hover:bg-muted focus-visible:bg-muted',
+									activeTab === 'planning'
+										? 'text-foreground'
+										: 'text-muted-foreground/70 hover:text-foreground'
+								)}
+							>
+								<ListChecks class="size-[18px]" strokeWidth={1.75} aria-hidden="true" />
+								<span class="sr-only">{t.header_nav_planning()}</span>
+								{#if activeTab === 'planning'}
+									<span
+										class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
+									></span>
+								{/if}
+							</button>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content side="bottom" sideOffset={6}>{t.header_nav_planning()}</Tooltip.Content>
+				</Tooltip.Root>
 
-			{#if distractionDetectorSupported}
-				<button
-					type="button"
-					role="tab"
-					id="tab-distractions"
-					aria-controls="tabpanel-distractions"
-					aria-selected={activeTab === 'distractions'}
-					onclick={() => handleTabClick('distractions')}
-					class={cn(
-						'group relative flex cursor-pointer flex-col items-center py-2 text-xs font-medium tracking-tight transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-xs',
-						activeTab === 'distractions'
-							? 'font-semibold text-foreground'
-							: 'text-muted-foreground/70 hover:text-foreground'
-					)}
-				>
-					<span>{t.header_nav_distractions()}</span>
-					{#if activeTab === 'distractions'}
-						<span
-							class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
-						></span>
-					{/if}
-				</button>
-			{/if}
-
-			<button
-				type="button"
-				role="tab"
-				id="tab-metrics"
-				aria-controls="tabpanel-metrics"
-				aria-selected={activeTab === 'metrics'}
-				onclick={() => handleTabClick('metrics')}
-				class={cn(
-					'group relative flex cursor-pointer flex-col items-center py-2 text-xs font-medium tracking-tight transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-xs',
-					activeTab === 'metrics'
-						? 'font-semibold text-foreground'
-						: 'text-muted-foreground/70 hover:text-foreground'
-				)}
-			>
-				<span>{t.header_nav_metrics()}</span>
-				{#if activeTab === 'metrics'}
-					<span
-						class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
-					></span>
+				{#if distractionDetectorSupported}
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									type="button"
+									role="tab"
+									id="tab-distractions"
+									aria-controls="tabpanel-distractions"
+									aria-selected={activeTab === 'distractions'}
+									onclick={() => handleTabClick('distractions')}
+									class={cn(
+										'group relative flex cursor-pointer flex-col items-center rounded-lg px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+										'hover:bg-muted focus-visible:bg-muted',
+										activeTab === 'distractions'
+											? 'text-foreground'
+											: 'text-muted-foreground/70 hover:text-foreground'
+									)}
+								>
+									<ShieldLock class="size-[18px]" strokeWidth={1.75} aria-hidden="true" />
+									<span class="sr-only">{t.header_nav_distractions()}</span>
+									{#if activeTab === 'distractions'}
+										<span
+											class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
+										></span>
+									{/if}
+								</button>
+							{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content side="bottom" sideOffset={6}
+							>{t.header_nav_distractions()}</Tooltip.Content
+						>
+					</Tooltip.Root>
 				{/if}
-			</button>
-		</div>
+
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								type="button"
+								role="tab"
+								id="tab-metrics"
+								aria-controls="tabpanel-metrics"
+								aria-selected={activeTab === 'metrics'}
+								onclick={() => handleTabClick('metrics')}
+								class={cn(
+									'group relative flex cursor-pointer flex-col items-center rounded-lg px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+									'hover:bg-muted focus-visible:bg-muted',
+									activeTab === 'metrics'
+										? 'text-foreground'
+										: 'text-muted-foreground/70 hover:text-foreground'
+								)}
+							>
+								<ChartColumn class="size-[18px]" strokeWidth={1.75} aria-hidden="true" />
+								<span class="sr-only">{t.header_nav_metrics()}</span>
+								{#if activeTab === 'metrics'}
+									<span
+										class="absolute -bottom-1 h-0.5 w-4 rounded-full bg-accent-rose transition-all duration-200"
+									></span>
+								{/if}
+							</button>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Content side="bottom" sideOffset={6}>{t.header_nav_metrics()}</Tooltip.Content>
+				</Tooltip.Root>
+			</div>
+		</Tooltip.Provider>
 	</nav>
 
 	<!-- Right Slot: Settings Action -->
