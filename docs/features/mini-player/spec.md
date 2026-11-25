@@ -154,6 +154,8 @@ La ventana principal posee restricciones mínimas por defecto (`minWidth: 480`, 
 3. **Chrome antes que tamaño**:
    `setSize` de Tauri define el tamaño **externo**, y sin decorations externo es igual a interno. Por eso `setDecorations` y `setResizable` se aplican **antes** del resize en ambos sentidos: al revés, la ventana entra 30px más baja de lo pedido, o el área cliente cae a ~620x620 al restaurar. Este orden solo se puede verificar con una ventana nativa real.
 
+   > **Superado parcialmente (2026-11-24, commit `4197f2b`).** Con [`custom-window-controls`](../../custom-window-controls/decisions.md) la ventana principal nace sin decoraciones, así que el sentido de restauración ya no aplica `setDecorations(true)` y el orden queda `setAlwaysOnTop(false)` → `setResizable(true)` → `setMinSize(MAIN_MIN)` → `setSize(MAIN)` → `center`. El invariante de entrar sigue igual: `setDecorations(false)` → `setMinSize(MINI_MIN)` → `setSize(dims)` → `setResizable(false)` → `setAlwaysOnTop(true)`.
+
 ### 4.2. Permisos y Capabilities (`src-tauri/capabilities/default.json`)
 
 Tauri v2 opera bajo un modelo estricto de seguridad de permisos. Se deben habilitar los siguientes permisos en la capacidad por defecto:

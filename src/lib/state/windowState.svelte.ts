@@ -10,6 +10,7 @@ import { WebWindowShell } from '../adapters/window/web-window-shell';
 export class WindowState {
 	public isMiniPlayer = $state(false);
 	public isAlwaysOnTop = $state(false);
+	public isMaximized = $state(false);
 
 	constructor(public readonly shell: IWindowShell) {}
 
@@ -49,6 +50,58 @@ export class WindowState {
 		await this.shell.restoreMainWindow();
 		this.isMiniPlayer = false;
 		this.isAlwaysOnTop = false;
+	}
+
+	/**
+	 * Sends the window to the taskbar. No-ops when the platform cannot manipulate the window.
+	 */
+	public async minimize(): Promise<void> {
+		if (!this.shell.isSupported) return;
+
+		await this.shell.minimize();
+	}
+
+	/**
+	 * Toggles the window between maximized and restored, and mirrors the resulting state.
+	 *
+	 * The state is read back after the toggle instead of being flipped locally: the OS is
+	 * the owner of the answer (a maximize can be refused while the mini window is
+	 * non-resizable), and the read also covers a dropped native event.
+	 */
+	public async toggleMaximize(): Promise<void> {
+		if (!this.shell.isSupported) return;
+
+		await this.shell.toggleMaximize();
+		this.isMaximized = await this.shell.isMaximized();
+	}
+
+	/**
+	 * Requests a close. On the desktop the Rust side turns it into hide-to-tray, so this
+	 * never terminates the app on its own.
+	 */
+	public async close(): Promise<void> {
+		if (!this.shell.isSupported) return;
+
+		await this.shell.close();
+	}
+
+	/**
+	 * Keeps {@link isMaximized} in sync with the native window and returns the unsubscribe.
+	 *
+	 * The OS can maximize or restore without the app asking (`Win+Up`, drag-to-snap, the
+	 * native double-click), so the strip cannot rely on its own buttons to know the state.
+	 * The current value is read on subscribe; later changes arrive through the shell.
+	 *
+	 * Returns a no-op unsubscribe when the platform cannot manipulate the window.
+	 */
+	public async watchMaximizedState(): Promise<() => void> {
+		if (!this.shell.isSupported) return () => {};
+
+		this.isMaximized = await this.shell.isMaximized();
+
+		return this.shell.onMaximizedChange((maximized) => {
+			this.isMaximized = maximized;
+		});
 	}
 }
 

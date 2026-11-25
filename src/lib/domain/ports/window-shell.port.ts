@@ -7,10 +7,17 @@ export interface WindowDimensions {
 	readonly height: number;
 }
 
-/** Default size of the main application window. Mirrors `tauri.conf.json` width/height. */
+/**
+ * Default size of the main application window. Mirrors `tauri.conf.json` width/height.
+ *
+ * The height carries the 32px of the custom title bar strip. The native bar it replaces lived
+ * outside the client area, so a frameless window needs exactly those 32px back in its own height
+ * to keep the same layout budget below the chrome (spec S5, `L9`). `restoreMainWindow` reuses this
+ * constant, so the Mini-Player round trip lands on the same size.
+ */
 export const MAIN_WINDOW_DIMENSIONS: WindowDimensions = Object.freeze({
 	width: 800,
-	height: 650
+	height: 682
 });
 
 /** Minimum size enforced while the main window layout is active. Mirrors `tauri.conf.json` minWidth/minHeight. */
@@ -48,7 +55,7 @@ export const MINI_WINDOW_MIN_DIMENSIONS: WindowDimensions = Object.freeze({
 });
 
 /**
- * Domain port for native window manipulation (resize, pin on top).
+ * Domain port for native window manipulation (resize, pin on top, window controls).
  * Zero dependencies on DOM, Svelte, or Tauri.
  *
  * Ordering invariants every adapter MUST honour:
@@ -56,6 +63,8 @@ export const MINI_WINDOW_MIN_DIMENSIONS: WindowDimensions = Object.freeze({
  *   BEFORE resizing to the requested dimensions, and only then enables always-on-top.
  * - `restoreMainWindow` disables always-on-top, resets the minimum size to
  *   {@link MAIN_WINDOW_MIN_DIMENSIONS}, and only then resizes to {@link MAIN_WINDOW_DIMENSIONS}.
+ * - Neither mini-player transition may bring the native decorations back: the main window is
+ *   frameless for good and its own title bar strip is the only chrome it has.
  */
 export interface IWindowShell {
 	/** Whether the current platform supports native window manipulation. */
@@ -76,4 +85,45 @@ export interface IWindowShell {
 
 	/** Queries whether the window is currently pinned on top of other windows. */
 	isAlwaysOnTop(): Promise<boolean>;
+
+	/**
+	 * Sends the window to the taskbar.
+	 *
+	 * Not the tray: `minimize` follows the Windows convention the tray deliberately left
+	 * alone (`docs/features/tray/decisions.md` §3), so an unsupported platform resolves
+	 * without acting.
+	 */
+	minimize(): Promise<void>;
+
+	/**
+	 * Toggles between maximized and restored.
+	 *
+	 * One operation instead of a `maximize()`/`unmaximize()` pair because both the strip
+	 * button and the strip double-click only ever ask "flip whatever the window is now",
+	 * and the OS already owns the answer.
+	 */
+	toggleMaximize(): Promise<void>;
+
+	/**
+	 * Requests a close of the window.
+	 *
+	 * On the desktop the Rust side intercepts the request (`prevent_close` + `hide`), so
+	 * this hides to the tray instead of terminating the app. That behaviour lives in the
+	 * native shell and is inherited, never reimplemented here.
+	 */
+	close(): Promise<void>;
+
+	/** Queries whether the window is currently maximized. */
+	isMaximized(): Promise<boolean>;
+
+	/**
+	 * Subscribes to maximize/restore changes, including the ones the OS performs on its own
+	 * (`Win+Up`, drag-to-snap).
+	 *
+	 * Every platform reports a maximize as a size change rather than a dedicated event, so
+	 * implementations debounce repeated reports of the same state and deliver only real
+	 * changes. Resolves with the unsubscribe, which is safe to call more than once and is a
+	 * no-op on platforms without native windows.
+	 */
+	onMaximizedChange(handler: (maximized: boolean) => void): Promise<() => void>;
 }

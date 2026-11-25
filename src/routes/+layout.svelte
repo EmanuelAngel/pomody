@@ -3,6 +3,7 @@
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import Header from '$lib/components/layout/header.svelte';
+	import TitleBar from '$lib/components/layout/title-bar.svelte';
 	import DailyCounter from '$lib/components/layout/daily-counter.svelte';
 	import SettingsDialog from '$lib/components/settings/settings-dialog.svelte';
 	import MiniPlayer from '$lib/components/timer/mini-player.svelte';
@@ -48,6 +49,51 @@
 	});
 
 	const isMiniPlayer = $derived(windowState.isMiniPlayer);
+
+	/**
+	 * Room for the title bar strip (spec S5), desktop only: the web build keeps the browser's
+	 * own chrome and must keep the exact layout it always had, so it gets no classes at all.
+	 *
+	 * The strip is 32px of chrome ABOVE the fixed header, and `header.svelte` cannot be edited,
+	 * so the shell owns the geometry with one universal push for every view:
+	 *
+	 * - `[&>header]:top-8` drops the fixed header below the strip band. The header's own `top-0`
+	 *   is a class, so the arbitrary variant's higher specificity wins.
+	 * - `[&>main]:pt-24` keeps the page's top offset plus the strip, so the content clears the
+	 *   header (which now ends at 88px) with the original 8px gap.
+	 *
+	 * Nothing here bounds or centres the routed view: the 32px the strip occupies are paid for by
+	 * the window height instead (`MAIN_WINDOW_DIMENSIONS` and `tauri.conf.json` are 682, not 650 —
+	 * the height the native bar used to consume outside the client area). At the default size:
+	 *
+	 *   strip 0..32, header 32..88, main padded 96 top / 32 bottom -> content box 96..650 = 554px
+	 *   Timer canvas 548px (400 arc + 24 + 68 + 56) -> 3px of slack each side, 6px total
+	 *
+	 * Those 6px are exactly the budget the Timer had before the strip existed, which is why no view
+	 * needs a special shape and why no scrollbar comes back. Shorter windows still scroll the
+	 * document, because `min-h-screen` is the page's own floor and nothing here caps it.
+	 */
+	const hasTitleBar = $derived(windowState.isSupported);
+	const activeTab = $derived(navigationState.activeTab);
+
+	const shellLayout = $derived(hasTitleBar ? '[&>header]:top-8 [&>main]:pt-24' : undefined);
+
+	/**
+	 * The daily counter needs a lower slot on the Timer view, and only there.
+	 *
+	 * The strip pushed the canvas down, so at the default 800x682 the task pill (TaskPill is
+	 * `h-8`, so it fills its whole band) ends at y=647 and the counter's universal `bottom-5`
+	 * slot (box 638..662, 24px tall: `text-xs` line box + `md:py-1`) would sit ON the pill
+	 * instead of under it. Its own default stays untouched for every other view, whose content
+	 * scrolls and whose slot is unchanged from pre-strip.
+	 *
+	 * `bottom-2` = 8px from the window edge -> counter band 650..674: 3px clear below the pill,
+	 * 8px above the bottom edge. The pre-strip 7px gap is unreachable here: it would need the
+	 * counter top at 654, i.e. its bottom edge at 678, only 4px from the window edge.
+	 */
+	const dailyCounterOffset = $derived(
+		hasTitleBar && activeTab === 'timer' ? 'bottom-2' : undefined
+	);
 
 	/**
 	 * The previous session must be restored before the shell paints: rendering first
@@ -104,17 +150,26 @@
 {:else if isMiniPlayer}
 	<MiniPlayer />
 {:else}
-	<Header bind:settingsOpen onSettingsClick={handleOpenSettings} />
-	<SettingsDialog bind:open={settingsOpen} initialTab={settingsTab} />
+	<div class={shellLayout}>
+		<!--
+			Above the header, on purpose (spec S5). During a running block the header fades
+			away and this strip is the only surface left to drag, maximize or close the
+			window, so it must never live inside the fading container.
+		-->
+		<TitleBar />
 
-	{@render children()}
+		<Header bind:settingsOpen onSettingsClick={handleOpenSettings} />
+		<SettingsDialog bind:open={settingsOpen} initialTab={settingsTab} />
 
-	<DailyCounter />
+		{@render children()}
 
-	<!--
-		The toast host lives in the main shell and not in the Mini-Player branch: a compact
-		window that always stays on top already shows the phase change, and the block-end
-		state suppresses its notices there.
-	-->
-	<BlockNoticeToaster />
+		<DailyCounter class={dailyCounterOffset} />
+
+		<!--
+			The toast host lives in the main shell and not in the Mini-Player branch: a compact
+			window that always stays on top already shows the phase change, and the block-end
+			state suppresses its notices there.
+		-->
+		<BlockNoticeToaster />
+	</div>
 {/if}

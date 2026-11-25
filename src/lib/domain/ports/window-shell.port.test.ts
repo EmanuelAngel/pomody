@@ -10,8 +10,8 @@ import {
 
 describe('Window Shell Port', () => {
 	describe('Dimension Constants', () => {
-		it('should define the main window dimensions as 800x650', () => {
-			expect(MAIN_WINDOW_DIMENSIONS).toEqual({ width: 800, height: 650 });
+		it('should define the main window dimensions as 800x682', () => {
+			expect(MAIN_WINDOW_DIMENSIONS).toEqual({ width: 800, height: 682 });
 		});
 
 		it('should define the main window minimum dimensions as 480x500', () => {
@@ -42,22 +42,60 @@ describe('Window Shell Port', () => {
 	});
 
 	describe('Contract Shape', () => {
-		it('should expose isSupported, enterMiniPlayer, restoreMainWindow and isAlwaysOnTop', () => {
+		function createContractStub(): IWindowShell {
 			const dimensions: WindowDimensions = { width: 300, height: 80 };
 
-			const shell: IWindowShell = {
+			return {
 				isSupported: true,
 				enterMiniPlayer: async () => {
 					void dimensions;
 				},
 				restoreMainWindow: async () => {},
-				isAlwaysOnTop: async () => true
+				isAlwaysOnTop: async () => true,
+				minimize: async () => {},
+				toggleMaximize: async () => {},
+				close: async () => {},
+				isMaximized: async () => false,
+				onMaximizedChange: async () => () => {}
 			};
+		}
+
+		it('should expose isSupported, enterMiniPlayer, restoreMainWindow and isAlwaysOnTop', () => {
+			const shell = createContractStub();
 
 			expect(shell.isSupported).toBe(true);
 			expect(typeof shell.enterMiniPlayer).toBe('function');
 			expect(typeof shell.restoreMainWindow).toBe('function');
 			expect(typeof shell.isAlwaysOnTop).toBe('function');
+		});
+
+		it('should expose the window control operations of the title bar strip', () => {
+			const shell = createContractStub();
+
+			expect(typeof shell.minimize).toBe('function');
+			expect(typeof shell.toggleMaximize).toBe('function');
+			expect(typeof shell.close).toBe('function');
+		});
+
+		it('should expose the maximized state as a query plus a subscription', async () => {
+			const shell = createContractStub();
+
+			await expect(shell.isMaximized()).resolves.toBe(false);
+
+			const unsubscribe = await shell.onMaximizedChange(() => {});
+			expect(typeof unsubscribe).toBe('function');
+		});
+
+		it('should resolve the subscription to an unsubscribe that can be called once', async () => {
+			const seen: boolean[] = [];
+			const shell = createContractStub();
+
+			const unsubscribe = await shell.onMaximizedChange((maximized) => {
+				seen.push(maximized);
+			});
+			unsubscribe();
+
+			expect(seen).toEqual([]);
 		});
 
 		it('should type dimension values as readonly numbers', () => {

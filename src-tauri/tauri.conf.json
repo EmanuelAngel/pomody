@@ -15,11 +15,11 @@
 				"label": "main",
 				"title": "Pomody",
 				"width": 800,
-				"height": 650,
+				"height": 682,
 				"minWidth": 480,
 				"minHeight": 500,
 				"resizable": true,
-				"decorations": true
+				"decorations": false
 			}
 		],
 		"security": {

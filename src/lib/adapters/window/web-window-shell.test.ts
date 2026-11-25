@@ -35,4 +35,37 @@ describe('WebWindowShell', () => {
 		await expect(shell.enterMiniPlayer()).resolves.toBeUndefined();
 		expect(shell.isSupported).toBe(false);
 	});
+
+	describe('window controls', () => {
+		it('should resolve minimize as a no-op', async () => {
+			// Browsers cannot minimize themselves; the call resolves and nothing happens.
+			await expect(new WebWindowShell().minimize()).resolves.toBeUndefined();
+		});
+
+		it('should resolve toggleMaximize as a no-op', async () => {
+			await expect(new WebWindowShell().toggleMaximize()).resolves.toBeUndefined();
+		});
+
+		it('should resolve close as a no-op without touching the DOM', async () => {
+			// Degrading to `window.close()` would take the tab down and no browser
+			// allows it for a tab the script did not open, so the adapter does nothing.
+			await expect(new WebWindowShell().close()).resolves.toBeUndefined();
+			expect(typeof window).toBe('undefined');
+		});
+
+		it('should always resolve isMaximized to false', async () => {
+			await expect(new WebWindowShell().isMaximized()).resolves.toBe(false);
+		});
+
+		it('should return an unsubscribe that never fires on the web', async () => {
+			const seen: boolean[] = [];
+			const shell = new WebWindowShell();
+
+			const unsubscribe = await shell.onMaximizedChange((maximized) => seen.push(maximized));
+			expect(typeof unsubscribe).toBe('function');
+			unsubscribe();
+
+			expect(seen).toEqual([]);
+		});
+	});
 });
