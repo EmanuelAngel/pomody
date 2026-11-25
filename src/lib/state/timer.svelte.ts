@@ -13,6 +13,7 @@ import {
 	buildTimerSnapshotRecord,
 	type TimerRestoreDecision
 } from '../domain/timer/timer-snapshot.entity';
+import { projectBlockEnd } from '../domain/timer/block-end';
 import type { ITimerStateRepository } from '../domain/ports/timer-state-repository.port';
 import { WebWorkerTimerTicker } from '../adapters/worker/timer-worker';
 import type { ITimerTicker } from '../domain/ports/timer-ticker.port';
@@ -64,9 +65,16 @@ export class TimerState {
 	 * block finished and nobody pressed continue. `null` in every other state.
 	 */
 	private _waitingSince = $state<number | null>(null);
+	/**
+	 * Wall-clock nudge for the labels that outlive the ticker. The ticker stops while the timer is
+	 * paused or idle, so without this signal an end-time label would freeze at whatever instant it
+	 * was last computed, instead of sliding forward with the minutes.
+	 */
+	private _wallClockTick = $state(0);
 
 	private _soundEnabled = $state<boolean>(true);
 	private _revitalizationEnabled = $state<boolean>(true);
+	private _blockEndTimeEnabled = $state<boolean>(false);
 	private _configSubscribers = new SvelteSet<(config: TimerConfig) => void>();
 
 	private _snapshot = $state<TimerSnapshot>({
@@ -114,6 +122,24 @@ export class TimerState {
 		this.storage?.saveSettings({ revitalizationEnabled: this._revitalizationEnabled });
 	}
 
+	/**
+	 * Whether the main view shows the estimated end time of the current block. Purely a display
+	 * preference, off by default: the projection itself is always available through `blockEndsAt`.
+	 */
+	public get blockEndTimeEnabled(): boolean {
+		return this._blockEndTimeEnabled;
+	}
+
+	public setBlockEndTimeEnabled(enabled: boolean): void {
+		this._blockEndTimeEnabled = enabled;
+		this.storage?.saveSettings({ blockEndTimeEnabled: this._blockEndTimeEnabled });
+	}
+
+	public toggleBlockEndTime(): void {
+		this._blockEndTimeEnabled = !this._blockEndTimeEnabled;
+		this.storage?.saveSettings({ blockEndTimeEnabled: this._blockEndTimeEnabled });
+	}
+
 	public get snapshot(): TimerSnapshot {
 		return this._snapshot;
 	}
@@ -159,6 +185,48 @@ export class TimerState {
 		return this._snapshot.state === 'running';
 	}
 
+	/**
+	 * Wall-clock instant at which the current block ends, or `null` once it has already ended.
+	 *
+	 * Idle projects the block that would start right now, so the label answers "if I start, when do
+	 * I finish?" before the first press. Running and paused add the time left to the current
+	 * instant, which is why a pause slides the end forward as the minutes pass.
+	 */
+	public get blockEndsAt(): number | null {
+		if (this._snapshot.state === 'completed') {
+			return null;
+		}
+
+		return projectBlockEnd(this.wallClockNow, this._snapshot.remainingMs);
+	}
+
+	/**
+	 * How many times the wall-clock signal has been advanced. Observable so the component that owns
+	 * the minute interval can be asserted without waiting a real minute.
+	 */
+	public get wallClockTick(): number {
+		return this._wallClockTick;
+	}
+
+	/**
+	 * Advances the wall-clock signal every derived label reading `blockEndsAt` depends on.
+	 *
+	 * Called once a minute by the view that renders the end-time label, and only in the states where
+	 * the ticker is stopped; while the block runs the snapshot itself re-renders the label.
+	 */
+	public tickWallClock(): void {
+		this._wallClockTick += 1;
+	}
+
+	/**
+	 * The clock instant the end-time label projects from, reactive on the minute-level signal.
+	 */
+	private get wallClockNow(): number {
+		void this._wallClockTick;
+
+		return this.now();
+	}
+
 	public get config(): TimerConfig {
 		return this._config;
 	}
@@ -194,6 +262,7 @@ export class TimerState {
 			this._soundEnabled = storedSettings.soundEnabled;
 		}
 		this._revitalizationEnabled = storedSettings?.revitalizationEnabled ?? true;
+		this._blockEndTimeEnabled = storedSettings?.blockEndTimeEnabled ?? false;
 
 		this.fsm = new TimerFSM(initialConfig);
 		this.ticker = ticker ?? new WebWorkerTimerTicker();
@@ -302,12 +371,14 @@ export class TimerState {
 	 */
 	public resetSettings(): void {
 		this._revitalizationEnabled = DEFAULT_USER_SETTINGS.revitalizationEnabled;
+		this._blockEndTimeEnabled = DEFAULT_USER_SETTINGS.blockEndTimeEnabled;
 		this._soundEnabled = DEFAULT_USER_SETTINGS.soundEnabled;
 		this.fsm.updateConfig(DEFAULT_TIMER_CONFIG);
 		this.storage?.saveSettings({
 			timer: this.fsm.config,
 			soundEnabled: this._soundEnabled,
-			revitalizationEnabled: this._revitalizationEnabled
+			revitalizationEnabled: this._revitalizationEnabled,
+			blockEndTimeEnabled: this._blockEndTimeEnabled
 		});
 		this._config = this.fsm.config;
 		for (const subscriber of this._configSubscribers) {

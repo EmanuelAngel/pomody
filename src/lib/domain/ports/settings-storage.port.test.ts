@@ -16,13 +16,14 @@ describe('Settings Storage Port & UserSettings Model', () => {
 	});
 
 	describe('DEFAULT_USER_SETTINGS', () => {
-		it('should match DEFAULT_TIMER_CONFIG, soundEnabled true, revitalizationEnabled true, detector off, illustration off, and dark theme', () => {
+		it('should match DEFAULT_TIMER_CONFIG, soundEnabled true, revitalizationEnabled true, block end time off, detector off, illustration off, and dark theme', () => {
 			expect(DEFAULT_USER_SETTINGS).toEqual({
 				timer: DEFAULT_TIMER_CONFIG,
 				soundEnabled: true,
 				revitalizationEnabled: true,
 				distractionDetectorEnabled: false,
 				blockNotificationsEnabled: true,
+				blockEndTimeEnabled: false,
 				theme: 'dark',
 				illustration: {
 					enabled: false,
@@ -36,6 +37,7 @@ describe('Settings Storage Port & UserSettings Model', () => {
 			expect(DEFAULT_USER_SETTINGS.revitalizationEnabled).toBe(true);
 			expect(DEFAULT_USER_SETTINGS.distractionDetectorEnabled).toBe(false);
 			expect(DEFAULT_USER_SETTINGS.blockNotificationsEnabled).toBe(true);
+			expect(DEFAULT_USER_SETTINGS.blockEndTimeEnabled).toBe(false);
 			expect(DEFAULT_USER_SETTINGS.theme).toBe('dark');
 			expect(DEFAULT_USER_SETTINGS.illustration).toBe(DEFAULT_ILLUSTRATION_SETTINGS);
 			expect(DEFAULT_USER_SETTINGS.illustration.enabled).toBe(false);

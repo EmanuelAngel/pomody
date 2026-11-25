@@ -30,6 +30,7 @@ export interface StoredSettingsEnvelope {
 	readonly revitalizationEnabled?: boolean;
 	readonly distractionDetectorEnabled?: boolean;
 	readonly blockNotificationsEnabled?: boolean;
+	readonly blockEndTimeEnabled?: boolean;
 	readonly theme: Theme;
 	readonly illustration?: IllustrationSettings;
 }
@@ -141,6 +142,10 @@ export class LocalSettingsStorage implements ISettingsStorage {
 				patch.blockNotificationsEnabled !== undefined
 					? patch.blockNotificationsEnabled
 					: current.blockNotificationsEnabled,
+			blockEndTimeEnabled:
+				patch.blockEndTimeEnabled !== undefined
+					? patch.blockEndTimeEnabled
+					: current.blockEndTimeEnabled,
 			theme: patch.theme !== undefined ? patch.theme : current.theme,
 			illustration: {
 				...current.illustration,
@@ -157,6 +162,7 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			revitalizationEnabled: validated.revitalizationEnabled,
 			distractionDetectorEnabled: validated.distractionDetectorEnabled,
 			blockNotificationsEnabled: validated.blockNotificationsEnabled,
+			blockEndTimeEnabled: validated.blockEndTimeEnabled,
 			theme: validated.theme,
 			illustration: validated.illustration
 		};
@@ -246,6 +252,10 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			? obj.blockNotificationsEnabled
 			: DEFAULT_USER_SETTINGS.blockNotificationsEnabled;
 
+		const blockEndTimeEnabled = isValidBoolean(obj.blockEndTimeEnabled)
+			? obj.blockEndTimeEnabled
+			: DEFAULT_USER_SETTINGS.blockEndTimeEnabled;
+
 		const theme = isValidTheme(obj.theme) ? obj.theme : DEFAULT_USER_SETTINGS.theme;
 
 		const illustrationObj =
@@ -282,6 +292,7 @@ export class LocalSettingsStorage implements ISettingsStorage {
 			revitalizationEnabled,
 			distractionDetectorEnabled,
 			blockNotificationsEnabled,
+			blockEndTimeEnabled,
 			theme,
 			illustration: {
 				enabled: illustrationEnabled,

@@ -4,6 +4,11 @@ import { FakeTicker } from '$tests/fakes/engine/fake-ticker';
 import { FakeAudioNotifier } from '$tests/fakes/engine/fake-audio-notifier';
 import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
 import { FakeTimerStateRepository } from '$tests/fakes/repositories/fake-timer-state-repository';
+import { InMemoryStorage } from '../adapters/storage/in-memory-storage';
+import {
+	LocalSettingsStorage,
+	SETTINGS_STORAGE_KEY
+} from '../adapters/storage/local-settings-storage';
 import { TimerState, createTimerState, formatTime, timerState } from './timer.svelte';
 import { DEFAULT_TIMER_CONFIG, TimerFSM, type DomainEvent } from '../domain/timer/timer-fsm';
 
@@ -676,7 +681,8 @@ describe('TimerState Composition Root', () => {
 				{
 					timer: DEFAULT_TIMER_CONFIG,
 					soundEnabled: true,
-					revitalizationEnabled: true
+					revitalizationEnabled: true,
+					blockEndTimeEnabled: false
 				}
 			]);
 
@@ -690,6 +696,8 @@ describe('TimerState Composition Root', () => {
 			expect(() => timer.toggleSound()).not.toThrow();
 			expect(() => timer.setRevitalizationEnabled(false)).not.toThrow();
 			expect(() => timer.toggleRevitalization()).not.toThrow();
+			expect(() => timer.setBlockEndTimeEnabled(false)).not.toThrow();
+			expect(() => timer.toggleBlockEndTime()).not.toThrow();
 			expect(() => timer.resetSettings()).not.toThrow();
 			timer.destroy();
 		});
@@ -1094,5 +1102,218 @@ describe('TimerState waitingSince', () => {
 
 		expect(state.state).toBe('paused');
 		expect(state.waitingSince).toBe(NOW - 300_000);
+	});
+});
+
+describe('TimerState blockEndsAt', () => {
+	const NOW = 1_700_000_000_000;
+	const MINUTE = 60_000;
+	let ticker: FakeTicker;
+	let clock: number;
+
+	beforeEach(() => {
+		ticker = new FakeTicker();
+		clock = NOW;
+	});
+
+	function createState(config?: Parameters<typeof createTimerState>[0]) {
+		return createTimerState(
+			config,
+			ticker,
+			new FakeAudioNotifier(),
+			undefined,
+			undefined,
+			() => clock
+		);
+	}
+
+	/**
+	 * Moves wall clock and timer forward together, the way a real running block behaves: the
+	 * ticker reports the same elapsed time the clock advanced.
+	 */
+	function advance(ms: number) {
+		clock += ms;
+		ticker.simulateTick(ms);
+	}
+
+	it('projects the end from the current instant while idle', () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+
+		expect(state.state).toBe('idle');
+		expect(state.blockEndsAt).toBe(NOW + 1_500_000);
+
+		clock = NOW + 5 * MINUTE;
+		expect(state.blockEndsAt).toBe(clock + 1_500_000);
+	});
+
+	it('keeps the end fixed while the block runs without pauses', () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+
+		state.start();
+		expect(state.blockEndsAt).toBe(NOW + 1_500_000);
+
+		advance(5 * MINUTE);
+		expect(state.blockEndsAt).toBe(NOW + 1_500_000);
+	});
+
+	it('pushes the end forward by every minute that passes while paused', () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+
+		state.start();
+		advance(MINUTE);
+		state.pause();
+		expect(state.state).toBe('paused');
+		expect(state.blockEndsAt).toBe(NOW + 1_500_000);
+
+		clock += 10 * MINUTE;
+		// The block had spent one of its 25 minutes: 24 left, paused for ten minutes.
+		expect(state.blockEndsAt).toBe(NOW + 11 * MINUTE + 1_440_000);
+	});
+
+	it('freezes the pushed-back end once the block resumes', () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+
+		state.start();
+		advance(MINUTE);
+		state.pause();
+		clock += 10 * MINUTE;
+		const pausedEnd = state.blockEndsAt;
+
+		state.resume();
+		expect(state.state).toBe('running');
+		expect(state.blockEndsAt).toBe(pausedEnd);
+
+		advance(3 * MINUTE);
+		expect(state.blockEndsAt).toBe(pausedEnd);
+	});
+
+	it('reprojects the end when the block resets or its duration changes', () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+
+		state.start();
+		advance(5 * MINUTE);
+		state.reset();
+
+		expect(state.state).toBe('idle');
+		expect(state.blockEndsAt).toBe(clock + 1_500_000);
+
+		state.updateConfig({ focusDurationSeconds: 600 });
+		expect(state.durationMs).toBe(600_000);
+		expect(state.blockEndsAt).toBe(clock + 600_000);
+	});
+
+	it('reports an end time for breaks as well as for focus blocks', () => {
+		const state = createState();
+
+		state.skip();
+		expect(state.mode).toBe('shortBreak');
+		expect(state.blockEndsAt).toBe(clock + 300_000);
+
+		state.updateConfig({ shortBreakDurationSeconds: 120 });
+		expect(state.blockEndsAt).toBe(clock + 120_000);
+	});
+
+	it('has no end time left once the block completed', () => {
+		const state = createState({ focusDurationSeconds: 4 });
+
+		state.start();
+		advance(4000);
+
+		expect(state.state).toBe('completed');
+		expect(state.blockEndsAt).toBeNull();
+	});
+
+	it('advances the wall-clock signal for the labels that outlive the ticker', () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+
+		state.start();
+		advance(MINUTE);
+		state.pause();
+		clock += 10 * MINUTE;
+
+		expect(state.wallClockTick).toBe(0);
+		state.tickWallClock();
+		expect(state.wallClockTick).toBe(1);
+		expect(state.blockEndsAt).toBe(NOW + 11 * MINUTE + 1_440_000);
+	});
+});
+
+describe('TimerState blockEndTimeEnabled', () => {
+	const ticker = () => new FakeTicker();
+
+	it('hides the block end time by default when no settings are stored', () => {
+		const state = createTimerState(undefined, ticker(), new FakeAudioNotifier());
+
+		expect(state.blockEndTimeEnabled).toBe(false);
+
+		state.destroy();
+	});
+
+	it('loads a persisted preference that opts in', () => {
+		const state = createTimerState(
+			undefined,
+			ticker(),
+			new FakeAudioNotifier(),
+			new FakeSettingsStorage({ blockEndTimeEnabled: true })
+		);
+
+		expect(state.blockEndTimeEnabled).toBe(true);
+
+		state.destroy();
+	});
+
+	it('defaults to hidden when the stored settings predate the preference', () => {
+		const storage = new InMemoryStorage();
+		storage.setItem(
+			SETTINGS_STORAGE_KEY,
+			JSON.stringify({ version: 1, timer: DEFAULT_TIMER_CONFIG, soundEnabled: true, theme: 'dark' })
+		);
+
+		const state = createTimerState(
+			undefined,
+			ticker(),
+			new FakeAudioNotifier(),
+			new LocalSettingsStorage(storage)
+		);
+
+		expect(state.blockEndTimeEnabled).toBe(false);
+
+		state.destroy();
+	});
+
+	it('persists the preference and toggles it reactively', () => {
+		const storage = new FakeSettingsStorage();
+		const state = createTimerState(undefined, ticker(), new FakeAudioNotifier(), storage);
+
+		state.setBlockEndTimeEnabled(true);
+		expect(state.blockEndTimeEnabled).toBe(true);
+		expect(storage.loadSettings().blockEndTimeEnabled).toBe(true);
+
+		state.toggleBlockEndTime();
+		expect(state.blockEndTimeEnabled).toBe(false);
+		expect(storage.loadSettings().blockEndTimeEnabled).toBe(false);
+
+		state.toggleBlockEndTime();
+		expect(state.blockEndTimeEnabled).toBe(true);
+		expect(storage.saveSettingsCalls).toEqual([
+			{ blockEndTimeEnabled: true },
+			{ blockEndTimeEnabled: false },
+			{ blockEndTimeEnabled: true }
+		]);
+
+		state.destroy();
+	});
+
+	it('restores the default when the settings are reset', () => {
+		const storage = new FakeSettingsStorage({ blockEndTimeEnabled: true });
+		const state = createTimerState(undefined, ticker(), new FakeAudioNotifier(), storage);
+		expect(state.blockEndTimeEnabled).toBe(true);
+
+		state.resetSettings();
+
+		expect(state.blockEndTimeEnabled).toBe(false);
+		expect(storage.loadSettings().blockEndTimeEnabled).toBe(false);
+
+		state.destroy();
 	});
 });

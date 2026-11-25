@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { tick } from 'svelte';
 import { render } from 'vitest-browser-svelte';
 import TimerArc from './timer-arc.svelte';
 import TimerDisplay from './timer-display.svelte';
@@ -10,6 +11,8 @@ import { createBreakActivity } from '$lib/domain/breaks/break-activity.entity';
 import { FakeBreakActivityRepository } from '$tests/fakes/repositories/fake-break-activity-repository';
 import { localeState } from '$lib/state/locale.svelte';
 import { FakeTicker } from '$tests/fakes/engine/fake-ticker';
+import { FakeAudioNotifier } from '$tests/fakes/engine/fake-audio-notifier';
+import { FakeSettingsStorage } from '$tests/fakes/repositories/fake-settings-storage';
 
 const mockActivity = createBreakActivity({
 	id: 'act-phys',
@@ -416,5 +419,261 @@ describe('Timer Reactive Localization (Client Browser)', () => {
 		await expect
 			.element(screen.getByRole('button', { name: 'Pausar temporizador', exact: true }))
 			.toBeVisible();
+	});
+});
+
+describe('Timer block end-time label (Client Browser)', () => {
+	/** 15:00 local, the instant every expectation below is written against. */
+	const START = new Date(2024, 0, 15, 15, 0, 0).getTime();
+	const MINUTE = 60_000;
+	let clock: number;
+	let ticker: FakeTicker;
+
+	beforeEach(() => {
+		clock = START;
+		ticker = new FakeTicker();
+	});
+
+	function createState(config?: Parameters<typeof createTimerState>[0]) {
+		return createTimerState(
+			config,
+			ticker,
+			new FakeAudioNotifier(),
+			new FakeSettingsStorage({ blockEndTimeEnabled: true }),
+			undefined,
+			() => clock
+		);
+	}
+
+	const line = (screen: { container: HTMLElement }) =>
+		screen.container.querySelector('[data-timer-status-line]');
+	const endLabel = (screen: { container: HTMLElement }) =>
+		screen.container.querySelector('[data-block-end]');
+
+	it('projects the end time of the block while idle', async () => {
+		const screen = await render(Timer, { state: createState({ focusDurationSeconds: 1500 }) });
+
+		await expect.element(screen.getByText('Would end at 15:25')).toBeVisible();
+		expect(endLabel(screen)?.getAttribute('data-block-end')).toBe('idle');
+		expect(screen.container.querySelector('[data-waiting-since]')).toBeNull();
+	});
+
+	it('shows the end time of a running block', async () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+		const screen = await render(Timer, { state });
+
+		state.start();
+
+		await expect.element(screen.getByText('Ends at 15:25')).toBeVisible();
+		expect(endLabel(screen)?.getAttribute('data-block-end')).toBe('running');
+		expect(screen.container.querySelector('[data-waiting-since]')).toBeNull();
+	});
+
+	it('keeps the end time of a running block fixed while its minutes pass', async () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+		const screen = await render(Timer, { state });
+
+		state.start();
+		await expect.element(screen.getByText('Ends at 15:25')).toBeVisible();
+
+		clock += 5 * MINUTE;
+		ticker.simulateTick(5 * MINUTE);
+		await tick();
+
+		expect(screen.container.textContent).toContain('Ends at 15:25');
+		expect(screen.container.textContent).not.toContain('Ends at 15:30');
+	});
+
+	it('shares one centered line with the waiting counter and pushes the end forward while paused', async () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+		const screen = await render(Timer, { state });
+
+		state.start();
+		clock += MINUTE;
+		ticker.simulateTick(MINUTE);
+		state.pause();
+		await expect.element(screen.getByText('Ends at 15:25')).toBeVisible();
+
+		clock += 10 * MINUTE;
+		await tick();
+		expect(endLabel(screen)?.textContent).toBe('Ends at 15:25');
+
+		state.tickWallClock();
+		await tick();
+		expect(endLabel(screen)?.textContent).toBe('Ends at 15:35');
+
+		const sharedLine = line(screen);
+		expect(sharedLine).not.toBeNull();
+		expect(sharedLine?.className).toContain('h-5');
+		expect(sharedLine?.querySelector('[data-waiting-since="paused"]')).not.toBeNull();
+		expect(sharedLine?.textContent).toContain(' · ');
+	});
+
+	it('freezes the pushed-back end time once the block resumes', async () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+		const screen = await render(Timer, { state });
+
+		state.start();
+		clock += MINUTE;
+		ticker.simulateTick(MINUTE);
+		state.pause();
+		clock += 10 * MINUTE;
+		state.tickWallClock();
+		state.resume();
+		await expect.element(screen.getByText('Ends at 15:35')).toBeVisible();
+
+		clock += 3 * MINUTE;
+		ticker.simulateTick(3 * MINUTE);
+		await tick();
+		expect(endLabel(screen)?.textContent).toBe('Ends at 15:35');
+	});
+
+	it('labels break blocks the same way as focus blocks', async () => {
+		const state = createState({ focusDurationSeconds: 1500, shortBreakDurationSeconds: 300 });
+		const screen = await render(Timer, { state });
+
+		state.skip();
+		await expect.element(screen.getByText('Would end at 15:05')).toBeVisible();
+
+		state.start();
+		await expect.element(screen.getByText('Ends at 15:05')).toBeVisible();
+	});
+
+	it('drops the end time once the block completed and leaves the finished label alone', async () => {
+		const state = createState({ focusDurationSeconds: 4 });
+		const screen = await render(Timer, { state });
+
+		state.start();
+		clock += 4000;
+		ticker.simulateTick(4000);
+
+		await vi.waitFor(() => {
+			expect(screen.container.querySelector('[data-waiting-since="completed"]')).not.toBeNull();
+		});
+		expect(endLabel(screen)).toBeNull();
+		expect(screen.container.textContent).not.toContain('Ends at');
+	});
+
+	it('translates the end-time copy with the rest of the timer', async () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+		const screen = await render(Timer, { state });
+
+		await expect.element(screen.getByText('Would end at 15:25')).toBeVisible();
+
+		localeState.setLocale('es');
+		await expect.element(screen.getByText('Terminaría a las 15:25')).toBeVisible();
+
+		state.start();
+		await expect.element(screen.getByText('Termina a las 15:25')).toBeVisible();
+	});
+});
+
+describe('Timer block end-time preference (Client Browser)', () => {
+	/** 15:00 local, the instant every expectation below is written against. */
+	const START = new Date(2024, 0, 15, 15, 0, 0).getTime();
+	const MINUTE = 60_000;
+	let clock: number;
+	let ticker: FakeTicker;
+
+	beforeEach(() => {
+		clock = START;
+		ticker = new FakeTicker();
+	});
+
+	function createState(options: { blockEndTimeEnabled?: boolean } = {}) {
+		return createTimerState(
+			{ focusDurationSeconds: 1500 },
+			ticker,
+			new FakeAudioNotifier(),
+			new FakeSettingsStorage({ blockEndTimeEnabled: options.blockEndTimeEnabled ?? false }),
+			undefined,
+			() => clock
+		);
+	}
+
+	const endLabels = (screen: { container: HTMLElement }) =>
+		screen.container.querySelectorAll('[data-block-end]');
+
+	it('hides the projected end time on the first render, before anything is stored', async () => {
+		const state = createTimerState(
+			{ focusDurationSeconds: 1500 },
+			new FakeTicker(),
+			new FakeAudioNotifier(),
+			undefined,
+			undefined,
+			() => clock
+		);
+
+		const screen = await render(Timer, { state });
+
+		expect(state.blockEndTimeEnabled).toBe(false);
+		expect(endLabels(screen)).toHaveLength(0);
+		expect(screen.container.textContent).not.toContain('Would end at');
+	});
+
+	it('hides the projected end time while idle when the preference is off', async () => {
+		const screen = await render(Timer, {
+			state: createState({ blockEndTimeEnabled: false })
+		});
+
+		const line = screen.container.querySelector('[data-timer-status-line]');
+		expect(line).not.toBeNull();
+		expect(endLabels(screen)).toHaveLength(0);
+		expect(screen.container.textContent).not.toContain('Would end at');
+		expect(screen.container.textContent).not.toContain('15:25');
+	});
+
+	it('hides the end time of a running block when the preference is off', async () => {
+		const state = createState({ blockEndTimeEnabled: false });
+		const screen = await render(Timer, { state });
+
+		state.start();
+		await tick();
+
+		expect(endLabels(screen)).toHaveLength(0);
+		expect(screen.container.textContent).not.toContain('Ends at');
+	});
+
+	it('leaves the waiting counter alone when the preference is off', async () => {
+		const state = createState({ blockEndTimeEnabled: false });
+		const screen = await render(Timer, { state });
+
+		state.start();
+		clock += MINUTE;
+		ticker.simulateTick(MINUTE);
+		state.pause();
+		await tick();
+
+		const line = screen.container.querySelector('[data-timer-status-line]');
+
+		expect(line?.querySelector('[data-waiting-since="paused"]')).not.toBeNull();
+		expect(endLabels(screen)).toHaveLength(0);
+		expect(line?.textContent).not.toContain('·');
+		expect(line?.textContent).not.toContain('Ends at');
+	});
+
+	it('keeps the reserved status line on one unbreakable row either way', async () => {
+		const state = createState({ blockEndTimeEnabled: false });
+		const screen = await render(Timer, { state });
+
+		const line = screen.container.querySelector('[data-timer-status-line]');
+		const content = line?.firstElementChild;
+
+		expect(line?.className).toContain('h-5');
+		expect(content?.className).toContain('whitespace-nowrap');
+	});
+
+	it('shows the label again the moment the preference is turned back on', async () => {
+		const state = createState({ blockEndTimeEnabled: false });
+		const screen = await render(Timer, { state });
+
+		state.start();
+		await tick();
+		expect(endLabels(screen)).toHaveLength(0);
+
+		state.setBlockEndTimeEnabled(true);
+
+		await expect.element(screen.getByText('Ends at 15:25')).toBeVisible();
+		expect(endLabels(screen)).toHaveLength(1);
 	});
 });

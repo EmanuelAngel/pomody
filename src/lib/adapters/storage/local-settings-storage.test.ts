@@ -65,6 +65,7 @@ describe('LocalSettingsStorage', () => {
 				revitalizationEnabled: false,
 				distractionDetectorEnabled: true,
 				blockNotificationsEnabled: false,
+				blockEndTimeEnabled: true,
 				theme: 'dawn',
 				illustration: {
 					enabled: true,
@@ -398,6 +399,20 @@ describe('LocalSettingsStorage', () => {
 
 			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({}));
 			expect(storageAdapter.loadSettings().revitalizationEnabled).toBe(true);
+		});
+
+		it('validates blockEndTimeEnabled boolean type and falls back to the default off', () => {
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ blockEndTimeEnabled: true }));
+			expect(storageAdapter.loadSettings().blockEndTimeEnabled).toBe(true);
+
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ blockEndTimeEnabled: 'true' }));
+			expect(storageAdapter.loadSettings().blockEndTimeEnabled).toBe(false);
+
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ blockEndTimeEnabled: 1 }));
+			expect(storageAdapter.loadSettings().blockEndTimeEnabled).toBe(false);
+
+			mockStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ soundEnabled: true }));
+			expect(storageAdapter.loadSettings().blockEndTimeEnabled).toBe(false);
 		});
 
 		it('validates distractionDetectorEnabled boolean type and falls back to the default off', () => {
