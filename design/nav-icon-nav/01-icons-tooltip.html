@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Nav — Icons + Tooltip</title>
+		<style>
+			:root {
+				--background: #191724;
+				--foreground: #e0def4;
+				--card: #1f1d2e;
+				--popover: #1f1d2e;
+				--muted-foreground: #908caa;
+				--border: #26233a;
+				--ring: #ebbcba;
+				--radius: 0.625rem;
+				--accent-rose: #ebbcba;
+			}
+			* {
+				box-sizing: border-box;
+				margin: 0;
+			}
+			body {
+				font-family: ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif;
+				background: var(--background);
+				color: var(--foreground);
+				min-height: 100vh;
+			}
+			header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				height: 56px;
+				padding: 0 24px;
+				border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+				background: color-mix(in srgb, var(--background) 50%, transparent);
+			}
+			.brand {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+			.brand .dot {
+				width: 20px;
+				height: 20px;
+				border-radius: 6px;
+				background: var(--accent-rose);
+				opacity: 0.85;
+			}
+			.brand span {
+				font-size: 12px;
+				font-weight: 600;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				color: var(--muted-foreground);
+			}
+			nav {
+				position: absolute;
+				left: 50%;
+				transform: translateX(-50%);
+			}
+			.tabs {
+				display: flex;
+				align-items: center;
+				gap: 32px;
+			}
+			.tab {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 4px;
+				padding: 8px 4px;
+				background: none;
+				border: none;
+				cursor: pointer;
+				color: color-mix(in srgb, var(--muted-foreground) 70%, transparent);
+				transition: color 0.2s ease;
+				position: relative;
+			}
+			@media (prefers-reduced-motion: reduce) {
+				.tab {
+					transition: none;
+				}
+			}
+			.tab .sr {
+				position: absolute;
+				width: 1px;
+				height: 1px;
+				overflow: hidden;
+				clip: rect(0 0 0 0);
+				white-space: nowrap;
+			}
+			.tab:hover,
+			.tab:focus-visible {
+				color: var(--foreground);
+			}
+			.tab:focus-visible {
+				outline: 2px solid var(--ring);
+				outline-offset: 4px;
+				border-radius: calc(var(--radius) * 0.6);
+			}
+			.tab[aria-selected='true'] {
+				color: var(--foreground);
+				font-weight: 600;
+			}
+			.tab[aria-selected='true']::after {
+				content: '';
+				position: absolute;
+				bottom: -2px;
+				width: 16px;
+				height: 2px;
+				border-radius: 9999px;
+				background: var(--accent-rose);
+			}
+			.tip {
+				position: absolute;
+				top: calc(100% + 10px);
+				left: 50%;
+				transform: translateX(-50%) translateY(4px);
+				background: var(--popover);
+				border: 1px solid var(--border);
+				border-radius: calc(var(--radius) * 0.8);
+				padding: 5px 10px;
+				font-size: 11px;
+				font-weight: 500;
+				color: var(--foreground);
+				white-space: nowrap;
+				opacity: 0;
+				pointer-events: none;
+				transition:
+					opacity 0.15s ease,
+					transform 0.15s ease;
+				z-index: 10;
+				box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+			}
+			@media (prefers-reduced-motion: reduce) {
+				.tip {
+					transition: none;
+				}
+			}
+			.tab:hover .tip,
+			.tab:focus-visible .tip {
+				opacity: 1;
+				transform: translateX(-50%) translateY(0);
+			}
+			.cands {
+				display: grid;
+				grid-template-columns: repeat(7, 1fr);
+				gap: 10px;
+				max-width: 820px;
+				margin: 48px auto 0;
+				padding: 0 24px;
+			}
+			.cands h2 {
+				grid-column: 1/-1;
+				font-size: 11px;
+				font-weight: 600;
+				text-transform: uppercase;
+				letter-spacing: 0.1em;
+				color: var(--muted-foreground);
+				margin: 0;
+			}
+			.cand {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 8px;
+				padding: 14px 6px;
+				border: 1px solid var(--border);
+				border-radius: calc(var(--radius) * 0.8);
+				background: var(--card);
+				color: var(--foreground);
+			}
+			.cand figcaption {
+				font-size: 10px;
+				font-family: ui-monospace, Consolas, monospace;
+				color: var(--muted-foreground);
+			}
+			.note {
+				max-width: 72ch;
+				margin: 56px auto 0;
+				padding: 0 24px;
+				color: var(--muted-foreground);
+				font-size: 13px;
+				line-height: 1.6;
+			}
+			.note b {
+				color: var(--foreground);
+				font-weight: 600;
+			}
+			.note code {
+				font-family: ui-monospace, Consolas, monospace;
+				font-size: 12px;
+			}
+		</style>
+	</head>
+	<body>
+		<header>
+			<div class="brand">
+				<div class="dot"></div>
+				<span>Pomody</span>
+			</div>
+			<nav aria-label="Main">
+				<div role="tablist" aria-label="Views" class="tabs">
+					<button type="button" role="tab" aria-selected="true" class="tab">
+						<svg
+							style="width: 18px; height: 18px; stroke-width: 1.75"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
+							<line x1="10" x2="14" y1="2" y2="2" />
+							<line x1="12" x2="15" y1="14" y2="11" />
+							<circle cx="12" cy="14" r="8" />
+						</svg>
+						<span class="sr">Timer</span>
+						<span class="tip" aria-hidden="true">Timer</span>
+					</button>
+					<button type="button" role="tab" aria-selected="false" class="tab">
+						<svg
+							style="width: 18px; height: 18px; stroke-width: 1.75"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
+							<path d="M13 5h8" />
+							<path d="M13 12h8" />
+							<path d="M13 19h8" />
+							<path d="m3 17 2 2 4-4" />
+							<path d="m3 7 2 2 4-4" />
+						</svg>
+						<span class="sr">Planning</span>
+						<span class="tip" aria-hidden="true">Planning · list-checks</span>
+					</button>
+					<button type="button" role="tab" aria-selected="false" class="tab">
+						<svg
+							style="width: 18px; height: 18px; stroke-width: 1.75"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
+							<path
+								d="M20 9.807V6a1 1 0 00-1-1c-2 0-4.49-1.19-6.24-2.72a1.17 1.17 0 00-1.52 0C9.5 3.8 7 5 5 5a1 1 0 00-1 1v7c0 3.88 2.107 6.254 5 7.796"
+							/>
+							<path d="M19 17v-2a2 2 0 00-4 0v2" />
+							<rect x="13" y="17" width="8" height="5" rx="1" />
+						</svg>
+						<span class="sr">Distractions</span>
+						<span class="tip" aria-hidden="true">Distractions · shield-lock</span>
+					</button>
+					<button type="button" role="tab" aria-selected="false" class="tab">
+						<svg
+							style="width: 18px; height: 18px; stroke-width: 1.75"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
+							<path d="M3 3v16a2 2 0 0 0 2 2h16" />
+							<path d="M18 17V9" />
+							<path d="M13 17V5" />
+							<path d="M8 17v-3" />
+						</svg>
+						<span class="sr">Metrics</span>
+						<span class="tip" aria-hidden="true">Metrics</span>
+					</button>
+				</div>
+			</nav>
+			<div></div>
+		</header>
+		<div class="cands">
+			<h2>Distractions — lucide candidates</h2>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path
+						d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"
+					/>
+					<path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+					<path
+						d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"
+					/>
+					<path d="m2 2 20 20" />
+				</svg>
+				<figcaption>eye-off</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="m15 18-.722-3.25" />
+					<path d="M2 8a10.645 10.645 0 0 0 20 0" />
+					<path d="m20 15-1.726-2.05" />
+					<path d="m4 15 1.726-2.05" />
+					<path d="m9 18 .722-3.25" />
+				</svg>
+				<figcaption>eye-closed</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="m2 2 20 20" />
+					<path
+						d="M5 5a1 1 0 0 0-1 1v7c0 5 3.5 7.5 7.67 8.94a1 1 0 0 0 .67.01c2.35-.82 4.48-1.97 5.9-3.71"
+					/>
+					<path
+						d="M9.309 3.652A12.252 12.252 0 0 0 11.24 2.28a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1v7a9.784 9.784 0 0 1-.08 1.264"
+					/>
+				</svg>
+				<figcaption>shield-off</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path
+						d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+					/>
+					<path d="m14.5 9.5-5 5" />
+					<path d="m9.5 9.5 5 5" />
+				</svg>
+				<figcaption>shield-x</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M15 10v1" />
+					<path
+						d="M7.528 20.472a1.6 1.6 0 012.277 0l1.057 1.056a1.6 1.6 0 002.276 0l1.057-1.056a1.6 1.6 0 012.277 0l1.114 1.114a1.4 1.4 0 002.414-1V10a8 8 0 00-16 0v10.586a1.4 1.4 0 002.414 1z"
+					/>
+					<path d="M9 10v1" />
+				</svg>
+				<figcaption>ghost</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M10.768 5.111 13.44 2.44a1.5 1.5 0 012.474 1.561l-1.633 4.625" />
+					<path d="m18.889 13.232.672-.672A1.5 1.5 0 0018.5 10h-2.844" />
+					<path d="m2 2 20 20" />
+					<path
+						d="m7.94 7.94-3.5 3.499A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l5.5-5.5"
+					/>
+				</svg>
+				<figcaption>zap-off</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path
+						d="M11 4.702a.7.7 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.7.7 0 0 0 11 19.298z"
+					/>
+					<path d="m16.5 14.5 5-5" />
+					<path d="m16.5 9.5 5 5" />
+				</svg>
+				<figcaption>volume-x</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M10.268 21a2 2 0 0 0 3.464 0" />
+					<path d="M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742" />
+					<path d="m2 2 20 20" />
+					<path d="M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05" />
+				</svg>
+				<figcaption>bell-off</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<circle cx="12" cy="12" r="10" />
+					<path d="M4.929 4.929 19.07 19.071" />
+				</svg>
+				<figcaption>ban</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="m15 9-6 6" />
+					<path
+						d="M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z"
+					/>
+					<path d="m9 9 6 6" />
+				</svg>
+				<figcaption>octagon-x</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path
+						d="M10.1 13.9a14 14 0 0 0 3.732 2.668 1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2 18 18 0 0 1-12.728-5.272"
+					/>
+					<path d="M22 2 2 22" />
+					<path
+						d="M4.76 13.582A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 .244.473"
+					/>
+				</svg>
+				<figcaption>phone-off</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M6.87 6.87a8 8 0 1 0 11.26 11.26" />
+					<path d="M19.9 14.25a8 8 0 0 0-9.15-9.15" />
+					<path d="m22 6-3-3" />
+					<path d="M6.26 18.67 4 21" />
+					<path d="m2 2 20 20" />
+					<path d="M4 4 2 6" />
+				</svg>
+				<figcaption>alarm-clock-off</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="m2 2 20 20" />
+					<path d="M8.35 2.69A10 10 0 0 1 21.3 15.65" />
+					<path d="M19.08 19.08A10 10 0 1 1 4.92 4.92" />
+				</svg>
+				<figcaption>circle-off</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M18 5h4" />
+					<path d="M20 3v4" />
+					<path
+						d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"
+					/>
+				</svg>
+				<figcaption>moon-star</figcaption>
+			</figure>
+		</div>
+		<div class="cands" style="max-width: 980px">
+			<h2>Batch 2 · by metaphor</h2>
+			<h3
+				style="
+					grid-column: 1/-1;
+					margin: 6px 0 0;
+					font-size: 10px;
+					font-weight: 600;
+					letter-spacing: 0.08em;
+					text-transform: uppercase;
+					color: var(--muted-foreground);
+				"
+			>
+				Block the distraction
+			</h3>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" />
+					<path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" />
+					<path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" />
+					<path
+						d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"
+					/>
+				</svg>
+				<figcaption>hand</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<circle cx="12" cy="12" r="10" />
+					<path d="M4.929 4.929 19.07 19.071" />
+				</svg>
+				<figcaption>ban</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<circle cx="12" cy="12" r="10" />
+					<line x1="10" x2="10" y1="15" y2="9" />
+					<line x1="14" x2="14" y1="15" y2="9" />
+				</svg>
+				<figcaption>circle-pause</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M6 18.5a3.5 3.5 0 1 0 7 0c0-1.57.92-2.52 2.04-3.46" />
+					<path d="M6 8.5c0-.75.13-1.47.36-2.14" />
+					<path d="M8.8 3.15A6.5 6.5 0 0 1 19 8.5c0 1.63-.44 2.81-1.09 3.76" />
+					<path d="M12.5 6A2.5 2.5 0 0 1 15 8.5M10 13a2 2 0 0 0 1.82-1.18" />
+					<line x1="2" x2="22" y1="2" y2="22" />
+				</svg>
+				<figcaption>ear-off</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M12 19v3" />
+					<path d="M15 9.34V5a3 3 0 0 0-5.68-1.33" />
+					<path d="M16.95 16.95A7 7 0 0 1 5 12v-2" />
+					<path d="M18.89 13.23A7 7 0 0 0 19 12v-2" />
+					<path d="m2 2 20 20" />
+					<path d="M9 9v3a3 3 0 0 0 5.12 2.12" />
+				</svg>
+				<figcaption>mic-off</figcaption>
+			</figure>
+			<h3
+				style="
+					grid-column: 1/-1;
+					margin: 6px 0 0;
+					font-size: 10px;
+					font-weight: 600;
+					letter-spacing: 0.08em;
+					text-transform: uppercase;
+					color: var(--muted-foreground);
+				"
+			>
+				The trigger / what distracts
+			</h3>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="m2 2 20 20" />
+					<path
+						d="M4.93 4.929a10 10 0 0 0-1.938 11.412 2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 0 0 11.302-1.989"
+					/>
+					<path d="M8.35 2.69A10 10 0 0 1 21.3 15.65" />
+				</svg>
+				<figcaption>message-circle-off</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M10.66 6H14a2 2 0 0 1 2 2v2.5l5.248-3.062A.5.5 0 0 1 22 7.87v8.196" />
+					<path d="M16 16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2" />
+					<path d="m2 2 20 20" />
+				</svg>
+				<figcaption>video-off</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+					<path d="M12 18h.01" />
+				</svg>
+				<figcaption>smartphone</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M16 7h.01" />
+					<path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />
+					<path d="m20 7 2 .5-2 .5" />
+					<path d="M10 18v3" />
+					<path d="M14 17.75V21" />
+					<path d="M7 18a6 6 0 0 0 3.84-10.61" />
+				</svg>
+				<figcaption>bird</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M15.236 22a3 3 0 0 0-2.2-5" />
+					<path d="M16 20a3 3 0 0 1 3-3h1a2 2 0 0 0 2-2v-2a4 4 0 0 0-4-4V4" />
+					<path d="M18 13h.01" />
+					<path
+						d="M18 6a4 4 0 0 0-4 4 7 7 0 0 0-7 7c0-5 4-5 4-10.5a4.5 4.5 0 1 0-9 0 2.5 2.5 0 0 0 5 0C7 10 3 11 3 17c0 2.8 2.2 5 5 5h10"
+					/>
+				</svg>
+				<figcaption>squirrel</figcaption>
+			</figure>
+			<h3
+				style="
+					grid-column: 1/-1;
+					margin: 6px 0 0;
+					font-size: 10px;
+					font-weight: 600;
+					letter-spacing: 0.08em;
+					text-transform: uppercase;
+					color: var(--muted-foreground);
+				"
+			>
+				The lost focus
+			</h3>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M12 18V5" />
+					<path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4" />
+					<path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5" />
+					<path d="M17.997 5.125a4 4 0 0 1 2.526 5.77" />
+					<path d="M18 18a4 4 0 0 0 2-7.464" />
+					<path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517" />
+					<path d="M6 18a4 4 0 0 1-2-7.464" />
+					<path d="M6.003 5.125a4 4 0 0 0-2.526 5.77" />
+				</svg>
+				<figcaption>brain</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<circle cx="12" cy="12" r="10" />
+					<line x1="22" x2="18" y1="12" y2="12" />
+					<line x1="6" x2="2" y1="12" y2="12" />
+					<line x1="12" x2="12" y1="6" y2="2" />
+					<line x1="12" x2="12" y1="22" y2="18" />
+				</svg>
+				<figcaption>crosshair</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<circle cx="12" cy="12" r="10" />
+					<circle cx="12" cy="12" r="6" />
+					<circle cx="12" cy="12" r="2" />
+				</svg>
+				<figcaption>target</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M21 4H3" />
+					<path d="M18 8H6" />
+					<path d="M19 12H9" />
+					<path d="M16 16h-6" />
+					<path d="M11 20H9" />
+				</svg>
+				<figcaption>tornado</figcaption>
+			</figure>
+			<h3
+				style="
+					grid-column: 1/-1;
+					margin: 6px 0 0;
+					font-size: 10px;
+					font-weight: 600;
+					letter-spacing: 0.08em;
+					text-transform: uppercase;
+					color: var(--muted-foreground);
+				"
+			>
+				The view itself (journal)
+			</h3>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4" />
+					<path d="M2 6h4" />
+					<path d="M2 10h4" />
+					<path d="M2 14h4" />
+					<path d="M2 18h4" />
+					<path
+						d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"
+					/>
+				</svg>
+				<figcaption>notebook-pen</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M13 5h8" />
+					<path d="M13 12h8" />
+					<path d="M13 19h8" />
+					<path d="m3 17 2 2 4-4" />
+					<rect x="3" y="4" width="6" height="6" rx="1" />
+				</svg>
+				<figcaption>list-todo</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+					<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+					<path d="M12 11h4" />
+					<path d="M12 16h4" />
+					<path d="M8 11h.01" />
+					<path d="M8 16h.01" />
+				</svg>
+				<figcaption>clipboard-list</figcaption>
+			</figure>
+			<figure class="cand">
+				<svg
+					style="width: 22px; height: 22px; stroke-width: 1.75"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<circle cx="6" cy="15" r="4" />
+					<circle cx="18" cy="15" r="4" />
+					<path d="M14 15a2 2 0 0 0-2-2 2 2 0 0 0-2 2" />
+					<path d="M2.5 13 5 7c.7-1.3 1.4-2 3-2" />
+					<path d="M21.5 13 19 7c-.7-1.3-1.5-2-3-2" />
+				</svg>
+				<figcaption>glasses</figcaption>
+			</figure>
+		</div>
+		<p class="note">
+			<b>Direction 01 · Icons + tooltip.</b> Purest form: 18px lucide icons, label revealed on hover
+			<i>and</i> keyboard focus via tooltip (hover is not the only reveal — focus shows it too, so
+			keyboard users are not penalized). Screen readers get the localized label through
+			<code>sr-only</code> text, so <code>aria-selected</code> semantics stay intact. Current pick
+			for Distractions: <code>shield-lock</code>. Tradeoff:
+			<b>maximal minimalism; discoverability rests entirely on the tooltips</b>, and touch devices
+			(no hover) rely on trial-and-error until first use.
+		</p>
+	</body>
+</html>
