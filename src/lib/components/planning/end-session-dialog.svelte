@@ -15,7 +15,7 @@
 
 <AlertDialog.Root bind:open>
 	<AlertDialog.Trigger
-		class="cursor-pointer rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2.5 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/20 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+		class="pressable cursor-pointer rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/20 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 	>
 		{t.planning_dialog_end_session_trigger()}
 	</AlertDialog.Trigger>

@@ -42,7 +42,8 @@ describe('BreakCard (Client Browser)', () => {
 		const badge = screen.getByText('Physical').element().parentElement;
 		expect(badge?.className).toContain('text-accent-gold');
 		expect(badge?.className).toContain('bg-accent-gold/15');
-		expect(badge?.className).toContain('border-accent-gold/40');
+		expect(badge?.className).toContain('border-transparent');
+		expect(badge?.className).not.toContain('border-accent-gold');
 	});
 
 	it('renders mindful activity with iris accent badge without redundant status badge', async () => {
@@ -56,7 +57,8 @@ describe('BreakCard (Client Browser)', () => {
 		const badge = screen.getByText('Mindful').element().parentElement;
 		expect(badge?.className).toContain('text-accent-iris');
 		expect(badge?.className).toContain('bg-accent-iris/15');
-		expect(badge?.className).toContain('border-accent-iris/40');
+		expect(badge?.className).toContain('border-transparent');
+		expect(badge?.className).not.toContain('border-accent-iris');
 	});
 
 	it('renders hydration activity with foam accent badge', async () => {
@@ -69,7 +71,8 @@ describe('BreakCard (Client Browser)', () => {
 		const badge = screen.getByText('Hydration').element().parentElement;
 		expect(badge?.className).toContain('text-accent-foam');
 		expect(badge?.className).toContain('bg-accent-foam/15');
-		expect(badge?.className).toContain('border-accent-foam/40');
+		expect(badge?.className).toContain('border-transparent');
+		expect(badge?.className).not.toContain('border-accent-foam');
 	});
 
 	it('renders expandable micro-guide when guide is present and toggles on click', async () => {

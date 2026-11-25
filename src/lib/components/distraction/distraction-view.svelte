@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { fade, fly } from 'svelte/transition';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import MousePointerClick from '@lucide/svelte/icons/mouse-pointer-click';
@@ -9,6 +10,7 @@
 	import BreakConfirmDialog from '$lib/components/breaks/break-confirm-dialog.svelte';
 	import DistractionRuleForm from './distraction-rule-form.svelte';
 	import { t } from '$lib/state/locale.svelte';
+	import { motionIn, motionOut } from '$lib/utils/motion';
 	import {
 		distractionState as defaultDistractionState,
 		type DistractionRuleInput,
@@ -110,6 +112,8 @@
 				{#each distractionState.rules as rule (rule.id)}
 					<li
 						class="flex items-center justify-between gap-3 rounded-xl border border-border/60 px-3 py-2"
+						in:fly={motionIn()}
+						out:fade={motionOut()}
 					>
 						<div class="flex min-w-0 items-center gap-2">
 							<Badge variant="secondary">{rule.exe}</Badge>
@@ -165,6 +169,8 @@
 				{#each distractionState.silencedRules as rule (rule.id)}
 					<li
 						class="flex items-center justify-between gap-3 rounded-xl border border-border/60 px-3 py-2"
+						in:fly={motionIn()}
+						out:fade={motionOut()}
 					>
 						<span class="truncate text-xs text-muted-foreground">{describeRule(rule)}</span>
 						<Button

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import AlertCircle from '@lucide/svelte/icons/alert-circle';
+	import { fade, fly } from 'svelte/transition';
 	import type { PlanningState } from '$lib/state/planning.svelte';
+	import { motionIn, motionOut } from '$lib/utils/motion';
 	import { t } from '$lib/state/locale.svelte';
 
 	interface Props {
@@ -16,6 +18,8 @@
 	<div
 		role="alert"
 		class="mt-4 flex flex-col gap-2.5 rounded-xl border border-accent-gold/40 bg-accent-gold/10 p-3 text-xs text-accent-gold sm:flex-row sm:items-center sm:justify-between"
+		in:fly={motionIn()}
+		out:fade={motionOut()}
 	>
 		<div class="flex items-center gap-2">
 			<AlertCircle class="size-4 shrink-0" />
@@ -24,7 +28,7 @@
 		<button
 			type="button"
 			onclick={() => planningState.adjustTargetEndTimeToMinimum()}
-			class="inline-flex cursor-pointer items-center justify-center rounded-lg border border-accent-gold/50 bg-accent-gold/20 px-2.5 py-1 text-xs font-semibold text-accent-gold transition-colors hover:bg-accent-gold/30 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+			class="inline-flex pressable cursor-pointer items-center justify-center rounded-lg border border-accent-gold/50 bg-accent-gold/20 px-2.5 py-1 text-xs font-semibold text-accent-gold hover:bg-accent-gold/30 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 		>
 			{t.planning_underflow_adjust_button({ minutes: minMinutes })}
 		</button>

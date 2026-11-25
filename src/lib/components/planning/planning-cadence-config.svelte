@@ -168,7 +168,7 @@
 						})}
 						onclick={() => applyPreset(preset)}
 						class={cn(
-							'flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors',
+							'flex pressable cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium',
 							isSelected
 								? 'border-primary/50 bg-primary/10 text-primary shadow-xs'
 								: 'border-border/60 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground'
@@ -183,7 +183,7 @@
 					{@const isSelected = activePresetId === preset.id}
 					<div
 						class={cn(
-							'flex items-center rounded-lg border text-xs font-medium transition-colors',
+							'flex items-center rounded-lg border text-xs font-medium interactive',
 							isSelected
 								? 'border-primary/50 bg-primary/10 text-primary shadow-xs'
 								: 'border-border/60 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground'
@@ -197,7 +197,7 @@
 								label: formatCadenceShort(preset)
 							})}
 							onclick={() => applyPreset(preset)}
-							class="flex cursor-pointer items-center gap-1.5 rounded-l-lg py-1.5 pr-1.5 pl-2.5"
+							class="flex pressable cursor-pointer items-center gap-1.5 rounded-l-lg py-1.5 pr-1.5 pl-2.5"
 						>
 							<span class="font-semibold">{preset.name}</span>
 							<span class="text-[10px] opacity-80">{formatCadenceShort(preset)}</span>
@@ -301,7 +301,7 @@
 									? t.planning_cadence_preset_error_limit()
 									: undefined}
 								aria-label={t.planning_cadence_preset_save_aria()}
-								class="flex cursor-pointer items-center rounded-lg border border-dashed border-border/60 bg-background px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+								class="flex pressable cursor-pointer items-center rounded-lg border border-dashed border-border/60 bg-background px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 							>
 								<Plus class="size-3" />
 							</button>
@@ -364,7 +364,7 @@
 						aria-label={t.planning_cadence_decrease_blocks_aria()}
 						disabled={planningState.isSessionActive || planningState.blockCount <= 1}
 						onclick={() => planningState.setBlockCount(planningState.blockCount - 1)}
-						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+						class="flex size-7 pressable cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						<Minus class="size-3" />
 					</button>
@@ -376,7 +376,7 @@
 						aria-label={t.planning_cadence_increase_blocks_aria()}
 						disabled={planningState.isSessionActive || planningState.blockCount >= 24}
 						onclick={() => planningState.setBlockCount(planningState.blockCount + 1)}
-						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+						class="flex size-7 pressable cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						<Plus class="size-3" />
 					</button>
@@ -410,7 +410,7 @@
 					disabled={planningState.isSessionActive}
 					value={planningState.targetEndTime}
 					oninput={(e) => planningState.setTargetEndTime(e.currentTarget.value)}
-					class="h-8.5 rounded-lg border border-border/60 bg-background px-2.5 text-xs text-foreground transition-colors focus:border-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					class="h-8.5 rounded-lg border border-border/60 bg-background px-2.5 text-xs text-foreground interactive focus:border-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 				/>
 			</div>
 
@@ -425,7 +425,7 @@
 						disabled={planningState.isSessionActive}
 						onclick={() => planningState.setScheduledStartTime('now')}
 						class={cn(
-							'h-8.5 cursor-pointer rounded-lg border px-2.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+							'h-8.5 pressable cursor-pointer rounded-lg border px-2.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50',
 							planningState.scheduledStartTime === 'now'
 								? 'border-primary/40 bg-primary/10 text-primary'
 								: 'border-border/60 bg-background text-muted-foreground hover:text-foreground'
@@ -442,7 +442,7 @@
 							? ''
 							: planningState.scheduledStartTime}
 						oninput={(e) => planningState.setScheduledStartTime(e.currentTarget.value || 'now')}
-						class="h-8.5 flex-1 rounded-lg border border-border/60 bg-background px-2.5 text-xs text-foreground transition-colors focus:border-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+						class="h-8.5 flex-1 rounded-lg border border-border/60 bg-background px-2.5 text-xs text-foreground interactive focus:border-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					/>
 				</div>
 			</div>
@@ -456,7 +456,7 @@
 			aria-expanded={isCustomOpen}
 			aria-controls="custom-cadence-panel"
 			onclick={() => (isCustomOpen = !isCustomOpen)}
-			class="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+			class="flex pressable cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
 		>
 			<SlidersHorizontal class="size-3 text-muted-foreground/70" />
 			<span>{t.planning_cadence_customize_toggle()}</span>
@@ -485,7 +485,7 @@
 						aria-label={t.planning_cadence_decrease_focus_aria()}
 						disabled={planningState.focusMinutes <= 5}
 						onclick={() => planningState.setFocusMinutes(planningState.focusMinutes - 5)}
-						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+						class="flex size-7 pressable cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						<Minus class="size-3" />
 					</button>
@@ -497,7 +497,7 @@
 						aria-label={t.planning_cadence_increase_focus_aria()}
 						disabled={planningState.focusMinutes >= 120}
 						onclick={() => planningState.setFocusMinutes(planningState.focusMinutes + 5)}
-						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+						class="flex size-7 pressable cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						<Plus class="size-3" />
 					</button>
@@ -515,7 +515,7 @@
 						aria-label={t.planning_cadence_decrease_short_break_aria()}
 						disabled={planningState.shortBreakMinutes <= 1}
 						onclick={() => planningState.setShortBreakMinutes(planningState.shortBreakMinutes - 1)}
-						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+						class="flex size-7 pressable cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						<Minus class="size-3" />
 					</button>
@@ -527,7 +527,7 @@
 						aria-label={t.planning_cadence_increase_short_break_aria()}
 						disabled={planningState.shortBreakMinutes >= 60}
 						onclick={() => planningState.setShortBreakMinutes(planningState.shortBreakMinutes + 1)}
-						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+						class="flex size-7 pressable cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						<Plus class="size-3" />
 					</button>
@@ -545,7 +545,7 @@
 						aria-label={t.planning_cadence_decrease_long_break_aria()}
 						disabled={planningState.longBreakMinutes <= 5}
 						onclick={() => planningState.setLongBreakMinutes(planningState.longBreakMinutes - 5)}
-						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+						class="flex size-7 pressable cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						<Minus class="size-3" />
 					</button>
@@ -557,7 +557,7 @@
 						aria-label={t.planning_cadence_increase_long_break_aria()}
 						disabled={planningState.longBreakMinutes >= 90}
 						onclick={() => planningState.setLongBreakMinutes(planningState.longBreakMinutes + 5)}
-						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+						class="flex size-7 pressable cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						<Plus class="size-3" />
 					</button>
@@ -575,7 +575,7 @@
 						aria-label={t.planning_cadence_decrease_interval_aria()}
 						disabled={planningState.longBreakInterval <= 1}
 						onclick={() => planningState.setLongBreakInterval(planningState.longBreakInterval - 1)}
-						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+						class="flex size-7 pressable cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						<Minus class="size-3" />
 					</button>
@@ -587,7 +587,7 @@
 						aria-label={t.planning_cadence_increase_interval_aria()}
 						disabled={planningState.longBreakInterval >= 12}
 						onclick={() => planningState.setLongBreakInterval(planningState.longBreakInterval + 1)}
-						class="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+						class="flex size-7 pressable cursor-pointer items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						<Plus class="size-3" />
 					</button>

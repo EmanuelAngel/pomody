@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { fade, fly } from 'svelte/transition';
 	import { tasksState as defaultTasksState, type TasksState } from '$lib/state/tasks.svelte';
 	import {
 		navigationState as defaultNavigationState,
@@ -19,6 +20,7 @@
 	import PlanningTimeline from './planning-timeline.svelte';
 	import TaskBacklog from './task-backlog.svelte';
 	import BreakCatalog from '$lib/components/breaks/break-catalog.svelte';
+	import { motionIn, motionOut } from '$lib/utils/motion';
 
 	interface Props {
 		planningState?: PlanningState;
@@ -104,7 +106,7 @@
 			type="button"
 			aria-label={t.planning_back_to_timer()}
 			onclick={() => navigationState.setTab('timer')}
-			class="inline-flex cursor-pointer items-center justify-center gap-1.5 self-start rounded-full border border-border/50 bg-muted/40 px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none sm:self-auto"
+			class="inline-flex pressable cursor-pointer items-center justify-center gap-1.5 self-start rounded-full border border-border/50 bg-muted/40 px-3.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/80 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none sm:self-auto"
 		>
 			<ArrowRight class="size-3.5 rotate-180" />
 			<span>{t.planning_back_to_timer()}</span>
@@ -167,10 +169,19 @@
 			</div>
 
 			<!-- Active Segment Content -->
+			<!--
+				The two segments are the only content of the column, so switching them
+				without motion reads as a page reload. The wrapper carries the transition
+				because Svelte refuses directives on a component.
+			-->
 			{#if activeRightSegment === 'tasks'}
-				<TaskBacklog {tasksState} {planningState} />
+				<div in:fly={motionIn()} out:fade={motionOut()}>
+					<TaskBacklog {tasksState} {planningState} />
+				</div>
 			{:else if activeRightSegment === 'breaks'}
-				<BreakCatalog {breaksState} />
+				<div in:fly={motionIn()} out:fade={motionOut()}>
+					<BreakCatalog {breaksState} />
+				</div>
 			{/if}
 		</div>
 	</div>

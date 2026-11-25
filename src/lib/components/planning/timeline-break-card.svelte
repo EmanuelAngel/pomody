@@ -2,7 +2,9 @@
 	import Coffee from '@lucide/svelte/icons/coffee';
 	import Clock from '@lucide/svelte/icons/clock';
 	import Check from '@lucide/svelte/icons/check';
+	import { fade, fly } from 'svelte/transition';
 	import { cn } from '$lib/utils';
+	import { motionIn, motionOut } from '$lib/utils/motion';
 	import type { PlanBlock } from '$lib/domain/planning/session-plan.entity';
 	import type { TimerState } from '$lib/state/timer.svelte';
 	import { t } from '$lib/state/locale.svelte';
@@ -20,6 +22,8 @@
 <li
 	class={cn('group relative list-none', className)}
 	aria-current={block.status === 'in_progress' ? 'step' : undefined}
+	in:fly={motionIn()}
+	out:fade={motionOut()}
 >
 	<!-- Left Circular Badge -->
 	<div
@@ -46,7 +50,7 @@
 	<!-- Break Card Body -->
 	<div
 		class={cn(
-			'rounded-xl border p-2.5 transition-colors',
+			'card-hover rounded-xl border p-2.5',
 			block.status === 'in_progress'
 				? 'border-primary/40 bg-primary/5'
 				: block.status === 'skipped'

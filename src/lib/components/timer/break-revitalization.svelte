@@ -33,10 +33,13 @@
 		activeActivity ? getLocalizedPresetGuide(activeActivity) : undefined
 	);
 
+	// Informational badges are borderless by design: the border colour is kept
+	// transparent so the tinted background + accent text carry the category
+	// signal on its own at 10px. Interactive pills keep their border affordance.
 	const categoryBadgeClasses: Record<BreakCategory, string> = {
-		physical: 'border-accent-gold/40 bg-accent-gold/15 text-accent-gold',
-		mindful: 'border-accent-iris/40 bg-accent-iris/15 text-accent-iris',
-		hydration: 'border-accent-foam/40 bg-accent-foam/15 text-accent-foam'
+		physical: 'border-transparent bg-accent-gold/15 text-accent-gold',
+		mindful: 'border-transparent bg-accent-iris/15 text-accent-iris',
+		hydration: 'border-transparent bg-accent-foam/15 text-accent-foam'
 	};
 
 	const categoryLabels = $derived<Record<BreakCategory, string>>({
@@ -101,7 +104,7 @@
 			<Popover.Trigger
 				type="button"
 				aria-label={t.break_revitalization_view_instructions({ title: activeTitle })}
-				class="inline-flex size-6 cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="inline-flex size-6 pressable cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				<BookOpen class="size-3.5" />
 			</Popover.Trigger>
@@ -143,8 +146,8 @@
 			aria-label={t.break_revitalization_shuffle_aria()}
 			onclick={handleShuffle}
 			class={cn(
-				'inline-flex size-6 cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 transition-all duration-200 hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none active:scale-90',
-				isShuffling && 'rotate-180 duration-300'
+				'inline-flex size-6 pressable cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+				isShuffling && 'motion-safe:rotate-180 motion-safe:duration-300'
 			)}
 		>
 			<Shuffle class="size-3.5" />
