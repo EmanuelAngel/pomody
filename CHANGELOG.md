@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.26.0...pomody-v0.27.0) (2026-11-25)
+
+
+### Features
+
+* **timer:** show block end time with opt-in settings toggle ([#243](https://github.com/EmanuelAngel/pomody/issues/243)) ([52ce9b5](https://github.com/EmanuelAngel/pomody/commit/52ce9b5c8c5d9c57434cf549c1b4347951d8d898))
+
 ## [0.26.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.25.0...pomody-v0.26.0) (2026-11-25)
 
 
