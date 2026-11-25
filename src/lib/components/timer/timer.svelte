@@ -100,7 +100,7 @@
 </script>
 
 <div class="mx-auto flex w-full max-w-sm flex-col items-center justify-center sm:max-w-md">
-	<TimerArc progress={state.progress} mode={state.mode}>
+	<TimerArc progress={state.progress} mode={state.mode} state={state.state}>
 		<TimerDisplay
 			formattedTime={state.formattedRemainingTime}
 			mode={state.mode}

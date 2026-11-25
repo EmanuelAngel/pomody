@@ -18,6 +18,9 @@ import type { FadeParams, FlyParams } from 'svelte/transition';
 const ENTER_MS = 150;
 const EXIT_MS = 100;
 
+/** The one dissolve in the vocabulary: both sides of the swap are visible at once. */
+const CROSSFADE_MS = 300;
+
 /** How far a surface travels while it fades in. Small on purpose: this is a hint, not a slide. */
 const ENTER_OFFSET_PX = 8;
 
@@ -68,4 +71,27 @@ export function motionOut(): FadeParams {
 	}
 
 	return { duration: EXIT_MS };
+}
+
+/**
+ * The cross-fade recipe, for a swap where the outgoing and the incoming surface have to be
+ * visible at the same time: the illustration's phase dissolve and anything else that replaces
+ * artwork in place.
+ *
+ * It is symmetric on purpose, which is why it is not the `motionIn`/`motionOut` pair. Those two
+ * are asymmetric because a dismissed surface overlaps nothing — a short exit is what makes the
+ * swap feel like one gesture. Here the two surfaces share the same pixels, so a shorter exit
+ * would leave the scene visibly empty for the difference and flash the page background through
+ * the middle of the dissolve.
+ *
+ * 300ms is the slowest gesture in the vocabulary and the only one that is a dissolve rather than
+ * a state change: below ~200ms a full-scene swap reads as a jump cut, and above ~400ms it is
+ * waiting.
+ */
+export function motionCrossfade(): FadeParams {
+	if (prefersReducedMotion()) {
+		return { duration: 0 };
+	}
+
+	return { duration: CROSSFADE_MS };
 }

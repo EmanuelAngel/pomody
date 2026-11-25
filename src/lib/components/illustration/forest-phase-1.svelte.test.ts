@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import ForestIllustration from './forest-illustration.svelte';
 
@@ -46,5 +46,44 @@ describe('Forest phase 1 motion (Client Browser)', () => {
 		for (const style of groups(screen.container, 'g.from, g.to')) {
 			expect(style.animationTimingFunction).toBe('steps(1)');
 		}
+	});
+});
+
+describe('Forest phase transitions (Client Browser)', () => {
+	it('cross-fades the outgoing and the incoming phase instead of swapping instantly', async () => {
+		const screen = await render(ForestIllustration, { phase: 0, animated: false });
+		const scenes = () => [...screen.container.querySelectorAll('g.scene')];
+
+		expect(scenes()).toHaveLength(1);
+
+		await screen.rerender({ phase: 1, animated: false });
+
+		// Both scenes must be in the document at once while the dissolve runs. An instant
+		// swap — the behaviour without a transition — never shows two.
+		await vi.waitFor(() => expect(scenes()).toHaveLength(2), { timeout: 200 });
+		expect(screen.container.querySelector('svg')?.getAttribute('data-phase')).toBe('1');
+
+		// The outgoing scene is dismissed once its fade ends, leaving the new phase alone.
+		await vi.waitFor(() => expect(scenes()).toHaveLength(1), { timeout: 2000 });
+	});
+
+	it('keeps the dissolve symmetric so no frame shows an empty scene', async () => {
+		const screen = await render(ForestIllustration, { phase: 0, animated: false });
+
+		await screen.rerender({ phase: 2, animated: false });
+
+		await vi.waitFor(
+			() => {
+				const opacities = [...screen.container.querySelectorAll('g.dissolve')].map((group) =>
+					Number(getComputedStyle(group).opacity)
+				);
+				expect(opacities).toHaveLength(2);
+				// Neither side may already be gone: the pair is mid-dissolve, so both are partial.
+				for (const opacity of opacities) {
+					expect(opacity).toBeGreaterThan(0);
+				}
+			},
+			{ timeout: 200 }
+		);
 	});
 });

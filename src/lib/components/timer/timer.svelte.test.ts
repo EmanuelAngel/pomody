@@ -6,6 +6,10 @@ import TimerDisplay from './timer-display.svelte';
 import TimerControls from './timer-controls.svelte';
 import Timer from './timer.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
+// The clock's fixed-width digits are the Tailwind `tabular-nums` utility. In isolation nothing
+// pulls `app.css` in (only `+layout.svelte` does), so without this import the utility is a no-op
+// and the width of every digit would read as `normal`.
+import '../../../app.css';
 import { createBreaksState } from '$lib/state/breaks.svelte';
 import { createBreakActivity } from '$lib/domain/breaks/break-activity.entity';
 import { FakeBreakActivityRepository } from '$tests/fakes/repositories/fake-break-activity-repository';
@@ -21,6 +25,62 @@ const mockActivity = createBreakActivity({
 	durationMinutes: 2,
 	guide: '1. Tilt ear.\n2. Roll shoulders.'
 });
+
+/**
+ * The computed transition list of an element, keyed by property. CSS reports the three lists
+ * (property, duration, timing function) independently and repeats the short ones, so pairing them
+ * here is what turns "some transition exists" into "this property moves at this speed".
+ */
+function transitions(element: Element) {
+	const style = getComputedStyle(element);
+	const properties = splitCssList(style.transitionProperty);
+	const durations = splitCssList(style.transitionDuration);
+	const timings = splitCssList(style.transitionTimingFunction);
+
+	return new Map(
+		properties.map((property, index) => [
+			property,
+			{
+				duration: durations[index % durations.length],
+				timingFunction: timings[index % timings.length]
+			}
+		])
+	);
+}
+
+/** Comma-splits a CSS value list without breaking `cubic-bezier(...)` on its own commas. */
+function splitCssList(value: string): string[] {
+	const parts: string[] = [];
+	let depth = 0;
+	let current = '';
+
+	for (const character of value) {
+		if (character === '(') depth += 1;
+		if (character === ')') depth -= 1;
+
+		if (character === ',' && depth === 0) {
+			parts.push(current.trim());
+			current = '';
+			continue;
+		}
+
+		current += character;
+	}
+
+	parts.push(current.trim());
+
+	return parts;
+}
+
+/** The single "consumed" stroke of the progress arc. */
+function arcStroke(container: Element): SVGElement {
+	const stroke = container.querySelector<SVGElement>('circle[stroke-linecap="round"]');
+	if (stroke === null) {
+		throw new Error('The progress arc stroke is missing.');
+	}
+
+	return stroke;
+}
 
 describe('TimerArc (Client Browser)', () => {
 	it('renders accessible progressbar with semantic attributes', async () => {
@@ -46,6 +106,66 @@ describe('TimerArc (Client Browser)', () => {
 		await expect
 			.element(longScreen.getByRole('progressbar'))
 			.toHaveAttribute('data-mode', 'longBreak');
+	});
+});
+
+describe('TimerArc interpolation and state cue (Client Browser)', () => {
+	it('interpolates the consumed stroke between ticks instead of stepping once per tick', async () => {
+		const screen = await render(TimerArc, { progress: 0.25, mode: 'focus' });
+		const strokeTransitions = transitions(arcStroke(screen.container));
+
+		// The ticker advances every 250ms; the interpolation covers one vocabulary step and is
+		// linear because a progress indicator must travel at a constant speed.
+		expect(strokeTransitions.get('stroke-dashoffset')).toEqual({
+			duration: '0.2s',
+			timingFunction: 'linear'
+		});
+		expect(strokeTransitions.get('stroke')?.timingFunction).toBe('cubic-bezier(0.25, 1, 0.5, 1)');
+	});
+
+	it('breathes the stroke while the block runs', async () => {
+		const screen = await render(TimerArc, { progress: 0.25, mode: 'focus', state: 'running' });
+		const style = getComputedStyle(arcStroke(screen.container));
+
+		expect(style.animationName).toContain('arc-breathe');
+		// A 2s+ cycle: fast enough to read as alive, slow enough not to pull the eye off the clock.
+		expect(Number.parseFloat(style.animationDuration)).toBeGreaterThanOrEqual(2);
+		expect(style.animationIterationCount).toBe('infinite');
+	});
+
+	it('holds the stroke still and dimmed while paused or finished', async () => {
+		for (const state of ['paused', 'completed'] as const) {
+			const screen = await render(TimerArc, { progress: 0.25, mode: 'focus', state });
+			const style = getComputedStyle(arcStroke(screen.container));
+
+			expect(style.animationName).toBe('none');
+			expect(Number(style.strokeOpacity)).toBeLessThan(1);
+
+			await screen.unmount();
+		}
+	});
+
+	it('leaves the stroke at full opacity and motionless while idle', async () => {
+		const screen = await render(TimerArc, { progress: 0.25, mode: 'focus', state: 'idle' });
+		const style = getComputedStyle(arcStroke(screen.container));
+
+		expect(style.animationName).toBe('none');
+		expect(Number(style.strokeOpacity)).toBe(1);
+	});
+});
+
+describe('TimerDisplay minute signal (Client Browser)', () => {
+	it('keeps the digits fixed-width so the clock never reflows', async () => {
+		const screen = await render(TimerDisplay, {
+			formattedTime: '25:00',
+			mode: 'focus',
+			currentRound: 1,
+			roundsBeforeLongBreak: 4
+		});
+
+		expect(getComputedStyle(screen.getByRole('timer').element()).fontVariantNumeric).toContain(
+			'tabular-nums'
+		);
 	});
 });
 
