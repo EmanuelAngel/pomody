@@ -1,6 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+// In isolation nothing pulls `app.css` in (only `+layout.svelte` does), so without this
+// import the width utilities are no-ops and every pill would measure the same.
+import '../../../app.css';
 import BreakRevitalization from './break-revitalization.svelte';
+import TaskPill from './task-pill.svelte';
+import { createTasksState } from '$lib/state/tasks.svelte';
+import { FakeTaskRepository } from '$tests/fakes/repositories/fake-task-repository';
 import { createBreaksState } from '$lib/state/breaks.svelte';
 import { localeState } from '$lib/state/locale.svelte';
 import { createBreakActivity } from '$lib/domain/breaks/break-activity.entity';
@@ -378,5 +384,54 @@ describe('BreakRevitalization (Client Browser)', () => {
 		await expect.element(screen.getByText('Alivio de cuello y hombros')).toBeVisible();
 		localeState.setLocale('en');
 		await expect.element(screen.getByText('Neck & Shoulder Release')).toBeVisible();
+	});
+
+	it('keeps the same width as the task pill whatever activity it shows', async () => {
+		const shortActivity = createBreakActivity({
+			id: 'act-short',
+			title: 'Walk',
+			category: 'physical',
+			durationMinutes: 1
+		});
+		const longActivity = createBreakActivity({
+			id: 'act-long',
+			title: 'Slow full-body stretch from the ankles up to the neck and shoulders',
+			category: 'mindful',
+			durationMinutes: 1
+		});
+		const breaksState = createBreaksState(
+			new FakeBreakActivityRepository([shortActivity, longActivity])
+		);
+		await breaksState.load();
+		const tasksState = createTasksState(new FakeTaskRepository());
+		await tasksState.load();
+
+		const breakScreen = await render(BreakRevitalization, {
+			breaksState,
+			mode: 'shortBreak',
+			currentRound: 1,
+			portalProps: { disabled: true }
+		});
+		const taskScreen = await render(TaskPill, {
+			isRunning: false,
+			tasksState,
+			portalProps: { disabled: true }
+		});
+		const breakPill = breakScreen.container.querySelector<HTMLElement>(
+			'[data-slot="break-revitalization"]'
+		)!;
+		const taskPill = taskScreen.container.querySelector<HTMLElement>('[data-slot="task-pill"]')!;
+		await expect.element(taskScreen.getByText('Free focus')).toBeVisible();
+		const width = taskPill.getBoundingClientRect().width;
+		expect(width).toBeGreaterThan(0);
+
+		const shuffleButton = breakScreen.getByRole('button', { name: 'Shuffle break activity' });
+		for (const title of [shortActivity.title, longActivity.title]) {
+			while (breaksState.activeActivity?.title !== title) {
+				await shuffleButton.click();
+			}
+			await expect.element(breakScreen.getByText(title, { exact: true })).toBeInTheDocument();
+			expect(breakPill.getBoundingClientRect().width).toBe(width);
+		}
 	});
 });

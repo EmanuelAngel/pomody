@@ -7,6 +7,7 @@
 	import BookOpen from '@lucide/svelte/icons/book-open';
 	import Shuffle from '@lucide/svelte/icons/shuffle';
 	import { cn } from '$lib/utils';
+	import { FOOTER_PILL_WIDTH } from './footer-pill-width';
 	import { breaksState as defaultBreaksState, type BreaksState } from '$lib/state/breaks.svelte';
 	import { t } from '$lib/state/locale.svelte';
 	import {
@@ -71,13 +72,16 @@
 
 <div
 	data-slot="break-revitalization"
-	class="group inline-flex h-8 items-center gap-2 rounded-full border border-border/40 bg-muted/40 px-3 text-xs shadow-xs transition-all duration-200 sm:text-sm"
+	class={cn(
+		'group inline-flex h-8 items-center justify-center gap-2 rounded-full border border-border/40 bg-muted/40 px-3 text-xs shadow-xs transition-all duration-200 sm:text-sm',
+		FOOTER_PILL_WIDTH
+	)}
 >
 	{#if activeActivity}
 		<!-- Category badge with icon and label -->
 		<span
 			class={cn(
-				'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase',
+				'inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase',
 				categoryBadgeClasses[activeActivity.category]
 			)}
 		>
@@ -92,10 +96,7 @@
 		</span>
 
 		<!-- Activity title with truncation if long -->
-		<span
-			class="max-w-[130px] truncate font-medium text-foreground sm:max-w-[200px]"
-			title={activeTitle}
-		>
+		<span class="min-w-0 flex-1 truncate font-medium text-foreground" title={activeTitle}>
 			{activeTitle}
 		</span>
 
@@ -104,7 +105,7 @@
 			<Popover.Trigger
 				type="button"
 				aria-label={t.break_revitalization_view_instructions({ title: activeTitle })}
-				class="inline-flex size-6 pressable cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+				class="inline-flex size-6 shrink-0 pressable cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 			>
 				<BookOpen class="size-3.5" />
 			</Popover.Trigger>
@@ -146,7 +147,7 @@
 			aria-label={t.break_revitalization_shuffle_aria()}
 			onclick={handleShuffle}
 			class={cn(
-				'inline-flex size-6 pressable cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+				'inline-flex size-6 shrink-0 pressable cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 hover:bg-muted hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
 				isShuffling && 'motion-safe:rotate-180 motion-safe:duration-300'
 			)}
 		>
