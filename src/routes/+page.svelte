@@ -2,6 +2,7 @@
 	import Timer from '$lib/components/timer/timer.svelte';
 	import PlanningView from '$lib/components/planning/planning-view.svelte';
 	import DistractionView from '$lib/components/distraction/distraction-view.svelte';
+	import MetricsViewLoader from '$lib/components/metrics/metrics-view-loader.svelte';
 	import IllustrationBackground from '$lib/components/illustration/illustration-background.svelte';
 	import { navigationState } from '$lib/state/navigation.svelte';
 	import { timerState } from '$lib/state/timer.svelte';
@@ -52,11 +53,7 @@
 		</div>
 	{:else if activeTab === 'metrics'}
 		<div role="tabpanel" id="tabpanel-metrics" aria-labelledby="tab-metrics" class="w-full">
-			<!-- Lazy: the charts and their math stay out of the timer's bundle (spec S25). -->
-			{#await import('$lib/components/metrics/metrics-view.svelte') then metricsModule}
-				{@const MetricsView = metricsModule.default}
-				<MetricsView />
-			{/await}
+			<MetricsViewLoader />
 		</div>
 	{/if}
 </main>

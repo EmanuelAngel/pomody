@@ -34,6 +34,7 @@ export class ActivityLogState {
 	private _queue: Promise<void> = Promise.resolve();
 	private _entries = $state<readonly ActivityLogEntry[]>([]);
 	private _isLoaded = $state<boolean>(false);
+	private _loadFailed = $state<boolean>(false);
 
 	public get entries(): readonly ActivityLogEntry[] {
 		return this._entries;
@@ -41,6 +42,11 @@ export class ActivityLogState {
 
 	public get isLoaded(): boolean {
 		return this._isLoaded;
+	}
+
+	/** True when no read has succeeded yet and the last one failed, so there is nothing to show. */
+	public get loadFailed(): boolean {
+		return this._loadFailed;
 	}
 
 	constructor(deps: ActivityLogDependencies = {}) {
@@ -63,8 +69,16 @@ export class ActivityLogState {
 	}
 
 	private async reload(): Promise<void> {
-		this._entries = await this.repository.getAll();
-		this._isLoaded = true;
+		try {
+			this._entries = await this.repository.getAll();
+			this._isLoaded = true;
+			this._loadFailed = false;
+		} catch (error) {
+			if (!this._isLoaded) {
+				this._loadFailed = true;
+			}
+			throw error;
+		}
 	}
 
 	private handleTimerEvent(event: DomainEvent): void {

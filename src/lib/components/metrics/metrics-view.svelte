@@ -137,7 +137,14 @@
 		</Tabs.Content>
 
 		<Tabs.Content value="stats" class="flex flex-col gap-6">
-			{#if !focusHistoryState.isLoaded}
+			{#if focusHistoryState.loadFailed}
+				<div
+					class="flex flex-col items-center justify-center rounded-2xl border border-border/40 bg-muted/10 py-12 text-center"
+					role="alert"
+				>
+					<p class="text-xs font-medium text-destructive">{t.metrics_load_failed()}</p>
+				</div>
+			{:else if !focusHistoryState.isLoaded}
 				<div
 					class="flex flex-col items-center justify-center rounded-2xl border border-border/40 bg-muted/10 py-12 text-center"
 					role="status"

@@ -61,6 +61,7 @@ async function createHarness(
 		goal?: Pick<DailyGoalChange, 'minutes' | 'restWeekdays'>;
 		entries?: FocusHistoryEntry[];
 		now?: Date;
+		historyReadFails?: boolean;
 	} = {}
 ) {
 	const now = options.now ?? FRIDAY;
@@ -77,6 +78,9 @@ async function createHarness(
 	const historyRepository = new LocalFocusHistoryRepository(new InMemoryStorage(), () => now);
 	for (const entry of options.entries ?? []) {
 		await historyRepository.append(entry);
+	}
+	if (options.historyReadFails) {
+		vi.spyOn(historyRepository, 'getAll').mockRejectedValueOnce(new Error('read failed'));
 	}
 	const focusHistoryState = createFocusHistoryState({
 		repository: historyRepository,
@@ -113,6 +117,42 @@ describe('MetricsView (Client Browser)', () => {
 		}
 		localeState.setLocale('en');
 		vi.restoreAllMocks();
+	});
+
+	describe('failed loads', () => {
+		it('shows an error instead of loading forever when the history cannot be read', async () => {
+			vi.spyOn(console, 'error').mockImplementation(() => {});
+			const { screen } = await renderView({ historyReadFails: true });
+
+			await expect
+				.element(screen.getByRole('alert'))
+				.toHaveTextContent('Couldn’t load your metrics. Reload the app to try again.');
+			await expect.element(screen.getByText('Loading your metrics…')).not.toBeInTheDocument();
+		});
+
+		it('shows an error in the history tab when the activity log cannot be read', async () => {
+			vi.spyOn(console, 'error').mockImplementation(() => {});
+			const repository = new LocalActivityLogRepository(new InMemoryStorage(), () => FRIDAY);
+			vi.spyOn(repository, 'getAll').mockRejectedValueOnce(new Error('read failed'));
+			const activityLogState = new ActivityLogState({
+				repository,
+				timer: { onEvent: () => () => {} },
+				nowProvider: () => FRIDAY
+			});
+			await activityLogState.whenIdle();
+			const harness = await createHarness();
+			goalStates.push(harness.dailyGoalState);
+			historyStates.push(harness.focusHistoryState);
+			const screen = await render(MetricsView, { ...harness, activityLogState });
+
+			await screen.getByRole('tab', { name: 'History' }).click();
+
+			await expect
+				.element(screen.getByRole('alert'))
+				.toHaveTextContent('Couldn’t load your history. Reload the app to try again.');
+			await expect.element(screen.getByText('Loading your history…')).not.toBeInTheDocument();
+			activityLogState.destroy();
+		});
 	});
 
 	describe('empty history', () => {

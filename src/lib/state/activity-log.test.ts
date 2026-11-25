@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { ActivityLogState } from './activity-log.svelte';
 import { LocalActivityLogRepository } from '../adapters/storage/local-activity-log-repository';
 import { InMemoryStorage } from '../adapters/storage/in-memory-storage';
@@ -17,6 +17,24 @@ function setup() {
 }
 
 describe('ActivityLogState', () => {
+	it('reports a failed first read and stays not loaded', async () => {
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		const repository = new LocalActivityLogRepository(new InMemoryStorage(), () => NOW);
+		vi.spyOn(repository, 'getAll').mockRejectedValueOnce(new Error('read failed'));
+		const state = new ActivityLogState({
+			repository,
+			timer: { onEvent: () => () => {} },
+			nowProvider: () => NOW
+		});
+
+		await state.whenIdle();
+
+		expect(state.isLoaded).toBe(false);
+		expect(state.loadFailed).toBe(true);
+		state.destroy();
+		vi.restoreAllMocks();
+	});
+
 	it('records every timer action, without merging repeats', async () => {
 		const { fsm, state } = setup();
 

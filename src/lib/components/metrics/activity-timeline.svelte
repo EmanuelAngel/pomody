@@ -124,7 +124,11 @@
 		</Button>
 	</div>
 
-	{#if !activityLogState.isLoaded}
+	{#if activityLogState.loadFailed}
+		<p class="py-12 text-center text-xs text-destructive" role="alert">
+			{t.activity_load_failed()}
+		</p>
+	{:else if !activityLogState.isLoaded}
 		<p class="py-12 text-center text-xs text-muted-foreground" role="status" aria-live="polite">
 			{t.activity_loading()}
 		</p>

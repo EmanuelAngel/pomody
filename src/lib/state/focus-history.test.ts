@@ -136,6 +136,23 @@ describe('FocusHistoryState', () => {
 			pending.destroy();
 		});
 
+		it('reports a failed first read and stays not loaded', async () => {
+			vi.spyOn(console, 'error').mockImplementation(() => {});
+			vi.spyOn(repository, 'getAll').mockRejectedValueOnce(new Error('read failed'));
+			const failing = createFocusHistoryState({
+				repository,
+				timer,
+				tasks,
+				nowProvider: () => NOW
+			});
+
+			await failing.whenIdle();
+
+			expect(failing.isLoaded).toBe(false);
+			expect(failing.loadFailed).toBe(true);
+			failing.destroy();
+		});
+
 		it('keeps the entries it already loaded when a later read fails', async () => {
 			vi.spyOn(console, 'error').mockImplementation(() => {});
 			timer.emit(completed());
@@ -148,6 +165,7 @@ describe('FocusHistoryState', () => {
 
 			expect(state.entries).toHaveLength(1);
 			expect(state.isLoaded).toBe(true);
+			expect(state.loadFailed).toBe(false);
 		});
 	});
 
