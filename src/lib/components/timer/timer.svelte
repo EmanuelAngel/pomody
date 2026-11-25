@@ -6,6 +6,8 @@
 	import TaskPill from './task-pill.svelte';
 	import BreakRevitalization from './break-revitalization.svelte';
 	import WaitingSince from './waiting-since.svelte';
+	import { formatClockTime } from '$lib/domain/timer/block-end';
+	import { t } from '$lib/state/locale.svelte';
 	import { timerState as defaultTimerState, type TimerState } from '$lib/state/timer.svelte';
 	import { tasksState as defaultTasksState, type TasksState } from '$lib/state/tasks.svelte';
 	import { breaksState as defaultBreaksState, type BreaksState } from '$lib/state/breaks.svelte';
@@ -35,6 +37,40 @@
 	const waitingKind = $derived(
 		state.state === 'paused' || state.state === 'completed' ? state.state : null
 	);
+
+	/**
+	 * The states where the ticker is stopped: their end time only moves with the wall clock, so the
+	 * label needs its own minute nudge. While the block runs, the snapshot ticks and does it for us.
+	 */
+	const needsWallClock = $derived(state.state === 'idle' || state.state === 'paused');
+
+	$effect(() => {
+		if (!needsWallClock) {
+			return;
+		}
+
+		const id = setInterval(() => state.tickWallClock(), 60_000);
+
+		return () => clearInterval(id);
+	});
+
+	/**
+	 * When the block in course ends: a reading of the clock, not a countdown. Idle projects the block
+	 * that would start right now, which is why its copy is conditional rather than the same sentence.
+	 */
+	const endTimeLabel = $derived.by(() => {
+		const endsAt = state.blockEndsAt;
+
+		if (endsAt === null) {
+			return null;
+		}
+
+		const time = formatClockTime(endsAt);
+
+		return state.state === 'idle'
+			? t.timer_block_end_time_idle({ time })
+			: t.timer_block_end_time({ time });
+	});
 
 	function handlePlayPause() {
 		if (state.isRunning) {
@@ -66,8 +102,18 @@
 	</TimerArc>
 
 	<!-- Always reserved, so the controls never jump when the counter appears. -->
-	<div class="mt-1 grid h-5 place-items-center">
-		<WaitingSince waitingSince={state.waitingSince} kind={waitingKind} />
+	<div class="mt-1 grid h-5 place-items-center" data-timer-status-line>
+		<div
+			class="flex items-center justify-center gap-2 text-xs text-muted-foreground tabular-nums sm:text-sm"
+		>
+			<WaitingSince waitingSince={state.waitingSince} kind={waitingKind} />
+			{#if waitingKind !== null && endTimeLabel !== null}
+				<span aria-hidden="true">·</span>
+			{/if}
+			{#if endTimeLabel !== null}
+				<span data-block-end={state.state}>{endTimeLabel}</span>
+			{/if}
+		</div>
 	</div>
 
 	<TimerControls

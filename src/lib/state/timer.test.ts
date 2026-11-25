@@ -1096,3 +1096,136 @@ describe('TimerState waitingSince', () => {
 		expect(state.waitingSince).toBe(NOW - 300_000);
 	});
 });
+
+describe('TimerState blockEndsAt', () => {
+	const NOW = 1_700_000_000_000;
+	const MINUTE = 60_000;
+	let ticker: FakeTicker;
+	let clock: number;
+
+	beforeEach(() => {
+		ticker = new FakeTicker();
+		clock = NOW;
+	});
+
+	function createState(config?: Parameters<typeof createTimerState>[0]) {
+		return createTimerState(
+			config,
+			ticker,
+			new FakeAudioNotifier(),
+			undefined,
+			undefined,
+			() => clock
+		);
+	}
+
+	/**
+	 * Moves wall clock and timer forward together, the way a real running block behaves: the
+	 * ticker reports the same elapsed time the clock advanced.
+	 */
+	function advance(ms: number) {
+		clock += ms;
+		ticker.simulateTick(ms);
+	}
+
+	it('projects the end from the current instant while idle', () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+
+		expect(state.state).toBe('idle');
+		expect(state.blockEndsAt).toBe(NOW + 1_500_000);
+
+		clock = NOW + 5 * MINUTE;
+		expect(state.blockEndsAt).toBe(clock + 1_500_000);
+	});
+
+	it('keeps the end fixed while the block runs without pauses', () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+
+		state.start();
+		expect(state.blockEndsAt).toBe(NOW + 1_500_000);
+
+		advance(5 * MINUTE);
+		expect(state.blockEndsAt).toBe(NOW + 1_500_000);
+	});
+
+	it('pushes the end forward by every minute that passes while paused', () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+
+		state.start();
+		advance(MINUTE);
+		state.pause();
+		expect(state.state).toBe('paused');
+		expect(state.blockEndsAt).toBe(NOW + 1_500_000);
+
+		clock += 10 * MINUTE;
+		// The block had spent one of its 25 minutes: 24 left, paused for ten minutes.
+		expect(state.blockEndsAt).toBe(NOW + 11 * MINUTE + 1_440_000);
+	});
+
+	it('freezes the pushed-back end once the block resumes', () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+
+		state.start();
+		advance(MINUTE);
+		state.pause();
+		clock += 10 * MINUTE;
+		const pausedEnd = state.blockEndsAt;
+
+		state.resume();
+		expect(state.state).toBe('running');
+		expect(state.blockEndsAt).toBe(pausedEnd);
+
+		advance(3 * MINUTE);
+		expect(state.blockEndsAt).toBe(pausedEnd);
+	});
+
+	it('reprojects the end when the block resets or its duration changes', () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+
+		state.start();
+		advance(5 * MINUTE);
+		state.reset();
+
+		expect(state.state).toBe('idle');
+		expect(state.blockEndsAt).toBe(clock + 1_500_000);
+
+		state.updateConfig({ focusDurationSeconds: 600 });
+		expect(state.durationMs).toBe(600_000);
+		expect(state.blockEndsAt).toBe(clock + 600_000);
+	});
+
+	it('reports an end time for breaks as well as for focus blocks', () => {
+		const state = createState();
+
+		state.skip();
+		expect(state.mode).toBe('shortBreak');
+		expect(state.blockEndsAt).toBe(clock + 300_000);
+
+		state.updateConfig({ shortBreakDurationSeconds: 120 });
+		expect(state.blockEndsAt).toBe(clock + 120_000);
+	});
+
+	it('has no end time left once the block completed', () => {
+		const state = createState({ focusDurationSeconds: 4 });
+
+		state.start();
+		advance(4000);
+
+		expect(state.state).toBe('completed');
+		expect(state.blockEndsAt).toBeNull();
+	});
+
+	it('advances the wall-clock signal for the labels that outlive the ticker', () => {
+		const state = createState({ focusDurationSeconds: 1500 });
+
+		state.start();
+		advance(MINUTE);
+		state.pause();
+		clock += 10 * MINUTE;
+
+		expect(state.wallClockTick).toBe(0);
+		state.tickWallClock();
+		expect(state.wallClockTick).toBe(1);
+		expect(state.blockEndsAt).toBe(NOW + 11 * MINUTE + 1_440_000);
+	});
+});
