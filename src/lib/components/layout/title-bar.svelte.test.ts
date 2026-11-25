@@ -8,7 +8,6 @@ import { FakeWindowShell } from '$tests/fakes/platform/fake-window-shell';
 
 const STRIP = '[data-slot="title-bar"]';
 const CONTROLS = '[data-slot="title-bar-controls"]';
-const MARK = '[data-slot="title-bar-mark"]';
 
 function createDesktopWindow(options: { maximized?: boolean } = {}) {
 	const shell = new FakeWindowShell();
@@ -39,20 +38,32 @@ describe('TitleBar visibility gates', () => {
 });
 
 describe('TitleBar content', () => {
-	it('renders the brand mark, the title and the three window controls', async () => {
+	it('renders the three window controls and nothing else', async () => {
 		const { windowState } = createDesktopWindow();
 
 		const screen = await render(TitleBar, { windowState });
 
 		const strip = screen.container.querySelector(STRIP);
 		expect(strip).not.toBeNull();
-		expect(strip?.querySelector(MARK)).not.toBeNull();
 
-		await expect.element(screen.getByText('Pomody')).toBeVisible();
 		await expect.element(screen.getByRole('group', { name: 'Window controls' })).toBeVisible();
 		await expect.element(screen.getByRole('button', { name: 'Minimize window' })).toBeVisible();
 		await expect.element(screen.getByRole('button', { name: 'Maximize window' })).toBeVisible();
 		await expect.element(screen.getByRole('button', { name: 'Close window' })).toBeVisible();
+	});
+
+	it('carries no brand of its own: the wordmark and the logo live only in the header', async () => {
+		const { windowState } = createDesktopWindow();
+
+		const screen = await render(TitleBar, { windowState });
+		const strip = screen.container.querySelector(STRIP) as HTMLElement;
+
+		// T3 feedback (L8): «hacé que el logo y 'Pomody' solo esté en un lugar».
+		expect(strip.textContent?.trim()).toBe('');
+		expect(strip.querySelectorAll('img').length).toBe(0);
+		// The button cluster is the strip's only content: nothing else borrows the header's slot.
+		expect(strip.children.length).toBe(1);
+		expect(strip.firstElementChild?.getAttribute('data-slot')).toBe('title-bar-controls');
 	});
 
 	it('names every control, because the glyphs alone carry no accessible text', async () => {
@@ -148,8 +159,9 @@ describe('TitleBar drag region', () => {
 		const strip = screen.container.querySelector(STRIP) as HTMLElement;
 		const controls = strip.querySelector(CONTROLS) as HTMLElement;
 
-		// `data-tauri-drag-region` is opt-in and not inherited: the attribute has to sit
-		// on the background element itself.
+		// `data-tauri-drag-region` is opt-in and not inherited: it has to sit on the element
+		// that receives the mouse down. With no brand on the left, that element is the strip
+		// itself — the whole background is drag space.
 		expect(strip.hasAttribute('data-tauri-drag-region')).toBe(true);
 		expect(controls.hasAttribute('data-tauri-drag-region')).toBe(false);
 		expect(controls.querySelectorAll('[data-tauri-drag-region]').length).toBe(0);

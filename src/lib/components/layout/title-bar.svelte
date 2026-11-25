@@ -4,7 +4,6 @@
 	import Copy from '@lucide/svelte/icons/copy';
 	import Minus from '@lucide/svelte/icons/minus';
 	import Square from '@lucide/svelte/icons/square';
-	import Timer from '@lucide/svelte/icons/timer';
 	import X from '@lucide/svelte/icons/x';
 	import {
 		windowState as defaultWindowState,
@@ -39,8 +38,8 @@
 
 	/**
 	 * Caption-button names are literal English, not Paraglide messages: `messages/*.json`
-	 * is outside this task's edit surface. Registering the three keys is tracked as debt
-	 * in `docs/features/custom-window-controls/spec.md`.
+	 * is outside this task's edit surface. Registering the keys is tracked as debt in
+	 * `docs/features/custom-window-controls/spec.md`.
 	 */
 	const minimizeLabel = 'Minimize window';
 	const maximizeLabel = $derived(isMaximized ? 'Restore window' : 'Maximize window');
@@ -106,9 +105,13 @@
 </script>
 
 <!--
-	Frameless-window chrome (spec S5). A strip of its own ABOVE the header, never merged
-	into it: the header fades during a running block, and this is the only remaining
-	surface to drag, maximize or close the window from then on.
+	Frameless-window chrome (spec S5, revised by T3 feedback L8). A strip of its own ABOVE the
+	header, never merged into it: the header fades during a running block, and this is the only
+	remaining surface to drag, maximize or close the window from then on.
+
+	It carries NO brand. The wordmark and the logo live exclusively in `header.svelte`, which
+	owns them already; repeating "Pomody" here made the shell say it twice. The left side is
+	therefore plain drag space, and the strip only ever shows its three caption buttons.
 
 	Visually it is the app background — same token, no separate tone, no separator line —
 	so the window reads as one piece instead of an app wearing a frame.
@@ -120,27 +123,8 @@
 		role="group"
 		aria-label="Window title bar"
 		ondblclick={handleDoubleClick}
-		class="fixed inset-x-0 top-0 z-40 flex h-8 items-center justify-between bg-background select-none"
+		class="fixed inset-x-0 top-0 z-40 flex h-8 items-center justify-end bg-background select-none"
 	>
-		<!-- Left: brand identity. Repeated on the child elements because `data-tauri-drag-region`
-		     is opt-in: an attribute on the parent does not make the text draggable. -->
-		<div data-tauri-drag-region class="flex items-center gap-2 pl-3">
-			<span
-				data-slot="title-bar-mark"
-				data-tauri-drag-region
-				aria-hidden="true"
-				class="flex items-center text-muted-foreground/70"
-			>
-				<Timer class="size-3.5" />
-			</span>
-			<span
-				data-tauri-drag-region
-				class="text-[0.6875rem] font-medium tracking-wide text-muted-foreground/70"
-			>
-				Pomody
-			</span>
-		</div>
-
 		<!-- Right: window controls. Never a drag region: a drag surface under a button eats its clicks. -->
 		<div
 			data-slot="title-bar-controls"

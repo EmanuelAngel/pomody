@@ -51,18 +51,48 @@
 	const isMiniPlayer = $derived(windowState.isMiniPlayer);
 
 	/**
-	 * The frameless desktop window owns a title bar strip (spec S5). It is desktop chrome
-	 * only, so the layout has to make room for it — and the web build, which keeps the
-	 * browser's own tab chrome, must stay exactly as it was.
+	 * Room for the title bar strip (spec S5), desktop only: the web build keeps the browser's
+	 * own chrome and must keep the exact layout it always had.
 	 *
-	 * The strip is 32px tall, and the header cannot move by itself: it is `fixed top-0`
-	 * inside its own component. Instead of editing it, this branch pushes it down by the
-	 * strip height (`[&>header]:top-8`) and gives the routed view the same 32px back
-	 * (`[&>main]:pt-24`, which is the page's own `pt-16` plus the strip) so the 8px gap
-	 * between the header band and the content is preserved.
+	 * The strip is 32px of chrome ABOVE the fixed header, and `header.svelte` cannot be edited,
+	 * so the shell owns the geometry. Two shapes, because the routed views behave differently:
+	 *
+	 * - Every view: `[&>header]:top-8` drops the fixed header below the strip band, and
+	 *   `[&>main]:pt-24` keeps the page's own 64px top offset plus the strip, so the content
+	 *   still clears the header (which now ends at 88px) with the original 8px gap.
+	 * - The Timer view is one centred canvas that never scrolls, so it also gets a shell of
+	 *   exactly one viewport: `h-screen` + `flex flex-col` + `pt-8` reserve the strip inside the
+	 *   viewport, and `[&>main]:flex-1` + `[&>main]:min-h-0` make the routed view take the height
+	 *   that is left instead of asserting `min-h-screen` and overflowing by the strip height.
+	 *   That pair is the scrollbar fix from the T3 feedback (L8): without it, the shell's padding
+	 *   (96px + 32px) plus the rigid canvas (548px: 400 arc + 24 + 68 + 56) summed 26px more than
+	 *   the default 800x650 window. With it the canvas overflows into main's OWN padding — 96px
+	 *   above, 32px below — so the document stays one viewport tall and nothing is clipped.
+	 *
+	 * The list-like views keep their normal `min-h-screen` flow on purpose: bounding them would
+	 * turn `justify-center` into unreachable overflow above the viewport once their content is
+	 * taller than the window, and those views are supposed to scroll. Small windows still scroll
+	 * the document either way, because nothing caps the page height.
 	 */
-	const windowChromeOffset = $derived(
-		windowState.isSupported ? '[&>header]:top-8 [&>main]:pt-24' : undefined
+	const hasTitleBar = $derived(windowState.isSupported);
+	const activeTab = $derived(navigationState.activeTab);
+
+	const shellLayout = $derived.by(() => {
+		if (!hasTitleBar) return undefined;
+
+		return activeTab === 'timer'
+			? 'flex h-screen flex-col pt-8 [&>header]:top-8 [&>main]:min-h-0 [&>main]:flex-1 [&>main]:pt-24'
+			: '[&>header]:top-8 [&>main]:pt-24';
+	});
+
+	/**
+	 * On the Timer view the canvas now ends ~3px from the window bottom (the strip took that room
+	 * from the bottom margin), which left the fixed daily counter on top of the task pill instead
+	 * of just under it. One notch up puts it back in the 24px the Timer already leaves between its
+	 * controls and the pill. Other views keep their counter exactly where it was.
+	 */
+	const dailyCounterOffset = $derived(
+		hasTitleBar && activeTab === 'timer' ? 'bottom-9' : undefined
 	);
 
 	/**
@@ -120,7 +150,7 @@
 {:else if isMiniPlayer}
 	<MiniPlayer />
 {:else}
-	<div class={windowChromeOffset}>
+	<div class={shellLayout}>
 		<!--
 			Above the header, on purpose (spec S5). During a running block the header fades
 			away and this strip is the only surface left to drag, maximize or close the
@@ -133,7 +163,7 @@
 
 		{@render children()}
 
-		<DailyCounter />
+		<DailyCounter class={dailyCounterOffset} />
 
 		<!--
 			The toast host lives in the main shell and not in the Mini-Player branch: a compact
