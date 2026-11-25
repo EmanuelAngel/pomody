@@ -67,7 +67,7 @@ describe('BehaviorPanel block notifications (Client Browser)', () => {
 describe('BehaviorPanel block end time (Client Browser)', () => {
 	function createTimer(options: { blockEndTimeEnabled?: boolean } = {}) {
 		const storage = new FakeSettingsStorage({
-			blockEndTimeEnabled: options.blockEndTimeEnabled ?? true
+			blockEndTimeEnabled: options.blockEndTimeEnabled ?? false
 		});
 
 		return {
@@ -76,28 +76,28 @@ describe('BehaviorPanel block end time (Client Browser)', () => {
 		};
 	}
 
-	it('should render the block end-time switch on by default', async () => {
-		const { state: timerState } = createTimer();
-		const { state: blockNoticeState } = createState();
-
-		const screen = await render(BehaviorPanel, { timerState, blockNoticeState });
-		const toggle = screen.getByRole('switch', { name: m.settings_block_end_time_aria() });
-
-		await expect.element(toggle).toHaveAttribute('aria-checked', 'true');
-		await expect.element(screen.getByText(m.settings_block_end_time_description())).toBeVisible();
-	});
-
-	it('should reflect a stored preference that is off', async () => {
-		const { state: timerState } = createTimer({ blockEndTimeEnabled: false });
+	it('should render the block end-time switch off by default', async () => {
+		const timerState = createTimerState(undefined, new FakeTicker(), new FakeAudioNotifier());
 		const { state: blockNoticeState } = createState();
 
 		const screen = await render(BehaviorPanel, { timerState, blockNoticeState });
 		const toggle = screen.getByRole('switch', { name: m.settings_block_end_time_aria() });
 
 		await expect.element(toggle).toHaveAttribute('aria-checked', 'false');
+		await expect.element(screen.getByText(m.settings_block_end_time_description())).toBeVisible();
 	});
 
-	it('should persist the preference when the switch is turned off', async () => {
+	it('should reflect a stored preference that is on', async () => {
+		const { state: timerState } = createTimer({ blockEndTimeEnabled: true });
+		const { state: blockNoticeState } = createState();
+
+		const screen = await render(BehaviorPanel, { timerState, blockNoticeState });
+		const toggle = screen.getByRole('switch', { name: m.settings_block_end_time_aria() });
+
+		await expect.element(toggle).toHaveAttribute('aria-checked', 'true');
+	});
+
+	it('should persist the opt-in when the switch is turned on', async () => {
 		const { state: timerState, storage } = createTimer();
 		const { state: blockNoticeState } = createState();
 
@@ -106,8 +106,8 @@ describe('BehaviorPanel block end time (Client Browser)', () => {
 
 		await toggle.click();
 
-		await expect.element(toggle).toHaveAttribute('aria-checked', 'false');
-		expect(timerState.blockEndTimeEnabled).toBe(false);
-		expect(storage.loadSettings().blockEndTimeEnabled).toBe(false);
+		await expect.element(toggle).toHaveAttribute('aria-checked', 'true');
+		expect(timerState.blockEndTimeEnabled).toBe(true);
+		expect(storage.loadSettings().blockEndTimeEnabled).toBe(true);
 	});
 });

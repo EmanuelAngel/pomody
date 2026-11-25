@@ -682,7 +682,7 @@ describe('TimerState Composition Root', () => {
 					timer: DEFAULT_TIMER_CONFIG,
 					soundEnabled: true,
 					revitalizationEnabled: true,
-					blockEndTimeEnabled: true
+					blockEndTimeEnabled: false
 				}
 			]);
 
@@ -1241,28 +1241,28 @@ describe('TimerState blockEndsAt', () => {
 describe('TimerState blockEndTimeEnabled', () => {
 	const ticker = () => new FakeTicker();
 
-	it('shows the block end time by default when no settings are stored', () => {
+	it('hides the block end time by default when no settings are stored', () => {
 		const state = createTimerState(undefined, ticker(), new FakeAudioNotifier());
-
-		expect(state.blockEndTimeEnabled).toBe(true);
-
-		state.destroy();
-	});
-
-	it('loads the persisted preference', () => {
-		const state = createTimerState(
-			undefined,
-			ticker(),
-			new FakeAudioNotifier(),
-			new FakeSettingsStorage({ blockEndTimeEnabled: false })
-		);
 
 		expect(state.blockEndTimeEnabled).toBe(false);
 
 		state.destroy();
 	});
 
-	it('keeps the label on when the stored settings predate the preference', () => {
+	it('loads a persisted preference that opts in', () => {
+		const state = createTimerState(
+			undefined,
+			ticker(),
+			new FakeAudioNotifier(),
+			new FakeSettingsStorage({ blockEndTimeEnabled: true })
+		);
+
+		expect(state.blockEndTimeEnabled).toBe(true);
+
+		state.destroy();
+	});
+
+	it('defaults to hidden when the stored settings predate the preference', () => {
 		const storage = new InMemoryStorage();
 		storage.setItem(
 			SETTINGS_STORAGE_KEY,
@@ -1276,7 +1276,7 @@ describe('TimerState blockEndTimeEnabled', () => {
 			new LocalSettingsStorage(storage)
 		);
 
-		expect(state.blockEndTimeEnabled).toBe(true);
+		expect(state.blockEndTimeEnabled).toBe(false);
 
 		state.destroy();
 	});
@@ -1285,34 +1285,34 @@ describe('TimerState blockEndTimeEnabled', () => {
 		const storage = new FakeSettingsStorage();
 		const state = createTimerState(undefined, ticker(), new FakeAudioNotifier(), storage);
 
-		state.setBlockEndTimeEnabled(false);
-		expect(state.blockEndTimeEnabled).toBe(false);
-		expect(storage.loadSettings().blockEndTimeEnabled).toBe(false);
-
-		state.toggleBlockEndTime();
+		state.setBlockEndTimeEnabled(true);
 		expect(state.blockEndTimeEnabled).toBe(true);
 		expect(storage.loadSettings().blockEndTimeEnabled).toBe(true);
 
 		state.toggleBlockEndTime();
 		expect(state.blockEndTimeEnabled).toBe(false);
+		expect(storage.loadSettings().blockEndTimeEnabled).toBe(false);
+
+		state.toggleBlockEndTime();
+		expect(state.blockEndTimeEnabled).toBe(true);
 		expect(storage.saveSettingsCalls).toEqual([
-			{ blockEndTimeEnabled: false },
 			{ blockEndTimeEnabled: true },
-			{ blockEndTimeEnabled: false }
+			{ blockEndTimeEnabled: false },
+			{ blockEndTimeEnabled: true }
 		]);
 
 		state.destroy();
 	});
 
 	it('restores the default when the settings are reset', () => {
-		const storage = new FakeSettingsStorage({ blockEndTimeEnabled: false });
+		const storage = new FakeSettingsStorage({ blockEndTimeEnabled: true });
 		const state = createTimerState(undefined, ticker(), new FakeAudioNotifier(), storage);
-		expect(state.blockEndTimeEnabled).toBe(false);
+		expect(state.blockEndTimeEnabled).toBe(true);
 
 		state.resetSettings();
 
-		expect(state.blockEndTimeEnabled).toBe(true);
-		expect(storage.loadSettings().blockEndTimeEnabled).toBe(true);
+		expect(state.blockEndTimeEnabled).toBe(false);
+		expect(storage.loadSettings().blockEndTimeEnabled).toBe(false);
 
 		state.destroy();
 	});

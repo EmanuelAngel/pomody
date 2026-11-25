@@ -41,7 +41,7 @@ export interface UserSettings {
 	readonly blockNotificationsEnabled: boolean;
 	/**
 	 * Whether the main view shows the estimated wall-clock end time of the current block.
-	 * On by default: it is a reading of the clock, not extra configuration.
+	 * Off by default: the label is opt-in, and payloads stored before this setting existed stay off.
 	 */
 	readonly blockEndTimeEnabled: boolean;
 	readonly theme: Theme;
@@ -57,7 +57,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = Object.freeze({
 	revitalizationEnabled: true,
 	distractionDetectorEnabled: false,
 	blockNotificationsEnabled: true,
-	blockEndTimeEnabled: true,
+	blockEndTimeEnabled: false,
 	theme: 'dark',
 	illustration: DEFAULT_ILLUSTRATION_SETTINGS
 });

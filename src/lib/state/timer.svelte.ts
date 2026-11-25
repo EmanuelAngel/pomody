@@ -74,7 +74,7 @@ export class TimerState {
 
 	private _soundEnabled = $state<boolean>(true);
 	private _revitalizationEnabled = $state<boolean>(true);
-	private _blockEndTimeEnabled = $state<boolean>(true);
+	private _blockEndTimeEnabled = $state<boolean>(false);
 	private _configSubscribers = new SvelteSet<(config: TimerConfig) => void>();
 
 	private _snapshot = $state<TimerSnapshot>({
@@ -124,7 +124,7 @@ export class TimerState {
 
 	/**
 	 * Whether the main view shows the estimated end time of the current block. Purely a display
-	 * preference: the projection itself is always available through `blockEndsAt`.
+	 * preference, off by default: the projection itself is always available through `blockEndsAt`.
 	 */
 	public get blockEndTimeEnabled(): boolean {
 		return this._blockEndTimeEnabled;
@@ -262,7 +262,7 @@ export class TimerState {
 			this._soundEnabled = storedSettings.soundEnabled;
 		}
 		this._revitalizationEnabled = storedSettings?.revitalizationEnabled ?? true;
-		this._blockEndTimeEnabled = storedSettings?.blockEndTimeEnabled ?? true;
+		this._blockEndTimeEnabled = storedSettings?.blockEndTimeEnabled ?? false;
 
 		this.fsm = new TimerFSM(initialConfig);
 		this.ticker = ticker ?? new WebWorkerTimerTicker();

@@ -439,7 +439,7 @@ describe('Timer block end-time label (Client Browser)', () => {
 			config,
 			ticker,
 			new FakeAudioNotifier(),
-			undefined,
+			new FakeSettingsStorage({ blockEndTimeEnabled: true }),
 			undefined,
 			() => clock
 		);
@@ -585,7 +585,7 @@ describe('Timer block end-time preference (Client Browser)', () => {
 			{ focusDurationSeconds: 1500 },
 			ticker,
 			new FakeAudioNotifier(),
-			new FakeSettingsStorage({ blockEndTimeEnabled: options.blockEndTimeEnabled ?? true }),
+			new FakeSettingsStorage({ blockEndTimeEnabled: options.blockEndTimeEnabled ?? false }),
 			undefined,
 			() => clock
 		);
@@ -593,6 +593,23 @@ describe('Timer block end-time preference (Client Browser)', () => {
 
 	const endLabels = (screen: { container: HTMLElement }) =>
 		screen.container.querySelectorAll('[data-block-end]');
+
+	it('hides the projected end time on the first render, before anything is stored', async () => {
+		const state = createTimerState(
+			{ focusDurationSeconds: 1500 },
+			new FakeTicker(),
+			new FakeAudioNotifier(),
+			undefined,
+			undefined,
+			() => clock
+		);
+
+		const screen = await render(Timer, { state });
+
+		expect(state.blockEndTimeEnabled).toBe(false);
+		expect(endLabels(screen)).toHaveLength(0);
+		expect(screen.container.textContent).not.toContain('Would end at');
+	});
 
 	it('hides the projected end time while idle when the preference is off', async () => {
 		const screen = await render(Timer, {
