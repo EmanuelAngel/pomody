@@ -1,0 +1,29 @@
+{
+	"version": 1,
+	"comments": [
+		{
+			"id": "o0uy6jkz",
+			"file": "01-icons-tooltip.html",
+			"selector": "body > header > nav > div",
+			"excerpt": "Timer Timer Planning Planning Distractions Distractions Metrics Metrics",
+			"comment": "propone otros iconos para planificacion y distracciones",
+			"createdAt": "2026-11-25T02:34:42.263Z",
+			"status": "resolved",
+			"sentAt": "2026-11-25T02:34:42.284Z",
+			"resolvedAt": "2026-11-25T02:35:11.234Z",
+			"resolution": "Swapped Planning to list-checks and Distractions to shield-off in artboard 01; also marked tooltips aria-hidden so screen readers no longer read the label twice."
+		},
+		{
+			"id": "2m6vig52",
+			"file": "01-icons-tooltip.html",
+			"selector": "body > header > nav > div > button:nth-of-type(3)",
+			"excerpt": "Distractions Distractions · shield-off",
+			"comment": "otro para distracciones",
+			"createdAt": "2026-11-25T02:39:18.318Z",
+			"status": "resolved",
+			"sentAt": "2026-11-25T02:39:18.334Z",
+			"resolvedAt": "2026-11-25T02:39:33.339Z",
+			"resolution": "Swapped Distractions icon to eye-off (crossed-out eye) in artboard 01."
+		}
+	]
+}

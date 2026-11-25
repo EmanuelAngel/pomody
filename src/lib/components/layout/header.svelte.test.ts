@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import { userEvent } from 'vitest/browser';
 import Header from './header.svelte';
 import { createTimerState } from '$lib/state/timer.svelte';
 import { createNavigationState } from '$lib/state/navigation.svelte';
@@ -61,6 +62,56 @@ describe('Header (Client Browser)', () => {
 		await expect.element(metricsTab).toHaveAttribute('aria-controls', 'tabpanel-metrics');
 		await expect.element(metricsTab).toHaveAttribute('aria-selected', 'false');
 		await expect.element(metricsTab).not.toBeDisabled();
+	});
+
+	it('renders each tab as an icon-only chip whose label is screen-reader text', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+		const navigationState = createNavigationState('timer');
+
+		const screen = await render(Header, { timerState, navigationState });
+
+		// The accessible name comes from the sr-only span, never from an aria-label
+		// on the button alone, so the localized text stays in the DOM.
+		const timerTab = screen.getByRole('tab', { name: 'Timer' });
+		const timerElement = timerTab.element() as HTMLElement;
+		expect(timerElement.querySelector('.sr-only')?.textContent).toBe('Timer');
+		expect(timerElement.getAttribute('aria-label')).toBeNull();
+
+		// Icon-only: the visual weight is a 18px lucide glyph, not a text label.
+		const icon = timerElement.querySelector('svg');
+		expect(icon).not.toBeNull();
+		expect(icon?.getAttribute('class')).toContain('size-[18px]');
+		expect(icon?.getAttribute('stroke-width')).toBe('1.75');
+		expect(icon?.getAttribute('aria-hidden')).toBe('true');
+
+		// The underline indicator belongs to the selected tab only.
+		expect(timerElement.querySelector('.bg-accent-rose')).not.toBeNull();
+		const planningElement = screen.getByRole('tab', { name: 'Planning' }).element() as HTMLElement;
+		expect(planningElement.querySelector('.sr-only')?.textContent).toBe('Planning');
+		expect(planningElement.querySelector('svg')).not.toBeNull();
+		expect(planningElement.querySelector('.bg-accent-rose')).toBeNull();
+	});
+
+	it('reveals the tab label in a tooltip on hover and on keyboard focus', async () => {
+		const ticker = createDummyTicker(false);
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, ticker);
+		const navigationState = createNavigationState('timer');
+
+		const screen = await render(Header, { timerState, navigationState });
+		const planningTab = screen.getByRole('tab', { name: 'Planning' });
+
+		const tooltipText = () =>
+			document.querySelector('[data-slot="tooltip-content"]')?.textContent?.trim() ?? null;
+
+		await userEvent.hover(planningTab);
+		await vi.waitFor(() => expect(tooltipText()).toBe('Planning'));
+		await userEvent.unhover(planningTab);
+		await vi.waitFor(() => expect(tooltipText()).toBeNull());
+
+		// Keyboard focus is a first-class reveal: hover cannot be the only way in.
+		(planningTab.element() as HTMLElement).focus();
+		await vi.waitFor(() => expect(tooltipText()).toBe('Planning'));
 	});
 
 	it('switches to the Metrics tab and back, leaving the previous tabs working', async () => {
@@ -286,6 +337,7 @@ describe('Header (Client Browser)', () => {
 
 			const tab = screen.getByRole('tab', { name: 'Distractions' });
 			await expect.element(tab).toBeVisible();
+			expect((tab.element() as HTMLElement).querySelector('svg')).not.toBeNull();
 			await expect.element(tab).toHaveAttribute('id', 'tab-distractions');
 			await expect.element(tab).toHaveAttribute('aria-controls', 'tabpanel-distractions');
 			await expect.element(tab).toHaveAttribute('aria-selected', 'false');

@@ -1,0 +1,27 @@
+{
+	"title": "Header nav — semantic icons",
+	"brief": "Replace the four text tabs in the fixed header (Timer, Planning, Distractions, Metrics) with semantic lucide icons; explore tooltip disclosure and active-state strategies. Candidates: timer, calendar-days, ghost, bar-chart-3.",
+	"artboards": [
+		{
+			"file": "01-icons-tooltip.html",
+			"title": "Icons + tooltip",
+			"tradeoff": "Maximal minimalism; discoverability rests entirely on tooltips, and touch devices have no hover",
+			"width": 1440,
+			"height": 480
+		},
+		{
+			"file": "02-icons-labels.html",
+			"title": "Icons beside labels",
+			"tradeoff": "Fully discoverable with zero learning cost; keeps nearly all of today's width, gains polish not space",
+			"width": 1440,
+			"height": 480
+		},
+		{
+			"file": "03-pill-tabs.html",
+			"title": "Segmented pill",
+			"tradeoff": "Strongest active state and touch-friendly targets; most visual weight, reads as a control rather than airy chrome",
+			"width": 1440,
+			"height": 480
+		}
+	]
+}
