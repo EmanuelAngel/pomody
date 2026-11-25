@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { APP_VERSION } from '$lib/app-version';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as Tabs from '$lib/components/ui/tabs';
 	import Timer from '@lucide/svelte/icons/timer';
@@ -179,5 +180,9 @@
 				</Tabs.Content>
 			</div>
 		</Tabs.Root>
+
+		<p class="shrink-0 border-t border-border/40 px-6 py-2 text-[11px] text-muted-foreground">
+			{t.settings_app_version({ version: APP_VERSION })}
+		</p>
 	</Dialog.Content>
 </Dialog.Root>

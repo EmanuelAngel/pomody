@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import SettingsDialog from './settings-dialog.svelte';
+import { version } from '../../../../package.json';
 import { createTimerState } from '$lib/state/timer.svelte';
 import { createUpdateState } from '$lib/state/update.svelte';
 import { FakeUpdateChecker } from '$tests/fakes/platform/fake-update-checker';
@@ -135,5 +136,13 @@ describe('SettingsDialog (Client Browser)', () => {
 		});
 
 		expect(screen.getByRole('heading', { name: 'Updates' }).query()).toBeNull();
+	});
+
+	it('shows the app version from package.json at the foot of the dialog', async () => {
+		const timerState = createTimerState({ focusDurationSeconds: 1500 }, createDummyTicker());
+
+		const screen = await render(SettingsDialog, { open: true, timerState });
+
+		await expect.element(screen.getByText(`Pomody v${version}`)).toBeVisible();
 	});
 });
