@@ -36,10 +36,13 @@
 	const localizedGuide = $derived(getLocalizedPresetGuide(activity));
 	const localizedCategory = $derived(getLocalizedBreakCategory(activity.category));
 
+	// Informational badges are borderless by design: the border colour is kept
+	// transparent so the tinted background + accent text carry the category
+	// signal on its own at 10px (selection chips elsewhere keep their border).
 	const categoryBadgeClasses: Record<BreakCategory, string> = {
-		physical: 'border-accent-gold/40 bg-accent-gold/15 text-accent-gold',
-		mindful: 'border-accent-iris/40 bg-accent-iris/15 text-accent-iris',
-		hydration: 'border-accent-foam/40 bg-accent-foam/15 text-accent-foam'
+		physical: 'border-transparent bg-accent-gold/15 text-accent-gold',
+		mindful: 'border-transparent bg-accent-iris/15 text-accent-iris',
+		hydration: 'border-transparent bg-accent-foam/15 text-accent-foam'
 	};
 </script>
 
@@ -73,7 +76,7 @@
 				<!-- Duration Pill -->
 				<Badge
 					variant="outline"
-					class="border-border/40 bg-muted/40 text-[10px] font-medium text-muted-foreground"
+					class="border-transparent bg-muted/60 text-[10px] font-medium text-muted-foreground"
 				>
 					<Clock data-icon="inline-start" class="opacity-70" />
 					<span>{activity.durationMinutes}m</span>

@@ -75,6 +75,13 @@ describe('BreakRevitalization (Client Browser)', () => {
 		const badge = screen.getByText('Physical').element().parentElement;
 		expect(badge?.className).toContain('text-accent-gold');
 		expect(badge?.className).toContain('bg-accent-gold/15');
+		expect(badge?.className).toContain('border-transparent');
+		expect(badge?.className).not.toContain('border-accent-gold');
+
+		// The informational badge is borderless, but the interactive trigger pill it
+		// lives in keeps its border affordance.
+		const trigger = screen.container.querySelector('[data-slot="break-revitalization"]');
+		expect(trigger?.className).toContain('border-border/40');
 	});
 
 	it('renders mindful activity with iris accent badge', async () => {
@@ -96,6 +103,8 @@ describe('BreakRevitalization (Client Browser)', () => {
 		const badge = screen.getByText('Mindful').element().parentElement;
 		expect(badge?.className).toContain('text-accent-iris');
 		expect(badge?.className).toContain('bg-accent-iris/15');
+		expect(badge?.className).toContain('border-transparent');
+		expect(badge?.className).not.toContain('border-accent-iris');
 	});
 
 	it('renders hydration activity with foam accent badge', async () => {
@@ -117,6 +126,8 @@ describe('BreakRevitalization (Client Browser)', () => {
 		const badge = screen.getByText('Hydration').element().parentElement;
 		expect(badge?.className).toContain('text-accent-foam');
 		expect(badge?.className).toContain('bg-accent-foam/15');
+		expect(badge?.className).toContain('border-transparent');
+		expect(badge?.className).not.toContain('border-accent-foam');
 	});
 
 	it('opens guide popover on trigger click and shows step-by-step instructions', async () => {
@@ -142,6 +153,14 @@ describe('BreakRevitalization (Client Browser)', () => {
 		await expect.element(screen.getByText(/1\. Tilt ear to shoulder/)).toBeVisible();
 		await expect.element(screen.getByText(/2\. Repeat other side/)).toBeVisible();
 		await expect.element(screen.getByText(/3\. Roll shoulders/)).toBeVisible();
+
+		// The second informational badge (popover header) follows the same borderless
+		// recipe as the pill badge: transparent border, accent tint and text intact.
+		const popoverBadge = screen.getByText('Physical').nth(1).element();
+		expect(popoverBadge.className).toContain('text-accent-gold');
+		expect(popoverBadge.className).toContain('bg-accent-gold/15');
+		expect(popoverBadge.className).toContain('border-transparent');
+		expect(popoverBadge.className).not.toContain('border-accent-gold');
 	});
 
 	it('calls shuffle and updates active activity when shuffle button is clicked', async () => {

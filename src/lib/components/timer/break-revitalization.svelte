@@ -33,10 +33,13 @@
 		activeActivity ? getLocalizedPresetGuide(activeActivity) : undefined
 	);
 
+	// Informational badges are borderless by design: the border colour is kept
+	// transparent so the tinted background + accent text carry the category
+	// signal on its own at 10px. Interactive pills keep their border affordance.
 	const categoryBadgeClasses: Record<BreakCategory, string> = {
-		physical: 'border-accent-gold/40 bg-accent-gold/15 text-accent-gold',
-		mindful: 'border-accent-iris/40 bg-accent-iris/15 text-accent-iris',
-		hydration: 'border-accent-foam/40 bg-accent-foam/15 text-accent-foam'
+		physical: 'border-transparent bg-accent-gold/15 text-accent-gold',
+		mindful: 'border-transparent bg-accent-iris/15 text-accent-iris',
+		hydration: 'border-transparent bg-accent-foam/15 text-accent-foam'
 	};
 
 	const categoryLabels = $derived<Record<BreakCategory, string>>({
