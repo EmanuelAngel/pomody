@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.25.0...pomody-v0.26.0) (2026-11-25)
+
+
+### Features
+
+* **desktop:** custom window controls — frameless main window with own title bar strip ([#240](https://github.com/EmanuelAngel/pomody/issues/240)) ([bfe86c5](https://github.com/EmanuelAngel/pomody/commit/bfe86c53f028238a27e13e0723b40aa6d6845e4c))
+* **header:** replace text nav tabs with icon chips and tooltips ([#242](https://github.com/EmanuelAngel/pomody/issues/242)) ([66d8429](https://github.com/EmanuelAngel/pomody/commit/66d84290663bbe21591179880f551d6425b5250f))
+
 ## [0.25.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.24.0...pomody-v0.25.0) (2026-11-24)
 
 
