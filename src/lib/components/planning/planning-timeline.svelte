@@ -22,6 +22,7 @@
 		type NavigationState
 	} from '$lib/state/navigation.svelte';
 	import { t } from '$lib/state/locale.svelte';
+	import SimpleTooltip from '$lib/components/common/simple-tooltip.svelte';
 
 	interface Props {
 		planningState?: PlanningState;
@@ -170,12 +171,16 @@
 							{planningState.estimatedFinishTime}
 						</span>
 						{#if planningState.isCrossesMidnight}
-							<span
-								class="rounded bg-accent-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent-gold"
-								title={t.planning_cadence_next_day_title()}
-							>
-								{t.planning_cadence_next_day_badge()}
-							</span>
+							<SimpleTooltip text={t.planning_cadence_next_day_title()}>
+								{#snippet children({ props })}
+									<span
+										{...props}
+										class="rounded bg-accent-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent-gold"
+									>
+										{t.planning_cadence_next_day_badge()}
+									</span>
+								{/snippet}
+							</SimpleTooltip>
 						{/if}
 					</div>
 					{#if planningState.targetMode === 'end_time' && planningState.freeMarginMinutes > 0}

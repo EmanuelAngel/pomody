@@ -25,6 +25,7 @@
 		type CadenceValues
 	} from '$lib/domain/planning/cadence-preset.entity';
 	import { t } from '$lib/state/locale.svelte';
+	import SimpleTooltip from '$lib/components/common/simple-tooltip.svelte';
 
 	interface Props {
 		planningState?: PlanningState;
@@ -293,18 +294,25 @@
 					}}
 				>
 					<Popover.Trigger disabled={!presetsState.canSaveMore}>
-						{#snippet child({ props })}
-							<button
-								{...props}
-								disabled={!presetsState.canSaveMore}
-								title={!presetsState.canSaveMore
+						{#snippet child({ props: popoverProps })}
+							<SimpleTooltip
+								text={!presetsState.canSaveMore
 									? t.planning_cadence_preset_error_limit()
 									: undefined}
-								aria-label={t.planning_cadence_preset_save_aria()}
-								class="flex pressable cursor-pointer items-center rounded-lg border border-dashed border-border/60 bg-background px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 							>
-								<Plus class="size-3" />
-							</button>
+								{#snippet children({ props })}
+									<span {...props} class="inline-flex">
+										<button
+											{...popoverProps}
+											disabled={!presetsState.canSaveMore}
+											aria-label={t.planning_cadence_preset_save_aria()}
+											class="flex pressable cursor-pointer items-center rounded-lg border border-dashed border-border/60 bg-background px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+										>
+											<Plus class="size-3" />
+										</button>
+									</span>
+								{/snippet}
+							</SimpleTooltip>
 						{/snippet}
 					</Popover.Trigger>
 					<Popover.Content
@@ -395,12 +403,16 @@
 						{t.planning_cadence_target_finish_time()}
 					</label>
 					{#if planningState.isCrossesMidnight}
-						<span
-							class="rounded bg-accent-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent-gold"
-							title={t.planning_cadence_next_day_title()}
-						>
-							{t.planning_cadence_next_day_badge()}
-						</span>
+						<SimpleTooltip text={t.planning_cadence_next_day_title()}>
+							{#snippet children({ props })}
+								<span
+									{...props}
+									class="rounded bg-accent-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent-gold"
+								>
+									{t.planning_cadence_next_day_badge()}
+								</span>
+							{/snippet}
+						</SimpleTooltip>
 					{/if}
 				</div>
 				<input
