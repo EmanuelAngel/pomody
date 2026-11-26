@@ -1,8 +1,17 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn-svelte/tailwind.css';
-@import '@fontsource-variable/inter';
-@import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource-variable/plus-jakarta-sans';
+/*
+	Commit Mono ships as static faces, so each weight is a separate file. Only the
+	three Pomody actually uses are imported: 400 (the clock and metadata), 500 (the
+	Mini-Player digits) and 600 (the numeric stats). With only 400 and 600 present,
+	`font-medium` would silently resolve to 400 and the Mini-Player would lose the
+	weight the design asks for.
+*/
+@import '@fontsource/commit-mono/400.css';
+@import '@fontsource/commit-mono/500.css';
+@import '@fontsource/commit-mono/600.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -161,8 +170,8 @@
 }
 
 @theme inline {
-	--font-sans: 'Inter Variable', sans-serif;
-	--font-mono: 'JetBrains Mono Variable', monospace;
+	--font-sans: 'Plus Jakarta Sans Variable', sans-serif;
+	--font-mono: 'Commit Mono', monospace;
 	--color-bg-base: var(--bg-base);
 	--color-bg-surface: var(--bg-surface);
 	--color-bg-overlay: var(--bg-overlay);
@@ -326,4 +335,24 @@
 			transform: translateY(-2px);
 		}
 	}
+}
+
+/*
+	`clock-figures` — the timer's own digits, wherever a countdown is shown: the
+	big clock, the Mini-Player, and the remaining time of an in-progress block.
+
+	`cv07` is Commit Mono's character variant for the dotted zero. The shipped
+	default is the slashed zero, which reads as "programming font"; the dot is the
+	one that reads as an instrument, and it is what the design system asks for.
+
+	It lives on a named utility instead of the `--font-mono` token so the feature
+	is never inherited by the static numbers — durations and round counts, and the
+	10px time ranges in the timeline — where the dot is smaller than the stroke
+	around it and only adds noise, and where nothing is ticking. `tabular-nums`
+	rides along because every caller is a countdown: the two must never be set
+	separately.
+*/
+@utility clock-figures {
+	font-feature-settings: 'cv07' 1;
+	font-variant-numeric: tabular-nums;
 }

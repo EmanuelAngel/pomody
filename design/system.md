@@ -48,12 +48,12 @@ Mode label text (WCAG AA ≥ 4.5:1 on `--bg-base`): `--mode-focus-text`, `--mode
 
 ## Typography (`src/app.css`, `@theme inline`)
 
-| Token         | Value                                  |
-| ------------- | -------------------------------------- |
-| `--font-sans` | `'Inter Variable', sans-serif`         |
-| `--font-mono` | `'JetBrains Mono Variable', monospace` |
+| Token         | Value                                      |
+| ------------- | ------------------------------------------ |
+| `--font-sans` | `'Plus Jakarta Sans Variable', sans-serif` |
+| `--font-mono` | `'Commit Mono', monospace`                 |
 
-Brand/nav micro-labels use `text-xs` uppercase `tracking-wider`; nav tabs use `text-xs` `tracking-tight`; the timer face uses the mono family.
+Brand/nav micro-labels use `text-xs` uppercase `tracking-wider`; nav tabs use `text-xs` `tracking-tight`; the timer face uses the mono family with the `clock-figures` utility, which sets the dotted zero (`cv07`) and `tabular-nums` together. The small numeric stats stay on plain `font-mono` + `tabular-nums`: at 10-12px the dot collapses into noise.
 
 ## Radius (`src/app.css`)
 

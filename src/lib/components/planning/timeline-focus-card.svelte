@@ -179,7 +179,7 @@
 				<div class="flex items-center gap-1.5">
 					{#if timerState}
 						<span
-							class="font-mono text-xs font-semibold text-primary tabular-nums"
+							class="font-mono clock-figures text-xs font-semibold text-primary"
 							aria-label={t.planning_card_remaining_time_aria()}
 						>
 							{timerState.formattedRemainingTime}

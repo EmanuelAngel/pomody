@@ -202,7 +202,7 @@
 			<span
 				data-tauri-drag-region
 				data-slot="mini-player-time"
-				class="block font-mono text-sm font-medium text-foreground tabular-nums"
+				class="block font-mono clock-figures text-sm font-medium text-foreground"
 			>
 				{timerState.formattedTime}
 			</span>
