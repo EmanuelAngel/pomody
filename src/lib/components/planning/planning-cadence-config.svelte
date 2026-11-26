@@ -144,6 +144,9 @@
 		await presetsState.deletePreset(presetId);
 		openPresetId = null;
 	}
+	// Writable derived: bits-ui deselects when clicking the active chip, so `onValueChange`
+	// restores the override; external cadence changes sync through the derivation.
+	let presetGroupValue = $derived<string>(activePresetId ?? '');
 </script>
 
 <div class={cn('mt-4 space-y-3.5 rounded-xl border border-border/40 bg-muted/20 p-3', className)}>
@@ -160,196 +163,205 @@
 			<span class="text-[11px] font-medium text-muted-foreground"
 				>{t.planning_cadence_preset_heading()}</span
 			>
-			<ToggleGroup.Root
-				type="single"
-				value={activePresetId ?? ''}
-				onValueChange={applyPresetById}
-				aria-label={t.planning_cadence_presets_aria()}
-				class="flex flex-wrap items-center gap-1.5"
-			>
-				{#each BUILT_IN_CADENCE_PRESETS as preset (preset.id)}
-					<ToggleGroup.Item
-						value={preset.id}
-						aria-label={t.planning_cadence_select_preset_aria({
-							name: getBuiltInShortName(preset),
-							label: getBuiltInLabel(preset)
-						})}
-						class="flex h-auto min-w-0 pressable cursor-pointer items-center gap-1.5 rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground data-[state=on]:border-primary/50 data-[state=on]:bg-primary/10 data-[state=on]:text-primary data-[state=on]:shadow-xs"
-					>
-						<span class="font-semibold">{getBuiltInShortName(preset)}</span>
-						<span class="text-[10px] opacity-80">{getBuiltInLabel(preset)}</span>
-					</ToggleGroup.Item>
-				{/each}
-
-				{#each presetsState.presets as preset (preset.id)}
-					{@const isSelected = activePresetId === preset.id}
-					<div
-						class={cn(
-							'flex items-center rounded-lg border text-xs font-medium interactive',
-							isSelected
-								? 'border-primary/50 bg-primary/10 text-primary shadow-xs'
-								: 'border-border/60 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-						)}
-					>
+			{#key presetsState.presets.length}
+				<ToggleGroup.Root
+					type="single"
+					bind:value={presetGroupValue}
+					onValueChange={(id) => {
+						if (id === '') {
+							// bits-ui deselects when clicking the active chip; keep the active preset
+							presetGroupValue = activePresetId ?? '';
+						} else {
+							applyPresetById(id);
+						}
+					}}
+					aria-label={t.planning_cadence_presets_aria()}
+					class="flex flex-wrap items-center gap-1.5"
+				>
+					{#each BUILT_IN_CADENCE_PRESETS as preset (preset.id)}
 						<ToggleGroup.Item
 							value={preset.id}
 							aria-label={t.planning_cadence_select_preset_aria({
-								name: preset.name,
-								label: formatCadenceShort(preset)
+								name: getBuiltInShortName(preset),
+								label: getBuiltInLabel(preset)
 							})}
-							class="flex h-auto min-w-0 pressable cursor-pointer items-center gap-1.5 rounded-l-lg py-1.5 pr-1.5 pl-2.5 hover:bg-transparent hover:text-inherit"
+							class="flex h-auto min-w-0 pressable cursor-pointer items-center gap-1.5 rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground data-[state=on]:border-primary/50 data-[state=on]:bg-primary/10 data-[state=on]:text-primary data-[state=on]:shadow-xs"
 						>
-							<span class="font-semibold">{preset.name}</span>
-							<span class="text-[10px] opacity-80">{formatCadenceShort(preset)}</span>
+							<span class="font-semibold">{getBuiltInShortName(preset)}</span>
+							<span class="text-[10px] opacity-80">{getBuiltInLabel(preset)}</span>
 						</ToggleGroup.Item>
+					{/each}
 
-						<Popover.Root
-							open={openPresetId === preset.id}
-							onOpenChange={(open) => {
-								if (open) {
-									openPresetId = preset.id;
-									openPresetMenu(preset.name);
-								} else if (openPresetId === preset.id) {
-									openPresetId = null;
-								}
-							}}
+					{#each presetsState.presets as preset (preset.id)}
+						{@const isSelected = activePresetId === preset.id}
+						<div
+							class={cn(
+								'flex items-center rounded-lg border text-xs font-medium interactive',
+								isSelected
+									? 'border-primary/50 bg-primary/10 text-primary shadow-xs'
+									: 'border-border/60 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+							)}
 						>
-							<Popover.Trigger
-								aria-label={t.planning_cadence_preset_menu_aria({ name: preset.name })}
-								class="flex cursor-pointer items-center rounded-r-lg border-l border-current/20 py-1.5 pr-1.5 pl-1.5 opacity-70 transition-opacity hover:opacity-100"
+							<ToggleGroup.Item
+								value={preset.id}
+								aria-label={t.planning_cadence_select_preset_aria({
+									name: preset.name,
+									label: formatCadenceShort(preset)
+								})}
+								class="flex h-auto min-w-0 pressable cursor-pointer items-center gap-1.5 rounded-l-lg py-1.5 pr-1.5 pl-2.5 hover:bg-transparent hover:text-inherit"
 							>
-								<MoreVertical class="size-3" />
-							</Popover.Trigger>
-							<Popover.Content
-								side="bottom"
-								sideOffset={6}
-								align="start"
-								class="z-50 w-56 rounded-xl border border-border/60 bg-popover/95 p-2 text-popover-foreground shadow-lg backdrop-blur-md"
+								<span class="font-semibold">{preset.name}</span>
+								<span class="text-[10px] opacity-80">{formatCadenceShort(preset)}</span>
+							</ToggleGroup.Item>
+
+							<Popover.Root
+								open={openPresetId === preset.id}
+								onOpenChange={(open) => {
+									if (open) {
+										openPresetId = preset.id;
+										openPresetMenu(preset.name);
+									} else if (openPresetId === preset.id) {
+										openPresetId = null;
+									}
+								}}
 							>
-								{#if isRenameMode}
-									<form
-										class="flex flex-col gap-2"
-										onsubmit={(event) => {
-											event.preventDefault();
-											void renamePreset(preset.id);
-										}}
-									>
-										<label
-											class="text-[11px] font-medium text-muted-foreground"
-											for={`cadence-preset-rename-${preset.id}`}
-										>
-											{t.planning_cadence_preset_name_label()}
-										</label>
-										<Input
-											id={`cadence-preset-rename-${preset.id}`}
-											bind:value={renameName}
-											aria-invalid={renameError !== null}
-											class="h-8 text-xs"
-										/>
-										{#if renameError !== null}
-											<p role="alert" class="text-[11px] text-destructive">
-												{getErrorMessage(renameError)}
-											</p>
-										{/if}
-										<Button type="submit" size="sm" class="h-8 text-xs">
-											{t.planning_cadence_preset_rename_button()}
-										</Button>
-									</form>
-								{:else}
-									<div class="flex flex-col gap-0.5">
-										<Button
-											variant="ghost"
-											size="sm"
-											class="justify-start text-xs"
-											onclick={() => {
-												isRenameMode = true;
-												renameError = null;
+								<Popover.Trigger
+									aria-label={t.planning_cadence_preset_menu_aria({ name: preset.name })}
+									class="flex cursor-pointer items-center rounded-r-lg border-l border-current/20 py-1.5 pr-1.5 pl-1.5 opacity-70 transition-opacity hover:opacity-100"
+								>
+									<MoreVertical class="size-3" />
+								</Popover.Trigger>
+								<Popover.Content
+									side="bottom"
+									sideOffset={6}
+									align="start"
+									class="z-50 w-56 rounded-xl border border-border/60 bg-popover/95 p-2 text-popover-foreground shadow-lg backdrop-blur-md"
+								>
+									{#if isRenameMode}
+										<form
+											class="flex flex-col gap-2"
+											onsubmit={(event) => {
+												event.preventDefault();
+												void renamePreset(preset.id);
 											}}
 										>
-											{t.planning_cadence_preset_rename_button()}
-										</Button>
-										<Button
-											variant="ghost"
-											size="sm"
-											class="justify-start text-xs text-destructive"
-											onclick={() => void deletePreset(preset.id)}
-										>
-											{t.planning_cadence_preset_delete_button()}
-										</Button>
-									</div>
-								{/if}
-							</Popover.Content>
-						</Popover.Root>
-					</div>
-				{/each}
+											<label
+												class="text-[11px] font-medium text-muted-foreground"
+												for={`cadence-preset-rename-${preset.id}`}
+											>
+												{t.planning_cadence_preset_name_label()}
+											</label>
+											<Input
+												id={`cadence-preset-rename-${preset.id}`}
+												bind:value={renameName}
+												aria-invalid={renameError !== null}
+												class="h-8 text-xs"
+											/>
+											{#if renameError !== null}
+												<p role="alert" class="text-[11px] text-destructive">
+													{getErrorMessage(renameError)}
+												</p>
+											{/if}
+											<Button type="submit" size="sm" class="h-8 text-xs">
+												{t.planning_cadence_preset_rename_button()}
+											</Button>
+										</form>
+									{:else}
+										<div class="flex flex-col gap-0.5">
+											<Button
+												variant="ghost"
+												size="sm"
+												class="justify-start text-xs"
+												onclick={() => {
+													isRenameMode = true;
+													renameError = null;
+												}}
+											>
+												{t.planning_cadence_preset_rename_button()}
+											</Button>
+											<Button
+												variant="ghost"
+												size="sm"
+												class="justify-start text-xs text-destructive"
+												onclick={() => void deletePreset(preset.id)}
+											>
+												{t.planning_cadence_preset_delete_button()}
+											</Button>
+										</div>
+									{/if}
+								</Popover.Content>
+							</Popover.Root>
+						</div>
+					{/each}
 
-				<Popover.Root
-					open={isCreateOpen}
-					onOpenChange={(open) => {
-						isCreateOpen = open;
-						if (open) {
-							openCreateEditor();
-						}
-					}}
-				>
-					<Popover.Trigger disabled={!presetsState.canSaveMore}>
-						{#snippet child({ props })}
-							<button
-								{...props}
-								disabled={!presetsState.canSaveMore}
-								title={!presetsState.canSaveMore
-									? t.planning_cadence_preset_error_limit()
-									: undefined}
-								aria-label={t.planning_cadence_preset_save_aria()}
-								class="flex pressable cursor-pointer items-center rounded-lg border border-dashed border-border/60 bg-background px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-							>
-								<Plus class="size-3" />
-							</button>
-						{/snippet}
-					</Popover.Trigger>
-					<Popover.Content
-						side="bottom"
-						sideOffset={6}
-						align="start"
-						class="z-50 w-56 rounded-xl border border-border/60 bg-popover/95 p-2 text-popover-foreground shadow-lg backdrop-blur-md"
+					<Popover.Root
+						open={isCreateOpen}
+						onOpenChange={(open) => {
+							isCreateOpen = open;
+							if (open) {
+								openCreateEditor();
+							}
+						}}
 					>
-						<form
-							class="flex flex-col gap-2"
-							onsubmit={(event) => {
-								event.preventDefault();
-								void savePreset();
-							}}
+						<Popover.Trigger disabled={!presetsState.canSaveMore}>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									disabled={!presetsState.canSaveMore}
+									title={!presetsState.canSaveMore
+										? t.planning_cadence_preset_error_limit()
+										: undefined}
+									aria-label={t.planning_cadence_preset_save_aria()}
+									class="flex pressable cursor-pointer items-center rounded-lg border border-dashed border-border/60 bg-background px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+								>
+									<Plus class="size-3" />
+								</button>
+							{/snippet}
+						</Popover.Trigger>
+						<Popover.Content
+							side="bottom"
+							sideOffset={6}
+							align="start"
+							class="z-50 w-56 rounded-xl border border-border/60 bg-popover/95 p-2 text-popover-foreground shadow-lg backdrop-blur-md"
 						>
-							<span class="text-[11px] font-semibold text-foreground">
-								{t.planning_cadence_preset_save_title()}
-							</span>
-							<span class="text-[11px] text-muted-foreground">
-								{formatCadenceShort(currentCadence)}
-							</span>
-							<label
-								class="text-[11px] font-medium text-muted-foreground"
-								for="cadence-preset-name"
+							<form
+								class="flex flex-col gap-2"
+								onsubmit={(event) => {
+									event.preventDefault();
+									void savePreset();
+								}}
 							>
-								{t.planning_cadence_preset_name_label()}
-							</label>
-							<Input
-								id="cadence-preset-name"
-								bind:value={createName}
-								aria-invalid={createError !== null}
-								class="h-8 text-xs"
-							/>
-							{#if createError !== null}
-								<p role="alert" class="text-[11px] text-destructive">
-									{getErrorMessage(createError)}
-								</p>
-							{/if}
-							<Button type="submit" size="sm" class="h-8 text-xs">
-								{t.planning_cadence_preset_save_button()}
-							</Button>
-						</form>
-					</Popover.Content>
-				</Popover.Root>
-			</ToggleGroup.Root>
+								<span class="text-[11px] font-semibold text-foreground">
+									{t.planning_cadence_preset_save_title()}
+								</span>
+								<span class="text-[11px] text-muted-foreground">
+									{formatCadenceShort(currentCadence)}
+								</span>
+								<label
+									class="text-[11px] font-medium text-muted-foreground"
+									for="cadence-preset-name"
+								>
+									{t.planning_cadence_preset_name_label()}
+								</label>
+								<Input
+									id="cadence-preset-name"
+									bind:value={createName}
+									aria-invalid={createError !== null}
+									class="h-8 text-xs"
+								/>
+								{#if createError !== null}
+									<p role="alert" class="text-[11px] text-destructive">
+										{getErrorMessage(createError)}
+									</p>
+								{/if}
+								<Button type="submit" size="sm" class="h-8 text-xs">
+									{t.planning_cadence_preset_save_button()}
+								</Button>
+							</form>
+						</Popover.Content>
+					</Popover.Root>
+				</ToggleGroup.Root>
+			{/key}
 		</div>
 
 		<!-- Primary Variable in Blocks mode: Block Count -->

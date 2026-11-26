@@ -82,6 +82,9 @@
 		const blocks = planningState.projectedPlan.blocks;
 		return blocks.slice(0, blockIndex + 1).filter((b) => b.mode === 'focus').length;
 	}
+	// Writable derived: bits-ui deselects when clicking the active item, so `onValueChange`
+	// restores the override; external changes to the mode sync through the derivation.
+	let modeGroupValue = $derived<string>(planningState.targetMode);
 </script>
 
 <section
@@ -106,9 +109,14 @@
 			<!-- Target Mode Toggle (Blocks vs End Time) -->
 			<ToggleGroup.Root
 				type="single"
-				value={planningState.targetMode}
+				bind:value={modeGroupValue}
 				onValueChange={(mode) => {
-					if (mode === 'blocks' || mode === 'end_time') planningState.setTargetMode(mode);
+					if (mode === 'blocks' || mode === 'end_time') {
+						planningState.setTargetMode(mode);
+					} else if (mode === '') {
+						// bits-ui deselects when clicking the active item; the mode cannot be empty
+						modeGroupValue = planningState.targetMode;
+					}
 				}}
 				aria-label={t.planning_timeline_mode_aria()}
 				spacing={1}

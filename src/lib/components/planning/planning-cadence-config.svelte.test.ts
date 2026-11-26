@@ -89,6 +89,18 @@ describe('PlanningCadenceConfig (Client Browser)', () => {
 		await expect.element(deepFocusBtn).toHaveAttribute('aria-checked', 'false');
 	});
 
+	it('keeps the active preset checked when clicking it again', async () => {
+		const planningState = setupPlanningState();
+		const screen = await render(PlanningCadenceConfig, { planningState });
+		const classicBtn = screen.getByRole('radio', { name: /25\/5 Classic/i });
+		await expect.element(classicBtn).toHaveAttribute('aria-checked', 'true');
+
+		await classicBtn.click();
+
+		await expect.element(classicBtn).toHaveAttribute('aria-checked', 'true');
+		expect(planningState.focusMinutes).toBe(25);
+	});
+
 	it('switches cadence when clicking a preset chip', async () => {
 		const planningState = setupPlanningState();
 		const screen = await render(PlanningCadenceConfig, { planningState });
