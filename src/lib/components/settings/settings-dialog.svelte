@@ -180,7 +180,7 @@
 				</Tabs.Content>
 
 				<!-- Inside the scroll area: a fixed footer would take the panels' last rows in short windows. -->
-				<p class="mt-auto px-6 pb-3 text-[11px] text-muted-foreground">
+				<p class="mt-auto px-6 pb-1.5 text-[11px] leading-4 text-muted-foreground">
 					{t.settings_app_version({ version: APP_VERSION })}
 				</p>
 			</div>
