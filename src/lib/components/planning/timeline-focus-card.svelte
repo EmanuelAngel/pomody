@@ -13,6 +13,7 @@
 	import type { FocusTask } from '$lib/domain/tasks/task.entity';
 	import type { TimerState } from '$lib/state/timer.svelte';
 	import { t } from '$lib/state/locale.svelte';
+	import SimpleTooltip from '$lib/components/common/simple-tooltip.svelte';
 
 	interface Props {
 		block: PlanBlock;
@@ -239,16 +240,20 @@
 						</span>
 					{/if}
 
-					<Button
-						variant="ghost"
-						size="icon-xs"
-						aria-label={t.planning_focus_card_unassign_task_aria({ index: focusIndex })}
-						title={t.planning_focus_card_unassign_task_title()}
-						onclick={onUnassignTask}
-						class="size-5 shrink-0 text-muted-foreground/60 hover:text-foreground"
-					>
-						<X class="size-3" />
-					</Button>
+					<SimpleTooltip text={t.planning_focus_card_unassign_task_title()}>
+						{#snippet children({ props })}
+							<Button
+								{...props}
+								variant="ghost"
+								size="icon-xs"
+								aria-label={t.planning_focus_card_unassign_task_aria({ index: focusIndex })}
+								onclick={onUnassignTask}
+								class="size-5 shrink-0 text-muted-foreground/60 hover:text-foreground"
+							>
+								<X class="size-3" />
+							</Button>
+						{/snippet}
+					</SimpleTooltip>
 				{:else}
 					<span class="text-muted-foreground/70">{t.planning_focus_card_unassigned()}</span>
 				{/if}

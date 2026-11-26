@@ -30,6 +30,35 @@ describe('TaskItem (Client Browser)', () => {
 		await expect.element(deleteBtn).toBeVisible();
 	});
 
+	it('shows the delete tooltip on hover and keyboard focus', async () => {
+		const task = createFocusTask({ title: 'Tooltip Target' });
+		const screen = await render(TaskItem, { task });
+
+		const deleteBtn = screen.getByRole('button', {
+			name: 'Delete task "Tooltip Target"'
+		});
+		const tooltipText = () =>
+			document.querySelector('[data-slot="tooltip-content"]')?.textContent?.trim() ?? null;
+
+		await userEvent.hover(deleteBtn);
+		await vi.waitFor(() => expect(tooltipText()).toBe('Delete task'));
+		await userEvent.unhover(deleteBtn);
+		await vi.waitFor(() => expect(tooltipText()).toBeNull());
+
+		(deleteBtn.element() as HTMLElement).focus();
+		await vi.waitFor(() => expect(tooltipText()).toBe('Delete task'));
+	});
+
+	it('hides the native title attribute in favor of the tooltip', async () => {
+		const task = createFocusTask({ title: 'No Native Title' });
+		const screen = await render(TaskItem, { task });
+
+		const deleteBtn = screen.getByRole('button', {
+			name: 'Delete task "No Native Title"'
+		});
+		await expect.element(deleteBtn).not.toHaveAttribute('title');
+	});
+
 	it('renders active task with active styling and aria-pressed', async () => {
 		const task = createFocusTask({ title: 'Active Focus Task' });
 		const screen = await render(TaskItem, { task, isActive: true });

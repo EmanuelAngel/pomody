@@ -15,6 +15,7 @@
 		getLocalizedPresetGuide
 	} from '$lib/components/breaks/break-preset-i18n';
 	import type { BreakCategory } from '$lib/domain/breaks/break-activity.entity';
+	import SimpleTooltip from '$lib/components/common/simple-tooltip.svelte';
 
 	interface Props {
 		breaksState?: BreaksState;
@@ -96,9 +97,13 @@
 		</span>
 
 		<!-- Activity title with truncation if long -->
-		<span class="min-w-0 flex-1 truncate font-medium text-foreground" title={activeTitle}>
-			{activeTitle}
-		</span>
+		<SimpleTooltip text={activeTitle}>
+			{#snippet children({ props })}
+				<span {...props} class="min-w-0 flex-1 truncate font-medium text-foreground">
+					{activeTitle}
+				</span>
+			{/snippet}
+		</SimpleTooltip>
 
 		<!-- Guide Popover Trigger and Content -->
 		<Popover.Root bind:open={guideOpen}>

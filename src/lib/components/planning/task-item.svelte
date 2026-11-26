@@ -5,6 +5,7 @@
 	import CalendarPlus from '@lucide/svelte/icons/calendar-plus';
 	import GripVertical from '@lucide/svelte/icons/grip-vertical';
 	import { Button } from '$lib/components/ui/button';
+	import SimpleTooltip from '$lib/components/common/simple-tooltip.svelte';
 	import { cn } from '$lib/utils';
 	import type { FocusTask } from '$lib/domain/tasks/task.entity';
 	import { t } from '$lib/state/locale.svelte';
@@ -99,16 +100,20 @@
 		</div>
 
 		<div class="flex shrink-0 items-center gap-1">
-			<Button
-				variant="ghost"
-				size="icon-xs"
-				aria-label={t.task_item_delete_button_aria({ title: task.title })}
-				title={t.task_item_delete_button_title()}
-				onclick={() => ondelete?.(task.id)}
-				class="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive"
-			>
-				<Trash class="size-3.5" />
-			</Button>
+			<SimpleTooltip text={t.task_item_delete_button_title()}>
+				{#snippet children({ props })}
+					<Button
+						{...props}
+						variant="ghost"
+						size="icon-xs"
+						aria-label={t.task_item_delete_button_aria({ title: task.title })}
+						onclick={() => ondelete?.(task.id)}
+						class="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive"
+					>
+						<Trash class="size-3.5" />
+					</Button>
+				{/snippet}
+			</SimpleTooltip>
 		</div>
 	</li>
 {:else}
@@ -127,13 +132,17 @@
 	>
 		<!-- Left: Grip + Checkbox + Title -->
 		<div class="flex min-w-0 flex-1 items-start gap-2.5">
-			<div
-				class="mt-1 flex size-3.5 shrink-0 items-center justify-center text-muted-foreground/30 transition-colors select-none group-hover:text-muted-foreground/60"
-				aria-hidden="true"
-				title={t.task_item_drag_title()}
-			>
-				<GripVertical class="size-3.5" />
-			</div>
+			<SimpleTooltip text={t.task_item_drag_title()}>
+				{#snippet children({ props })}
+					<div
+						{...props}
+						class="mt-1 flex size-3.5 shrink-0 items-center justify-center text-muted-foreground/30 transition-colors select-none group-hover:text-muted-foreground/60"
+						aria-hidden="true"
+					>
+						<GripVertical class="size-3.5" />
+					</div>
+				{/snippet}
+			</SimpleTooltip>
 
 			<button
 				type="button"
@@ -155,61 +164,77 @@
 					class="h-7 w-full rounded border border-ring bg-background px-2 text-sm text-foreground focus:outline-none"
 				/>
 			{:else}
-				<button
-					type="button"
-					aria-label={t.task_item_edit_button_aria({ title: task.title })}
-					class="min-w-0 flex-1 pressable cursor-text text-left text-sm leading-snug font-medium break-words text-foreground hover:text-foreground/80 focus-visible:outline-none"
-					title={t.task_item_edit_button_title()}
-					onclick={startEditing}
-				>
-					{task.title}
-				</button>
+				<SimpleTooltip text={t.task_item_edit_button_title()}>
+					{#snippet children({ props })}
+						<button
+							{...props}
+							type="button"
+							aria-label={t.task_item_edit_button_aria({ title: task.title })}
+							class="min-w-0 flex-1 pressable cursor-text text-left text-sm leading-snug font-medium break-words text-foreground hover:text-foreground/80 focus-visible:outline-none"
+							onclick={startEditing}
+						>
+							{task.title}
+						</button>
+					{/snippet}
+				</SimpleTooltip>
 			{/if}
 		</div>
 
 		<!-- Right: Quick Slot + Pin Active + Delete -->
 		<div class="-mt-0.5 flex shrink-0 items-center gap-1">
 			{#if onslot}
-				<Button
-					variant="ghost"
-					size="icon-xs"
-					aria-label={t.task_item_slot_button_aria({ title: task.title })}
-					title={t.task_item_slot_button_title()}
-					onclick={() => onslot?.(task.id)}
-					class="text-muted-foreground/50 hover:text-foreground"
-				>
-					<CalendarPlus class="size-3.5" />
-				</Button>
+				<SimpleTooltip text={t.task_item_slot_button_title()}>
+					{#snippet children({ props })}
+						<Button
+							{...props}
+							variant="ghost"
+							size="icon-xs"
+							aria-label={t.task_item_slot_button_aria({ title: task.title })}
+							onclick={() => onslot?.(task.id)}
+							class="text-muted-foreground/50 hover:text-foreground"
+						>
+							<CalendarPlus class="size-3.5" />
+						</Button>
+					{/snippet}
+				</SimpleTooltip>
 			{/if}
-			<Button
-				variant="ghost"
-				size="icon-xs"
-				aria-label={isActive
-					? t.task_item_unset_active_aria({ title: task.title })
-					: t.task_item_set_active_aria({ title: task.title })}
-				aria-pressed={isActive}
-				title={isActive ? t.task_item_active_title() : t.task_item_set_active_title()}
-				onclick={() => ontogglepin?.(task.id)}
-				class={cn(
-					'transition-colors',
-					isActive
-						? 'bg-primary/15 text-primary hover:bg-primary/25 hover:text-primary'
-						: 'text-muted-foreground/50 hover:text-foreground'
-				)}
-			>
-				<Pin class={cn('size-3.5', isActive && 'fill-primary')} />
-			</Button>
+			<SimpleTooltip text={isActive ? t.task_item_active_title() : t.task_item_set_active_title()}>
+				{#snippet children({ props })}
+					<Button
+						{...props}
+						variant="ghost"
+						size="icon-xs"
+						aria-label={isActive
+							? t.task_item_unset_active_aria({ title: task.title })
+							: t.task_item_set_active_aria({ title: task.title })}
+						aria-pressed={isActive}
+						onclick={() => ontogglepin?.(task.id)}
+						class={cn(
+							'transition-colors',
+							isActive
+								? 'bg-primary/15 text-primary hover:bg-primary/25 hover:text-primary'
+								: 'text-muted-foreground/50 hover:text-foreground'
+						)}
+					>
+						<Pin class={cn('size-3.5', isActive && 'fill-primary')} />
+					</Button>
+				{/snippet}
+			</SimpleTooltip>
 
-			<Button
-				variant="ghost"
-				size="icon-xs"
-				aria-label={t.task_item_delete_button_aria({ title: task.title })}
-				title={t.task_item_delete_button_title()}
-				onclick={() => ondelete?.(task.id)}
-				class="text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive"
-			>
-				<Trash class="size-3.5" />
-			</Button>
+			<SimpleTooltip text={t.task_item_delete_button_title()}>
+				{#snippet children({ props })}
+					<Button
+						{...props}
+						variant="ghost"
+						size="icon-xs"
+						aria-label={t.task_item_delete_button_aria({ title: task.title })}
+						onclick={() => ondelete?.(task.id)}
+						class="text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive"
+					>
+						<Trash class="size-3.5" />
+					</Button>
+				{/snippet}
+			</SimpleTooltip>
 		</div>
 	</li>
 {/if}
