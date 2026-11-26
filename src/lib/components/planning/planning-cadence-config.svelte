@@ -301,15 +301,16 @@
 									: undefined}
 							>
 								{#snippet children({ props })}
-									<button
-										{...props}
-										{...popoverProps}
-										disabled={!presetsState.canSaveMore}
-										aria-label={t.planning_cadence_preset_save_aria()}
-										class="flex pressable cursor-pointer items-center rounded-lg border border-dashed border-border/60 bg-background px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-									>
-										<Plus class="size-3" />
-									</button>
+									<span {...props} class="inline-flex">
+										<button
+											{...popoverProps}
+											disabled={!presetsState.canSaveMore}
+											aria-label={t.planning_cadence_preset_save_aria()}
+											class="flex pressable cursor-pointer items-center rounded-lg border border-dashed border-border/60 bg-background px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+										>
+											<Plus class="size-3" />
+										</button>
+									</span>
 								{/snippet}
 							</SimpleTooltip>
 						{/snippet}
