@@ -298,14 +298,14 @@ describe('PlanningView (Client Browser)', () => {
 
 		expect(planningState.targetMode).toBe('blocks');
 
-		const byEndTimeBtn = screen.getByRole('button', { name: 'By End Time' });
+		const byEndTimeBtn = screen.getByRole('radio', { name: 'By End Time' });
 		await byEndTimeBtn.click();
 		expect(planningState.targetMode).toBe('end_time');
 
 		// Target finish time input should be visible
 		await expect.element(screen.getByLabelText('Target finish time')).toBeVisible();
 
-		const byBlocksBtn = screen.getByRole('button', { name: 'By Blocks' });
+		const byBlocksBtn = screen.getByRole('radio', { name: 'By Blocks' });
 		await byBlocksBtn.click();
 		expect(planningState.targetMode).toBe('blocks');
 	});
@@ -322,13 +322,13 @@ describe('PlanningView (Client Browser)', () => {
 		const screen = await render(PlanningView, { tasksState, planningState, timerState });
 
 		// Select 50/10 Foco Profundo preset chip
-		const deepFocusBtn = screen.getByRole('button', { name: /50\/10/i });
+		const deepFocusBtn = screen.getByRole('radio', { name: /50\/10/i });
 		await deepFocusBtn.click();
 		expect(planningState.focusMinutes).toBe(50);
 		expect(planningState.shortBreakMinutes).toBe(10);
 
 		// Switch back to 25/5 Clásico preset chip
-		const classicBtn = screen.getByRole('button', { name: /25\/5/i });
+		const classicBtn = screen.getByRole('radio', { name: /25\/5/i });
 		await classicBtn.click();
 		expect(planningState.focusMinutes).toBe(25);
 		expect(planningState.shortBreakMinutes).toBe(5);
@@ -498,7 +498,7 @@ describe('PlanningView (Client Browser)', () => {
 		});
 
 		// Switch to By End Time mode
-		const byEndTimeBtn = screen.getByRole('button', { name: 'By End Time' });
+		const byEndTimeBtn = screen.getByRole('radio', { name: 'By End Time' });
 		await byEndTimeBtn.click();
 		expect(planningState.targetMode).toBe('end_time');
 
@@ -978,8 +978,8 @@ describe('PlanningView (Client Browser)', () => {
 			await expect.element(screen.getByText('Cronograma de sesión')).toBeVisible();
 
 			// Timeline mode buttons
-			await expect.element(screen.getByRole('button', { name: 'Por bloques' })).toBeVisible();
-			await expect.element(screen.getByRole('button', { name: 'Por hora final' })).toBeVisible();
+			await expect.element(screen.getByRole('radio', { name: 'Por bloques' })).toBeVisible();
+			await expect.element(screen.getByRole('radio', { name: 'Por hora final' })).toBeVisible();
 
 			// Summary metrics
 			await expect.element(screen.getByText('Foco total')).toBeVisible();

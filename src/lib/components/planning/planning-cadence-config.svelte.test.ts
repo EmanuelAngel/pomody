@@ -76,24 +76,36 @@ describe('PlanningCadenceConfig (Client Browser)', () => {
 		const planningState = setupPlanningState();
 		const screen = await render(PlanningCadenceConfig, { planningState });
 
-		const classicBtn = screen.getByRole('button', { name: /25\/5 Classic/i });
-		const deepFocusBtn = screen.getByRole('button', { name: /50\/10 Deep Focus/i });
-		const ultradianBtn = screen.getByRole('button', { name: /90\/20 Ultradian Rhythm/i });
+		const classicBtn = screen.getByRole('radio', { name: /25\/5 Classic/i });
+		const deepFocusBtn = screen.getByRole('radio', { name: /50\/10 Deep Focus/i });
+		const ultradianBtn = screen.getByRole('radio', { name: /90\/20 Ultradian Rhythm/i });
 
 		await expect.element(classicBtn).toBeVisible();
 		await expect.element(deepFocusBtn).toBeVisible();
 		await expect.element(ultradianBtn).toBeVisible();
 
-		// Classic should be active (aria-pressed=true)
-		await expect.element(classicBtn).toHaveAttribute('aria-pressed', 'true');
-		await expect.element(deepFocusBtn).toHaveAttribute('aria-pressed', 'false');
+		// Classic should be active (aria-checked=true)
+		await expect.element(classicBtn).toHaveAttribute('aria-checked', 'true');
+		await expect.element(deepFocusBtn).toHaveAttribute('aria-checked', 'false');
+	});
+
+	it('keeps the active preset checked when clicking it again', async () => {
+		const planningState = setupPlanningState();
+		const screen = await render(PlanningCadenceConfig, { planningState });
+		const classicBtn = screen.getByRole('radio', { name: /25\/5 Classic/i });
+		await expect.element(classicBtn).toHaveAttribute('aria-checked', 'true');
+
+		await classicBtn.click();
+
+		await expect.element(classicBtn).toHaveAttribute('aria-checked', 'true');
+		expect(planningState.focusMinutes).toBe(25);
 	});
 
 	it('switches cadence when clicking a preset chip', async () => {
 		const planningState = setupPlanningState();
 		const screen = await render(PlanningCadenceConfig, { planningState });
 
-		const deepFocusBtn = screen.getByRole('button', { name: /50\/10 Deep Focus/i });
+		const deepFocusBtn = screen.getByRole('radio', { name: /50\/10 Deep Focus/i });
 		await deepFocusBtn.click();
 
 		expect(planningState.focusMinutes).toBe(50);
@@ -101,17 +113,17 @@ describe('PlanningCadenceConfig (Client Browser)', () => {
 		expect(planningState.longBreakMinutes).toBe(20);
 		expect(planningState.longBreakInterval).toBe(4);
 
-		await expect.element(deepFocusBtn).toHaveAttribute('aria-pressed', 'true');
+		await expect.element(deepFocusBtn).toHaveAttribute('aria-checked', 'true');
 
 		// Click ultradian preset
-		const ultradianBtn = screen.getByRole('button', { name: /90\/20 Ultradian Rhythm/i });
+		const ultradianBtn = screen.getByRole('radio', { name: /90\/20 Ultradian Rhythm/i });
 		await ultradianBtn.click();
 
 		expect(planningState.focusMinutes).toBe(90);
 		expect(planningState.shortBreakMinutes).toBe(20);
 		expect(planningState.longBreakMinutes).toBe(30);
 		expect(planningState.longBreakInterval).toBe(3);
-		await expect.element(ultradianBtn).toHaveAttribute('aria-pressed', 'true');
+		await expect.element(ultradianBtn).toHaveAttribute('aria-checked', 'true');
 	});
 
 	it('adjusts block count in blocks mode', async () => {
@@ -185,9 +197,9 @@ describe('PlanningCadenceConfig (Client Browser)', () => {
 		await expect.element(screen.getByText('Ritmo predefinido')).toBeVisible();
 
 		// Verify localized preset chips
-		const classicBtn = screen.getByRole('button', { name: /25\/5 Clásico/i });
-		const deepFocusBtn = screen.getByRole('button', { name: /50\/10 Foco profundo/i });
-		const ultradianBtn = screen.getByRole('button', { name: /90\/20 Ritmo ultradiano/i });
+		const classicBtn = screen.getByRole('radio', { name: /25\/5 Clásico/i });
+		const deepFocusBtn = screen.getByRole('radio', { name: /50\/10 Foco profundo/i });
+		const ultradianBtn = screen.getByRole('radio', { name: /90\/20 Ritmo ultradiano/i });
 		await expect.element(classicBtn).toBeVisible();
 		await expect.element(deepFocusBtn).toBeVisible();
 		await expect.element(ultradianBtn).toBeVisible();
@@ -225,7 +237,7 @@ describe('PlanningCadenceConfig (Client Browser)', () => {
 			const { planningState, presetsState } = await setupScreen([createPreset('Deep work')]);
 			const screen = await render(PlanningCadenceConfig, { planningState, presetsState });
 
-			const chip = screen.getByRole('button', {
+			const chip = screen.getByRole('radio', {
 				name: 'Select Deep work 45/15/30/3 cadence preset'
 			});
 			await expect.element(chip).toBeVisible();
@@ -236,19 +248,19 @@ describe('PlanningCadenceConfig (Client Browser)', () => {
 			expect(planningState.longBreakMinutes).toBe(30);
 			expect(planningState.longBreakInterval).toBe(3);
 
-			await expect.element(chip).toHaveAttribute('aria-pressed', 'true');
+			await expect.element(chip).toHaveAttribute('aria-checked', 'true');
 		});
 
 		it('does not highlight a built-in cadence when only focus and short break match', async () => {
 			const { planningState, presetsState } = await setupScreen();
 			const screen = await render(PlanningCadenceConfig, { planningState, presetsState });
 
-			const classicBtn = screen.getByRole('button', { name: /25\/5 Classic/i });
-			await expect.element(classicBtn).toHaveAttribute('aria-pressed', 'true');
+			const classicBtn = screen.getByRole('radio', { name: /25\/5 Classic/i });
+			await expect.element(classicBtn).toHaveAttribute('aria-checked', 'true');
 
 			planningState.setLongBreakMinutes(30);
 
-			await expect.element(classicBtn).toHaveAttribute('aria-pressed', 'false');
+			await expect.element(classicBtn).toHaveAttribute('aria-checked', 'false');
 			await expect.element(screen.getByText('Custom', { exact: true })).toBeVisible();
 		});
 
@@ -264,11 +276,11 @@ describe('PlanningCadenceConfig (Client Browser)', () => {
 			await screen.getByLabelText('Name').fill('Deep work');
 			await screen.getByRole('button', { name: 'Save', exact: true }).click();
 
-			const chip = screen.getByRole('button', {
+			const chip = screen.getByRole('radio', {
 				name: 'Select Deep work 45/15/30/3 cadence preset'
 			});
 			await expect.element(chip).toBeVisible();
-			await expect.element(chip).toHaveAttribute('aria-pressed', 'true');
+			await expect.element(chip).toHaveAttribute('aria-checked', 'true');
 			expect(presetsState.presets).toEqual([createPreset('Deep work')]);
 		});
 
@@ -320,7 +332,7 @@ describe('PlanningCadenceConfig (Client Browser)', () => {
 			await screen.getByLabelText('Name').fill('Focus 45');
 			await screen.getByRole('button', { name: 'Rename', exact: true }).click();
 
-			const renamed = screen.getByRole('button', {
+			const renamed = screen.getByRole('radio', {
 				name: 'Select Focus 45 45/15/30/3 cadence preset'
 			});
 			await expect.element(renamed).toBeVisible();
@@ -332,7 +344,7 @@ describe('PlanningCadenceConfig (Client Browser)', () => {
 			const screen = await render(PlanningCadenceConfig, { planningState, presetsState });
 
 			await screen
-				.getByRole('button', { name: 'Select Deep work 45/15/30/3 cadence preset' })
+				.getByRole('radio', { name: 'Select Deep work 45/15/30/3 cadence preset' })
 				.click();
 			await screen.getByRole('button', { name: 'Preset actions: Deep work' }).click();
 			await screen.getByRole('button', { name: 'Delete', exact: true }).click();

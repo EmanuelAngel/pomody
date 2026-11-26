@@ -3,6 +3,7 @@
 	import Check from '@lucide/svelte/icons/check';
 	import Info from '@lucide/svelte/icons/info';
 	import * as Tooltip from '$lib/components/ui/tooltip';
+	import * as ToggleGroup from '$lib/components/ui/toggle-group';
 	import UnderflowAlert from './underflow-alert.svelte';
 	import EndSessionDialog from './end-session-dialog.svelte';
 	import PlanningCadenceConfig from './planning-cadence-config.svelte';
@@ -81,6 +82,9 @@
 		const blocks = planningState.projectedPlan.blocks;
 		return blocks.slice(0, blockIndex + 1).filter((b) => b.mode === 'focus').length;
 	}
+	// Writable derived: bits-ui deselects when clicking the active item, so `onValueChange`
+	// restores the override; external changes to the mode sync through the derivation.
+	let modeGroupValue = $derived<string>(planningState.targetMode);
 </script>
 
 <section
@@ -103,38 +107,33 @@
 			</div>
 
 			<!-- Target Mode Toggle (Blocks vs End Time) -->
-			<div
-				class="flex items-center rounded-lg border border-border/50 bg-muted/30 p-0.5 text-xs"
-				role="group"
+			<ToggleGroup.Root
+				type="single"
+				bind:value={modeGroupValue}
+				onValueChange={(mode) => {
+					if (mode === 'blocks' || mode === 'end_time') {
+						planningState.setTargetMode(mode);
+					} else if (mode === '') {
+						// bits-ui deselects when clicking the active item; the mode cannot be empty
+						modeGroupValue = planningState.targetMode;
+					}
+				}}
 				aria-label={t.planning_timeline_mode_aria()}
+				spacing={1}
+				class="flex items-center rounded-lg border border-border/50 bg-muted/30 p-0.5 text-xs"
 			>
-				<button
-					type="button"
-					disabled={planningState.isSessionActive}
-					class={cn(
-						'pressable cursor-pointer rounded-md px-2.5 py-1 font-medium disabled:cursor-not-allowed disabled:opacity-60',
-						planningState.targetMode === 'blocks'
-							? 'bg-background text-foreground shadow-xs'
-							: 'text-muted-foreground hover:text-foreground'
-					)}
-					onclick={() => planningState.setTargetMode('blocks')}
-				>
-					{t.planning_timeline_mode_blocks()}
-				</button>
-				<button
-					type="button"
-					disabled={planningState.isSessionActive}
-					class={cn(
-						'pressable cursor-pointer rounded-md px-2.5 py-1 font-medium disabled:cursor-not-allowed disabled:opacity-60',
-						planningState.targetMode === 'end_time'
-							? 'bg-background text-foreground shadow-xs'
-							: 'text-muted-foreground hover:text-foreground'
-					)}
-					onclick={() => planningState.setTargetMode('end_time')}
-				>
-					{t.planning_timeline_mode_end_time()}
-				</button>
-			</div>
+				{#each ['blocks', 'end_time'] as mode (mode)}
+					<ToggleGroup.Item
+						value={mode}
+						disabled={planningState.isSessionActive}
+						class="h-auto min-w-0 pressable cursor-pointer rounded-md px-2.5 py-1 font-medium text-muted-foreground hover:bg-transparent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60 data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-xs"
+					>
+						{mode === 'blocks'
+							? t.planning_timeline_mode_blocks()
+							: t.planning_timeline_mode_end_time()}
+					</ToggleGroup.Item>
+				{/each}
+			</ToggleGroup.Root>
 		</div>
 
 		<!-- Cadence Presets & Progressive Disclosure Configuration -->
