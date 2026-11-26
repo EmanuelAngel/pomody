@@ -132,17 +132,12 @@
 	>
 		<!-- Left: Grip + Checkbox + Title -->
 		<div class="flex min-w-0 flex-1 items-start gap-2.5">
-			<SimpleTooltip text={t.task_item_drag_title()}>
-				{#snippet children({ props })}
-					<div
-						{...props}
-						class="mt-1 flex size-3.5 shrink-0 items-center justify-center text-muted-foreground/30 transition-colors select-none group-hover:text-muted-foreground/60"
-						aria-hidden="true"
-					>
-						<GripVertical class="size-3.5" />
-					</div>
-				{/snippet}
-			</SimpleTooltip>
+			<div
+				class="mt-1 flex size-3.5 shrink-0 items-center justify-center text-muted-foreground/30 transition-colors select-none group-hover:text-muted-foreground/60"
+				aria-hidden="true"
+			>
+				<GripVertical class="size-3.5" />
+			</div>
 
 			<button
 				type="button"
