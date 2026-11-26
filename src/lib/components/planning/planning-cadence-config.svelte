@@ -403,14 +403,14 @@
 						</span>
 					{/if}
 				</div>
-				<input
+				<Input
 					id="target-end-time"
 					type="time"
 					aria-label={t.planning_cadence_target_finish_time_aria()}
 					disabled={planningState.isSessionActive}
 					value={planningState.targetEndTime}
 					oninput={(e) => planningState.setTargetEndTime(e.currentTarget.value)}
-					class="h-8.5 rounded-lg border border-border/60 bg-background px-2.5 text-xs text-foreground interactive focus:border-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					class="h-8.5 rounded-lg px-2.5 text-xs focus-visible:ring-1"
 				/>
 			</div>
 
@@ -433,7 +433,7 @@
 					>
 						{t.planning_cadence_scheduled_start_now()}
 					</button>
-					<input
+					<Input
 						id="scheduled-start-time"
 						type="time"
 						aria-label={t.planning_cadence_scheduled_start_aria()}
@@ -442,7 +442,7 @@
 							? ''
 							: planningState.scheduledStartTime}
 						oninput={(e) => planningState.setScheduledStartTime(e.currentTarget.value || 'now')}
-						class="h-8.5 flex-1 rounded-lg border border-border/60 bg-background px-2.5 text-xs text-foreground interactive focus:border-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+						class="h-8.5 flex-1 rounded-lg px-2.5 text-xs focus-visible:ring-1"
 					/>
 				</div>
 			</div>
