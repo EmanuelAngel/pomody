@@ -107,7 +107,7 @@
 					: t.task_pill_mark_as_completed({ title: activeTask.title })}
 				onCheckedChange={handleToggleCompleted}
 				class={cn(
-					'size-4 pressable cursor-pointer rounded-full [&_[data-slot=checkbox-indicator]_svg]:size-2.5 [&_[data-slot=checkbox-indicator]_svg]:stroke-[3]',
+					'size-4 pressable cursor-pointer rounded-full after:hidden [&_[data-slot=checkbox-indicator]_svg]:size-2.5 [&_[data-slot=checkbox-indicator]_svg]:stroke-[3]',
 					activeTask.completed
 						? 'border-primary'
 						: 'border-muted-foreground/50 hover:border-foreground'

@@ -85,7 +85,7 @@
 				checked={true}
 				aria-label={t.task_item_mark_as_pending({ title: task.title })}
 				onCheckedChange={() => ontoggle?.(task.id)}
-				class="mt-0.5 size-4.5 pressable cursor-pointer rounded-full border-primary [&_[data-slot=checkbox-indicator]_svg]:size-2.5 [&_[data-slot=checkbox-indicator]_svg]:stroke-[3]"
+				class="mt-0.5 size-4.5 pressable cursor-pointer rounded-full border-primary after:hidden [&_[data-slot=checkbox-indicator]_svg]:size-2.5 [&_[data-slot=checkbox-indicator]_svg]:stroke-[3]"
 			/>
 			<span
 				class="min-w-0 flex-1 text-sm leading-snug break-words text-muted-foreground/60 line-through select-none"
@@ -135,7 +135,7 @@
 				checked={false}
 				aria-label={t.task_item_mark_as_completed({ title: task.title })}
 				onCheckedChange={() => ontoggle?.(task.id)}
-				class="mt-0.5 size-4.5 pressable cursor-pointer rounded-full border-muted-foreground/40 hover:border-primary"
+				class="mt-0.5 size-4.5 pressable cursor-pointer rounded-full border-muted-foreground/40 after:hidden hover:border-primary"
 			/>
 
 			{#if isEditing}
