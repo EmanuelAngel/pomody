@@ -38,6 +38,7 @@
 	"settings_trigger_open": "Open settings",
 	"settings_title": "Settings",
 	"settings_tabs_aria": "Settings sections",
+	"settings_app_version": "Pomody v{version}",
 	"settings_tab_intervals": "Intervals",
 	"settings_tab_appearance": "Appearance",
 	"settings_tab_companion": "Companion",
