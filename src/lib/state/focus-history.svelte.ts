@@ -47,6 +47,7 @@ export class FocusHistoryState {
 
 	private _entries = $state<readonly FocusHistoryEntry[]>([]);
 	private _isLoaded = $state<boolean>(false);
+	private _loadFailed = $state<boolean>(false);
 
 	public get entries(): readonly FocusHistoryEntry[] {
 		return this._entries;
@@ -55,6 +56,11 @@ export class FocusHistoryState {
 	/** True once a read of the persisted history succeeded at least once. */
 	public get isLoaded(): boolean {
 		return this._isLoaded;
+	}
+
+	/** True when no read has succeeded yet and the last one failed, so there is nothing to show. */
+	public get loadFailed(): boolean {
+		return this._loadFailed;
 	}
 
 	constructor(deps: FocusHistoryDependencies = {}) {
@@ -82,8 +88,16 @@ export class FocusHistoryState {
 	}
 
 	private async reload(): Promise<void> {
-		this._entries = await this.repository.getAll();
-		this._isLoaded = true;
+		try {
+			this._entries = await this.repository.getAll();
+			this._isLoaded = true;
+			this._loadFailed = false;
+		} catch (error) {
+			if (!this._isLoaded) {
+				this._loadFailed = true;
+			}
+			throw error;
+		}
 	}
 
 	/**
