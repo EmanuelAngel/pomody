@@ -1,10 +1,10 @@
 <script lang="ts">
-	import Check from '@lucide/svelte/icons/check';
 	import Pin from '@lucide/svelte/icons/pin';
 	import Trash from '@lucide/svelte/icons/trash';
 	import CalendarPlus from '@lucide/svelte/icons/calendar-plus';
 	import GripVertical from '@lucide/svelte/icons/grip-vertical';
 	import { Button } from '$lib/components/ui/button';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { cn } from '$lib/utils';
 	import type { FocusTask } from '$lib/domain/tasks/task.entity';
 	import { t } from '$lib/state/locale.svelte';
@@ -81,16 +81,12 @@
 		class="group flex items-start justify-between gap-3 rounded-xl border border-border/20 bg-muted/20 px-3 py-2 text-muted-foreground/70 interactive"
 	>
 		<div class="flex min-w-0 flex-1 items-start gap-3">
-			<button
-				type="button"
-				role="checkbox"
-				aria-checked={true}
+			<Checkbox
+				checked={true}
 				aria-label={t.task_item_mark_as_pending({ title: task.title })}
-				onclick={() => ontoggle?.(task.id)}
-				class="mt-0.5 flex size-4.5 shrink-0 pressable cursor-pointer items-center justify-center rounded-full border border-primary bg-primary text-primary-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-			>
-				<Check class="size-2.5 stroke-[3]" />
-			</button>
+				onCheckedChange={() => ontoggle?.(task.id)}
+				class="mt-0.5 size-4.5 pressable cursor-pointer rounded-full border-primary [&_[data-slot=checkbox-indicator]_svg]:size-2.5 [&_[data-slot=checkbox-indicator]_svg]:stroke-[3]"
+			/>
 			<span
 				class="min-w-0 flex-1 text-sm leading-snug break-words text-muted-foreground/60 line-through select-none"
 			>
@@ -135,15 +131,12 @@
 				<GripVertical class="size-3.5" />
 			</div>
 
-			<button
-				type="button"
-				role="checkbox"
-				aria-checked={false}
+			<Checkbox
+				checked={false}
 				aria-label={t.task_item_mark_as_completed({ title: task.title })}
-				onclick={() => ontoggle?.(task.id)}
-				class="mt-0.5 flex size-4.5 shrink-0 pressable cursor-pointer items-center justify-center rounded-full border border-muted-foreground/40 hover:border-primary focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-			>
-			</button>
+				onCheckedChange={() => ontoggle?.(task.id)}
+				class="mt-0.5 size-4.5 pressable cursor-pointer rounded-full border-muted-foreground/40 hover:border-primary"
+			/>
 
 			{#if isEditing}
 				<input

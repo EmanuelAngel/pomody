@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import * as Popover from '$lib/components/ui/popover';
 	import * as Tooltip from '$lib/components/ui/tooltip';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import Check from '@lucide/svelte/icons/check';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Plus from '@lucide/svelte/icons/plus';
@@ -50,8 +51,7 @@
 		}
 	}
 
-	async function handleToggleCompleted(e: MouseEvent) {
-		e.stopPropagation();
+	async function handleToggleCompleted() {
 		if (!activeTask) return;
 		await tasksState.toggleTask(activeTask.id);
 	}
@@ -100,25 +100,19 @@
 		)}
 	>
 		{#if activeTask}
-			<button
-				type="button"
-				role="checkbox"
-				aria-checked={activeTask.completed}
+			<Checkbox
+				checked={activeTask.completed}
 				aria-label={activeTask.completed
 					? t.task_pill_mark_as_pending({ title: activeTask.title })
 					: t.task_pill_mark_as_completed({ title: activeTask.title })}
-				onclick={handleToggleCompleted}
+				onCheckedChange={handleToggleCompleted}
 				class={cn(
-					'flex size-4 shrink-0 pressable cursor-pointer items-center justify-center rounded-full border focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+					'size-4 pressable cursor-pointer rounded-full [&_[data-slot=checkbox-indicator]_svg]:size-2.5 [&_[data-slot=checkbox-indicator]_svg]:stroke-[3]',
 					activeTask.completed
-						? 'border-primary bg-primary text-primary-foreground'
+						? 'border-primary'
 						: 'border-muted-foreground/50 hover:border-foreground'
 				)}
-			>
-				{#if activeTask.completed}
-					<Check class="size-2.5 stroke-[3]" />
-				{/if}
-			</button>
+			/>
 		{/if}
 
 		<Popover.Trigger
