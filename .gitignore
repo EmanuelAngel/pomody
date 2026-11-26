@@ -67,3 +67,7 @@ SCAFFOLDING.md
 **/.impeccable/live/deferred-svelte-component-accepts.json
 **/.impeccable/live/*.png
 # impeccable-ignore-end
+
+# Vitest browser-mode artifacts
+.vitest-attachments/
+**/__screenshots__/
