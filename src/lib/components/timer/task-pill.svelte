@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import * as Popover from '$lib/components/ui/popover';
+	import { Input } from '$lib/components/ui/input';
 	import * as Tooltip from '$lib/components/ui/tooltip';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import Check from '@lucide/svelte/icons/check';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Plus from '@lucide/svelte/icons/plus';
@@ -50,8 +52,7 @@
 		}
 	}
 
-	async function handleToggleCompleted(e: MouseEvent) {
-		e.stopPropagation();
+	async function handleToggleCompleted() {
 		if (!activeTask) return;
 		await tasksState.toggleTask(activeTask.id);
 	}
@@ -100,25 +101,19 @@
 		)}
 	>
 		{#if activeTask}
-			<button
-				type="button"
-				role="checkbox"
-				aria-checked={activeTask.completed}
+			<Checkbox
+				checked={activeTask.completed}
 				aria-label={activeTask.completed
 					? t.task_pill_mark_as_pending({ title: activeTask.title })
 					: t.task_pill_mark_as_completed({ title: activeTask.title })}
-				onclick={handleToggleCompleted}
+				onCheckedChange={handleToggleCompleted}
 				class={cn(
-					'flex size-4 shrink-0 pressable cursor-pointer items-center justify-center rounded-full border focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+					'size-4 pressable cursor-pointer rounded-full after:hidden [&_[data-slot=checkbox-indicator]_svg]:size-2.5 [&_[data-slot=checkbox-indicator]_svg]:stroke-[3]',
 					activeTask.completed
-						? 'border-primary bg-primary text-primary-foreground'
+						? 'border-primary'
 						: 'border-muted-foreground/50 hover:border-foreground'
 				)}
-			>
-				{#if activeTask.completed}
-					<Check class="size-2.5 stroke-[3]" />
-				{/if}
-			</button>
+			/>
 		{/if}
 
 		<Popover.Trigger
@@ -186,13 +181,13 @@
 	>
 		<!-- Quick Add Input -->
 		<div class="relative mb-2 flex items-center">
-			<input
+			<Input
 				type="text"
 				placeholder={t.task_pill_new_task_placeholder()}
 				aria-label={t.task_pill_create_and_pin_aria()}
 				bind:value={newTaskTitle}
 				onkeydown={handleInputKeyDown}
-				class="h-8 w-full rounded-lg border border-input/60 bg-muted/30 px-2.5 pr-8 text-xs text-foreground placeholder:text-muted-foreground/70 focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+				class="h-8 rounded-lg px-2.5 pr-8 text-xs focus-visible:ring-1"
 			/>
 			{#if newTaskTitle.trim().length > 0}
 				<button
