@@ -73,7 +73,7 @@
 <div
 	data-slot="break-revitalization"
 	class={cn(
-		'group inline-flex h-8 items-center justify-center gap-2 rounded-full border border-border/40 bg-muted/40 px-3 text-xs shadow-xs transition-all duration-200 sm:text-sm',
+		'group inline-flex h-8 items-center justify-start gap-2 rounded-full border border-border/40 bg-muted/40 px-3 text-xs shadow-xs transition-all duration-200 sm:text-sm',
 		FOOTER_PILL_WIDTH
 	)}
 >

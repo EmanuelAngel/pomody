@@ -523,4 +523,26 @@ describe('TaskPill Reactive Localization (Client Browser)', () => {
 		await expect.element(screen.getByText('Free focus')).toBeVisible();
 		expect(pill.getBoundingClientRect().width).toBe(width);
 	});
+	it('starts the title at the left and puts the chevron at the right edge', async () => {
+		const task = createFocusTask({ title: 'Mail' });
+		const repo = new FakeTaskRepository([task]);
+		const tasksState = createTasksState(repo);
+		await tasksState.load();
+		tasksState.setActiveTask(task.id);
+
+		const screen = await render(TaskPill, {
+			isRunning: false,
+			tasksState,
+			portalProps: { disabled: true }
+		});
+		const pill = screen.container.querySelector<HTMLElement>('[data-slot="task-pill"]')!;
+		await expect.element(screen.getByText('Mail')).toBeVisible();
+		const pillRect = pill.getBoundingClientRect();
+		const title = screen.getByText('Mail').element().getBoundingClientRect();
+		const chevron = pill.querySelector('svg.lucide-chevron-down')!.getBoundingClientRect();
+
+		// Checkbox (16 px) + gap + padding: the title starts near the left edge, not in the middle.
+		expect(title.left - pillRect.left).toBeLessThan(48);
+		expect(pillRect.right - chevron.right).toBeLessThan(24);
+	});
 });

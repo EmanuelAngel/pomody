@@ -123,7 +123,7 @@
 
 		<Popover.Trigger
 			class={cn(
-				'inline-flex h-full min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 select-none focus-visible:outline-none',
+				'inline-flex h-full min-w-0 flex-1 cursor-pointer items-center justify-start gap-1.5 text-left select-none focus-visible:outline-none',
 				activeTask
 					? 'text-foreground'
 					: cn(
@@ -172,7 +172,7 @@
 				<span class="font-normal">{t.task_pill_free_focus()}</span>
 			{/if}
 			<ChevronDown
-				class="size-3 shrink-0 text-muted-foreground/60 transition-transform duration-200 group-data-[state=open]:rotate-180"
+				class="ml-auto size-3 shrink-0 text-muted-foreground/60 transition-transform duration-200 group-data-[state=open]:rotate-180"
 			/>
 		</Popover.Trigger>
 	</div>
