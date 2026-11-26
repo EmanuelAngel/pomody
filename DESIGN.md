@@ -16,31 +16,31 @@ colors:
   accent-gold: '#f6c177'
 typography:
   display:
-    fontFamily: 'JetBrains Mono Variable, monospace'
+    fontFamily: 'Commit Mono, monospace'
     fontSize: 'clamp(4.25rem, 14vw, 7.5rem)'
     fontWeight: 400
     lineHeight: 1
     letterSpacing: '-0.025em'
   headline:
-    fontFamily: 'Inter Variable, sans-serif'
+    fontFamily: 'Plus Jakarta Sans Variable, sans-serif'
     fontSize: '1.25rem'
     fontWeight: 600
     lineHeight: 1.3
     letterSpacing: '-0.015em'
   title:
-    fontFamily: 'Inter Variable, sans-serif'
+    fontFamily: 'Plus Jakarta Sans Variable, sans-serif'
     fontSize: '0.875rem'
     fontWeight: 600
     lineHeight: 1.25
     letterSpacing: '-0.01em'
   body:
-    fontFamily: 'Inter Variable, sans-serif'
+    fontFamily: 'Plus Jakarta Sans Variable, sans-serif'
     fontSize: '0.875rem'
     fontWeight: 400
     lineHeight: 1.5
     letterSpacing: 'normal'
   label:
-    fontFamily: 'Inter Variable, sans-serif'
+    fontFamily: 'Plus Jakarta Sans Variable, sans-serif'
     fontSize: '0.75rem'
     fontWeight: 600
     lineHeight: 1
@@ -128,11 +128,11 @@ The color palette is built upon Rosé Pine's natural botanical and mineral pigme
 
 ## Typography
 
-**Display Font:** JetBrains Mono Variable (tabular-nums, monospace)
-**Body Font:** Inter Variable (with sans-serif system fallback)
-**Label/Mono Font:** Inter Variable (wide tracking for labels) / JetBrains Mono Variable (for numeric stats)
+**Display Font:** Commit Mono (tabular-nums, monospace, dotted zero via `cv07`)
+**Body Font:** Plus Jakarta Sans Variable (with sans-serif system fallback)
+**Label/Mono Font:** Plus Jakarta Sans Variable (wide tracking for labels) / Commit Mono (for numeric stats)
 
-**Character:** Balanced mechanical precision meets humanistic readability. The timer display reads with stopwatch clarity, while conversational copy, guides, and forms feel warm, thoughtful, and unobtrusive.
+**Character:** Balanced mechanical precision meets humanistic readability. The timer display reads with stopwatch clarity — the dotted zero of Commit Mono is what makes it an instrument rather than a console — while conversational copy, guides, and forms feel warm, thoughtful, and unobtrusive.
 
 ### Hierarchy
 
@@ -144,7 +144,7 @@ The color palette is built upon Rosé Pine's natural botanical and mineral pigme
 
 ### Named Rules
 
-**The Tabular Clock Rule.** Timer numbers must always render with tabular numerals (`tabular-nums`) and JetBrains Mono Variable to prevent jitter and layout shifts as seconds elapse.
+**The Tabular Clock Rule.** Timer numbers must always render with tabular numerals (`tabular-nums`) and Commit Mono with the dotted zero (`cv07`, applied through the `clock-figures` utility) to prevent jitter and layout shifts as seconds elapse. The dot is the point: the slashed zero reads as a programming font, the dot as an instrument.
 
 **The Quiet Label Rule.** State labels above the clock must always be uppercase with wide letter spacing (`tracking-[0.25em]`) at 12px/14px, maintaining immediate peripheral comprehension.
 
@@ -212,7 +212,7 @@ Pomody is flat by default with planar tonal stepping. It deliberately avoids art
 ### Do:
 
 - **Do** preserve Zen Mode discipline: all peripheral controls must fade out when a focus session is active.
-- **Do** format timer digits with JetBrains Mono Variable and `tabular-nums` to eliminate jitter.
+- **Do** format timer digits with Commit Mono, the `clock-figures` utility (dotted zero, `cv07`) and `tabular-nums` to eliminate jitter.
 - **Do** use Rosé Pine semantic mode tokens (`--accent-foam` for focus, `--accent-pine` for short break, `--accent-iris` for long break).
 - **Do** maintain clear tonal hierarchy (`bg-base` → `bg-surface` → `bg-overlay`).
 - **Do** keep cards and dialogs flat with subtle hairline borders (`border-border/40`).

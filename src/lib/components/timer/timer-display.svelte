@@ -75,11 +75,14 @@
 		{modeLabel}
 	</span>
 
-	<!-- Large monospace time display (JetBrains Mono Variable) -->
+	<!--
+		The timer face. `clock-figures` carries the dotted zero (`cv07`) and the
+		tabular figures together, so neither can be set without the other.
+	-->
 	<div
 		role="timer"
 		aria-label={t.timer_time_remaining({ time: formattedTime })}
-		class="font-mono text-[clamp(4.25rem,14vw,6.5rem)] leading-none font-normal tracking-tight text-foreground tabular-nums select-none sm:text-[clamp(5.5rem,15vw,7.5rem)]"
+		class="font-mono clock-figures text-[clamp(4.25rem,14vw,6.5rem)] leading-none font-normal tracking-tight text-foreground select-none sm:text-[clamp(5.5rem,15vw,7.5rem)]"
 	>
 		{formattedTime}
 	</div>

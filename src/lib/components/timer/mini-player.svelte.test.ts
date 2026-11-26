@@ -365,7 +365,12 @@ describe('MiniPlayer layout geometry', () => {
 			.querySelector('[data-slot="mini-player-time"]');
 
 		expect(time?.getAttribute('class')).toContain('font-mono');
-		expect(time?.getAttribute('class')).toContain('tabular-nums');
+		// The fixed width is the requirement; `clock-figures` is how the timer
+		// states it now, so assert the computed behaviour instead of the class
+		// name that happens to carry it.
+		const style = getComputedStyle(time as Element);
+		expect(style.fontVariantNumeric).toContain('tabular-nums');
+		expect(style.fontFeatureSettings).toContain('cv07');
 	});
 });
 
