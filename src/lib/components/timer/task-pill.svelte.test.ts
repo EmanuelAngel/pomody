@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
+// In isolation nothing pulls `app.css` in (only `+layout.svelte` does), so without this
+// import the width utilities are no-ops and every pill would measure the same.
+import '../../../app.css';
 import TaskPill from './task-pill.svelte';
 import Timer from './timer.svelte';
 import { createTasksState } from '$lib/state/tasks.svelte';
@@ -490,5 +493,56 @@ describe('TaskPill Reactive Localization (Client Browser)', () => {
 		const pill = screen.container.querySelector('[data-slot="task-pill"]');
 		expect(pill?.classList.contains('md:backdrop-blur-sm')).toBe(false);
 		expect(pill?.classList.contains('bg-muted/40')).toBe(true);
+	});
+
+	it('keeps the same width for a short title, a long title and Free focus', async () => {
+		const shortTask = createFocusTask({ title: 'Mail' });
+		const longTask = createFocusTask({
+			title: 'Refactor the whole persistence layer so every adapter shares one contract'
+		});
+		const repo = new FakeTaskRepository([shortTask, longTask]);
+		const tasksState = createTasksState(repo);
+		await tasksState.load();
+		tasksState.setActiveTask(shortTask.id);
+
+		const screen = await render(TaskPill, {
+			isRunning: false,
+			tasksState,
+			portalProps: { disabled: true }
+		});
+		const pill = screen.container.querySelector<HTMLElement>('[data-slot="task-pill"]')!;
+		await expect.element(screen.getByText('Mail')).toBeVisible();
+		const width = pill.getBoundingClientRect().width;
+		expect(width).toBeGreaterThan(0);
+
+		tasksState.setActiveTask(longTask.id);
+		await expect.element(screen.getByText(longTask.title)).toBeInTheDocument();
+		expect(pill.getBoundingClientRect().width).toBe(width);
+
+		tasksState.setActiveTask(null);
+		await expect.element(screen.getByText('Free focus')).toBeVisible();
+		expect(pill.getBoundingClientRect().width).toBe(width);
+	});
+	it('starts the title at the left and puts the chevron at the right edge', async () => {
+		const task = createFocusTask({ title: 'Mail' });
+		const repo = new FakeTaskRepository([task]);
+		const tasksState = createTasksState(repo);
+		await tasksState.load();
+		tasksState.setActiveTask(task.id);
+
+		const screen = await render(TaskPill, {
+			isRunning: false,
+			tasksState,
+			portalProps: { disabled: true }
+		});
+		const pill = screen.container.querySelector<HTMLElement>('[data-slot="task-pill"]')!;
+		await expect.element(screen.getByText('Mail')).toBeVisible();
+		const pillRect = pill.getBoundingClientRect();
+		const title = screen.getByText('Mail').element().getBoundingClientRect();
+		const chevron = pill.querySelector('svg.lucide-chevron-down')!.getBoundingClientRect();
+
+		// Checkbox (16 px) + gap + padding: the title starts near the left edge, not in the middle.
+		expect(title.left - pillRect.left).toBeLessThan(48);
+		expect(pillRect.right - chevron.right).toBeLessThan(24);
 	});
 });

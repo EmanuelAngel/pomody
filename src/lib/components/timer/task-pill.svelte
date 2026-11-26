@@ -6,6 +6,7 @@
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Plus from '@lucide/svelte/icons/plus';
 	import { cn } from '$lib/utils';
+	import { FOOTER_PILL_WIDTH } from './footer-pill-width';
 	import { tasksState as defaultTasksState, type TasksState } from '$lib/state/tasks.svelte';
 	import {
 		illustrationState as defaultIllustrationState,
@@ -89,6 +90,7 @@
 		data-slot="task-pill"
 		class={cn(
 			'group inline-flex h-8 items-center rounded-full border border-border/40 bg-muted/40 shadow-xs interactive sm:text-sm',
+			FOOTER_PILL_WIDTH,
 			activeTask ? 'gap-2 px-3 text-xs' : 'p-0 text-xs text-muted-foreground/80',
 			isRunning
 				? 'opacity-60 transition-opacity hover:opacity-100'
@@ -121,7 +123,7 @@
 
 		<Popover.Trigger
 			class={cn(
-				'inline-flex h-full cursor-pointer items-center gap-1.5 select-none focus-visible:outline-none',
+				'inline-flex h-full min-w-0 flex-1 cursor-pointer items-center justify-start gap-1.5 text-left select-none focus-visible:outline-none',
 				activeTask
 					? 'text-foreground'
 					: cn(
@@ -143,7 +145,7 @@
 									<span
 										{...props}
 										class={cn(
-											'inline-block max-w-[160px] truncate font-medium transition-colors sm:max-w-[220px]',
+											'min-w-0 truncate font-medium transition-colors',
 											activeTask.completed && 'text-muted-foreground/60 line-through'
 										)}
 									>
@@ -159,7 +161,7 @@
 				{:else}
 					<span
 						class={cn(
-							'inline-block max-w-[160px] truncate font-medium transition-colors sm:max-w-[220px]',
+							'min-w-0 truncate font-medium transition-colors',
 							activeTask.completed && 'text-muted-foreground/60 line-through'
 						)}
 					>
@@ -170,7 +172,7 @@
 				<span class="font-normal">{t.task_pill_free_focus()}</span>
 			{/if}
 			<ChevronDown
-				class="size-3 shrink-0 text-muted-foreground/60 transition-transform duration-200 group-data-[state=open]:rotate-180"
+				class="ml-auto size-3 shrink-0 text-muted-foreground/60 transition-transform duration-200 group-data-[state=open]:rotate-180"
 			/>
 		</Popover.Trigger>
 	</div>
