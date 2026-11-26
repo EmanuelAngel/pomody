@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.28.0...pomody-v0.29.0) (2026-11-26)
+
+
+### Features
+
+* **design:** replace Inter + JetBrains Mono with Plus Jakarta Sans + Commit Mono ([#252](https://github.com/EmanuelAngel/pomody/issues/252)) ([60f61a8](https://github.com/EmanuelAngel/pomody/commit/60f61a858cd541d74e7c7a0e4e2d3d60ef2a17b9))
+
+
+### Bug Fixes
+
+* **distraction:** show an error when the open windows cannot be listed ([#248](https://github.com/EmanuelAngel/pomody/issues/248)) ([414e935](https://github.com/EmanuelAngel/pomody/commit/414e93525f92b22628981b6fe4a37a3ff44a242a))
+* **metrics:** show an error when the view or the history cannot be loaded ([#251](https://github.com/EmanuelAngel/pomody/issues/251)) ([f9137ad](https://github.com/EmanuelAngel/pomody/commit/f9137ad13dc1121db13a7f2d2385cb58edc0ff63))
+* **timer:** give the task and break pills a fixed shared width ([#249](https://github.com/EmanuelAngel/pomody/issues/249)) ([cebb9c5](https://github.com/EmanuelAngel/pomody/commit/cebb9c5c31cd289c1f831950f83220ad5abe34f1))
+
 ## [0.28.0](https://github.com/EmanuelAngel/pomody/compare/pomody-v0.27.0...pomody-v0.28.0) (2026-11-25)
 
 
