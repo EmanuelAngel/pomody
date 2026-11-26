@@ -5,6 +5,7 @@
 	import MoreVertical from '@lucide/svelte/icons/more-vertical';
 	import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
 	import * as Popover from '$lib/components/ui/popover';
+	import * as ToggleGroup from '$lib/components/ui/toggle-group';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { cn } from '$lib/utils';
@@ -99,6 +100,13 @@
 		planningState.applyCadence(preset);
 	}
 
+	function applyPresetById(id: string): void {
+		const builtIn = BUILT_IN_CADENCE_PRESETS.find((preset) => preset.id === id);
+		const custom = presetsState.presets.find((preset) => preset.id === id);
+		if (builtIn) applyPreset(builtIn);
+		else if (custom) applyPreset(custom);
+	}
+
 	function openCreateEditor(): void {
 		createName = '';
 		createError = null;
@@ -152,31 +160,25 @@
 			<span class="text-[11px] font-medium text-muted-foreground"
 				>{t.planning_cadence_preset_heading()}</span
 			>
-			<div
-				class="flex flex-wrap items-center gap-1.5"
-				role="group"
+			<ToggleGroup.Root
+				type="single"
+				value={activePresetId ?? ''}
+				onValueChange={applyPresetById}
 				aria-label={t.planning_cadence_presets_aria()}
+				class="flex flex-wrap items-center gap-1.5"
 			>
 				{#each BUILT_IN_CADENCE_PRESETS as preset (preset.id)}
-					{@const isSelected = activePresetId === preset.id}
-					<button
-						type="button"
-						aria-pressed={isSelected}
+					<ToggleGroup.Item
+						value={preset.id}
 						aria-label={t.planning_cadence_select_preset_aria({
 							name: getBuiltInShortName(preset),
 							label: getBuiltInLabel(preset)
 						})}
-						onclick={() => applyPreset(preset)}
-						class={cn(
-							'flex pressable cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium',
-							isSelected
-								? 'border-primary/50 bg-primary/10 text-primary shadow-xs'
-								: 'border-border/60 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-						)}
+						class="flex h-auto min-w-0 pressable cursor-pointer items-center gap-1.5 rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground data-[state=on]:border-primary/50 data-[state=on]:bg-primary/10 data-[state=on]:text-primary data-[state=on]:shadow-xs"
 					>
 						<span class="font-semibold">{getBuiltInShortName(preset)}</span>
 						<span class="text-[10px] opacity-80">{getBuiltInLabel(preset)}</span>
-					</button>
+					</ToggleGroup.Item>
 				{/each}
 
 				{#each presetsState.presets as preset (preset.id)}
@@ -189,19 +191,17 @@
 								: 'border-border/60 bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground'
 						)}
 					>
-						<button
-							type="button"
-							aria-pressed={isSelected}
+						<ToggleGroup.Item
+							value={preset.id}
 							aria-label={t.planning_cadence_select_preset_aria({
 								name: preset.name,
 								label: formatCadenceShort(preset)
 							})}
-							onclick={() => applyPreset(preset)}
-							class="flex pressable cursor-pointer items-center gap-1.5 rounded-l-lg py-1.5 pr-1.5 pl-2.5"
+							class="flex h-auto min-w-0 pressable cursor-pointer items-center gap-1.5 rounded-l-lg py-1.5 pr-1.5 pl-2.5 hover:bg-transparent hover:text-inherit"
 						>
 							<span class="font-semibold">{preset.name}</span>
 							<span class="text-[10px] opacity-80">{formatCadenceShort(preset)}</span>
-						</button>
+						</ToggleGroup.Item>
 
 						<Popover.Root
 							open={openPresetId === preset.id}
@@ -349,7 +349,7 @@
 						</form>
 					</Popover.Content>
 				</Popover.Root>
-			</div>
+			</ToggleGroup.Root>
 		</div>
 
 		<!-- Primary Variable in Blocks mode: Block Count -->
