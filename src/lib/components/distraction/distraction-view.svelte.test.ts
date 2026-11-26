@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import DistractionView from './distraction-view.svelte';
@@ -25,6 +25,7 @@ async function createHarness(
 		rules?: readonly DistractionRule[];
 		silencedRuleIds?: readonly string[];
 		windows?: readonly { exe: string; title: string }[];
+		listFails?: boolean;
 	} = {}
 ) {
 	const ruleRepository = new FakeDistractionRuleRepository(options.rules);
@@ -35,6 +36,9 @@ async function createHarness(
 	);
 	const settingsStorage = new FakeSettingsStorage();
 	const monitor = new FakeDistractionMonitor({ windows: options.windows ?? WINDOWS });
+	if (options.listFails) {
+		vi.spyOn(monitor, 'listOpenWindows').mockRejectedValue(new Error('open_windows failed'));
+	}
 
 	const state = createDistractionState({
 		ruleRepository,
@@ -143,5 +147,23 @@ describe('DistractionView (Client Browser)', () => {
 
 		await expect.element(screen.getByText('Silenced today')).not.toBeInTheDocument();
 		await expect.element(screen.getByText('Declared rules')).toBeVisible();
+	});
+
+	it('tells the user the window list failed and keeps the manual fields usable', async () => {
+		const { screen, ruleRepository } = await createHarness({ listFails: true });
+
+		await expect
+			.element(screen.getByRole('alert'))
+			.toHaveTextContent(/Couldn.t read the list of open windows/);
+		await expect
+			.element(screen.getByRole('button', { name: 'Open windows' }))
+			.not.toBeInTheDocument();
+
+		await screen.getByLabelText('Executable').fill('steam');
+		await screen.getByRole('button', { name: 'Add rule' }).click();
+
+		await expect
+			.poll(async () => (await ruleRepository.getAll()).map((rule) => rule.exe))
+			.toEqual(['steam']);
 	});
 });
