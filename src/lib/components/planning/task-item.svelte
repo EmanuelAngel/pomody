@@ -5,6 +5,7 @@
 	import GripVertical from '@lucide/svelte/icons/grip-vertical';
 	import { Button } from '$lib/components/ui/button';
 	import { Checkbox } from '$lib/components/ui/checkbox';
+	import { Input } from '$lib/components/ui/input';
 	import { cn } from '$lib/utils';
 	import type { FocusTask } from '$lib/domain/tasks/task.entity';
 	import { t } from '$lib/state/locale.svelte';
@@ -139,13 +140,13 @@
 			/>
 
 			{#if isEditing}
-				<input
+				<Input
 					type="text"
 					aria-label={t.task_item_edit_input_aria()}
 					bind:value={editingTitle}
 					onkeydown={handleKeyDown}
 					onblur={handleSave}
-					class="h-7 w-full rounded border border-ring bg-background px-2 text-sm text-foreground focus:outline-none"
+					class="h-7 rounded border-ring px-2 text-sm focus-visible:ring-1"
 				/>
 			{:else}
 				<button
